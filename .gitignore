@@ -4,3 +4,10 @@
 !.gitignore
 !*.md
 
+!grammar/
+!src/
+
+!*.[ch]
+
+!*.lex
+
