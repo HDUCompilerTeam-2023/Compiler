@@ -4,10 +4,16 @@
 !.gitignore
 !*.md
 
+!Makefile
+!*.mk
+
+!include/
 !grammar/
+!script/
 !src/
 
 !*.[ch]
+!*.cc
 
 !*.lex
 
