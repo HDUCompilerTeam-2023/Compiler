@@ -6,7 +6,7 @@
 #include <stdio.h>
 %}
 
-%option yylineno batch noinput nounput noyywrap debug
+%option yylineno batch noinput nounput noyywrap
 
 INT (int)
 FLOAT (float)
@@ -64,7 +64,7 @@ DECCONST ([1-9][0-9]*)
 {CONTINUE} { printf("%d CONTINUE\n", yylineno); }
 {IF}       { printf("%d IF\n", yylineno);       }
 {ELSE}     { printf("%d ELSE\n", yylineno);     }
-{RETURN}   { printf("%d ELSE\n", yylineno);     }
+{RETURN}   { printf("%d RETURN\n", yylineno);   }
 
 {ID} { printf("%d ID %s\n", yylineno, yytext); }
 
