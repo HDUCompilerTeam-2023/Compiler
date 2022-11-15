@@ -10,6 +10,7 @@
 !include/
 !grammar/
 !script/
+!test/
 !src/
 
 !*.[ch]
@@ -17,3 +18,4 @@
 
 !*.lex
 
+!*.sy
