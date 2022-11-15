@@ -17,9 +17,12 @@ CXXSRCS = $(shell find $(CSRC_DIR) -name *.cc)
 
 TESTSRC = $(shell find $(TEST_DIR) -name *.sy)
 
+
 # Rules
 include script/native.mk
 
+
+# Phony rules
 clean:
 	@echo - CLEAN $(CLEAN_DIR)
 	@rm -rf $(CLEAN_DIR)
@@ -28,6 +31,7 @@ PHONY += clean
 help:
 	@echo : commands
 	@echo $(PHONY)
+
 
 # Settings
 .PHONY: $(PHONY)
