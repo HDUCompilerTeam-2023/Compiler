@@ -1,5 +1,5 @@
 # Info
-NAME ?= RelopLexer
+NAME ?= SysYLexer
 
 
 # Compiler
@@ -10,7 +10,7 @@ CC ?= clang
 # Source
 CSRC_DIR ?= src
 
-LEXSRC ?= grammar/Relop.lex
+LEXSRC ?= grammar/SysY.lex
 CSRCS = $(shell find $(CSRC_DIR) -name *.c)
 CXXSRCS = $(shell find $(CSRC_DIR) -name *.cc)
 
