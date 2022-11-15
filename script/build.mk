@@ -14,7 +14,7 @@ BINARY = $(BUILD_DIR)/$(NAME)
 # Lex rules
 LEXFLAG = -i -I
 
-$(TMP_DIR)/%.yy.c: %.lex
+$(TMP_DIR)/%.yy.c: %.l
 	@echo + LEX $<
 	@mkdir -p $(dir $@)
 	@$(LEX) $(LEXFLAG) -o $@ $<
@@ -58,7 +58,7 @@ $(OBJ_DIR)/%.o: %.cc
 
 
 # Link rules
-OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o) $(LEXSRC:%.lex=$(OBJ_DIR)/%.yy.o)
+OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o) $(LEXSRC:%.l=$(OBJ_DIR)/%.yy.o)
 $(BINARY): $(OBJS)
 	@echo + LD $^
 	@mkdir -p $(dir $@)
