@@ -1,5 +1,5 @@
 /*
- * labLexer-2.lex : Scanner for a simple language
+ * SysY.l : Scanner for SysY language
  */
 
 %{
