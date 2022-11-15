@@ -59,7 +59,6 @@ $(OBJ_DIR)/%.o: %.cc
 
 # Link rules
 OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o) $(LEXSRC:%.lex=$(OBJ_DIR)/%.yy.o)
-
 $(BINARY): $(OBJS)
 	@echo + LD $^
 	@mkdir -p $(dir $@)
@@ -69,9 +68,3 @@ $(BINARY): $(OBJS)
 # Phony rules
 app: $(BINARY)
 PHONY += app
-
-clean:
-	@echo - CLEAN $(CLEAN_DIR)
-	@rm -rf $(CLEAN_DIR)
-PHONY += clean
-
