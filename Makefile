@@ -11,7 +11,7 @@ CC ?= clang
 CSRC_DIR ?= src
 TEST_DIR ?= test
 
-LEXSRC ?= grammar/SysY.lex
+LEXSRC ?= grammar/SysY.l
 CSRCS = $(shell find $(CSRC_DIR) -name *.c)
 CXXSRCS = $(shell find $(CSRC_DIR) -name *.cc)
 
