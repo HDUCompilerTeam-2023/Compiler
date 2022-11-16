@@ -2,12 +2,14 @@
 .DEFAULT_GOAL = app
 
 
-# Directorys 
+# Directorys
 BUILD_DIR = build
 TMP_DIR = tmp
 CLEAN_DIR += $(BUILD_DIR) $(TMP_DIR)
 
 OBJ_DIR  = $(BUILD_DIR)/obj-$(NAME)$(SO)
+OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o) $(YACCSRC:%.y=$(OBJ_DIR)/%.tab.o) $(LEXSRC:%.l=$(OBJ_DIR)/%.yy.o)
+
 BINARY = $(BUILD_DIR)/$(NAME)
 
 
@@ -66,7 +68,6 @@ $(OBJ_DIR)/%.o: %.cc
 
 
 # Link rules
-OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o) $(YACCSRC:%.y=$(OBJ_DIR)/%.tab.o) $(LEXSRC:%.l=$(OBJ_DIR)/%.yy.o)
 $(BINARY): $(OBJS)
 	@echo + LD $^
 	@mkdir -p $(dir $@)
