@@ -9,8 +9,8 @@ CC ?= clang
 
 
 # Debug args only
-YACCFLAG = -r solved
-LEXFLAG =
+YACCFLAGS = -r solved
+LEXFLAGS =
 
 INC_PATH =
 CFLAGS = -DDEBUG

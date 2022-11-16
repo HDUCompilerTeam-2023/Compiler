@@ -14,21 +14,21 @@ BINARY = $(BUILD_DIR)/$(NAME)
 
 
 # Yacc rules
-YACCFLAG += -d
+YACCFLAGS += -d
 
 $(TMP_DIR)/%.tab.h $(TMP_DIR)/%.tab.c: %.y
 	@echo + YACC $<
 	@mkdir -p $(dir $@)
-	@$(YACC) $(YACCFLAG) -o $(@:%.h=%.c) $<
+	@$(YACC) $(YACCFLAGS) -o $(@:%.h=%.c) $<
 
 
 # Lex rules
-LEXFLAG +=
+LEXFLAGS +=
 
 $(TMP_DIR)/%.yy.c: %.l
 	@echo + LEX $<
 	@mkdir -p $(dir $@)
-	@$(LEX) $(LEXFLAG) -o $@ $<
+	@$(LEX) $(LEXFLAGS) -o $@ $<
 
 
 # Compile rules
