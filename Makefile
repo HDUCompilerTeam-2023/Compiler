@@ -8,6 +8,17 @@ LEX ?= flex
 CC ?= clang
 
 
+# Debug args only
+YACCFLAG = -r solved
+LEXFLAG =
+
+INC_PATH =
+CFLAGS = -DDEBUG
+
+LDFLAGS =
+LDLIBS =
+
+
 # Source
 CSRC_DIR ?= src
 TEST_DIR ?= test

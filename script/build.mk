@@ -14,7 +14,7 @@ BINARY = $(BUILD_DIR)/$(NAME)
 
 
 # Yacc rules
-YACCFLAG = -d -r solved
+YACCFLAG += -d
 
 $(TMP_DIR)/%.tab.h $(TMP_DIR)/%.tab.c: %.y
 	@echo + YACC $<
@@ -23,7 +23,7 @@ $(TMP_DIR)/%.tab.h $(TMP_DIR)/%.tab.c: %.y
 
 
 # Lex rules
-LEXFLAG =
+LEXFLAG +=
 
 $(TMP_DIR)/%.yy.c: %.l
 	@echo + LEX $<
