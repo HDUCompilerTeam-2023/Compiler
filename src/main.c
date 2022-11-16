@@ -1,8 +1,8 @@
 #include <stdio.h>
 
-int yylex();
+int yyparse();
 
 int main()
 {
-	return yylex();
+	return yyparse();
 }
