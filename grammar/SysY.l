@@ -3,7 +3,7 @@
  */
 
 %{
-#include <stdio.h>
+#include <log.h>
 %}
 
 %option yylineno batch noinput nounput noyywrap
@@ -74,5 +74,5 @@ DECCONST ([1-9][0-9]*)
 
 <<EOF>> { return 0; }
 
-. { printf("%d no rules %s", yylineno, yytext); return 0; }
+. { yyerror("%d no rules %s", yylineno, yytext); return 0; }
 %%
