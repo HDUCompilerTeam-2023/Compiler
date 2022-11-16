@@ -8,35 +8,35 @@
 
 %option yylineno batch noinput nounput noyywrap
 
-INT (int)
-FLOAT (float)
-VOID (void)
-CONST (const)
-DO (do)
-WHILE (while)
-FOR (for)
-BREAK (break)
-CONTINUE (continue)
-IF (if)
-ELSE (else)
-RETURN (return)
+LE   (<=)
+GE   (>=)
+EQ   (==)
+NEQ  (!=)
 
-LE (<=)
-GE (>=)
-EQ (==)
-NEQ (!=)
+AND  (&&)
+OR   (\|\|)
 
-AND (&&)
-OR (\|\|)
+INT       (int)
+FLOAT     (float)
+VOID      (void)
+CONST     (const)
+DO        (do)
+WHILE     (while)
+FOR       (for)
+BREAK     (break)
+CONTINUE  (continue)
+IF        (if)
+ELSE      (else)
+RETURN    (return)
 
-BLANK ([ \t\r\a])
-NEWLINE ([\n])
+BLANK     ([ \t\r\a])
+NEWLINE   ([\n])
 
-ID ([_a-zA-Z][_a-zA-Z0-9]*)
+IDENTIFY  ([_a-zA-Z][_a-zA-Z0-9]*)
 
-HEXCONST (0[xX][0-9a-fA-F]+)
-OCTCONST (0[0-7]*)
-DECCONST ([1-9][0-9]*)
+HEXCONST  (0[xX][0-9a-fA-F]+)
+OCTCONST  (0[0-7]*)
+DECCONST  ([1-9][0-9]*)
 
 %%
 
@@ -53,20 +53,20 @@ DECCONST ([1-9][0-9]*)
 {BLANK}+   { /* empty space */ }
 {NEWLINE}+ { /* empty lines */ }
 
-{INT}      { printf("%d INT\n", yylineno);      }
-{FLOAT}    { printf("%d FLOAT\n", yylineno);    }
-{VOID}     { printf("%d VOID\n", yylineno);     }
-{CONST}    { printf("%d CONST\n", yylineno);    }
-{DO}       { printf("%d DO\n", yylineno);       }
-{WHILE}    { printf("%d WHILE\n", yylineno);    }
-{FOR}      { printf("%d FOR\n", yylineno);      }
-{BREAK}    { printf("%d BREAK\n", yylineno);    }
-{CONTINUE} { printf("%d CONTINUE\n", yylineno); }
-{IF}       { printf("%d IF\n", yylineno);       }
-{ELSE}     { printf("%d ELSE\n", yylineno);     }
-{RETURN}   { printf("%d RETURN\n", yylineno);   }
+{INT}      { printf("%d INT\n", yylineno);           }
+{FLOAT}    { printf("%d FLOAT\n", yylineno);         }
+{VOID}     { printf("%d VOID\n", yylineno);          }
+{CONST}    { printf("%d CONST\n", yylineno);         }
+{DO}       { printf("%d DO\n", yylineno);            }
+{WHILE}    { printf("%d WHILE\n", yylineno);         }
+{FOR}      { printf("%d FOR\n", yylineno);           }
+{BREAK}    { printf("%d BREAK\n", yylineno);         }
+{CONTINUE} { printf("%d CONTINUE\n", yylineno);      }
+{IF}       { printf("%d IF\n", yylineno);            }
+{ELSE}     { printf("%d ELSE\n", yylineno);          }
+{RETURN}   { printf("%d RETURN\n", yylineno);        }
 
-{ID} { printf("%d ID %s\n", yylineno, yytext); }
+{ID}       { printf("%d ID %s\n", yylineno, yytext); }
 
 {HEXCONST} { printf("%d HEXCONST %s\n", yylineno, yytext); }
 {DECCONST} { printf("%d DECCONST %s\n", yylineno, yytext); }
