@@ -15,4 +15,10 @@
  */
 #define yyerror(fmt, ...) fprintf(stderr, fmt"\n", ##__VA_ARGS__)
 
+#ifdef DEBUG
+#define yydebug(fmt, ...) printf(fmt"\n", ##__VA_ARGS__)
+#else
+#define yydebug(fmt, ...)
+#endif
+
 #endif
