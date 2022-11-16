@@ -11,6 +11,15 @@ OBJ_DIR  = $(BUILD_DIR)/obj-$(NAME)$(SO)
 BINARY = $(BUILD_DIR)/$(NAME)
 
 
+# Yacc rules
+YACCFLAG = -d -r solved
+
+$(TMP_DIR)/%.tab.h $(TMP_DIR)/%.tab.c: %.y
+	@echo + YACC $<
+	@mkdir -p $(dir $@)
+	@$(YACC) $(YACCFLAG) -o $(@:%.h=%.c) $<
+
+
 # Lex rules
 LEXFLAG =
 
@@ -57,7 +66,7 @@ $(OBJ_DIR)/%.o: %.cc
 
 
 # Link rules
-OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o) $(LEXSRC:%.l=$(OBJ_DIR)/%.yy.o)
+OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o) $(YACCSRC:%.y=$(OBJ_DIR)/%.tab.o) $(LEXSRC:%.l=$(OBJ_DIR)/%.yy.o)
 $(BINARY): $(OBJS)
 	@echo + LD $^
 	@mkdir -p $(dir $@)

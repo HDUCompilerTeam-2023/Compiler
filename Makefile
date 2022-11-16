@@ -3,6 +3,7 @@ NAME ?= SysYLexer
 
 
 # Compiler
+YACC ?= bison
 LEX ?= flex
 CC ?= clang
 
@@ -11,6 +12,7 @@ CC ?= clang
 CSRC_DIR ?= src
 TEST_DIR ?= test
 
+YACCSRC ?= grammar/SysY.y
 LEXSRC ?= grammar/SysY.l
 CSRCS = $(shell find $(CSRC_DIR) -name *.c)
 CXXSRCS = $(shell find $(CSRC_DIR) -name *.cc)
