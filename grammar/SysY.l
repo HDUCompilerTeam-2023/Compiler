@@ -70,7 +70,7 @@ DECCONST  ([1-9][0-9]*)
 {ELSE}     { yydebug("\"%s\" -> ELSE", yytext);     return ELSE;     }
 {RETURN}   { yydebug("\"%s\" -> RETURN", yytext);   return RETURN;   }
 
-{ID}       { return ID;       }
+{ID}       { yydebug("\"%s\" -> ID", yytext);       return ID;       }
 
 {HEXCONST} { yydebug("\"%s\" -> HEXCONST", yytext); return INTCONST; }
 {DECCONST} { yydebug("\"%s\" -> DECCONST", yytext); return INTCONST; }
