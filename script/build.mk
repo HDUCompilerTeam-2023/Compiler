@@ -12,7 +12,7 @@ BINARY = $(BUILD_DIR)/$(NAME)
 
 
 # Lex rules
-LEXFLAG = -i -I
+LEXFLAG =
 
 $(TMP_DIR)/%.yy.c: %.l
 	@echo + LEX $<
@@ -30,8 +30,7 @@ LD = $(CXX)
 
 INC_PATH += include
 INCLUDES = $(addprefix -I, $(INC_PATH))
-CFLAGS  += -O2 -MMD $(INCLUDES)
-CFLAGS_WCHECK = -Wall -Werror
+CFLAGS  += -Wall -Werror -O2 $(INCLUDES)
 
 LDFLAGS += -O2
 LDLIBS += -lfl
@@ -49,12 +48,12 @@ $(OBJ_DIR)/%.o: $(TMP_DIR)/%.cc
 $(OBJ_DIR)/%.o: %.c
 	@echo + CC $<
 	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS_WCHECK) $(CFLAGS) -c -o $@ $<
+	@$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJ_DIR)/%.o: %.cc
 	@echo + CXX $<
 	@mkdir -p $(dir $@)
-	@$(CXX) $(CFLAGS_WCHECK) $(CFLAGS) -c -o $@ $<
+	@$(CXX) $(CFLAGS) -c -o $@ $<
 
 
 # Link rules
