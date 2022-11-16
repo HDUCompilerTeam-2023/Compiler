@@ -6,12 +6,16 @@ include script/build.mk
 OUTPUT_DIR = output
 CLEAN_DIR += $(OUTPUT_DIR)
 
+FAILURE = $(OUTPUT_DIR)/failure
+
 
 # Test rules
 $(OUTPUT_DIR)/%.out: %.sy $(BINARY)
 	@echo '> test $<'
 	@mkdir -p $(dir $@)
-	@cat $< | $(BINARY) > $@
+	@cat $< | $(BINARY) > $@ 2> /dev/null || echo $< >> $(FAILURE)
+
+$(FAILURE): $(TESTSRC:%.sy=$(OUTPUT_DIR)/%.out)
 
 
 # Phony rules
@@ -20,6 +24,7 @@ run: $(BINARY)
 	@$(BINARY)
 PHONY += run
 
-TESTOUT = $(TESTSRC:%.sy=$(OUTPUT_DIR)/%.out)
-test: $(TESTOUT)
+test: $(FAILURE)
+	@echo - FAIL
+	@cat $(FAILURE)
 PHONY += test
