@@ -9,6 +9,9 @@
 
 %option yylineno batch noinput nounput noyywrap
 
+%x MULTICOMMENT
+%x LINECOMMENT
+
 LE   (<=)
 GE   (>=)
 EQ   (==)
@@ -72,6 +75,18 @@ DECCONST  ([1-9][0-9]*)
 {HEXCONST} { yydebug("\"%s\" -> HEXCONST", yytext); return INTCONST; }
 {DECCONST} { yydebug("\"%s\" -> DECCONST", yytext); return INTCONST; }
 {OCTCONST} { yydebug("\"%s\" -> OCTCONST", yytext); return INTCONST; }
+
+
+[/][/] { BEGIN(LINECOMMENT); }
+<LINECOMMENT>[^\\\n]+
+<LINECOMMENT>[\\]+/[^\n]
+<LINECOMMENT>([\\][\n])+
+<LINECOMMENT>[\n] { BEGIN(INITIAL); }
+
+[/][*] { BEGIN(MULTICOMMENT); }
+<MULTICOMMENT>[^*]+
+<MULTICOMMENT>[*]+/[^/]
+<MULTICOMMENT>[*][/] { BEGIN(INITIAL); }
 
 <<EOF>> { yydebug("<EOF>"); return 0; }
 
