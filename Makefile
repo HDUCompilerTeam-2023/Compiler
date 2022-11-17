@@ -44,6 +44,7 @@ PHONY += clean
 help:
 	@echo : commands
 	@echo $(PHONY)
+PHONY += help
 
 
 # Settings
