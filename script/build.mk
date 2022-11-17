@@ -15,29 +15,7 @@ OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o)
 BINARY = $(BUILD_DIR)/$(NAME)
 
 
-# Yacc rules
-YACCFLAGS += -d
-
-$(TMP_DIR)/%.tab.h $(TMP_DIR)/%.tab.c: %.y
-	@echo + YACC $<
-	@mkdir -p $(dir $@)
-	@$(YACC) $(YACCFLAGS) -o $(@:%.h=%.c) $<
-
-CSRCS += $(YACCSRC:%.y=$(TMP_DIR)/%.tab.c)
-
-
-# Lex rules
-LEXFLAGS +=
-
-$(TMP_DIR)/%.yy.c: %.l
-	@echo + LEX $<
-	@mkdir -p $(dir $@)
-	@$(LEX) $(LEXFLAGS) -o $@ $<
-
-CSRCS += $(LEXSRC:%.l=$(TMP_DIR)/%.yy.c)
-
-
-# Compile rules
+# Compilers
 ifeq ($(CC),clang)
 CXX = clang++
 else
@@ -45,6 +23,13 @@ CXX = g++
 endif
 LD = $(CXX)
 
+
+# SRC from other source
+## Just can change $(CSRCS) and $(CXXSRCS)
+include $(BUILD_SCIRPT)
+
+
+# Compile rules
 INC_PATH += include
 INCLUDES = $(addprefix -I, $(INC_PATH))
 CFLAGS  += -Wall -Werror -O2 $(INCLUDES)
