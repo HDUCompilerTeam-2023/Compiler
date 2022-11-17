@@ -3,9 +3,9 @@ NAME ?= SysYParser
 
 
 # Compiler
-YACC ?= bison
-LEX ?= flex
-CC ?= clang
+YACC = bison
+LEX = flex
+CC = clang
 
 
 # Debug args only
@@ -21,11 +21,11 @@ LDLIBS =
 
 
 # Source
-CSRC_DIR ?= src
-TEST_DIR ?= test
+CSRC_DIR = src
+TEST_DIR = test
 
-YACCSRC ?= grammar/SysY.y
-LEXSRC ?= grammar/SysY.l
+YACCSRC = grammar/SysY.y
+LEXSRC = grammar/SysY.l
 CSRCS = $(shell find $(CSRC_DIR) -name *.c)
 CXXSRCS = $(shell find $(CSRC_DIR) -name *.cc)
 
