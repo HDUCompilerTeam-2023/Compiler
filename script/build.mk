@@ -48,6 +48,7 @@ LD = $(CXX)
 INC_PATH += include
 INCLUDES = $(addprefix -I, $(INC_PATH))
 CFLAGS  += -Wall -Werror -O2 $(INCLUDES)
+CXXFLAGS += $(CFLAGS)
 
 LDFLAGS += -O2
 LDLIBS += -lfl
@@ -60,7 +61,7 @@ $(OBJ_DIR)/%.o: %.c
 $(OBJ_DIR)/%.o: %.cc
 	@echo + CXX $<
 	@mkdir -p $(dir $@)
-	@$(CXX) $(CFLAGS) -c -o $@ $<
+	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 
 # Link rules
