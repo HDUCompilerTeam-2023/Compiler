@@ -4,8 +4,10 @@
 
 # Directorys
 BUILD_DIR = build
+CLEAN += $(BUILD_DIR)/
+
 TMP_DIR = tmp
-CLEAN_DIR += $(BUILD_DIR) $(TMP_DIR)
+CLEAN += $(TMP_DIR)/
 
 OBJ_DIR  = $(BUILD_DIR)/obj-$(NAME)$(SO)
 OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o) $(YACCSRC:%.y=$(OBJ_DIR)/%.tab.o) $(LEXSRC:%.l=$(OBJ_DIR)/%.yy.o)

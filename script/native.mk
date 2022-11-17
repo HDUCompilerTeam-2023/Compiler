@@ -4,9 +4,8 @@ include script/build.mk
 
 # Directorys
 OUTPUT_DIR = output
-CLEAN_DIR += $(OUTPUT_DIR)
-
 FAILURE = $(OUTPUT_DIR)/failure
+CLEAN += $(OUTPUT_DIR)/
 
 
 # Test rules

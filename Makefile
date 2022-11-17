@@ -37,8 +37,8 @@ include script/native.mk
 
 # Phony rules
 clean:
-	@echo - CLEAN $(CLEAN_DIR)
-	@rm -rf $(CLEAN_DIR)
+	@echo - CLEAN $(CLEAN)
+	@rm -rf $(CLEAN)
 PHONY += clean
 
 help:
