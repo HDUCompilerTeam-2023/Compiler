@@ -32,11 +32,13 @@ include $(BUILD_SCIRPT)
 # Compile rules
 INC_PATH += include
 INCLUDES = $(addprefix -I, $(INC_PATH))
-CFLAGS  += -Wall -Werror -O2 $(INCLUDES)
+CFLAGS  += -Wall -Werror -O2 -MMD $(INCLUDES)
 CXXFLAGS += $(CFLAGS)
 
 LDFLAGS += -O2
 LDLIBS += -lfl
+
+-include $(OBJS:%.o=%.d)
 
 $(OBJ_DIR)/%.o: %.c
 	@echo + CC $<
@@ -57,5 +59,5 @@ $(BINARY): $(OBJS)
 
 
 # Phony rules
-app: $(BINARY)
+app: $(CSRCS) $(BINARY)
 PHONY += app
