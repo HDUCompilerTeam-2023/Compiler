@@ -40,6 +40,6 @@
 
 ## TODO
 
-- [ ] 1. 确认语法分析过程中使用到的`Exp`、`DefExp`、`ConstExp`正确无误
+- [x] 1. 确认语法分析过程中使用到的`Exp`、`DefExp`、`ConstExp`正确无误（目前直接使用`Exp`、`AssignExp`）
 - [ ] 2. 增加浮点数
 - [ ] 3. 修改 if-else 部分的规则，以去除相关的优先级定义
