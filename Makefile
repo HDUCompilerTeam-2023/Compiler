@@ -1,5 +1,5 @@
 # Info
-NAME ?= SysYLexer
+NAME ?= SysYParser
 
 
 # Compiler
