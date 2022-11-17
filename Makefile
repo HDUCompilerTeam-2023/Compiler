@@ -31,6 +31,8 @@ CXXSRCS = $(shell find $(CSRC_DIR) -name *.cc)
 
 TESTSRC = $(shell find $(TEST_DIR) -name *.sy)
 
+BUILD_SCIRPT = script/yacc.mk script/lex.mk
+
 
 # Rules
 include script/native.mk
