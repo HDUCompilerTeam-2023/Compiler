@@ -9,7 +9,7 @@ CLEAN += $(BUILD_DIR)/
 TMP_DIR = tmp
 CLEAN += $(TMP_DIR)/
 
-OBJ_DIR  = $(BUILD_DIR)/obj-$(NAME)$(SO)
+OBJ_DIR = $(BUILD_DIR)/obj-$(NAME)$(SO)
 OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o) $(YACCSRC:%.y=$(OBJ_DIR)/%.tab.o) $(LEXSRC:%.l=$(OBJ_DIR)/%.yy.o)
 
 BINARY = $(BUILD_DIR)/$(NAME)
