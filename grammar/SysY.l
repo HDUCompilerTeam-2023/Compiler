@@ -41,6 +41,9 @@ ID        ([_a-zA-Z][_a-zA-Z0-9]*)
 HEXCONST  (0[xX][0-9a-fA-F]+)
 OCTCONST  (0[0-7]*)
 DECCONST  ([1-9][0-9]*)
+LL_SUFFIX ("ll"|"LL")
+INTSUFFIX ([lL][uU]?|[uU][lL]?|[uU]{LL_SUFFIX}|{LL_SUFFIX}[uU])
+INTCONST  (({HEXCONST}|{OCTCONST}|{DECCONST}){INTSUFFIX}?)
 
 %%
 
@@ -72,9 +75,7 @@ DECCONST  ([1-9][0-9]*)
 
 {ID}       { yydebug("\"%s\" -> ID", yytext);       return ID;       }
 
-{HEXCONST} { yydebug("\"%s\" -> HEXCONST", yytext); return INTCONST; }
-{DECCONST} { yydebug("\"%s\" -> DECCONST", yytext); return INTCONST; }
-{OCTCONST} { yydebug("\"%s\" -> OCTCONST", yytext); return INTCONST; }
+{INTCONST} { yydebug("\"%s\" -> INTCONST", yytext); return INTCONST; }
 
 
 [/][/] { BEGIN(LINECOMMENT); }
