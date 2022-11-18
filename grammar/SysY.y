@@ -120,9 +120,16 @@ Exp : Exp ',' AssignExp { yydebug("Exp ',' AssignExp -> Exp"); }
 Number : INTCONST { yydebug("INTCONST -> Number"); }
        ;
 
-FuncRParams : Exp          { yydebug("Exp -> FuncRParams");    }
-            | /* *empty */ { yydebug("*empty -> FuncRParams"); }
+FuncRParams : FuncRParamList { yydebug("FuncRParamList -> FuncRParams"); }
+            | /* *empty */   { yydebug("*empty -> FuncRParams");         }
             ;
+
+FuncRParamList : FuncRParamList ',' FuncRParam { yydebug("FuncRParamList ',' FuncFParam -> FuncRParamList"); }
+               | FuncRParam                    { yydebug("FuncRParam -> FuncRParamList");                    }
+               ;
+
+FuncRParam : AssignExp { yydebug("AssignExp -> FuncRParam"); }
+           ;
 
 LVal : ID Indexs { yydebug("ID Indexs -> LVal"); }
      ;
