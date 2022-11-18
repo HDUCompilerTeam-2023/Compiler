@@ -46,7 +46,7 @@ VarDef : ID Indexs '=' InitVal { yydebug("ID Indexs '=' InitVal -> VarDef"); }
        ;
 
 Indexs : Indexs Index { yydebug("Indexs Index -> Indexs"); }
-       |              { yydebug("Index -> Indexs");        }
+       | /* *empty */ { yydebug("*empty -> Indexs");       }
        ;
 
 Index : '[' AssignExp ']' { yydebug("'[' AssignExp ']' -> Index"); }
@@ -68,49 +68,49 @@ BOrExp : BOrExp '|' BNorExp { yydebug("BOrExp '|' BNorExp -> BOrExp"); }
        | BNorExp            { yydebug("BNorExp -> BOrExp");            }
        ;
 
-BNorExp : BNorExp '^' BAndExp
-        | BAndExp
+BNorExp : BNorExp '^' BAndExp { yydebug("BNorExp '^' BAndExp -> BNorExp"); }
+        | BAndExp             { yydebug("BAndExp -> BOrExp");              }
         ;
 
-BAndExp : BAndExp '&' EqExp
-        | EqExp
+BAndExp : BAndExp '&' EqExp { yydebug("BAndExp '&' EqExp"); }
+        | EqExp             { yydebug("EqExp -> BAndExp");  }
         ;
 
-EqExp : EqExp EQ RelExp
-      | EqExp NEQ RelExp
-      | RelExp
+EqExp : EqExp EQ RelExp  { yydebug("EqExp EQ RelExp -> EqExp");  }
+      | EqExp NEQ RelExp { yydebug("EqExp NEQ RelExp -> EqExp"); }
+      | RelExp           { yydebug("RelExp -> EqExp");           }
       ;
 
-RelExp : RelExp '<' AddExp
-       | RelExp '>' AddExp
-       | RelExp LE AddExp
-       | RelExp GE AddExp
-       | AddExp
+RelExp : RelExp '<' AddExp { yydebug("RelExp '<' AddExp -> RelExp"); }
+       | RelExp '>' AddExp { yydebug("RelExp '>' AddExp -> RelExp"); }
+       | RelExp LE AddExp  { yydebug("RelExp LE AddExp -> RelExp");  }
+       | RelExp GE AddExp  { yydebug("RelExp GE AddExp -> RelExp");  }
+       | AddExp            { yydebug("AddExp -> RelExp");            }
        ;
 
-AddExp : AddExp '+' MulExp
-       | AddExp '-' MulExp
-       | MulExp
+AddExp : AddExp '+' MulExp { yydebug("AddExp '+' MulExp -> AddExp"); }
+       | AddExp '-' MulExp { yydebug("AddExp '-' MulExp -> AddExp"); }
+       | MulExp            { yydebug("MulExp -> AddExp");            }
        ;
 
-MulExp : MulExp '*' UnaryExp
-       | MulExp '/' UnaryExp
-       | MulExp '%' UnaryExp
-       | UnaryExp
+MulExp : MulExp '*' UnaryExp { yydebug("MulExp '*' UnaryExp - >MulExp");  }
+       | MulExp '/' UnaryExp { yydebug("MulExp '/' UnaryExp - >MulExp");  }
+       | MulExp '%' UnaryExp { yydebug("MulExp '%%' UnaryExp - >MulExp"); }
+       | UnaryExp            { yydebug("UnaryExp -> MulExp");             }
        ;
 
-UnaryExp : '-' UnaryExp
-         | '+' UnaryExp
-         | '!' UnaryExp
-         | '~' UnaryExp
-         | '(' Type ')' UnaryExp
-         | PrimaryExp
+UnaryExp : '-' UnaryExp          { yydebug("'-' UnaryExp -> UnaryExp");          }
+         | '+' UnaryExp          { yydebug("'+' UnaryExp -> UnaryExp");          }
+         | '!' UnaryExp          { yydebug("'!' UnaryExp -> UnaryExp");          }
+         | '~' UnaryExp          { yydebug("'~' UnaryExp -> UnaryExp");          }
+         | '(' Type ')' UnaryExp { yydebug("'(' Type ')' UnaryExp -> UnaryExp"); }
+         | PrimaryExp            { yydebug("PrimaryExp -> UnaryExp");            }
          ;
 
-PrimaryExp : '(' Exp ')'
-           | Number
-           | ID '(' FuncRParams ')'
-           | LVal
+PrimaryExp : '(' Exp ')'            { yydebug("'(' Exp ')' -> PrimaryExp");            }
+           | Number                 { yydebug("Number -> PrimaryExp");                 }
+           | ID '(' FuncRParams ')' { yydebug("ID '(' FuncRParams ')' -> PrimaryExp"); }
+           | LVal                   { yydebug("LVal -> PrimaryExp");                   }
            ;
 
 Exp : Exp ',' AssignExp { yydebug("Exp ',' AssignExp -> Exp"); }
