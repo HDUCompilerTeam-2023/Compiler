@@ -19,9 +19,6 @@ int yylex();
 %token INTCONST
 %token AND OR LE GE EQ NEQ
 
-%left NOELSE
-%left ELSE
-
 %%
 CompUnit : CompUnit VarDecl        { yydebug("CompUnit VarDecl -> CompUnit");        }
          | CompUnit FuncDecl ';'   { yydebug("CompUnit FuncDecl ';' -> CompUnit");   }
@@ -177,16 +174,16 @@ Stmt : IfMatchedStmt   { yydebug("IfMatchedStmt -> Stmt");   }
 IfMatchedStmt : Block                                           { yydebug("Block -> IfMatchedStmt");                                           }
               | ';'                                             { yydebug("';' -> IfMatchedStmt");                                             }
               | Exp ';'                                         { yydebug("Exp ';' -> IfMatchedStmt");                                         }
-              | WHILE '(' Exp ')' Stmt                          { yydebug("WHILE '(' Exp ')' Stmt -> IfMatchedStmt");                          }
               | RETURN Exp ';'                                  { yydebug("RETURN Exp ';' -> IfMatchedStmt");                                  }
               | RETURN ';'                                      { yydebug("RETURN ';' -> IfMatchedStmt");                                      }
               | BREAK ';'                                       { yydebug("BREAK ';' -> IfMatchedStmt");                                       }
               | CONTINUE ';'                                    { yydebug("CONTINUE ';' -> IfMatchedStmt");                                    }
               | IF '(' Exp ')' IfMatchedStmt ELSE IfMatchedStmt { yydebug("IF '(' Exp ')' IfMatchedStmt ELSE IfMatchedStmt -> IfMatchedStmt"); }
+              | WHILE '(' Exp ')' IfMatchedStmt                 { yydebug("WHILE '(' Exp ')' IfMatchedStmt -> IfMatchedStmt");                 }
               ;
 
 IfUnMatchedStmt : IF '(' Exp ')' IfMatchedStmt ELSE IfUnMatchedStmt { yydebug("IF '(' Exp ')' IfMatchedStmt ELSE IfUnMatchedStmt -> IfUnMatchedStmt"); }
-                | IF '(' Exp ')' IfMatchedStmt %prec NOELSE         { yydebug("IF '(' Exp ')' IfMatchedStmt -> IfUnMatchedStmt");                      }
-                | IF '(' Exp ')' IfUnMatchedStmt                    { yydebug("IF '(' Exp ')' IfUnMatchedStmt -> IfUnMatchedStmt");                    }
+                | IF '(' Exp ')' Stmt                               { yydebug("IF '(' Exp ')' Stmt -> IfUnMatchedStmt");                               }
+                | WHILE '(' Exp ')' IfUnMatchedStmt                 { yydebug("WHILE '(' Exp ')' IfUnMatchedStmt -> IfMatchedStmt");                   }
                 ;
 %%
