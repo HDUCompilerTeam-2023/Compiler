@@ -1,6 +1,25 @@
 # Simple Compiler of Sys-Y
 
-## Chang
+## Build
+
+使用 GNU make 构建，通过`make help`查看可支持的命令
+
+## Directories
+
+    /
+    ├── doc/       --- 文档 （ 目前暂无 ）
+    ├── build/     --- 构建目标 （ 由 make clean 删除 ）
+    ├── tmp-src/   --- flex 与 bison 生成的 C 文件 （ 由 make clean 删除 ）
+    ├── grammar/   --- flex 与 bison 的文法定义
+    ├── include/   --- C 头文件
+    ├── script/    --- Makefile 子文件
+    ├── src/       --- C 源文件
+    ├── test/      --- 测试用例
+    ├── .gitignore
+    ├── Makefile
+    └── README.md
+
+## Change log
 
 ### 0.7.0
 
