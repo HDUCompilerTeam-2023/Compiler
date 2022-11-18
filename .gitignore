@@ -12,6 +12,7 @@
 !script/
 !test/
 !src/
+!doc/
 
 !*.[ch]
 !*.cc
