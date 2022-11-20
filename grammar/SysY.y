@@ -27,77 +27,77 @@ CompUnit : CompUnit Declaration { yydebug("CompUnit Declaration -> CompUnit"); }
          | /* *empty */         { yydebug("*empty -> CompUnit");               }
          ;
 
-Declaration : DeclarationSepcifiers InitDeclaratorList ';'
+Declaration : DeclarationSepcifiers InitDeclaratorList ';' { yydebug("DeclarationSepcifiers InitDeclaratorList -> Declaration"); }
             ;
 
-DeclarationSepcifiers : DeclarationSepcifiers DeclarationSepcifier
-                      | DeclarationSepcifier
+DeclarationSepcifiers : DeclarationSepcifiers DeclarationSepcifier { yydebug("DeclarationSepcifiers DeclarationSepcifier -> DeclarationSepcifiers"); }
+                      | DeclarationSepcifier                       { yydebug("DeclarationSepcifier -> DeclarationSepcifiers");                       }
                       ;
 
-DeclarationSepcifier : TypeSpecifier
-                     | TypeQualifier
+DeclarationSepcifier : TypeSpecifier { yydebug("TypeSpecifier -> DeclarationSepcifier"); }
+                     | TypeQualifier { yydebug("TypeQualifier -> DeclarationSepcifier"); }
                      ;
 
-TypeSpecifier : VOID
-              | INT
-              | FLOAT
+TypeSpecifier : VOID  { yydebug("VOID -> TypeSpecifier");  }
+              | INT   { yydebug("INT -> TypeSpecifier");   }
+              | FLOAT { yydebug("FLOAT -> TypeSpecifier"); }
               ;
 
-TypeQualifier : CONST
+TypeQualifier : CONST { yydebug("CONST -> TypeQualifier"); }
               ;
 
-InitDeclaratorList : InitDeclaratorList ',' InitDeclarator
-                   | InitDeclarator
+InitDeclaratorList : InitDeclaratorList ',' InitDeclarator { yydebug("InitDeclaratorList ',' InitDeclarator -> InitDeclaratorList"); }
+                   | InitDeclarator                        { yydebug("InitDeclarator -> InitDeclaratorList");                        }
                    ;
 
-InitDeclarator : Declarator '=' Initializer
-               | Declarator
+InitDeclarator : Declarator '=' Initializer { yydebug("Declarator '=' Initializer -> InitDeclarator"); }
+               | Declarator                 { yydebug("Declarator -> InitDeclarator");                 }
                ;
 
-Declarator : Pointer DirectDeclarator
+Declarator : Pointer DirectDeclarator { yydebug("Pointer DirectDeclarator -> Declarator"); }
            ;
 
-Pointer : '*' TypeQualifiers Pointer
-        | 
+Pointer : '*' TypeQualifiers Pointer { yydebug("'*' TypeQualifiers Pointer -> Pointer"); }
+        | /* *empty */               { yydebug("*empty -> Pointer");                     }
         ;
 
 TypeQualifiers : TypeQualifiers TypeQualifier { yydebug("TypeQualifiers TypeQualifier -> TypeQualifiers"); }
                | /* *empty */                 { yydebug("*empty -> TypeQualifiers");                       }
                ;
 
-DirectDeclarator : VarDirectDeclarator
-                 | FuncDirectDeclarator
+DirectDeclarator : VarDirectDeclarator  { yydebug("VarDirectDeclarator -> DirectDeclarator");  }
+                 | FuncDirectDeclarator { yydebug("FuncDirectDeclarator -> DirectDeclarator"); }
                  ;
 
-VarDirectDeclarator : VarDirectDeclarator '[' AssignExp ']'
-                    | VarDirectDeclarator '[' ']'
-                    | '(' Declarator ')'
-                    | ID
+VarDirectDeclarator : VarDirectDeclarator '[' AssignExp ']' { yydebug("VarDirectDeclarator '[' AssignExp ']' -> VarDirectDeclarator"); }
+                    | VarDirectDeclarator '[' ']'           { yydebug("VarDirectDeclarator '[' ']' -> VarDirectDeclarator");           }
+                    | '(' Declarator ')'                    { yydebug("'(' Declarator ')' -> VarDirectDeclarator");                    }
+                    | ID                                    { yydebug("ID -> VarDirectDeclarator");                                    }
                     ;
 
-FuncDirectDeclarator : '(' Declarator ')' '(' Parameters ')'
-                     | ID '(' Parameters ')'
+FuncDirectDeclarator : '(' Declarator ')' '(' Parameters ')' { yydebug("'(' Declarator ')' '(' Parameters ')' -> FuncDirectDeclarator"); }
+                     | ID '(' Parameters ')'                 { yydebug("ID '(' Parameters ')' -> FuncDirectDeclarator");                 }
                      ;
 
-Parameters : ParameterList
-           | 
+Parameters : ParameterList { yydebug("ParameterList -> Parameters"); }
+           | /* *empty */  { yydebug("*empty -> Parameters");        }
            ;
 
-ParameterList : ParameterList ',' ParameterDeclaration
-              | ParameterDeclaration
+ParameterList : ParameterList ',' ParameterDeclaration { yydebug("ParameterList ',' ParameterDeclaration -> ParameterList"); }
+              | ParameterDeclaration                   { yydebug("ParameterDeclaration -> ParameterList");                   }
               ;
 
-ParameterDeclaration : DeclarationSepcifiers Declarator
+ParameterDeclaration : DeclarationSepcifiers Declarator { yydebug("DeclarationSepcifiers Declarator -> ParameterDeclaration"); }
                      ;
 
-Initializer : '{' InitializerList ',' '}'
-            | '{' InitializerList '}'
-            | '{' '}'
-            | AssignExp
+Initializer : '{' InitializerList ',' '}' { yydebug("'{' InitializerList ',' '}' -> Initializer"); }
+            | '{' InitializerList '}'     { yydebug("'{' InitializerList '}' -> Initializer");     }
+            | '{' '}'                     { yydebug("'{' '}' -> Initializer");                     }
+            | AssignExp                   { yydebug("AssignExp -> Initializer");                   }
             ;
 
-InitializerList : InitializerList ',' Initializer
-                | Initializer
+InitializerList : InitializerList ',' Initializer { yydebug("InitializerList Initializer -> InitializerList"); }
+                | Initializer                     { yydebug("Initializer -> InitializerList");                 }
                 ;
 
 AssignExp : UnaryExp '=' AssignExp { yydebug("UnaryExp '=' AssignExp -> AssignExp"); }
@@ -147,20 +147,20 @@ MulExp : MulExp '*' UnaryExp { yydebug("MulExp '*' UnaryExp - >MulExp");  }
        | UnaryExp            { yydebug("UnaryExp -> MulExp");             }
        ;
 
-UnaryExp : '-' UnaryExp          { yydebug("'-' UnaryExp -> UnaryExp");     }
-         | '+' UnaryExp          { yydebug("'+' UnaryExp -> UnaryExp");     }
-         | '!' UnaryExp          { yydebug("'!' UnaryExp -> UnaryExp");     }
-         | '~' UnaryExp          { yydebug("'~' UnaryExp -> UnaryExp");     }
-         | SELFADD UnaryExp      { yydebug("SELFADD UnaryExp -> UnaryExp"); }
-         | SELFSUB UnaryExp      { yydebug("SELFSUB UnaryExp -> UnaryExp"); }
-         | PostfixExp            { yydebug("PostfixExp -> UnaryExp");       }
+UnaryExp : '-' UnaryExp     { yydebug("'-' UnaryExp -> UnaryExp");     }
+         | '+' UnaryExp     { yydebug("'+' UnaryExp -> UnaryExp");     }
+         | '!' UnaryExp     { yydebug("'!' UnaryExp -> UnaryExp");     }
+         | '~' UnaryExp     { yydebug("'~' UnaryExp -> UnaryExp");     }
+         | SELFADD UnaryExp { yydebug("SELFADD UnaryExp -> UnaryExp"); }
+         | SELFSUB UnaryExp { yydebug("SELFSUB UnaryExp -> UnaryExp"); }
+         | PostfixExp       { yydebug("PostfixExp -> UnaryExp");       }
          ;
 
-PostfixExp : PostfixExp '[' Exp ']'
-           | PostfixExp '(' FuncRParams ')'
-           | PostfixExp SELFADD
-           | PostfixExp SELFSUB
-           | PrimaryExp
+PostfixExp : PostfixExp '[' Exp ']'         { yydebug("PostfixExp '[' Exp ']' -> PostfixExp");         }
+           | PostfixExp '(' FuncRParams ')' { yydebug("PostfixExp '(' FuncRParams ')' -> PostfixExp"); }
+           | PostfixExp SELFADD             { yydebug("PostfixExp SELFADD -> PostfixExp");             }
+           | PostfixExp SELFSUB             { yydebug("PostfixExp SELFSUB -> PostfixExp");             }
+           | PrimaryExp                     { yydebug("PrimaryExp -> PostfixExp");                     }
            ;
 
 PrimaryExp : '(' Exp ')' { yydebug("'(' Exp ')' -> PrimaryExp");            }
@@ -179,14 +179,14 @@ FuncRParams : FuncRParamList { yydebug("FuncRParamList -> FuncRParams"); }
             | /* *empty */   { yydebug("*empty -> FuncRParams");         }
             ;
 
-FuncRParamList : FuncRParamList ',' FuncRParam { yydebug("FuncRParamList ',' FuncFParam -> FuncRParamList"); }
+FuncRParamList : FuncRParamList ',' FuncRParam { yydebug("FuncRParamList ',' FuncRParam -> FuncRParamList"); }
                | FuncRParam                    { yydebug("FuncRParam -> FuncRParamList");                    }
                ;
 
 FuncRParam : AssignExp { yydebug("AssignExp -> FuncRParam"); }
            ;
 
-FunctionDef : DeclarationSepcifiers Pointer ID '(' Parameters ')' Block
+FunctionDef : DeclarationSepcifiers Pointer ID '(' Parameters ')' Block { yydebug("DeclarationSepcifiers Pointer ID '(' Parameters ')' -> FunctionDef"); }
             ;
 
 Block : '{' BlockItems '}' { yydebug("'{' BlockItems '}' -> Block"); }
