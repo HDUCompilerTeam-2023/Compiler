@@ -10,7 +10,8 @@ int yylex();
 
 %locations
 
-%token INT FLOAT VOID CONST
+%token INT FLOAT VOID
+%token CONST
 %token DO WHILE FOR BREAK CONTINUE
 %token IF ELSE
 %token RETURN
@@ -21,40 +22,86 @@ int yylex();
 %token SELFADD SELFSUB
 
 %%
-CompUnit : CompUnit VarDecl        { yydebug("CompUnit VarDecl -> CompUnit");        }
-         | CompUnit FuncDecl ';'   { yydebug("CompUnit FuncDecl ';' -> CompUnit");   }
-         | CompUnit FuncDecl Block { yydebug("CompUnit FuncDecl Block -> CompUnit"); }
-         | /* *empty */            { yydebug("*empty -> CompUnit");                  }
+CompUnit : CompUnit Declaration { yydebug("CompUnit Declaration -> CompUnit"); }
+         | CompUnit FunctionDef { yydebug("CompUnit FunctionDef - >CompUnit"); }
+         | /* *empty */         { yydebug("*empty -> CompUnit");               }
          ;
 
-VarDecl : Type VarDefList ';' { yydebug("Type DefList ';' -> VarDecl"); }
-        ;
+Declaration : DeclarationSepcifiers InitDeclaratorList ';'
+            ;
 
-Type : CONST BType { yydebug("CONST BType -> Type"); }
-     | BType       { yydebug("BType -> Type");       }
-     ;
+DeclarationSepcifiers : DeclarationSepcifiers DeclarationSepcifier
+                      | DeclarationSepcifier
+                      ;
 
-BType : INT   { yydebug("INT -> BType");   }
-      | FLOAT { yydebug("FLOAT -> BType"); }
-      ;
+DeclarationSepcifier : TypeSpecifier
+                     | TypeQualifier
+                     ;
 
-VarDefList : VarDefList ',' VarDef { yydebug("VarDefList ',' VarDef -> VarDefList"); }
-           | VarDef                { yydebug("VarDef -> VarDefList");                }
+TypeSpecifier : VOID
+              | INT
+              | FLOAT
+              ;
+
+TypeQualifier : CONST
+              ;
+
+InitDeclaratorList : InitDeclaratorList ',' InitDeclarator
+                   | InitDeclarator
+                   ;
+
+InitDeclarator : Declarator '=' Initializer
+               | Declarator
+               ;
+
+Declarator : Pointer DirectDeclarator
            ;
 
-VarDef : ID Indexs '=' InitVal { yydebug("ID Indexs '=' InitVal -> VarDef"); }
-       | ID Indexs             { yydebug("ID Indexs -> VarDef");             }
-       ;
+Pointer : '*' TypeQualifiers Pointer
+        | 
+        ;
 
-Indexs : Indexs Index { yydebug("Indexs Index -> Indexs"); }
-       | /* *empty */ { yydebug("*empty -> Indexs");       }
-       ;
+TypeQualifiers : TypeQualifiers TypeQualifier { yydebug("TypeQualifiers TypeQualifier -> TypeQualifiers"); }
+               | /* *empty */                 { yydebug("*empty -> TypeQualifiers");                       }
+               ;
 
-Index : '[' AssignExp ']' { yydebug("'[' AssignExp ']' -> Index"); }
-      ;
+DirectDeclarator : VarDirectDeclarator
+                 | FuncDirectDeclarator
+                 ;
 
-AssignExp : LVal '=' AssignExp { yydebug("ID '=' AssignExp -> AssignExp"); }
-          | LOrExp             { yydebug("LOrExp -> AssignExp");           }
+VarDirectDeclarator : VarDirectDeclarator '[' AssignExp ']'
+                    | VarDirectDeclarator '[' ']'
+                    | '(' Declarator ')'
+                    | ID
+                    ;
+
+FuncDirectDeclarator : '(' Declarator ')' '(' Parameters ')'
+                     | ID '(' Parameters ')'
+                     ;
+
+Parameters : ParameterList
+           | 
+           ;
+
+ParameterList : ParameterList ',' ParameterDeclaration
+              | ParameterDeclaration
+              ;
+
+ParameterDeclaration : DeclarationSepcifiers Declarator
+                     ;
+
+Initializer : '{' InitializerList ',' '}'
+            | '{' InitializerList '}'
+            | '{' '}'
+            | AssignExp
+            ;
+
+InitializerList : InitializerList ',' Initializer
+                | Initializer
+                ;
+
+AssignExp : UnaryExp '=' AssignExp { yydebug("UnaryExp '=' AssignExp -> AssignExp"); }
+          | LOrExp                 { yydebug("LOrExp -> AssignExp");                 }
           ;
 
 LOrExp : LOrExp OR LAndExp { yydebug("LOrExp OR LAndExp -> LOrExp"); }
@@ -139,47 +186,15 @@ FuncRParamList : FuncRParamList ',' FuncRParam { yydebug("FuncRParamList ',' Fun
 FuncRParam : AssignExp { yydebug("AssignExp -> FuncRParam"); }
            ;
 
-LVal : ID Indexs { yydebug("ID Indexs -> LVal"); }
-     ;
-
-InitVal : AssignExp           { yydebug("AssignExp -> InitVal");           }
-        | '{' '}'             { yydebug("'{' '}' -> InitVal");             }
-        | '{' InitValList '}' { yydebug("'{' InitValList '}' -> InitVal"); }
-        ;
-
-InitValList : InitValList ',' InitVal { yydebug("InitValList ',' InitVal -> InitValList"); }
-            | InitVal                 { yydebug("InitVal -> InitValList");                 }
+FunctionDef : DeclarationSepcifiers Pointer ID '(' Parameters ')' Block
             ;
-
-FuncDecl : VOID ID '(' FuncFParams ')' { yydebug("VOID ID '(' FuncFParams ')' -> FuncDecl"); }
-         | Type ID '(' FuncFParams ')' { yydebug("Type ID '(' FuncFParams ')' -> FuncDecl"); }
-         ;
-
-FuncFParams : FuncFParamList { yydebug("FuncFParamList -> FuncFParams"); }
-            | /* *empty */   { yydebug("*empty -> FuncFParams");         }
-            ;
-
-FuncFParamList : FuncFParamList ',' FuncFParam { yydebug("FuncFParamList ',' FuncFParam -> FuncFParamList"); }
-               | FuncFParam                    { yydebug("FuncFParam -> FuncFParamList");                    }
-               ;
-
-FuncFParam : Type ID FuncFParamIndexs { yydebug("Type ID FuncFParamIndexs -> FuncFParam"); }
-           ;
-
-FuncFParamIndexs : FuncFParamFirstIndex Indexs { yydebug("FuncFParamFirstIndex Indexs -> FuncFParamIndexs"); }
-                 | /* *empty */                { yydebug("*empty -> FuncFParamIndexs");                      }
-                 ;
-
-FuncFParamFirstIndex : '[' ']' { yydebug("'[' ']' -> FuncFParamFirstIndex"); }
-                     | Index   { yydebug("Index -> FuncFParamFirstIndex");   }
-                     ;
 
 Block : '{' BlockItems '}' { yydebug("'{' BlockItems '}' -> Block"); }
       ;
 
-BlockItems : BlockItems VarDecl { yydebug("BlockItems VarDecl -> BlockItems"); }
-           | BlockItems Stmt    { yydebug("BlockItems Stmt -> BlockItems");    }
-           | /* *empty */       { yydebug("*empty -> BlockItems");             }
+BlockItems : BlockItems Declaration { yydebug("BlockItems Declaration -> BlockItems"); }
+           | BlockItems Stmt        { yydebug("BlockItems Stmt -> BlockItems");        }
+           | /* *empty */           { yydebug("*empty -> BlockItems");                 }
            ;
 
 Stmt : IfMatchedStmt   { yydebug("IfMatchedStmt -> Stmt");   }
