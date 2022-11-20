@@ -18,6 +18,7 @@ int yylex();
 %token ID
 %token INTCONST
 %token AND OR LE GE EQ NEQ
+%token SELFADD SELFSUB
 
 %%
 CompUnit : CompUnit VarDecl        { yydebug("CompUnit VarDecl -> CompUnit");        }
@@ -99,18 +100,25 @@ MulExp : MulExp '*' UnaryExp { yydebug("MulExp '*' UnaryExp - >MulExp");  }
        | UnaryExp            { yydebug("UnaryExp -> MulExp");             }
        ;
 
-UnaryExp : '-' UnaryExp          { yydebug("'-' UnaryExp -> UnaryExp");          }
-         | '+' UnaryExp          { yydebug("'+' UnaryExp -> UnaryExp");          }
-         | '!' UnaryExp          { yydebug("'!' UnaryExp -> UnaryExp");          }
-         | '~' UnaryExp          { yydebug("'~' UnaryExp -> UnaryExp");          }
-         | '(' Type ')' UnaryExp { yydebug("'(' Type ')' UnaryExp -> UnaryExp"); }
-         | PrimaryExp            { yydebug("PrimaryExp -> UnaryExp");            }
+UnaryExp : '-' UnaryExp          { yydebug("'-' UnaryExp -> UnaryExp");     }
+         | '+' UnaryExp          { yydebug("'+' UnaryExp -> UnaryExp");     }
+         | '!' UnaryExp          { yydebug("'!' UnaryExp -> UnaryExp");     }
+         | '~' UnaryExp          { yydebug("'~' UnaryExp -> UnaryExp");     }
+         | SELFADD UnaryExp      { yydebug("SELFADD UnaryExp -> UnaryExp"); }
+         | SELFSUB UnaryExp      { yydebug("SELFSUB UnaryExp -> UnaryExp"); }
+         | PostfixExp            { yydebug("PostfixExp -> UnaryExp");       }
          ;
 
-PrimaryExp : '(' Exp ')'            { yydebug("'(' Exp ')' -> PrimaryExp");            }
-           | Number                 { yydebug("Number -> PrimaryExp");                 }
-           | ID '(' FuncRParams ')' { yydebug("ID '(' FuncRParams ')' -> PrimaryExp"); }
-           | LVal                   { yydebug("LVal -> PrimaryExp");                   }
+PostfixExp : PostfixExp '[' Exp ']'
+           | PostfixExp '(' FuncRParams ')'
+           | PostfixExp SELFADD
+           | PostfixExp SELFSUB
+           | PrimaryExp
+           ;
+
+PrimaryExp : '(' Exp ')' { yydebug("'(' Exp ')' -> PrimaryExp");            }
+           | Number      { yydebug("Number -> PrimaryExp");                 }
+           | ID          { yydebug("ID '(' FuncRParams ')' -> PrimaryExp"); }
            ;
 
 Exp : Exp ',' AssignExp { yydebug("Exp ',' AssignExp -> Exp"); }

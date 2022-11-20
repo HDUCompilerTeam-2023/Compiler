@@ -20,6 +20,9 @@ NEQ  (!=)
 AND  (&&)
 OR   (\|\|)
 
+SELFADD ([+][+])
+SELFSUB ([-][-])
+
 INT       (int)
 FLOAT     (float)
 VOID      (void)
@@ -48,6 +51,9 @@ INTCONST  (({HEXCONST}|{OCTCONST}|{DECCONST}){INTSUFFIX}?)
 %%
 
 [+\-*/%&|~^,()\[\]{};<=>!] { yydebug("\"%s\" -> '%c'", yytext, yytext[0]); return yytext[0]; }
+
+{SELFADD} { return SELFADD; }
+{SELFSUB} { return SELFSUB; }
 
 {LE}  { yydebug("\"%s\" -> LE", yytext);  return LE;  }
 {GE}  { yydebug("\"%s\" -> GE", yytext);  return GE;  }
