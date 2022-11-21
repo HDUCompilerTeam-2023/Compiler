@@ -79,9 +79,21 @@ INTCONST  (({HEXCONST}|{OCTCONST}|{DECCONST}){INTSUFFIX}?)
 {ELSE}     { yydebug("\"%s\" -> ELSE", yytext);     return ELSE;     }
 {RETURN}   { yydebug("\"%s\" -> RETURN", yytext);   return RETURN;   }
 
-{ID}       { yydebug("\"%s\" -> ID", yytext);       return ID;       }
+{ID} {
+    pIDNode node = malloc(sizeof(*node));
+    node->str = malloc(sizeof(yytext));
+    strcpy(node->str, yytext);
+    yylval.ID = node;
+    return ID;
+}
 
-{INTCONST} { yydebug("\"%s\" -> INTCONST", yytext); return INTCONST; }
+{INTCONST} {
+    pINTCONSTNode node = malloc(sizeof(*node));
+    node->type = type_int;
+    node->val.val_int = atoi(yytext);
+    yylval.INTCONST = node;
+    return INTCONST;
+}
 
 
 [/][/] { BEGIN(LINECOMMENT); }
