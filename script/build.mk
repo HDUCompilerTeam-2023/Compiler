@@ -10,7 +10,7 @@ TMP_DIR = tmp-src
 CLEAN += $(TMP_DIR)/
 
 OBJ_DIR = $(BUILD_DIR)/obj-$(NAME)$(SO)
-OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRC:%.cc=$(OBJ_DIR)/%.o)
+OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRCS:%.cc=$(OBJ_DIR)/%.o)
 
 BINARY = $(BUILD_DIR)/$(NAME)
 
@@ -30,7 +30,7 @@ include $(BUILD_SCIRPT)
 
 
 # Compile rules
-INC_PATH += include
+INC_PATH += include $(TMP_DIR)
 INCLUDES = $(addprefix -I, $(INC_PATH))
 CFLAGS  += -Wall -Werror -O2 -MMD $(INCLUDES)
 CXXFLAGS += $(CFLAGS)
@@ -52,12 +52,12 @@ $(OBJ_DIR)/%.o: %.cc
 
 
 # Link rules
-$(BINARY): $(OBJS)
-	@echo + LD $^
+$(BINARY): $(CSRCS) $(CXXSRCS) $(OBJS)
+	@echo + LD $(OBJS)
 	@mkdir -p $(dir $@)
-	@$(LD) $(LDFLAGS) $(LDLIBS) -o $@ $^
+	@$(LD) $(LDFLAGS) $(LDLIBS) -o $@ $(OBJS)
 
 
 # Phony rules
-app: $(CSRCS) $(BINARY)
+app: $(BINARY)
 PHONY += app
