@@ -20,27 +20,27 @@ int yylex();
 %token AND OR LE GE EQ NEQ
 
 %%
-CompUnit : CompUnit Decl
-         | /* *empty */
+CompUnit : CompUnit Decl { yydebug("CompUnit Decl -> CompUnit"); }
+         | /* *empty */  { yydebug("*empty -> CompUnit");        }
          ;
 
-Decl : ConstDecl
+Decl : ConstDecl { yydebug("ConstDecl -> Decl"); }
      ;
 
-ConstDecl : CONST Type ConstDefList ';'
+ConstDecl : CONST Type ConstDefList ';' { yydebug("CONST Type ConstDefList ';' -> ConstDecl"); }
           ;
 
-Type : INT
-     | FLOAT
+Type : INT   { yydebug("INT -> Type");   }
+     | FLOAT { yydebug("FLOAT -> Type"); }
      ;
 
-ConstDefList : ConstDefList ',' ConstDef
-             | ConstDef
+ConstDefList : ConstDefList ',' ConstDef { yydebug("ConstDefList ',' ConstDef -> ConstDefList"); }
+             | ConstDef                  { yydebug("ConstDef -> ConstDefList"); }
              ;
 
-ConstDef : ID '=' ConstInitVal
+ConstDef : ID '=' ConstInitVal { yydebug("IDENTIFY '=' ConstInitVal -> ConstDef"); }
          ;
 
-ConstInitVal : INTCONST
+ConstInitVal : INTCONST { yydebug("INTCONST -> ConstInitVal"); }
              ;
 %%
