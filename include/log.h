@@ -3,22 +3,15 @@
 
 #include <stdio.h>
 
-/* In stdio.h
- * Write formatted output to STREAM.
- * This function is a possible cancellation point and therefore not
- * marked with __THROW.
- * ```
- * extern int fprintf (FILE *__restrict __stream,
- *                     const char *__restrict __format, ...);
- * ```
- * Write formatted output to stdout.
- */
-#define yyerror(fmt, ...) fprintf(stderr, fmt"\n", ##__VA_ARGS__)
+typedef enum {
+    debug,
+    log,
+    err,
+} loglevel;
 
-#ifdef DEBUG
-#define yydebug(fmt, ...) printf(fmt"\n", ##__VA_ARGS__)
-#else
-#define yydebug(fmt, ...)
-#endif
+int yylog(loglevel level, const char *format, ...);
+
+#define yyerror(fmt, ...) yylog(err, fmt, ##__VA_ARGS__)
+#define yydebug(fmt, ...) yylog(debug, fmt, ##__VA_ARGS__)
 
 #endif
