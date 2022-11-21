@@ -41,39 +41,39 @@ DECCONST  ([1-9][0-9]*)
 
 %%
 
-[+\-*/%&|~^,()\[\]{};<=>!] { return yytext[0]; }
+[+\-*/%&|~^,()\[\]{};<=>!] { yydebug("\"%s\" -> '%c'", yytext, yytext[0]); return yytext[0]; }
 
-{LE}  { return LE;  }
-{GE}  { return GE;  }
-{EQ}  { return EQ;  }
-{NEQ} { return NEQ; }
+{LE}  { yydebug("\"%s\" -> LE", yytext);  return LE;  }
+{GE}  { yydebug("\"%s\" -> GE", yytext);  return GE;  }
+{EQ}  { yydebug("\"%s\" -> EQ", yytext);  return EQ;  }
+{NEQ} { yydebug("\"%s\" -> NEQ", yytext); return NEQ; }
 
-{AND} { return AND; }
-{OR}  { return OR;  }
+{AND} { yydebug("\"%s\" -> AND", yytext); return AND; }
+{OR}  { yydebug("\"%s\" -> OR", yytext);  return OR;  }
 
 {BLANK}+   { /* empty space */ }
 {NEWLINE}+ { /* empty lines */ }
 
-{INT}      { return INT;      }
-{FLOAT}    { return FLOAT;    }
-{VOID}     { return VOID;     }
-{CONST}    { return CONST;    }
-{DO}       { return DO;       }
-{WHILE}    { return WHILE;    }
-{FOR}      { return FOR;      }
-{BREAK}    { return BREAK;    }
-{CONTINUE} { return CONTINUE; }
-{IF}       { return IF;       }
-{ELSE}     { return ELSE;     }
-{RETURN}   { return RETURN;   }
+{INT}      { yydebug("\"%s\" -> INT", yytext);      return INT;      }
+{FLOAT}    { yydebug("\"%s\" -> FLOAT", yytext);    return FLOAT;    }
+{VOID}     { yydebug("\"%s\" -> VOID", yytext);     return VOID;     }
+{CONST}    { yydebug("\"%s\" -> CONST", yytext);    return CONST;    }
+{DO}       { yydebug("\"%s\" -> DO", yytext);       return DO;       }
+{WHILE}    { yydebug("\"%s\" -> WHILE", yytext);    return WHILE;    }
+{FOR}      { yydebug("\"%s\" -> FOR", yytext);      return FOR;      }
+{BREAK}    { yydebug("\"%s\" -> BREAK", yytext);    return BREAK;    }
+{CONTINUE} { yydebug("\"%s\" -> CONTINUE", yytext); return CONTINUE; }
+{IF}       { yydebug("\"%s\" -> IF", yytext);       return IF;       }
+{ELSE}     { yydebug("\"%s\" -> ELSE", yytext);     return ELSE;     }
+{RETURN}   { yydebug("\"%s\" -> RETURN", yytext);   return RETURN;   }
 
 {ID}       { return ID;       }
 
-{HEXCONST} { return INTCONST; }
-{DECCONST} { return INTCONST; }
-{OCTCONST} { return INTCONST; }
+{HEXCONST} { yydebug("\"%s\" -> HEXCONST", yytext); return INTCONST; }
+{DECCONST} { yydebug("\"%s\" -> DECCONST", yytext); return INTCONST; }
+{OCTCONST} { yydebug("\"%s\" -> OCTCONST", yytext); return INTCONST; }
 
-<<EOF>> { return 0; }
+<<EOF>> { yydebug("<EOF>"); return 0; }
 
 . { yyerror("%d no rules %s", yylineno, yytext); return 0; }
 %%
