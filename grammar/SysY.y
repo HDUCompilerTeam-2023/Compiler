@@ -4,8 +4,7 @@
 
 %{
 #include <log.h>
-
-int yylex();
+#include <lexer.h>
 %}
 
 %locations

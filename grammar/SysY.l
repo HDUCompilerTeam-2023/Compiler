@@ -4,7 +4,7 @@
 
 %{
 #include <log.h>
-#include "SysY.tab.h"
+#include <parser.h>
 %}
 
 %option yylineno batch noinput nounput noyywrap
