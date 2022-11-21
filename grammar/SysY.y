@@ -168,11 +168,11 @@ DirectDeclarator : VarDirectDeclarator  { yydebug("VarDirectDeclarator -> Direct
 VarDirectDeclarator : VarDirectDeclarator '[' AssignExp ']' { yydebug("VarDirectDeclarator '[' AssignExp ']' -> VarDirectDeclarator"); }
                     | VarDirectDeclarator '[' ']'           { yydebug("VarDirectDeclarator '[' ']' -> VarDirectDeclarator");           }
                     | '(' Declarator ')'                    { yydebug("'(' Declarator ')' -> VarDirectDeclarator");                    }
-                    | ID                                    { yydebug("ID -> VarDirectDeclarator");                                    }
+                    | ID                                    { yydebug("%s -> VarDirectDeclarator", $1->str);                                    }
                     ;
 
 FuncDirectDeclarator : '(' Declarator ')' '(' Parameters ')' { yydebug("'(' Declarator ')' '(' Parameters ')' -> FuncDirectDeclarator"); }
-                     | ID '(' Parameters ')'                 { yydebug("ID '(' Parameters ')' -> FuncDirectDeclarator");                 }
+                     | ID '(' Parameters ')'                 { yydebug("%s '(' Parameters ')' -> FuncDirectDeclarator", $1->str);                 }
                      ;
 
 Parameters : ParameterList { yydebug("ParameterList -> Parameters"); }
@@ -261,14 +261,14 @@ PostfixExp : PostfixExp '[' Exp ']'         { yydebug("PostfixExp '[' Exp ']' ->
 
 PrimaryExp : '(' Exp ')' { yydebug("'(' Exp ')' -> PrimaryExp");            }
            | Number      { yydebug("Number -> PrimaryExp");                 }
-           | ID          { yydebug("ID '(' FuncRParams ')' -> PrimaryExp"); }
+           | ID          { yydebug("%s '(' FuncRParams ')' -> PrimaryExp", $1->str); }
            ;
 
 Exp : Exp ',' AssignExp { yydebug("Exp ',' AssignExp -> Exp"); }
     | AssignExp         { yydebug("AssignExp -> Exp");         }
     ;
 
-Number : INTCONST { yydebug("INTCONST -> Number"); }
+Number : INTCONST { yydebug("%d -> Number", $1->val.val_int); }
        ;
 
 FuncRParams : FuncRParamList { yydebug("FuncRParamList -> FuncRParams"); }
@@ -282,7 +282,7 @@ FuncRParamList : FuncRParamList ',' FuncRParam { yydebug("FuncRParamList ',' Fun
 FuncRParam : AssignExp { yydebug("AssignExp -> FuncRParam"); }
            ;
 
-FunctionDef : DeclarationSpecifiers Pointer ID '(' Parameters ')' Block { yydebug("DeclarationSpecifiers Pointer ID '(' Parameters ')' -> FunctionDef"); }
+FunctionDef : DeclarationSpecifiers Pointer ID '(' Parameters ')' Block { yydebug("DeclarationSpecifiers Pointer %s '(' Parameters ')' Block -> FunctionDef", $3->str); }
             ;
 
 Block : '{' BlockItems '}' { yydebug("'{' BlockItems '}' -> Block"); }
