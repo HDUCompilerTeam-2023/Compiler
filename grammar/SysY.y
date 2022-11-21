@@ -26,15 +26,15 @@ CompUnit : CompUnit Declaration { yydebug("CompUnit Declaration -> CompUnit"); }
          | /* *empty */         { yydebug("*empty -> CompUnit");               }
          ;
 
-Declaration : DeclarationSepcifiers InitDeclaratorList ';' { yydebug("DeclarationSepcifiers InitDeclaratorList -> Declaration"); }
+Declaration : DeclarationSpecifiers InitDeclaratorList ';' { yydebug("DeclarationSpecifiers InitDeclaratorList -> Declaration"); }
             ;
 
-DeclarationSepcifiers : DeclarationSepcifiers DeclarationSepcifier { yydebug("DeclarationSepcifiers DeclarationSepcifier -> DeclarationSepcifiers"); }
-                      | DeclarationSepcifier                       { yydebug("DeclarationSepcifier -> DeclarationSepcifiers");                       }
+DeclarationSpecifiers : DeclarationSpecifiers DeclarationSpecifier { yydebug("DeclarationSpecifiers DeclarationSpecifier -> DeclarationSpecifiers"); }
+                      | DeclarationSpecifier                       { yydebug("DeclarationSpecifier -> DeclarationSpecifiers");                       }
                       ;
 
-DeclarationSepcifier : TypeSpecifier { yydebug("TypeSpecifier -> DeclarationSepcifier"); }
-                     | TypeQualifier { yydebug("TypeQualifier -> DeclarationSepcifier"); }
+DeclarationSpecifier : TypeSpecifier { yydebug("TypeSpecifier -> DeclarationSpecifier"); }
+                     | TypeQualifier { yydebug("TypeQualifier -> DeclarationSpecifier"); }
                      ;
 
 TypeSpecifier : VOID  { yydebug("VOID -> TypeSpecifier");  }
@@ -86,7 +86,7 @@ ParameterList : ParameterList ',' ParameterDeclaration { yydebug("ParameterList 
               | ParameterDeclaration                   { yydebug("ParameterDeclaration -> ParameterList");                   }
               ;
 
-ParameterDeclaration : DeclarationSepcifiers Declarator { yydebug("DeclarationSepcifiers Declarator -> ParameterDeclaration"); }
+ParameterDeclaration : DeclarationSpecifiers Declarator { yydebug("DeclarationSpecifiers Declarator -> ParameterDeclaration"); }
                      ;
 
 Initializer : '{' InitializerList ',' '}' { yydebug("'{' InitializerList ',' '}' -> Initializer"); }
@@ -185,7 +185,7 @@ FuncRParamList : FuncRParamList ',' FuncRParam { yydebug("FuncRParamList ',' Fun
 FuncRParam : AssignExp { yydebug("AssignExp -> FuncRParam"); }
            ;
 
-FunctionDef : DeclarationSepcifiers Pointer ID '(' Parameters ')' Block { yydebug("DeclarationSepcifiers Pointer ID '(' Parameters ')' -> FunctionDef"); }
+FunctionDef : DeclarationSpecifiers Pointer ID '(' Parameters ')' Block { yydebug("DeclarationSpecifiers Pointer ID '(' Parameters ')' -> FunctionDef"); }
             ;
 
 Block : '{' BlockItems '}' { yydebug("'{' BlockItems '}' -> Block"); }
