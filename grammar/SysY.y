@@ -2,6 +2,8 @@
  * SysY.y : Parser for SysY language
  */
 
+%define parse.error verbose
+
 %{
 #include <log.h>
 #include <lexer.h>
