@@ -1,6 +1,14 @@
 # Simple Compiler of Sys-Y
 
-## Change log
+## Chang
+
+### 0.7.0
+
+基本实现语法分析
+
+### 0.6.0
+
+词法分析时识别并跳过注释
 
 ### 0.5.0
 
