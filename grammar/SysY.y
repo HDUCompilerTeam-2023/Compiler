@@ -7,6 +7,103 @@
 #include <lexer.h>
 %}
 
+%code requires{
+#include <SyntaxTree.h>
+}
+
+%union {
+       pCompUnitNode CompUnit;
+       pDeclarationNode Declaration;
+       pDeclarationSpecifiersNode DeclarationSpecifiers;
+       pDeclarationSpecifierNode DeclarationSpecifier;
+       pTypeSpecifierNode TypeSpecifier;
+       pTypeQualifierNode TypeQualifier;
+       pInitDeclaratorListNode InitDeclaratorList;
+       pInitDeclaratorNode InitDeclarator;
+       pDeclaratorNode Declarator;
+       pPointerNode Pointer;
+       pTypeQualifiersNode TypeQualifiers;
+       pDirectDeclaratorNode DirectDeclarator;
+       pVarDirectDeclaratorNode VarDirectDeclarator;
+       pFuncDirectDeclaratorNode FuncDirectDeclarator;
+       pParametersNode Parameters;
+       pParameterListNode ParameterList;
+       pParameterDeclarationNode ParameterDeclaration;
+       pInitializerNode Initializer;
+       pInitializerListNode InitializerList;
+       pAssignExpNode AssignExp;
+       pLOrExpNode LOrExp;
+       pLAndExpNode LAndExp;
+       pBOrExpNode BOrExp;
+       pBNorExpNode BNorExp;
+       pBAndExpNode BAndExp;
+       pEqExpNode EqExp;
+       pRelExpNode RelExp;
+       pAddExpNode AddExp;
+       pMulExpNode MulExp;
+       pUnaryExpNode UnaryExp;
+       pPostfixExpNode PostfixExp;
+       pPrimaryExpNode PrimaryExp;
+       pExpNode Exp;
+       pNumberNode Number;
+       pFuncRParamsNode FuncRParams;
+       pFuncRParamListNode FuncRParamList;
+       pFuncRParamNode FuncRParam;
+       pFunctionDefNode FunctionDef;
+       pBlockNode Block;
+       pBlockItemsNode BlockItems;
+       pStmtNode Stmt;
+       pIfMatchedStmtNode IfMatchedStmt;
+       pIfUnMatchedStmtNode IfUnMatchedStmt;
+
+       pIDNode ID;
+       pINTCONSTNode INTCONST;
+}
+
+%type <CompUnit> CompUnit
+%type <Declaration> Declaration
+%type <DeclarationSpecifiers> DeclarationSpecifiers
+%type <DeclarationSpecifier> DeclarationSpecifier
+%type <TypeSpecifier> TypeSpecifier
+%type <TypeQualifier> TypeQualifier
+%type <InitDeclaratorList> InitDeclaratorList
+%type <InitDeclarator> InitDeclarator
+%type <Declarator> Declarator
+%type <Pointer> Pointer
+%type <TypeQualifiers> TypeQualifiers
+%type <DirectDeclarator> DirectDeclarator
+%type <VarDirectDeclarator> VarDirectDeclarator
+%type <FuncDirectDeclarator> FuncDirectDeclarator
+%type <Parameters> Parameters
+%type <ParameterList> ParameterList
+%type <ParameterDeclaration> ParameterDeclaration
+%type <Initializer> Initializer
+%type <InitializerList> InitializerList
+%type <AssignExp> AssignExp
+%type <LOrExp> LOrExp
+%type <LAndExp> LAndExp
+%type <BOrExp> BOrExp
+%type <BNorExp> BNorExp
+%type <BAndExp> BAndExp
+%type <EqExp> EqExp
+%type <RelExp> RelExp
+%type <AddExp> AddExp
+%type <MulExp> MulExp
+%type <UnaryExp> UnaryExp
+%type <PostfixExp> PostfixExp
+%type <PrimaryExp> PrimaryExp
+%type <Exp> Exp
+%type <Number> Number
+%type <FuncRParams> FuncRParams
+%type <FuncRParamList> FuncRParamList
+%type <FuncRParam> FuncRParam
+%type <FunctionDef> FunctionDef
+%type <Block> Block
+%type <BlockItems> BlockItems
+%type <Stmt> Stmt
+%type <IfMatchedStmt> IfMatchedStmt
+%type <IfUnMatchedStmt> IfUnMatchedStmt
+
 %locations
 
 %token INT FLOAT VOID
@@ -15,8 +112,8 @@
 %token IF ELSE
 %token RETURN
 
-%token ID
-%token INTCONST
+%token <ID> ID
+%token <INTCONST> INTCONST
 %token AND OR LE GE EQ NEQ
 %token SELFADD SELFSUB
 
