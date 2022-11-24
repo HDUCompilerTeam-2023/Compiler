@@ -110,5 +110,5 @@ INTCONST  (({HEXCONST}|{OCTCONST}|{DECCONST}){INTSUFFIX}?)
 
 <<EOF>> { return 0; }
 
-. { yyerror(yylloc, yyscanner, "%d no rules %s", yylineno, yytext); return 0; }
+. { yyerror(yylloc, yyscanner, "lexical error, unexpected \"%s\"", yytext); return 0; }
 %%
