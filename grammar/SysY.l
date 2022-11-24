@@ -3,8 +3,8 @@
  */
 
 %{
-#include <log.h>
 #include <parser.h>
+#include <frontend/log.h>
 %}
 
 %option yylineno batch noinput nounput noyywrap
