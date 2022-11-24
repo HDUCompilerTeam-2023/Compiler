@@ -1,6 +1,6 @@
 #include <frontend/log.h>
 
-int yylog(loglevel level, const char *format, ...) {
+int yylog(loglevel level, YYLTYPE *loc, yyscan_t scanner, const char *format, ...) {
     va_list args;
     int ret;
     FILE *output = stdout;

@@ -7,6 +7,7 @@
 #include <frontend/log.h>
 %}
 
+%option reentrant bison-bridge bison-locations
 %option yylineno batch noinput nounput noyywrap
 
 %x MULTICOMMENT
@@ -83,7 +84,7 @@ INTCONST  (({HEXCONST}|{OCTCONST}|{DECCONST}){INTSUFFIX}?)
     pIDNode node = malloc(sizeof(*node));
     node->str = malloc(sizeof(yytext));
     strcpy(node->str, yytext);
-    yylval.ID = node;
+    yylval->ID = node;
     return ID;
 }
 
@@ -91,7 +92,7 @@ INTCONST  (({HEXCONST}|{OCTCONST}|{DECCONST}){INTSUFFIX}?)
     pINTCONSTNode node = malloc(sizeof(*node));
     node->type = type_int;
     node->val.val_int = atoi(yytext);
-    yylval.INTCONST = node;
+    yylval->INTCONST = node;
     return INTCONST;
 }
 
@@ -109,5 +110,5 @@ INTCONST  (({HEXCONST}|{OCTCONST}|{DECCONST}){INTSUFFIX}?)
 
 <<EOF>> { return 0; }
 
-. { yyerror("%d no rules %s", yylineno, yytext); return 0; }
+. { yyerror(yylloc, yyscanner, "%d no rules %s", yylineno, yytext); return 0; }
 %%
