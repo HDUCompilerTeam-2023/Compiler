@@ -108,7 +108,7 @@ INTCONST  (({HEXCONST}|{OCTCONST}|{DECCONST}){INTSUFFIX}?)
 <MULTICOMMENT>[*]+/[^/]
 <MULTICOMMENT>[*][/] { BEGIN(INITIAL); }
 
-<<EOF>> { return 0; }
+<<EOF>> { yyterminate(); }
 
 . { yyerror(yylloc, yyscanner, "lexical error, unexpected \"%s\"", yytext); }
 %%
