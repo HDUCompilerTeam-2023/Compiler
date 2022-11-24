@@ -91,7 +91,12 @@ INTCONST  (({HEXCONST}|{OCTCONST}|{DECCONST}){INTSUFFIX}?)
 {INTCONST} {
     pINTCONSTNode node = malloc(sizeof(*node));
     node->type = type_int;
-    node->val.val_int = atoi(yytext);
+    char *endptr;
+    node->val.val_int = strtol(yytext, &endptr, 0);
+    if (*endptr != '\0') {
+        yyerror(yylloc, yyscanner, "lexical error, wrong integer const, \"%s\"", yytext);
+        exit(1);
+    }
     yylval->INTCONST = node;
     return INTCONST;
 }
