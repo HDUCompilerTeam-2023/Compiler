@@ -3,6 +3,7 @@
  */
 
 %define parse.error verbose
+%param { yyscan_t yyscanner }
 
 %{
 #include <lexer.h>
@@ -11,7 +12,10 @@
 
 %code requires{
 #include <frontend/syntaxtree.h>
+typedef void *yyscan_t;
 }
+
+%define api.pure full
 
 %union {
        pCompUnitNode CompUnit;

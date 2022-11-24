@@ -3,15 +3,17 @@
 
 #include <stdio.h>
 
+#include <parser.h>
+
 typedef enum {
     debug,
     log,
     err,
 } loglevel;
 
-int yylog(loglevel level, const char *format, ...);
+int yylog(loglevel level, YYLTYPE *loc, yyscan_t scanner, const char *format, ...);
 
-#define yyerror(fmt, ...) yylog(err, fmt, ##__VA_ARGS__)
-#define yydebug(fmt, ...) yylog(debug, fmt, ##__VA_ARGS__)
+#define yyerror(loc, scan, fmt, ...) yylog(err, loc, scan, fmt, ##__VA_ARGS__)
+#define yydebug(loc, scan, fmt, ...) yylog(debug, loc, scan, fmt, ##__VA_ARGS__)
 
 #endif

@@ -1,8 +1,14 @@
 #include <stdio.h>
 
 #include <parser.h>
+#include <lexer.h>
 
 int main()
 {
-	return yyparse();
+	yyscan_t scanner;
+	int ret;
+	yylex_init(&scanner);
+	ret = yyparse(scanner);
+	yylex_destroy(scanner);
+	return ret;
 }
