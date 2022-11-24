@@ -4,6 +4,7 @@
 
 %define parse.error verbose
 %param { yyscan_t yyscanner }
+%parse-param { pCompUnitNode *root }
 
 %{
 #include <lexer.h>
@@ -124,9 +125,9 @@ typedef void *yyscan_t;
 %token SELFADD SELFSUB
 
 %%
-CompUnit : CompUnit Declaration { $$ = malloc(sizeof(*$$)); $$->type = tDeclaration; $$->CompUnit = $1; $$->select.Declaration = $2;}
-         | CompUnit FunctionDef { $$ = malloc(sizeof(*$$)); $$->type = tFunctionDef; $$->CompUnit = $1; $$->select.FunctionDef = $2;}
-         | /* *empty */         { $$ = NULL; }
+CompUnit : CompUnit Declaration { *root = $$ = malloc(sizeof(*$$)); $$->type = tDeclaration; $$->CompUnit = $1; $$->select.Declaration = $2;}
+         | CompUnit FunctionDef { *root = $$ = malloc(sizeof(*$$)); $$->type = tFunctionDef; $$->CompUnit = $1; $$->select.FunctionDef = $2;}
+         | /* *empty */         { *root = $$ = NULL; }
          ;
 
 Declaration : DeclarationSpecifiers InitDeclaratorList ';' { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1; $$->InitDeclaratorList = $2; }
