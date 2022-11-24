@@ -1,6 +1,12 @@
 *
 *.*
 
+!*/
+.*/
+build/
+output/
+tmp-src/
+
 !.gitignore
 !*.md
 

@@ -1,5 +1,5 @@
-#ifndef __SYNTAXTREE__
-#define __SYNTAXTREE__
+#ifndef __FRONTEND_SYNTAXTREE__
+#define __FRONTEND_SYNTAXTREE__
 
 #include <util.h>
 

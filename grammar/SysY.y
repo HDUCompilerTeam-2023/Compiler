@@ -5,12 +5,12 @@
 %define parse.error verbose
 
 %{
-#include <log.h>
 #include <lexer.h>
+#include <frontend/log.h>
 %}
 
 %code requires{
-#include <SyntaxTree.h>
+#include <frontend/syntaxtree.h>
 }
 
 %union {

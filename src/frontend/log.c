@@ -1,4 +1,4 @@
-#include <log.h>
+#include <frontend/log.h>
 
 int yylog(loglevel level, const char *format, ...) {
     va_list args;
