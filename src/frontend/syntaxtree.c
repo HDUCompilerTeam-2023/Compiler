@@ -331,6 +331,8 @@ void frontend_drop_UnaryExp(pUnaryExpNode UnaryExp) {
     case '+':
     case '!':
     case '~':
+    case '*':
+    case '&':
     case SELFADD:
     case SELFSUB:
         frontend_drop_UnaryExp(UnaryExp->select.UnaryExp);

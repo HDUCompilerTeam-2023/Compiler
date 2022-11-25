@@ -262,6 +262,8 @@ UnaryExp : '-' UnaryExp     { $$ = malloc(sizeof(*$$)); $$->op = '-';     $$->se
          | '+' UnaryExp     { $$ = malloc(sizeof(*$$)); $$->op = '+';     $$->select.UnaryExp = $2;   }
          | '!' UnaryExp     { $$ = malloc(sizeof(*$$)); $$->op = '!';     $$->select.UnaryExp = $2;   }
          | '~' UnaryExp     { $$ = malloc(sizeof(*$$)); $$->op = '~';     $$->select.UnaryExp = $2;   }
+         | '*' UnaryExp     { $$ = malloc(sizeof(*$$)); $$->op = '*';     $$->select.UnaryExp = $2;   }
+         | '&' UnaryExp     { $$ = malloc(sizeof(*$$)); $$->op = '&';     $$->select.UnaryExp = $2;   }
          | SELFADD UnaryExp { $$ = malloc(sizeof(*$$)); $$->op = SELFADD; $$->select.UnaryExp = $2;   }
          | SELFSUB UnaryExp { $$ = malloc(sizeof(*$$)); $$->op = SELFSUB; $$->select.UnaryExp = $2;   }
          | PostfixExp       { $$ = malloc(sizeof(*$$)); $$->op = YYEMPTY; $$->select.PostfixExp = $1; }
