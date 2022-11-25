@@ -50,6 +50,8 @@ typedef struct IfUnMatchedStmtNode *pIfUnMatchedStmtNode;
 typedef struct IDNode *pIDNode;
 typedef struct INTCONSTNode *pINTCONSTNode;
 
+void frontend_drop_syntaxtree(pCompUnitNode CompUnit);
+
 struct CompUnitNode {
     enum {
         tDeclaration,
