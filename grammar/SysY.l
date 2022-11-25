@@ -27,7 +27,12 @@ OR   (\|\|)
 SELFADD ([+][+])
 SELFSUB ([-][-])
 
+UNSIGNED  (unsigned)
+SIGNED    (signed)
+SHORT     (short)
+LONG      (long)
 INT       (int)
+CHAR      (char)
 FLOAT     (float)
 VOID      (void)
 CONST     (const)
@@ -72,6 +77,11 @@ L_SUFFIX ([lL])
 {BLANK}+   { /* empty space */ }
 {NEWLINE}+ { /* empty lines */ }
 
+{UNSIGNED} { return UNSIGNED; }
+{SIGNED}   { return SIGNED;   }
+{SHORT}    { return SHORT;    }
+{LONG}     { return LONG;     }
+{CHAR}     { return CHAR;     }
 {INT}      { return INT;      }
 {FLOAT}    { return FLOAT;    }
 {VOID}     { return VOID;     }

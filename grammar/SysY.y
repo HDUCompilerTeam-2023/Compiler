@@ -113,7 +113,10 @@ typedef void *yyscan_t;
 
 %locations
 
-%token INT FLOAT VOID
+%token UNSIGNED SIGNED
+%token LONG SHORT
+%token INT FLOAT CHAR
+%token VOID
 %token CONST
 %token DO WHILE FOR BREAK CONTINUE
 %token IF ELSE
@@ -141,9 +144,14 @@ DeclarationSpecifier : TypeSpecifier { $$ = malloc(sizeof(*$$)); $$->type = tTyp
                      | TypeQualifier { $$ = malloc(sizeof(*$$)); $$->type = tTypeQualifier; $$->select.TypeQualifier = $1; }
                      ;
 
-TypeSpecifier : VOID  { $$ = malloc(sizeof(*$$)); $$->type = tVOID;  }
-              | INT   { $$ = malloc(sizeof(*$$)); $$->type = tINT;   }
-              | FLOAT { $$ = malloc(sizeof(*$$)); $$->type = tFLOAT; }
+TypeSpecifier : VOID     { $$ = malloc(sizeof(*$$)); $$->type = tVOID;      }
+              | UNSIGNED { $$ = malloc(sizeof(*$$)); $$->type = tUNSIGNED;  }
+              | SIGNED   { $$ = malloc(sizeof(*$$)); $$->type = tSIGNED;    }
+              | LONG     { $$ = malloc(sizeof(*$$)); $$->type = tLONG;      }
+              | SHORT    { $$ = malloc(sizeof(*$$)); $$->type = tSHORT;     }
+              | INT      { $$ = malloc(sizeof(*$$)); $$->type = tINT;       }
+              | FLOAT    { $$ = malloc(sizeof(*$$)); $$->type = tFLOAT;     }
+              | CHAR     { $$ = malloc(sizeof(*$$)); $$->type = tCHAR;      }
               ;
 
 TypeQualifier : CONST { $$ = malloc(sizeof(*$$)); $$->type = tCONST; }
