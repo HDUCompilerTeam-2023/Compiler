@@ -246,7 +246,7 @@ struct MulExpNode {
 struct UnaryExpNode {
     int op;
     union {
-        pUnaryExpNode UnaryExp; // '+' '-' '!' '~' SELFADD SELFSUB
+        pUnaryExpNode UnaryExp; // '+' '-' '!' '~' '*' '&' SELFADD SELFSUB
         pPostfixExpNode PostfixExp; // YYEMPTY
     } select;
 };

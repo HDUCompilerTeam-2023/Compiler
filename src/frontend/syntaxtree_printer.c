@@ -403,6 +403,8 @@ void frontend_print_UnaryExp(pUnaryExpNode UnaryExp) {
     case '+':
     case '!':
     case '~':
+    case '*':
+    case '&':
         printf("%c", UnaryExp->op);
         frontend_print_UnaryExp(UnaryExp->select.UnaryExp);
         break;
