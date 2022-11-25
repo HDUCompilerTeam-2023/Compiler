@@ -97,7 +97,7 @@ L_SUFFIX ([lL])
 
 {ID} {
     pIDNode node = malloc(sizeof(*node));
-    node->str = malloc(sizeof(yytext));
+    node->str = malloc(strlen(yytext) + 1);
     strcpy(node->str, yytext);
     yylval->ID = node;
     return ID;
