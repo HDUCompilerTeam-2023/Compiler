@@ -93,11 +93,26 @@ void frontend_print_TypeSpecifier(pTypeSpecifierNode TypeSpecifier) {
     case tVOID:
         printf("void");
         break;
+    case tUNSIGNED:
+        printf("unsigned");
+        break;
+    case tSIGNED:
+        printf("signed");
+        break;
+    case tLONG:
+        printf("long");
+        break;
+    case tSHORT:
+        printf("short");
+        break;
     case tINT:
         printf("int");
         break;
     case tFLOAT:
         printf("float");
+        break;
+    case tCHAR:
+        printf("char");
         break;
     }
     printf(" ");

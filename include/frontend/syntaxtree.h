@@ -86,8 +86,13 @@ struct DeclarationSpecifierNode {
 struct TypeSpecifierNode {
     enum {
         tVOID,
+        tUNSIGNED,
+        tSIGNED,
+        tLONG,
+        tSHORT,
         tINT,
         tFLOAT,
+        tCHAR,
     } type;
 };
 
