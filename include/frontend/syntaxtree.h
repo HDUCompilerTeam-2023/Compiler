@@ -347,9 +347,19 @@ struct IDNode {
 struct INTCONSTNode {
     enum {
         type_int,
+        type_unsigned_int,
+        type_long_int,
+        type_unsigned_long_int,
+        type_long_long_int,
+        type_unsigned_long_long_int,
     } type;
     union {
         int val_int;
+        unsigned int val_unsigned_int;
+        long int val_long_int;
+        unsigned long int val_unsigned_long_int;
+        long long int val_long_long_int;
+        unsigned long long int val_unsigned_long_long_int;
     } val;
 };
 
