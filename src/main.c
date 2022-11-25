@@ -12,6 +12,7 @@ int main()
 	pCompUnitNode root;
 	ret = yyparse(scanner, &root);
 	frontend_print_syntaxtree(root);
+	frontend_drop_syntaxtree(root);
 	yylex_destroy(scanner);
 	return ret;
 }
