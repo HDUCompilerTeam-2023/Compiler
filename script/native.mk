@@ -12,9 +12,7 @@ CLEAN += $(OUTPUT_DIR)/
 $(OUTPUT_DIR)/%.out: %.sy $(BINARY)
 	@echo '> test $<'
 	@mkdir -p $(dir $@)
-	@cat $< | $(BINARY) > $@ 2> /dev/null || echo $< >> $(FAILURE)
-
-$(FAILURE): $(TESTSRC:%.sy=$(OUTPUT_DIR)/%.out)
+	-@cat $< | $(BINARY) > $@ 2> $@.err
 
 
 # Phony rules
@@ -23,7 +21,5 @@ run: $(BINARY)
 	@$(BINARY)
 PHONY += run
 
-test: $(FAILURE)
-	@echo - FAIL
-	@cat $(FAILURE)
+test: $(TESTSRC:%.sy=$(OUTPUT_DIR)/%.out)
 PHONY += test

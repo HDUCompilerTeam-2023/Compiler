@@ -13,7 +13,7 @@ YACCFLAGS = -r solved
 LEXFLAGS =
 
 INC_PATH =
-CFLAGS = -DDEBUG
+CFLAGS = -DDEBUG -fsanitize=address -fsanitize=leak
 CXXFLAGS =
 
 LDFLAGS =

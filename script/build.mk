@@ -35,7 +35,7 @@ INCLUDES = $(addprefix -I, $(INC_PATH))
 CFLAGS  += -Wall -Werror -O2 -MMD $(INCLUDES)
 CXXFLAGS += $(CFLAGS)
 
-LDFLAGS += -O2
+LDFLAGS += $(CXXFLAGS)
 LDLIBS += -lfl
 
 -include $(OBJS:%.o=%.d)
