@@ -612,5 +612,20 @@ void frontend_print_INTCONST(pINTCONSTNode INTCONST) {
     case type_int:
         printf("%d", INTCONST->val.val_int);
         break;
+    case type_unsigned_int:
+        printf("%u", INTCONST->val.val_unsigned_int);
+        break;
+    case type_long_int:
+        printf("%ld", INTCONST->val.val_long_int);
+        break;
+    case type_unsigned_long_int:
+        printf("%lu", INTCONST->val.val_unsigned_long_int);
+        break;
+    case type_long_long_int:
+        printf("%lld", INTCONST->val.val_long_long_int);
+        break;
+    case type_unsigned_long_long_int:
+        printf("%llu", INTCONST->val.val_unsigned_long_long_int);
+        break;
     }
 }
