@@ -355,7 +355,8 @@ L_SUFFIX ([lL])
 <MULTICOMMENT>[*]+/[^/]
 <MULTICOMMENT>[*][/] { BEGIN(INITIAL); }
 
-<<EOF>> { yyterminate(); }
+^[ \t]*#[ \t]*endfile { yyterminate(); }
+<<EOF>>         { yyterminate(); }
 
 . { yyerror(yylloc, yyscanner, NULL, "lexical error, unexpected \"%s\"", yytext); }
 %%
