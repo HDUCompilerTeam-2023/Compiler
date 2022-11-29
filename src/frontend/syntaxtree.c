@@ -379,6 +379,7 @@ void frontend_drop_Number(pNumberNode Number) {
     switch (Number->type) {
     case INTCONST:
         frontend_drop_INTCONST(Number->select.INTCONST);
+        break;
     }
     free(Number);
 }

@@ -475,6 +475,7 @@ void frontend_print_Number(pNumberNode Number) {
     switch (Number->type) {
     case INTCONST:
         frontend_print_INTCONST(Number->select.INTCONST);
+        break;
     }
 }
 
