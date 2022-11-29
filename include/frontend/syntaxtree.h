@@ -15,8 +15,6 @@ typedef struct DeclaratorNode *pDeclaratorNode;
 typedef struct PointerNode *pPointerNode;
 typedef struct TypeQualifiersNode *pTypeQualifiersNode;
 typedef struct DirectDeclaratorNode *pDirectDeclaratorNode;
-typedef struct VarDirectDeclaratorNode *pVarDirectDeclaratorNode;
-typedef struct FuncDirectDeclaratorNode *pFuncDirectDeclaratorNode;
 typedef struct ParametersNode *pParametersNode;
 typedef struct ParameterListNode *pParameterListNode;
 typedef struct ParameterDeclarationNode *pParameterDeclarationNode;
@@ -40,7 +38,6 @@ typedef struct NumberNode *pNumberNode;
 typedef struct FuncRParamsNode *pFuncRParamsNode;
 typedef struct FuncRParamListNode *pFuncRParamListNode;
 typedef struct FuncRParamNode *pFuncRParamNode;
-typedef struct FunctionDefNode *pFunctionDefNode;
 typedef struct BlockNode *pBlockNode;
 typedef struct BlockItemsNode *pBlockItemsNode;
 typedef struct StmtNode *pStmtNode;
@@ -53,20 +50,17 @@ typedef struct INTCONSTNode *pINTCONSTNode;
 void frontend_drop_syntaxtree(pCompUnitNode CompUnit);
 
 struct CompUnitNode {
-    enum {
-        tDeclaration,
-        tFunctionDef,
-    } type;
     pCompUnitNode CompUnit;
-    union {
-        pDeclarationNode Declaration;
-        pFunctionDefNode FunctionDef;
-    } select;
+    pDeclarationNode Declaration;
 };
 
 struct DeclarationNode {
-  pDeclarationSpecifiersNode DeclarationSpecifiers;
-  pInitDeclaratorListNode InitDeclaratorList;
+    pDeclarationSpecifiersNode DeclarationSpecifiers;
+    union {
+        pInitDeclaratorListNode InitDeclaratorList; // Block == NULL
+        pDeclaratorNode Declarator; // Block != NULL
+    } declarators;
+    pBlockNode Block;
 };
 
 struct DeclarationSpecifiersNode {
@@ -131,32 +125,18 @@ struct TypeQualifiersNode {
 
 struct DirectDeclaratorNode {
     enum {
-        tVarDirectDeclarator,
-        tFuncDirectDeclarator,
-    } type;
+        tIDJust,
+        tArrDec,
+        tFunDec,
+        tRecurr,
+    } op;
     union {
-        pVarDirectDeclaratorNode VarDirectDeclarator;
-        pFuncDirectDeclaratorNode FuncDirectDeclarator;
+        pDirectDeclaratorNode DirectDeclarator; // tArrDec tFunDec
+        pDeclaratorNode Declarator; // tRecurr
+        pIDNode ID; // tIDJust
     } select;
-};
-
-struct VarDirectDeclaratorNode {
-    int op;
-    union {
-        pVarDirectDeclaratorNode VarDirectDeclarator; // '['
-        pDeclaratorNode Declarator; // '('
-        pIDNode ID; // ID
-    } select;
-    pAssignExpNode AssignExp; // '['
-};
-
-struct FuncDirectDeclaratorNode {
-    bool SimpleFunc;
-    union {
-        pDeclaratorNode Declarator; // false
-        pIDNode ID; // true
-    } select;
-    pParametersNode Parameters;
+    pAssignExpNode AssignExp; // tArrDec
+    pParametersNode Parameters; // tFunDec
 };
 
 struct ParametersNode {
@@ -295,14 +275,6 @@ struct FuncRParamListNode {
 
 struct FuncRParamNode {
     pAssignExpNode AssignExp;
-};
-
-struct FunctionDefNode {
-    pDeclarationSpecifiersNode DeclarationSpecifiers;
-    pPointerNode Pointer;
-    pIDNode ID;
-    pParametersNode Parameters;
-    pBlockNode Block;
 };
 
 struct BlockNode {

@@ -17,8 +17,6 @@ void frontend_drop_Declarator(pDeclaratorNode Declarator);
 void frontend_drop_Pointer(pPointerNode Pointer);
 void frontend_drop_TypeQualifiers(pTypeQualifiersNode TypeQualifiers);
 void frontend_drop_DirectDeclarator(pDirectDeclaratorNode DirectDeclarator);
-void frontend_drop_VarDirectDeclarator(pVarDirectDeclaratorNode VarDirectDeclarator);
-void frontend_drop_FuncDirectDeclarator(pFuncDirectDeclaratorNode FuncDirectDeclarator);
 void frontend_drop_Parameters(pParametersNode Parameters);
 void frontend_drop_ParameterList(pParameterListNode ParameterList);
 void frontend_drop_ParameterDeclaration(pParameterDeclarationNode ParameterDeclaration);
@@ -42,7 +40,6 @@ void frontend_drop_Number(pNumberNode Number);
 void frontend_drop_FuncRParams(pFuncRParamsNode FuncRParams);
 void frontend_drop_FuncRParamList(pFuncRParamListNode FuncRParamList);
 void frontend_drop_FuncRParam(pFuncRParamNode FuncRParam);
-void frontend_drop_FunctionDef(pFunctionDefNode FunctionDef);
 void frontend_drop_Block(pBlockNode Block);
 void frontend_drop_BlockItems(pBlockItemsNode BlockItems);
 void frontend_drop_Stmt(pStmtNode Stmt);
@@ -59,18 +56,19 @@ void frontend_drop_CompUnit(pCompUnitNode CompUnit) {
     if (!CompUnit)
         return;
     frontend_drop_CompUnit(CompUnit->CompUnit);
-    if (CompUnit->type == tDeclaration) {
-        frontend_drop_Declaration(CompUnit->select.Declaration);
-    }
-    else if (CompUnit->type == tFunctionDef) {
-        frontend_drop_FunctionDef(CompUnit->select.FunctionDef);
-    }
+    frontend_drop_Declaration(CompUnit->Declaration);
     free(CompUnit);
 }
 
 void frontend_drop_Declaration(pDeclarationNode Declaration) {
     frontend_drop_DeclarationSpecifiers(Declaration->DeclarationSpecifiers);
-    frontend_drop_InitDeclaratorList(Declaration->InitDeclaratorList);
+    if (Declaration->Block) {
+        frontend_drop_Declarator(Declaration->declarators.Declarator);
+        frontend_drop_Block(Declaration->Block);
+    }
+    else {
+        frontend_drop_InitDeclaratorList(Declaration->declarators.InitDeclaratorList);
+    }
     free(Declaration);
 }
 
@@ -139,41 +137,27 @@ void frontend_drop_TypeQualifiers(pTypeQualifiersNode TypeQualifiers) {
 }
 
 void frontend_drop_DirectDeclarator(pDirectDeclaratorNode DirectDeclarator) {
-    if (DirectDeclarator->type == tVarDirectDeclarator) {
-        frontend_drop_VarDirectDeclarator(DirectDeclarator->select.VarDirectDeclarator);
-    }
-    else if (DirectDeclarator->type == tFuncDirectDeclarator) {
-        frontend_drop_FuncDirectDeclarator(DirectDeclarator->select.FuncDirectDeclarator);
+    switch (DirectDeclarator->op) {
+    case tRecurr:
+        frontend_drop_Declarator(DirectDeclarator->select.Declarator);
+        break;
+    case tIDJust:
+        frontend_drop_ID(DirectDeclarator->select.ID);
+        break;
+    case tArrDec:
+        frontend_drop_DirectDeclarator(DirectDeclarator->select.DirectDeclarator);
+        if (DirectDeclarator->AssignExp) {
+            frontend_drop_AssignExp(DirectDeclarator->AssignExp);
+        }
+        break;
+    case tFunDec:
+        frontend_drop_DirectDeclarator(DirectDeclarator->select.DirectDeclarator);
+        if (DirectDeclarator->Parameters) {
+            frontend_drop_Parameters(DirectDeclarator->Parameters);
+        }
+        break;
     }
     free(DirectDeclarator);
-}
-
-void frontend_drop_VarDirectDeclarator(pVarDirectDeclaratorNode VarDirectDeclarator) {
-    switch (VarDirectDeclarator->op) {
-    case ID:
-        frontend_drop_ID(VarDirectDeclarator->select.ID);
-        break;
-    case '(':
-        frontend_drop_Declarator(VarDirectDeclarator->select.Declarator);
-        break;
-    case '[':
-        frontend_drop_VarDirectDeclarator(VarDirectDeclarator->select.VarDirectDeclarator);
-        if (VarDirectDeclarator->AssignExp)
-            frontend_drop_AssignExp(VarDirectDeclarator->AssignExp);
-        break;
-    }
-    free(VarDirectDeclarator);
-}
-
-void frontend_drop_FuncDirectDeclarator(pFuncDirectDeclaratorNode FuncDirectDeclarator) {
-    if (FuncDirectDeclarator->SimpleFunc) {
-        frontend_drop_ID(FuncDirectDeclarator->select.ID);
-    }
-    else {
-        frontend_drop_Declarator(FuncDirectDeclarator->select.Declarator);
-    }
-    frontend_drop_Parameters(FuncDirectDeclarator->Parameters);
-    free(FuncDirectDeclarator);
 }
 
 void frontend_drop_Parameters(pParametersNode Parameters) {
@@ -416,15 +400,6 @@ void frontend_drop_FuncRParamList(pFuncRParamListNode FuncRParamList) {
 void frontend_drop_FuncRParam(pFuncRParamNode FuncRParam) {
     frontend_drop_AssignExp(FuncRParam->AssignExp);
     free(FuncRParam);
-}
-
-void frontend_drop_FunctionDef(pFunctionDefNode FunctionDef) {
-    frontend_drop_DeclarationSpecifiers(FunctionDef->DeclarationSpecifiers);
-    frontend_drop_Pointer(FunctionDef->Pointer);
-    frontend_drop_ID(FunctionDef->ID);
-    frontend_drop_Parameters(FunctionDef->Parameters);
-    frontend_drop_Block(FunctionDef->Block);
-    free(FunctionDef);
 }
 
 void frontend_drop_Block(pBlockNode Block) {
