@@ -4,15 +4,20 @@
 #include <lexer.h>
 #include <frontend/syntaxtree_printer.h>
 
-int main()
+int main(int argc, char *argv[])
 {
 	yyscan_t scanner;
-	int ret;
-	yylex_init(&scanner);
+	int ret = 0;
 	pCompUnitNode root;
-	ret = yyparse(scanner, &root);
-	frontend_print_syntaxtree(root);
-	frontend_drop_syntaxtree(root);
-	yylex_destroy(scanner);
+
+	if (argc == 1)
+		argv[argc++] = NULL;
+	for (int i = 1; i < argc; ++i) {
+		yyopen_file(argv[i], &scanner);
+		ret &= yyparse(scanner, &root);
+		frontend_print_syntaxtree(root);
+		frontend_drop_syntaxtree(root);
+		yyclose_file(&scanner);
+	}
 	return ret;
 }
