@@ -13,6 +13,8 @@ unsigned long long int str2ull(const char *text, int base, YYLTYPE *loc, yyscan_
 %option reentrant bison-bridge bison-locations
 %option yylineno batch noinput nounput noyywrap
 
+%option extra-type="pExtraInfo"
+
 %x MULTICOMMENT
 %x LINECOMMENT
 
@@ -122,7 +124,7 @@ L_SUFFIX ([lL])
     }
     else {
         errno = ERANGE;
-        yyerror(yylloc, yyscanner, NULL, "lexical error, wrong integer constant \"%s\": %m", yytext);
+        yyerror(yylloc, yyscanner, "lexical error, wrong integer constant \"%s\": %m", yytext);
         errno = 0;
     }
 
@@ -165,7 +167,7 @@ L_SUFFIX ([lL])
     }
     else{
         errno = ERANGE;
-        yyerror(yylloc, yyscanner, NULL, "lexical error, wrong integer constant \"%s\": %m", yytext);
+        yyerror(yylloc, yyscanner, "lexical error, wrong integer constant \"%s\": %m", yytext);
         errno = 0;
     }
 
@@ -200,7 +202,7 @@ L_SUFFIX ([lL])
     }
     else {
         errno = ERANGE;
-        yyerror(yylloc, yyscanner, NULL, "lexical error, wrong integer constant \"%s\": %m", yytext);
+        yyerror(yylloc, yyscanner, "lexical error, wrong integer constant \"%s\": %m", yytext);
         errno = 0;
     }
 
@@ -358,7 +360,7 @@ L_SUFFIX ([lL])
 ^[ \t]*#[ \t]*endfile { yyterminate(); }
 <<EOF>>         { yyterminate(); }
 
-. { yyerror(yylloc, yyscanner, NULL, "lexical error, unexpected \"%s\"", yytext); }
+. { yyerror(yylloc, yyscanner, "lexical error, unexpected \"%s\"", yytext); }
 %%
 unsigned long long int str2ull(const char *text, int base, YYLTYPE *loc, yyscan_t scanner) {
     char *endptr;
@@ -366,7 +368,7 @@ unsigned long long int str2ull(const char *text, int base, YYLTYPE *loc, yyscan_
     unsigned long long int tmp = strtoull(text, &endptr, base);
     if ((errno == ERANGE && tmp == ULLONG_MAX)
         || (errno != 0 && tmp == 0)) {
-        yyerror(loc, scanner, NULL, "lexical error, wrong integer constant \"%s\": %m", text);
+        yyerror(loc, scanner, "lexical error, wrong integer constant \"%s\": %m", text);
         tmp = 0;
         errno = 0;
     }

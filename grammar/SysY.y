@@ -4,11 +4,11 @@
 
 %define parse.error verbose
 %param { yyscan_t yyscanner }
-%parse-param { pCompUnitNode *root }
 
 %{
 #include <lexer.h>
 #include <frontend/log.h>
+#define extra yyget_extra(yyscanner)
 %}
 
 %code requires{
@@ -122,8 +122,16 @@ typedef void *yyscan_t;
 %token SELFADD SELFSUB
 
 %%
-CompUnit : CompUnit Declaration { *root = $$ = malloc(sizeof(*$$)); $$->CompUnit = $1; $$->Declaration = $2;}
-         | /* *empty */         { *root = $$ = NULL; }
+begin : CompUnit {
+              if (extra->root) {
+                     frontend_drop_syntaxtree(extra->root);
+              }
+              extra->root = $1;
+       }
+      ;
+
+CompUnit : CompUnit Declaration { $$ = malloc(sizeof(*$$)); $$->CompUnit = $1; $$->Declaration = $2; }
+         | /* *empty */         { $$ = NULL; }
          ;
 
 Declaration : DeclarationSpecifiers InitDeclaratorList ';' { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1; $$->declarators.InitDeclaratorList = $2; $$->Block = NULL; }
