@@ -106,20 +106,20 @@ L_SUFFIX ([lL])
 }
 
 {DECINTCONST} {
-    pINTCONSTNode node = malloc(sizeof(*node));
+    pCONSTNUMNode node = malloc(sizeof(*node));
 
     unsigned long long int val = str2ull(yytext, 10, yylloc, yyscanner);
 
     if (val <= INT_MAX) {
-        node->type = type_int;
+        node->valtype = type_int;
         node->val.val_int = val;
     }
     else if (val <= LONG_MAX) {
-        node->type = type_long_int;
+        node->valtype = type_long_int;
         node->val.val_long_int = val;
     }
     else if (val <= LLONG_MAX) {
-        node->type = type_long_long_int;
+        node->valtype = type_long_long_int;
         node->val.val_long_long_int = val;
     }
     else {
@@ -128,41 +128,41 @@ L_SUFFIX ([lL])
         errno = 0;
     }
 
-    yylval->INTCONST = node;
-    return INTCONST;
+    yylval->CONSTNUM = node;
+    return CONSTNUM;
 }
 {DECINTCONST}{U_SUFFIX} {
-    pINTCONSTNode node = malloc(sizeof(*node));
+    pCONSTNUMNode node = malloc(sizeof(*node));
 
     unsigned long long int val = str2ull(yytext, 10, yylloc, yyscanner);
 
     if (val <= UINT_MAX) {
-        node->type = type_unsigned_int;
+        node->valtype = type_unsigned_int;
         node->val.val_unsigned_int = val;
     }
     else if (val <= ULONG_MAX) {
-        node->type = type_unsigned_long_int;
+        node->valtype = type_unsigned_long_int;
         node->val.val_unsigned_long_int = val;
     }
     else {
-        node->type = type_unsigned_long_long_int;
+        node->valtype = type_unsigned_long_long_int;
         node->val.val_unsigned_long_long_int = val;
     }
 
-    yylval->INTCONST = node;
-    return INTCONST;
+    yylval->CONSTNUM = node;
+    return CONSTNUM;
 }
 {DECINTCONST}{L_SUFFIX} {
-    pINTCONSTNode node = malloc(sizeof(*node));
+    pCONSTNUMNode node = malloc(sizeof(*node));
 
     unsigned long long int val = str2ull(yytext, 10, yylloc, yyscanner);
 
     if (val <= LONG_MAX) {
-        node->type = type_long_int;
+        node->valtype = type_long_int;
         node->val.val_long_int = val;
     }
     else if (val <= LLONG_MAX){
-        node->type = type_long_long_int;
+        node->valtype = type_long_long_int;
         node->val.val_long_long_int = val;
     }
     else{
@@ -171,33 +171,33 @@ L_SUFFIX ([lL])
         errno = 0;
     }
 
-    yylval->INTCONST = node;
-    return INTCONST;
+    yylval->CONSTNUM = node;
+    return CONSTNUM;
 }
 {DECINTCONST}{UL_SUFFIX} {
-    pINTCONSTNode node = malloc(sizeof(*node));
+    pCONSTNUMNode node = malloc(sizeof(*node));
 
     unsigned long long int val = str2ull(yytext, 10, yylloc, yyscanner);
 
     if (val <= ULONG_MAX) {
-        node->type = type_unsigned_long_int;
+        node->valtype = type_unsigned_long_int;
         node->val.val_unsigned_long_int = val;
     }
     else {
-        node->type = type_unsigned_long_long_int;
+        node->valtype = type_unsigned_long_long_int;
         node->val.val_unsigned_long_long_int = val;
     }
 
-    yylval->INTCONST = node;
-    return INTCONST;
+    yylval->CONSTNUM = node;
+    return CONSTNUM;
 }
 {DECINTCONST}{LL_SUFFIX} {
-    pINTCONSTNode node = malloc(sizeof(*node));
+    pCONSTNUMNode node = malloc(sizeof(*node));
 
     unsigned long long int val = str2ull(yytext, 10, yylloc, yyscanner);
     
     if (val <= LLONG_MAX) {
-        node->type = type_long_long_int;
+        node->valtype = type_long_long_int;
         node->val.val_long_long_int = val;
     }
     else {
@@ -206,144 +206,144 @@ L_SUFFIX ([lL])
         errno = 0;
     }
 
-    yylval->INTCONST = node;
-    return INTCONST;
+    yylval->CONSTNUM = node;
+    return CONSTNUM;
 }
 {DECINTCONST}{ULL_SUFFIX} {
-    pINTCONSTNode node = malloc(sizeof(*node));
+    pCONSTNUMNode node = malloc(sizeof(*node));
 
     unsigned long long int val = str2ull(yytext, 10, yylloc, yyscanner);
 
-    node->type = type_unsigned_long_long_int;
+    node->valtype = type_unsigned_long_long_int;
     node->val.val_unsigned_long_long_int = val;
 
-    yylval->INTCONST = node;
-    return INTCONST;
+    yylval->CONSTNUM = node;
+    return CONSTNUM;
 }
 
 ({OCTINTCONST}|{HEXINTCONST}) {
-    pINTCONSTNode node = malloc(sizeof(*node));
+    pCONSTNUMNode node = malloc(sizeof(*node));
 
     unsigned long long int val = str2ull(yytext, 0, yylloc, yyscanner);
 
     if (val <= INT_MAX) {
-        node->type = type_int;
+        node->valtype = type_int;
         node->val.val_int = val;
     }
     else if (val <= UINT_MAX) {
-        node->type = type_unsigned_int;
+        node->valtype = type_unsigned_int;
         node->val.val_unsigned_int = val;
     }
     else if (val <= LONG_MAX) {
-        node->type = type_long_int;
+        node->valtype = type_long_int;
         node->val.val_long_int = val;
     }
     else if (val <= ULONG_MAX) {
-        node->type = type_unsigned_long_int;
+        node->valtype = type_unsigned_long_int;
         node->val.val_unsigned_long_int = val;
     }
     else if (val <= LLONG_MAX) {
-        node->type = type_long_long_int;
+        node->valtype = type_long_long_int;
         node->val.val_long_long_int = val;
     }
     else {
-        node->type = type_unsigned_long_long_int;
+        node->valtype = type_unsigned_long_long_int;
         node->val.val_unsigned_long_long_int = val;
     }
 
-    yylval->INTCONST = node;
-    return INTCONST;
+    yylval->CONSTNUM = node;
+    return CONSTNUM;
 }
 ({OCTINTCONST}|{HEXINTCONST}){U_SUFFIX} {
-    pINTCONSTNode node = malloc(sizeof(*node));
+    pCONSTNUMNode node = malloc(sizeof(*node));
 
     unsigned long long int val = str2ull(yytext, 0, yylloc, yyscanner);
 
     if (val <= UINT_MAX) {
-        node->type = type_unsigned_int;
+        node->valtype = type_unsigned_int;
         node->val.val_unsigned_int = val;
     }
     else if (val <= ULONG_MAX) {
-        node->type = type_unsigned_long_int;
+        node->valtype = type_unsigned_long_int;
         node->val.val_unsigned_long_int = val;
     }
     else {
-        node->type = type_unsigned_long_long_int;
+        node->valtype = type_unsigned_long_long_int;
         node->val.val_unsigned_long_long_int = val;
     }
 
-    yylval->INTCONST = node;
-    return INTCONST;
+    yylval->CONSTNUM = node;
+    return CONSTNUM;
 }
 ({OCTINTCONST}|{HEXINTCONST}){L_SUFFIX} {
-    pINTCONSTNode node = malloc(sizeof(*node));
+    pCONSTNUMNode node = malloc(sizeof(*node));
 
     unsigned long long int val = str2ull(yytext, 0, yylloc, yyscanner);
 
     if (val <= LONG_MAX) {
-        node->type = type_long_int;
+        node->valtype = type_long_int;
         node->val.val_long_int = val;
     }
     else if (val <= ULONG_MAX) {
-        node->type = type_unsigned_long_int;
+        node->valtype = type_unsigned_long_int;
         node->val.val_unsigned_long_int = val;
     }
     else if (val <= LLONG_MAX) {
-        node->type = type_long_long_int;
+        node->valtype = type_long_long_int;
         node->val.val_long_long_int = val;
     }
     else {
-        node->type = type_unsigned_long_long_int;
+        node->valtype = type_unsigned_long_long_int;
         node->val.val_unsigned_long_long_int = val;
     }
 
-    yylval->INTCONST = node;
-    return INTCONST;
+    yylval->CONSTNUM = node;
+    return CONSTNUM;
 }
 ({OCTINTCONST}|{HEXINTCONST}){UL_SUFFIX} {
-    pINTCONSTNode node = malloc(sizeof(*node));
+    pCONSTNUMNode node = malloc(sizeof(*node));
 
     unsigned long long int val = str2ull(yytext, 0, yylloc, yyscanner);
 
     if (val <= ULONG_MAX) {
-        node->type = type_unsigned_long_int;
+        node->valtype = type_unsigned_long_int;
         node->val.val_unsigned_long_int = val;
     }
     else {
-        node->type = type_unsigned_long_long_int;
+        node->valtype = type_unsigned_long_long_int;
         node->val.val_unsigned_long_long_int = val;
     }
 
-    yylval->INTCONST = node;
-    return INTCONST;
+    yylval->CONSTNUM = node;
+    return CONSTNUM;
 }
 ({OCTINTCONST}|{HEXINTCONST}){LL_SUFFIX} {
-    pINTCONSTNode node = malloc(sizeof(*node));
+    pCONSTNUMNode node = malloc(sizeof(*node));
 
     unsigned long long int val = str2ull(yytext, 0, yylloc, yyscanner);
 
     if (val <= LLONG_MAX) {
-        node->type = type_long_long_int;
+        node->valtype = type_long_long_int;
         node->val.val_long_long_int = val;
     }
     else {
-        node->type = type_unsigned_long_long_int;
+        node->valtype = type_unsigned_long_long_int;
         node->val.val_unsigned_long_long_int = val;
     }
 
-    yylval->INTCONST = node;
-    return INTCONST;
+    yylval->CONSTNUM = node;
+    return CONSTNUM;
 }
 ({OCTINTCONST}|{HEXINTCONST}){ULL_SUFFIX} {
-    pINTCONSTNode node = malloc(sizeof(*node));
+    pCONSTNUMNode node = malloc(sizeof(*node));
 
     unsigned long long int val = str2ull(yytext, 0, yylloc, yyscanner);
 
-    node->type = type_unsigned_long_long_int;
+    node->valtype = type_unsigned_long_long_int;
     node->val.val_unsigned_long_long_int = val;
 
-    yylval->INTCONST = node;
-    return INTCONST;
+    yylval->CONSTNUM = node;
+    return CONSTNUM;
 }
 
 [/][/] { BEGIN(LINECOMMENT); }

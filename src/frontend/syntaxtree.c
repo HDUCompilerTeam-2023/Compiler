@@ -36,7 +36,6 @@ void frontend_drop_UnaryExp(pUnaryExpNode UnaryExp);
 void frontend_drop_PostfixExp(pPostfixExpNode PostfixExp);
 void frontend_drop_PrimaryExp(pPrimaryExpNode PrimaryExp);
 void frontend_drop_Exp(pExpNode Exp);
-void frontend_drop_Number(pNumberNode Number);
 void frontend_drop_FuncRParams(pFuncRParamsNode FuncRParams);
 void frontend_drop_FuncRParamList(pFuncRParamListNode FuncRParamList);
 void frontend_drop_FuncRParam(pFuncRParamNode FuncRParam);
@@ -46,7 +45,7 @@ void frontend_drop_Stmt(pStmtNode Stmt);
 void frontend_drop_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt);
 void frontend_drop_IfUnMatchedStmt(pIfUnMatchedStmtNode IfUnMatchedStmt);
 void frontend_drop_ID(pIDNode ID);
-void frontend_drop_INTCONST(pINTCONSTNode INTCONST);
+void frontend_drop_CONSTNUM(pCONSTNUMNode CONSTNUM);
 
 void frontend_drop_syntaxtree(pCompUnitNode CompUnit) {
     frontend_drop_CompUnit(CompUnit);
@@ -351,13 +350,13 @@ void frontend_drop_PostfixExp(pPostfixExpNode PostfixExp) {
 
 void frontend_drop_PrimaryExp(pPrimaryExpNode PrimaryExp) {
     switch (PrimaryExp->type) {
-    case '(':
+    case tExp:
         frontend_drop_Exp(PrimaryExp->select.Exp);
         break;
-    case INTCONST:
-        frontend_drop_Number(PrimaryExp->select.Number);
+    case tCONST:
+        frontend_drop_CONSTNUM(PrimaryExp->select.CONSTNUM);
         break;
-    case ID:
+    case tID:
         frontend_drop_ID(PrimaryExp->select.ID);
         break;
     }
@@ -373,15 +372,6 @@ void frontend_drop_Exp(pExpNode Exp) {
         frontend_drop_AssignExp(Exp->AssignExp);
     }
     free(Exp);
-}
-
-void frontend_drop_Number(pNumberNode Number) {
-    switch (Number->type) {
-    case INTCONST:
-        frontend_drop_INTCONST(Number->select.INTCONST);
-        break;
-    }
-    free(Number);
 }
 
 void frontend_drop_FuncRParams(pFuncRParamsNode FuncRParams) {
@@ -481,6 +471,6 @@ void frontend_drop_ID(pIDNode ID) {
     free(ID);
 }
 
-void frontend_drop_INTCONST(pINTCONSTNode INTCONST) {
-    free(INTCONST);
+void frontend_drop_CONSTNUM(pCONSTNUMNode CONSTNUM) {
+    free(CONSTNUM);
 }

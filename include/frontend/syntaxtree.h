@@ -34,7 +34,6 @@ typedef struct UnaryExpNode *pUnaryExpNode;
 typedef struct PostfixExpNode *pPostfixExpNode;
 typedef struct PrimaryExpNode *pPrimaryExpNode;
 typedef struct ExpNode *pExpNode;
-typedef struct NumberNode *pNumberNode;
 typedef struct FuncRParamsNode *pFuncRParamsNode;
 typedef struct FuncRParamListNode *pFuncRParamListNode;
 typedef struct FuncRParamNode *pFuncRParamNode;
@@ -45,7 +44,7 @@ typedef struct IfMatchedStmtNode *pIfMatchedStmtNode;
 typedef struct IfUnMatchedStmtNode *pIfUnMatchedStmtNode;
 
 typedef struct IDNode *pIDNode;
-typedef struct INTCONSTNode *pINTCONSTNode;
+typedef struct CONSTNUMNode *pCONSTNUMNode;
 
 void frontend_drop_syntaxtree(pCompUnitNode CompUnit);
 
@@ -81,20 +80,20 @@ struct DeclarationSpecifierNode {
 
 struct TypeSpecifierNode {
     enum {
-        tVOID,
-        tUNSIGNED,
-        tSIGNED,
-        tLONG,
-        tSHORT,
-        tINT,
-        tFLOAT,
-        tCHAR,
+        spec_VOID,
+        spec_UNSIGNED,
+        spec_SIGNED,
+        spec_LONG,
+        spec_SHORT,
+        spec_INT,
+        spec_FLOAT,
+        spec_CHAR,
     } type;
 };
 
 struct TypeQualifierNode {
     enum {
-        tCONST,
+        qual_CONST,
     } type;
 };
 
@@ -244,24 +243,21 @@ struct PostfixExpNode {
 };
 
 struct PrimaryExpNode {
-    int type;
+    enum {
+        tExp,
+        tID,
+        tCONST,
+    } type;
     union {
-        pExpNode Exp; // '('
-        pNumberNode Number; // INTCONST
-        pIDNode ID; // ID
+        pExpNode Exp;
+        pCONSTNUMNode CONSTNUM;
+        pIDNode ID;
     } select;
 };
 
 struct ExpNode {
     pExpNode Exp;
     pAssignExpNode AssignExp;
-};
-
-struct NumberNode {
-    int type;
-    union {
-        pINTCONSTNode INTCONST; // INTCONST
-    } select;
 };
 
 struct FuncRParamsNode {
@@ -323,16 +319,25 @@ struct IDNode {
     char *str;
 };
 
-struct INTCONSTNode {
+struct CONSTNUMNode {
     enum {
-        type_int,
-        type_unsigned_int,
-        type_long_int,
-        type_unsigned_long_int,
-        type_long_long_int,
-        type_unsigned_long_long_int,
-    } type;
+        type_void, // void
+        type_char, // char  signed char
+        type_unsigned_char, // unsigned char
+        type_short_int, // short  signed short  short int  signed short int
+        type_unsigned_short_int, // unsigned short  unsigned short int
+        type_int, // int  signed  signed int
+        type_unsigned_int, // unsigned  unsigned int
+        type_long_int, // long  signed long  long int  signed long int
+        type_unsigned_long_int, // unsigned long  unsigned long int
+        type_long_long_int, // long long  signed long long  long long int  signed long long int
+        type_unsigned_long_long_int, // unsigned long long  unsigned long long int
+    } valtype;
     union {
+        char val_char;
+        unsigned char val_unsigned_char;
+        short int val_short_int;
+        unsigned short int val_unsigned_short_int;
         int val_int;
         unsigned int val_unsigned_int;
         long int val_long_int;

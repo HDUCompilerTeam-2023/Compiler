@@ -50,7 +50,6 @@ typedef void *yyscan_t;
        pPostfixExpNode PostfixExp;
        pPrimaryExpNode PrimaryExp;
        pExpNode Exp;
-       pNumberNode Number;
        pFuncRParamsNode FuncRParams;
        pFuncRParamListNode FuncRParamList;
        pFuncRParamNode FuncRParam;
@@ -61,7 +60,7 @@ typedef void *yyscan_t;
        pIfUnMatchedStmtNode IfUnMatchedStmt;
 
        pIDNode ID;
-       pINTCONSTNode INTCONST;
+       pCONSTNUMNode CONSTNUM;
 }
 
 %type <CompUnit> CompUnit
@@ -95,7 +94,6 @@ typedef void *yyscan_t;
 %type <PostfixExp> PostfixExp
 %type <PrimaryExp> PrimaryExp
 %type <Exp> Exp
-%type <Number> Number
 %type <FuncRParams> FuncRParams
 %type <FuncRParamList> FuncRParamList
 %type <FuncRParam> FuncRParam
@@ -117,7 +115,7 @@ typedef void *yyscan_t;
 %token RETURN
 
 %token <ID> ID
-%token <INTCONST> INTCONST
+%token <CONSTNUM> CONSTNUM
 %token AND OR LE GE EQ NEQ
 %token SELFADD SELFSUB
 
@@ -146,17 +144,17 @@ DeclarationSpecifier : TypeSpecifier { $$ = malloc(sizeof(*$$)); $$->type = tTyp
                      | TypeQualifier { $$ = malloc(sizeof(*$$)); $$->type = tTypeQualifier; $$->select.TypeQualifier = $1; }
                      ;
 
-TypeSpecifier : VOID     { $$ = malloc(sizeof(*$$)); $$->type = tVOID;      }
-              | UNSIGNED { $$ = malloc(sizeof(*$$)); $$->type = tUNSIGNED;  }
-              | SIGNED   { $$ = malloc(sizeof(*$$)); $$->type = tSIGNED;    }
-              | LONG     { $$ = malloc(sizeof(*$$)); $$->type = tLONG;      }
-              | SHORT    { $$ = malloc(sizeof(*$$)); $$->type = tSHORT;     }
-              | INT      { $$ = malloc(sizeof(*$$)); $$->type = tINT;       }
-              | FLOAT    { $$ = malloc(sizeof(*$$)); $$->type = tFLOAT;     }
-              | CHAR     { $$ = malloc(sizeof(*$$)); $$->type = tCHAR;      }
+TypeSpecifier : VOID     { $$ = malloc(sizeof(*$$)); $$->type = spec_VOID;      }
+              | UNSIGNED { $$ = malloc(sizeof(*$$)); $$->type = spec_UNSIGNED;  }
+              | SIGNED   { $$ = malloc(sizeof(*$$)); $$->type = spec_SIGNED;    }
+              | LONG     { $$ = malloc(sizeof(*$$)); $$->type = spec_LONG;      }
+              | SHORT    { $$ = malloc(sizeof(*$$)); $$->type = spec_SHORT;     }
+              | INT      { $$ = malloc(sizeof(*$$)); $$->type = spec_INT;       }
+              | FLOAT    { $$ = malloc(sizeof(*$$)); $$->type = spec_FLOAT;     }
+              | CHAR     { $$ = malloc(sizeof(*$$)); $$->type = spec_CHAR;      }
               ;
 
-TypeQualifier : CONST { $$ = malloc(sizeof(*$$)); $$->type = tCONST; }
+TypeQualifier : CONST { $$ = malloc(sizeof(*$$)); $$->type = qual_CONST; }
               ;
 
 InitDeclaratorList : InitDeclaratorList ',' InitDeclarator { $$ = malloc(sizeof(*$$)); $$->InitDeclaratorList = $1;   $$->InitDeclarator = $3; }
@@ -271,17 +269,14 @@ PostfixExp : PostfixExp '[' Exp ']'         { $$ = malloc(sizeof(*$$)); $$->op =
            | PrimaryExp                     { $$ = malloc(sizeof(*$$)); $$->op = YYEMPTY; $$->select.PrimaryExp = $1; $$->suffix.Exp = NULL;       }
            ;
 
-PrimaryExp : '(' Exp ')' { $$ = malloc(sizeof(*$$)); $$->type = '(';      $$->select.Exp = $2;    }
-           | Number      { $$ = malloc(sizeof(*$$)); $$->type = $1->type; $$->select.Number = $1; }
-           | ID          { $$ = malloc(sizeof(*$$)); $$->type = ID;       $$->select.ID = $1;     }
+PrimaryExp : '(' Exp ')' { $$ = malloc(sizeof(*$$)); $$->type = tExp;   $$->select.Exp = $2;      }
+           | CONSTNUM    { $$ = malloc(sizeof(*$$)); $$->type = tCONST; $$->select.CONSTNUM = $1; }
+           | ID          { $$ = malloc(sizeof(*$$)); $$->type = tID;    $$->select.ID = $1;       }
            ;
 
 Exp : Exp ',' AssignExp { $$ = malloc(sizeof(*$$)); $$->Exp = $1;   $$->AssignExp = $3; }
     | AssignExp         { $$ = malloc(sizeof(*$$)); $$->Exp = NULL; $$->AssignExp = $1; }
     ;
-
-Number : INTCONST { $$ = malloc(sizeof(*$$)); $$->type = INTCONST; $$->select.INTCONST = $1; }
-       ;
 
 FuncRParams : FuncRParamList { $$ = malloc(sizeof(*$$)); $$->FuncRParamList = $1;   }
             | /* *empty */   { $$ = malloc(sizeof(*$$)); $$->FuncRParamList = NULL; }

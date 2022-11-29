@@ -37,7 +37,6 @@ void frontend_print_UnaryExp(pUnaryExpNode UnaryExp);
 void frontend_print_PostfixExp(pPostfixExpNode PostfixExp);
 void frontend_print_PrimaryExp(pPrimaryExpNode PrimaryExp);
 void frontend_print_Exp(pExpNode Exp);
-void frontend_print_Number(pNumberNode Number);
 void frontend_print_FuncRParams(pFuncRParamsNode FuncRParams);
 void frontend_print_FuncRParamList(pFuncRParamListNode FuncRParamList);
 void frontend_print_FuncRParam(pFuncRParamNode FuncRParam);
@@ -47,7 +46,7 @@ void frontend_print_Stmt(pStmtNode Stmt, int depth);
 void frontend_print_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt, int depth);
 void frontend_print_IfUnMatchedStmt(pIfUnMatchedStmtNode IfUnMatchedStmt, int depth);
 void frontend_print_ID(pIDNode ID);
-void frontend_print_INTCONST(pINTCONSTNode INTCONST);
+void frontend_print_CONSTNUM(pCONSTNUMNode CONSTNUM);
 
 void frontend_print_syntaxtree(pCompUnitNode CompUnit) {
     frontend_print_CompUnit(CompUnit);
@@ -89,28 +88,28 @@ void frontend_print_DeclarationSpecifier(pDeclarationSpecifierNode DeclarationSp
 
 void frontend_print_TypeSpecifier(pTypeSpecifierNode TypeSpecifier) {
     switch (TypeSpecifier->type) {
-    case tVOID:
+    case spec_VOID:
         printf("void");
         break;
-    case tUNSIGNED:
+    case spec_UNSIGNED:
         printf("unsigned");
         break;
-    case tSIGNED:
+    case spec_SIGNED:
         printf("signed");
         break;
-    case tLONG:
+    case spec_LONG:
         printf("long");
         break;
-    case tSHORT:
+    case spec_SHORT:
         printf("short");
         break;
-    case tINT:
+    case spec_INT:
         printf("int");
         break;
-    case tFLOAT:
+    case spec_FLOAT:
         printf("float");
         break;
-    case tCHAR:
+    case spec_CHAR:
         printf("char");
         break;
     }
@@ -119,7 +118,7 @@ void frontend_print_TypeSpecifier(pTypeSpecifierNode TypeSpecifier) {
 
 void frontend_print_TypeQualifier(pTypeQualifierNode TypeQualifier) {
     switch (TypeQualifier->type) {
-    case tCONST:
+    case qual_CONST:
         printf("const");
         break;
     }
@@ -446,13 +445,13 @@ void frontend_print_PostfixExp(pPostfixExpNode PostfixExp) {
 
 void frontend_print_PrimaryExp(pPrimaryExpNode PrimaryExp) {
     switch (PrimaryExp->type) {
-    case '(':
+    case tExp:
         frontend_print_Exp(PrimaryExp->select.Exp);
         break;
-    case INTCONST:
-        frontend_print_Number(PrimaryExp->select.Number);
+    case tCONST:
+        frontend_print_CONSTNUM(PrimaryExp->select.CONSTNUM);
         break;
-    case ID:
+    case tID:
         frontend_print_ID(PrimaryExp->select.ID);
         break;
     }
@@ -468,14 +467,6 @@ void frontend_print_Exp(pExpNode Exp) {
     }
     else {
         frontend_print_AssignExp(Exp->AssignExp);
-    }
-}
-
-void frontend_print_Number(pNumberNode Number) {
-    switch (Number->type) {
-    case INTCONST:
-        frontend_print_INTCONST(Number->select.INTCONST);
-        break;
     }
 }
 
@@ -600,25 +591,27 @@ void frontend_print_ID(pIDNode ID) {
     printf("%s", ID->str);
 }
 
-void frontend_print_INTCONST(pINTCONSTNode INTCONST) {
-    switch (INTCONST->type) {
+void frontend_print_CONSTNUM(pCONSTNUMNode CONSTNUM) {
+    switch (CONSTNUM->valtype) {
     case type_int:
-        printf("%d", INTCONST->val.val_int);
+        printf("%d", CONSTNUM->val.val_int);
         break;
     case type_unsigned_int:
-        printf("%u", INTCONST->val.val_unsigned_int);
+        printf("%u", CONSTNUM->val.val_unsigned_int);
         break;
     case type_long_int:
-        printf("%ld", INTCONST->val.val_long_int);
+        printf("%ld", CONSTNUM->val.val_long_int);
         break;
     case type_unsigned_long_int:
-        printf("%lu", INTCONST->val.val_unsigned_long_int);
+        printf("%lu", CONSTNUM->val.val_unsigned_long_int);
         break;
     case type_long_long_int:
-        printf("%lld", INTCONST->val.val_long_long_int);
+        printf("%lld", CONSTNUM->val.val_long_long_int);
         break;
     case type_unsigned_long_long_int:
-        printf("%llu", INTCONST->val.val_unsigned_long_long_int);
+        printf("%llu", CONSTNUM->val.val_unsigned_long_long_int);
+        break;
+    default:
         break;
     }
 }
