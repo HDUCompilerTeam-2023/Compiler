@@ -31,8 +31,6 @@ typedef void *yyscan_t;
        pPointerNode Pointer;
        pTypeQualifiersNode TypeQualifiers;
        pDirectDeclaratorNode DirectDeclarator;
-       pVarDirectDeclaratorNode VarDirectDeclarator;
-       pFuncDirectDeclaratorNode FuncDirectDeclarator;
        pParametersNode Parameters;
        pParameterListNode ParameterList;
        pParameterDeclarationNode ParameterDeclaration;
@@ -56,7 +54,6 @@ typedef void *yyscan_t;
        pFuncRParamsNode FuncRParams;
        pFuncRParamListNode FuncRParamList;
        pFuncRParamNode FuncRParam;
-       pFunctionDefNode FunctionDef;
        pBlockNode Block;
        pBlockItemsNode BlockItems;
        pStmtNode Stmt;
@@ -79,8 +76,6 @@ typedef void *yyscan_t;
 %type <Pointer> Pointer
 %type <TypeQualifiers> TypeQualifiers
 %type <DirectDeclarator> DirectDeclarator
-%type <VarDirectDeclarator> VarDirectDeclarator
-%type <FuncDirectDeclarator> FuncDirectDeclarator
 %type <Parameters> Parameters
 %type <ParameterList> ParameterList
 %type <ParameterDeclaration> ParameterDeclaration
@@ -104,7 +99,6 @@ typedef void *yyscan_t;
 %type <FuncRParams> FuncRParams
 %type <FuncRParamList> FuncRParamList
 %type <FuncRParam> FuncRParam
-%type <FunctionDef> FunctionDef
 %type <Block> Block
 %type <BlockItems> BlockItems
 %type <Stmt> Stmt
@@ -128,12 +122,12 @@ typedef void *yyscan_t;
 %token SELFADD SELFSUB
 
 %%
-CompUnit : CompUnit Declaration { *root = $$ = malloc(sizeof(*$$)); $$->type = tDeclaration; $$->CompUnit = $1; $$->select.Declaration = $2;}
-         | CompUnit FunctionDef { *root = $$ = malloc(sizeof(*$$)); $$->type = tFunctionDef; $$->CompUnit = $1; $$->select.FunctionDef = $2;}
+CompUnit : CompUnit Declaration { *root = $$ = malloc(sizeof(*$$)); $$->CompUnit = $1; $$->Declaration = $2;}
          | /* *empty */         { *root = $$ = NULL; }
          ;
 
-Declaration : DeclarationSpecifiers InitDeclaratorList ';' { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1; $$->InitDeclaratorList = $2; }
+Declaration : DeclarationSpecifiers InitDeclaratorList ';' { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1; $$->declarators.InitDeclaratorList = $2; $$->Block = NULL; }
+            | DeclarationSpecifiers Declarator Block       { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1; $$->declarators.Declarator = $2;         $$->Block = $3;   }
             ;
 
 DeclarationSpecifiers : DeclarationSpecifiers DeclarationSpecifier { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1;   $$->DeclarationSpecifier = $2;}
@@ -176,19 +170,12 @@ TypeQualifiers : TypeQualifiers TypeQualifier { $$ = malloc(sizeof(*$$)); $$->Ty
                | /* *empty */                 { $$ = NULL;                                                                 }
                ;
 
-DirectDeclarator : VarDirectDeclarator  { $$ = malloc(sizeof(*$$)); $$->type = tVarDirectDeclarator;  $$->select.VarDirectDeclarator = $1;  }
-                 | FuncDirectDeclarator { $$ = malloc(sizeof(*$$)); $$->type = tFuncDirectDeclarator; $$->select.FuncDirectDeclarator = $1; }
+DirectDeclarator : DirectDeclarator '[' AssignExp ']'  { $$ = malloc(sizeof(*$$)); $$->op = tArrDec; $$->select.DirectDeclarator = $1; $$->AssignExp = $3;   $$->Parameters = NULL; }
+                 | DirectDeclarator '[' ']'            { $$ = malloc(sizeof(*$$)); $$->op = tArrDec; $$->select.DirectDeclarator = $1; $$->AssignExp = NULL; $$->Parameters = NULL; }
+                 | DirectDeclarator '(' Parameters ')' { $$ = malloc(sizeof(*$$)); $$->op = tFunDec; $$->select.DirectDeclarator = $1; $$->AssignExp = NULL; $$->Parameters = $3;   }
+                 | '(' Declarator ')'                  { $$ = malloc(sizeof(*$$)); $$->op = tRecurr; $$->select.Declarator = $2;       $$->AssignExp = NULL; $$->Parameters = NULL; }
+                 | ID                                  { $$ = malloc(sizeof(*$$)); $$->op = tIDJust; $$->select.ID = $1;               $$->AssignExp = NULL; $$->Parameters = NULL; }
                  ;
-
-VarDirectDeclarator : VarDirectDeclarator '[' AssignExp ']' { $$ = malloc(sizeof(*$$)); $$->op = '['; $$->select.VarDirectDeclarator = $1; $$->AssignExp = $3;   }
-                    | VarDirectDeclarator '[' ']'           { $$ = malloc(sizeof(*$$)); $$->op = '['; $$->select.VarDirectDeclarator = $1; $$->AssignExp = NULL; }
-                    | '(' Declarator ')'                    { $$ = malloc(sizeof(*$$)); $$->op = '('; $$->select.Declarator = $2;                                }
-                    | ID                                    { $$ = malloc(sizeof(*$$)); $$->op = ID;  $$->select.ID = $1;                                        }
-                    ;
-
-FuncDirectDeclarator : '(' Declarator ')' '(' Parameters ')' { $$ = malloc(sizeof(*$$)); $$->SimpleFunc = false; $$->select.Declarator = $2; $$->Parameters = $5; }
-                     | ID '(' Parameters ')'                 { $$ = malloc(sizeof(*$$)); $$->SimpleFunc = true;  $$->select.ID = $1;         $$->Parameters = $3; }
-                     ;
 
 Parameters : ParameterList { $$ = malloc(sizeof(*$$)); $$->ParameterList = $1;   }
            | /* *empty */  { $$ = malloc(sizeof(*$$)); $$->ParameterList = NULL; }
@@ -298,9 +285,6 @@ FuncRParamList : FuncRParamList ',' FuncRParam { $$ = malloc(sizeof(*$$)); $$->F
 
 FuncRParam : AssignExp { $$ = malloc(sizeof(*$$)); $$->AssignExp = $1; }
            ;
-
-FunctionDef : DeclarationSpecifiers Pointer ID '(' Parameters ')' Block { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1; $$->Pointer = $2; $$->ID = $3; $$->Parameters = $5; $$->Block = $7; }
-            ;
 
 Block : '{' BlockItems '}' { $$ = malloc(sizeof(*$$)); $$->BlockItems = $2; }
       ;

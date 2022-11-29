@@ -18,8 +18,6 @@ void frontend_print_Declarator(pDeclaratorNode Declarator);
 void frontend_print_Pointer(pPointerNode Pointer);
 void frontend_print_TypeQualifiers(pTypeQualifiersNode TypeQualifiers);
 void frontend_print_DirectDeclarator(pDirectDeclaratorNode DirectDeclarator);
-void frontend_print_VarDirectDeclarator(pVarDirectDeclaratorNode VarDirectDeclarator);
-void frontend_print_FuncDirectDeclarator(pFuncDirectDeclaratorNode FuncDirectDeclarator);
 void frontend_print_Parameters(pParametersNode Parameters);
 void frontend_print_ParameterList(pParameterListNode ParameterList);
 void frontend_print_ParameterDeclaration(pParameterDeclarationNode ParameterDeclaration);
@@ -43,7 +41,6 @@ void frontend_print_Number(pNumberNode Number);
 void frontend_print_FuncRParams(pFuncRParamsNode FuncRParams);
 void frontend_print_FuncRParamList(pFuncRParamListNode FuncRParamList);
 void frontend_print_FuncRParam(pFuncRParamNode FuncRParam);
-void frontend_print_FunctionDef(pFunctionDefNode FunctionDef);
 void frontend_print_Block(pBlockNode Block, int depth);
 void frontend_print_BlockItems(pBlockItemsNode BlockItems, int depth);
 void frontend_print_Stmt(pStmtNode Stmt, int depth);
@@ -60,16 +57,18 @@ void frontend_print_CompUnit(pCompUnitNode CompUnit) {
     if (!CompUnit)
         return;
     frontend_print_CompUnit(CompUnit->CompUnit);
-    if (CompUnit->type == tDeclaration) {
-        frontend_print_Declaration(CompUnit->select.Declaration, 0);
-    }
-    else if (CompUnit->type == tFunctionDef) {
-        frontend_print_FunctionDef(CompUnit->select.FunctionDef);
-    }
+    frontend_print_Declaration(CompUnit->Declaration, 0);
 }
 
 void frontend_print_Declaration(pDeclarationNode Declaration, int depth) {
-    frontend_print_InitDeclaratorList(Declaration->DeclarationSpecifiers, Declaration->InitDeclaratorList, depth);
+    if (Declaration->Block) {
+        frontend_print_DeclarationSpecifiers(Declaration->DeclarationSpecifiers);
+        frontend_print_Declarator(Declaration->declarators.Declarator);
+        printf("\n");
+        frontend_print_Block(Declaration->Block, depth + 1);
+    }
+    else
+        frontend_print_InitDeclaratorList(Declaration->DeclarationSpecifiers, Declaration->declarators.InitDeclaratorList, depth);
 }
 
 void frontend_print_DeclarationSpecifiers(pDeclarationSpecifiersNode DeclarationSpecifiers) {
@@ -166,46 +165,32 @@ void frontend_print_TypeQualifiers(pTypeQualifiersNode TypeQualifiers) {
 }
 
 void frontend_print_DirectDeclarator(pDirectDeclaratorNode DirectDeclarator) {
-    if (DirectDeclarator->type == tVarDirectDeclarator) {
-        frontend_print_VarDirectDeclarator(DirectDeclarator->select.VarDirectDeclarator);
-    }
-    else if (DirectDeclarator->type == tFuncDirectDeclarator) {
-        frontend_print_FuncDirectDeclarator(DirectDeclarator->select.FuncDirectDeclarator);
-    }
-}
-
-void frontend_print_VarDirectDeclarator(pVarDirectDeclaratorNode VarDirectDeclarator) {
-    switch (VarDirectDeclarator->op) {
-    case ID:
-        frontend_print_ID(VarDirectDeclarator->select.ID);
-        break;
-    case '(':
+    switch (DirectDeclarator->op) {
+    case tRecurr:
         printf("(");
-        frontend_print_Declarator(VarDirectDeclarator->select.Declarator);
+        frontend_print_Declarator(DirectDeclarator->select.Declarator);
         printf(")");
         break;
-    case '[':
-        frontend_print_VarDirectDeclarator(VarDirectDeclarator->select.VarDirectDeclarator);
+    case tIDJust:
+        frontend_print_ID(DirectDeclarator->select.ID);
+        break;
+    case tArrDec:
+        frontend_print_DirectDeclarator(DirectDeclarator->select.DirectDeclarator);
         printf("[");
-        if (VarDirectDeclarator->AssignExp)
-            frontend_print_AssignExp(VarDirectDeclarator->AssignExp);
+        if (DirectDeclarator->AssignExp) {
+            frontend_print_AssignExp(DirectDeclarator->AssignExp);
+        }
         printf("]");
         break;
-    }
-}
-
-void frontend_print_FuncDirectDeclarator(pFuncDirectDeclaratorNode FuncDirectDeclarator) {
-    if (FuncDirectDeclarator->SimpleFunc) {
-        frontend_print_ID(FuncDirectDeclarator->select.ID);
-    }
-    else {
+    case tFunDec:
+        frontend_print_DirectDeclarator(DirectDeclarator->select.DirectDeclarator);
         printf("(");
-        frontend_print_Declarator(FuncDirectDeclarator->select.Declarator);
+        if (DirectDeclarator->Parameters) {
+            frontend_print_Parameters(DirectDeclarator->Parameters);
+        }
         printf(")");
+        break;
     }
-    printf("(");
-    frontend_print_Parameters(FuncDirectDeclarator->Parameters);
-    printf(")");
 }
 
 void frontend_print_Parameters(pParametersNode Parameters) {
@@ -508,16 +493,6 @@ void frontend_print_FuncRParamList(pFuncRParamListNode FuncRParamList) {
 
 void frontend_print_FuncRParam(pFuncRParamNode FuncRParam) {
     frontend_print_AssignExp(FuncRParam->AssignExp);
-}
-
-void frontend_print_FunctionDef(pFunctionDefNode FunctionDef) {
-    frontend_print_DeclarationSpecifiers(FunctionDef->DeclarationSpecifiers);
-    frontend_print_Pointer(FunctionDef->Pointer);
-    frontend_print_ID(FunctionDef->ID);
-    printf("(");
-    frontend_print_Parameters(FunctionDef->Parameters);
-    printf(")\n");
-    frontend_print_Block(FunctionDef->Block, 1);
 }
 
 void frontend_print_Block(pBlockNode Block, int depth) {
