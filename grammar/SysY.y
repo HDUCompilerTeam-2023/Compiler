@@ -182,7 +182,8 @@ ParameterList : ParameterList ',' ParameterDeclaration { $$ = malloc(sizeof(*$$)
               | ParameterDeclaration                   { $$ = malloc(sizeof(*$$)); $$->ParameterList = NULL; $$->ParameterDeclaration = $1; }
               ;
 
-ParameterDeclaration : DeclarationSpecifiers Declarator { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1; $$->Declarator = $2; }
+ParameterDeclaration : DeclarationSpecifiers Declarator { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1; $$->Declarator = $2;   }
+                     | DeclarationSpecifiers            { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1; $$->Declarator = NULL; }
                      ;
 
 Initializer : '{' InitializerList ',' '}' { $$ = malloc(sizeof(*$$)); $$->isList = true;  $$->select.InitializerList = $2;   }

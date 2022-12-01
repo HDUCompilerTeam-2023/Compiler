@@ -44,6 +44,7 @@ void frontend_print_CompUnit(pCompUnitNode CompUnit) {
 void frontend_print_Declaration(pDeclarationNode Declaration, int depth) {
     if (Declaration->is_func_def) {
         frontend_print_DeclarationSpecifiers(Declaration->DeclarationSpecifiers);
+        printf(" ");
         frontend_print_Declarator(Declaration->declarators.Declarator);
         printf("\n");
         for (int i = 0; i < depth; ++i) printf("    ");
@@ -60,6 +61,7 @@ void frontend_print_Declaration(pDeclarationNode Declaration, int depth) {
 void frontend_print_DeclarationSpecifiers(pDeclarationSpecifiersNode DeclarationSpecifiers) {
     if (DeclarationSpecifiers->DeclarationSpecifiers) {
         frontend_print_DeclarationSpecifiers(DeclarationSpecifiers->DeclarationSpecifiers);
+        printf(" ");
     }
     frontend_print_DeclarationSpecifier(DeclarationSpecifiers->DeclarationSpecifier);
 }
@@ -100,7 +102,6 @@ void frontend_print_TypeSpecifier(pTypeSpecifierNode TypeSpecifier) {
         printf("char");
         break;
     }
-    printf(" ");
 }
 
 void frontend_print_TypeQualifier(pTypeQualifierNode TypeQualifier) {
@@ -109,7 +110,6 @@ void frontend_print_TypeQualifier(pTypeQualifierNode TypeQualifier) {
         printf("const");
         break;
     }
-    printf(" ");
 }
 
 void frontend_print_InitDeclaratorList(pDeclarationSpecifiersNode DeclarationSpecifiers, pInitDeclaratorListNode InitDeclaratorList, int depth) {
@@ -118,6 +118,7 @@ void frontend_print_InitDeclaratorList(pDeclarationSpecifiersNode DeclarationSpe
     }
     for (int i = 0; i < depth; ++i) printf("    ");
     frontend_print_DeclarationSpecifiers(DeclarationSpecifiers);
+    printf(" ");
     frontend_print_InitDeclarator(InitDeclaratorList->InitDeclarator);
     printf(";\n");
 }
@@ -178,6 +179,7 @@ void frontend_print_TypeQualifiers(pTypeQualifiersNode TypeQualifiers) {
         return;
     frontend_print_TypeQualifiers(TypeQualifiers->TypeQualifiers);
     frontend_print_TypeQualifier(TypeQualifiers->TypeQualifier);
+    printf(" ");
 }
 
 void frontend_print_ParameterList(pParameterListNode ParameterList) {
@@ -191,7 +193,10 @@ void frontend_print_ParameterList(pParameterListNode ParameterList) {
 
 void frontend_print_ParameterDeclaration(pParameterDeclarationNode ParameterDeclaration) {
     frontend_print_DeclarationSpecifiers(ParameterDeclaration->DeclarationSpecifiers);
-    frontend_print_Declarator(ParameterDeclaration->Declarator);
+    if (ParameterDeclaration->Declarator) {
+        printf(" ");
+        frontend_print_Declarator(ParameterDeclaration->Declarator);
+    }
 }
 
 void frontend_print_Initializer(pInitializerNode Initializer) {

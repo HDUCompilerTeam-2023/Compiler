@@ -150,7 +150,7 @@ void frontend_drop_ParameterList(pParameterListNode ParameterList) {
 
 void frontend_drop_ParameterDeclaration(pParameterDeclarationNode ParameterDeclaration) {
     frontend_drop_DeclarationSpecifiers(ParameterDeclaration->DeclarationSpecifiers);
-    frontend_drop_Declarator(ParameterDeclaration->Declarator);
+    if (ParameterDeclaration->Declarator) frontend_drop_Declarator(ParameterDeclaration->Declarator);
     free(ParameterDeclaration);
 }
 
