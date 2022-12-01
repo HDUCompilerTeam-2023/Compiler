@@ -266,7 +266,7 @@ PrimaryExp : '(' Exp ')' { $$ = $2; }
            | ID          { $$ = malloc(sizeof(*$$)); $$->type = type_ID;       $$->select.ID = $1;       }
            ;
 
-Exp : Exp ',' AssignExp { $$ = malloc(sizeof(*$$)); $$->type = arrary_index; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3;     }
+Exp : Exp ',' AssignExp { $$ = malloc(sizeof(*$$)); $$->type = comma; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3;     }
     | AssignExp         { $$ = $1; }
     ;
 
