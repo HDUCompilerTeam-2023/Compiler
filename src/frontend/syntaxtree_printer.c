@@ -17,30 +17,12 @@ void frontend_print_InitDeclarator(pInitDeclaratorNode InitDeclarator);
 void frontend_print_Declarator(pDeclaratorNode Declarator);
 void frontend_print_Pointer(pPointerNode Pointer);
 void frontend_print_TypeQualifiers(pTypeQualifiersNode TypeQualifiers);
-void frontend_print_DirectDeclarator(pDirectDeclaratorNode DirectDeclarator);
-void frontend_print_Parameters(pParametersNode Parameters);
 void frontend_print_ParameterList(pParameterListNode ParameterList);
 void frontend_print_ParameterDeclaration(pParameterDeclarationNode ParameterDeclaration);
 void frontend_print_Initializer(pInitializerNode Initializer);
 void frontend_print_InitializerList(pInitializerListNode InitializerList);
-void frontend_print_AssignExp(pAssignExpNode AssignExp);
-void frontend_print_LOrExp(pLOrExpNode LOrExp);
-void frontend_print_LAndExp(pLAndExpNode LAndExp);
-void frontend_print_BOrExp(pBOrExpNode BOrExp);
-void frontend_print_BNorExp(pBNorExpNode BNorExp);
-void frontend_print_BAndExp(pBAndExpNode BAndExp);
-void frontend_print_EqExp(pEqExpNode EqExp);
-void frontend_print_RelExp(pRelExpNode RelExp);
-void frontend_print_AddExp(pAddExpNode AddExp);
-void frontend_print_MulExp(pMulExpNode MulExp);
-void frontend_print_UnaryExp(pUnaryExpNode UnaryExp);
-void frontend_print_PostfixExp(pPostfixExpNode PostfixExp);
-void frontend_print_PrimaryExp(pPrimaryExpNode PrimaryExp);
-void frontend_print_Exp(pExpNode Exp);
-void frontend_print_FuncRParams(pFuncRParamsNode FuncRParams);
+void frontend_print_Expression(pExpressionNode Expression);
 void frontend_print_FuncRParamList(pFuncRParamListNode FuncRParamList);
-void frontend_print_FuncRParam(pFuncRParamNode FuncRParam);
-void frontend_print_Block(pBlockNode Block, int depth);
 void frontend_print_BlockItems(pBlockItemsNode BlockItems, int depth);
 void frontend_print_Stmt(pStmtNode Stmt, int depth);
 void frontend_print_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt, int depth);
@@ -60,14 +42,19 @@ void frontend_print_CompUnit(pCompUnitNode CompUnit) {
 }
 
 void frontend_print_Declaration(pDeclarationNode Declaration, int depth) {
-    if (Declaration->Block) {
+    if (Declaration->is_func_def) {
         frontend_print_DeclarationSpecifiers(Declaration->DeclarationSpecifiers);
         frontend_print_Declarator(Declaration->declarators.Declarator);
         printf("\n");
-        frontend_print_Block(Declaration->Block, depth + 1);
+        for (int i = 0; i < depth; ++i) printf("    ");
+        printf("{\n");
+        frontend_print_BlockItems(Declaration->BlockItems, depth + 1);
+        for (int i = 0; i < depth; ++i) printf("    ");
+        printf("}\n");
     }
-    else
+    else {
         frontend_print_InitDeclaratorList(Declaration->DeclarationSpecifiers, Declaration->declarators.InitDeclaratorList, depth);
+    }
 }
 
 void frontend_print_DeclarationSpecifiers(pDeclarationSpecifiersNode DeclarationSpecifiers) {
@@ -144,8 +131,38 @@ void frontend_print_InitDeclarator(pInitDeclaratorNode InitDeclarator) {
 }
 
 void frontend_print_Declarator(pDeclaratorNode Declarator) {
-    frontend_print_Pointer(Declarator->Pointer);
-    frontend_print_DirectDeclarator(Declarator->DirectDeclarator);
+    switch (Declarator->type) {
+    case tPointer:
+        if (Declarator->select.Pointer) {
+            frontend_print_Pointer(Declarator->select.Pointer);
+        }
+        frontend_print_Declarator(Declarator->body.Declarator);
+        break;
+    case tArrDec:
+        if (Declarator->body.Declarator->type == tPointer) printf("(");
+        frontend_print_Declarator(Declarator->body.Declarator);
+        if (Declarator->body.Declarator->type == tPointer) printf(")");
+        printf("[");
+        if (Declarator->select.Expression) {
+            frontend_print_Expression(Declarator->select.Expression);
+        }
+        printf("]");
+        break;
+    case tFunDec:
+        if (Declarator->body.Declarator->type == tPointer) printf("(");
+        frontend_print_Declarator(Declarator->body.Declarator);
+        if (Declarator->body.Declarator->type == tPointer) printf(")");
+        printf("(");
+        if (Declarator->select.ParameterList) {
+            frontend_print_ParameterList(Declarator->select.ParameterList);
+        }
+        printf(")");
+        break;
+    case tIDJust:
+        frontend_print_ID(Declarator->body.ID);
+        assert(!Declarator->select.IDsuffix);
+        break;
+    }
 }
 
 void frontend_print_Pointer(pPointerNode Pointer) {
@@ -163,41 +180,8 @@ void frontend_print_TypeQualifiers(pTypeQualifiersNode TypeQualifiers) {
     frontend_print_TypeQualifier(TypeQualifiers->TypeQualifier);
 }
 
-void frontend_print_DirectDeclarator(pDirectDeclaratorNode DirectDeclarator) {
-    switch (DirectDeclarator->op) {
-    case tRecurr:
-        printf("(");
-        frontend_print_Declarator(DirectDeclarator->select.Declarator);
-        printf(")");
-        break;
-    case tIDJust:
-        frontend_print_ID(DirectDeclarator->select.ID);
-        break;
-    case tArrDec:
-        frontend_print_DirectDeclarator(DirectDeclarator->select.DirectDeclarator);
-        printf("[");
-        if (DirectDeclarator->AssignExp) {
-            frontend_print_AssignExp(DirectDeclarator->AssignExp);
-        }
-        printf("]");
-        break;
-    case tFunDec:
-        frontend_print_DirectDeclarator(DirectDeclarator->select.DirectDeclarator);
-        printf("(");
-        if (DirectDeclarator->Parameters) {
-            frontend_print_Parameters(DirectDeclarator->Parameters);
-        }
-        printf(")");
-        break;
-    }
-}
-
-void frontend_print_Parameters(pParametersNode Parameters) {
-    if (Parameters->ParameterList)
-        frontend_print_ParameterList(Parameters->ParameterList);
-}
-
 void frontend_print_ParameterList(pParameterListNode ParameterList) {
+    if (!ParameterList) return;
     if (ParameterList->ParameterList) {
         frontend_print_ParameterList(ParameterList->ParameterList);
         printf(", ");
@@ -218,7 +202,7 @@ void frontend_print_Initializer(pInitializerNode Initializer) {
         printf("}");
     }
     else {
-        frontend_print_AssignExp(Initializer->select.AssignExp);
+        frontend_print_Expression(Initializer->select.Expression);
     }
 }
 
@@ -230,269 +214,221 @@ void frontend_print_InitializerList(pInitializerListNode InitializerList) {
     frontend_print_Initializer(InitializerList->Initializer);
 }
 
-void frontend_print_AssignExp(pAssignExpNode AssignExp) {
-    if (AssignExp->AssignExp) {
-        frontend_print_UnaryExp(AssignExp->select.UnaryExp);
+void frontend_print_Expression(pExpressionNode Expression) {
+    assert(Expression);
+    switch (Expression->type) {
+    case comma:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf(", ");
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        printf(")");
+        break;
+    case assign:
+        frontend_print_Expression(Expression->select.exp.first);
         printf(" = ");
-        frontend_print_AssignExp(AssignExp->AssignExp);
-    }
-    else {
-        frontend_print_LOrExp(AssignExp->select.LOrExp);
-    }
-}
-
-void frontend_print_LOrExp(pLOrExpNode LOrExp) {
-    if (LOrExp->LOrExp) {
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        break;
+    case logic_or:
         printf("(");
-        frontend_print_LOrExp(LOrExp->LOrExp);
+        frontend_print_Expression(Expression->select.exp.first);
         printf("||");
-        frontend_print_LAndExp(LOrExp->LAndExp);
+        frontend_print_Expression(Expression->select.exp.second.Expression);
         printf(")");
-    }
-    else {
-        frontend_print_LAndExp(LOrExp->LAndExp);
-    }
-}
-
-void frontend_print_LAndExp(pLAndExpNode LAndExp) {
-    if (LAndExp->LAndExp) {
+        break;
+    case logic_and:
         printf("(");
-        frontend_print_LAndExp(LAndExp->LAndExp);
+        frontend_print_Expression(Expression->select.exp.first);
         printf("&&");
-        frontend_print_BOrExp(LAndExp->BOrExp);
+        frontend_print_Expression(Expression->select.exp.second.Expression);
         printf(")");
-    }
-    else {
-        frontend_print_BOrExp(LAndExp->BOrExp);
-    }
-}
-
-void frontend_print_BOrExp(pBOrExpNode BOrExp) {
-    if (BOrExp->BOrExp) {
+        break;
+    case bit_or:
         printf("(");
-        frontend_print_BOrExp(BOrExp->BOrExp);
+        frontend_print_Expression(Expression->select.exp.first);
         printf("|");
-        frontend_print_BNorExp(BOrExp->BNorExp);
+        frontend_print_Expression(Expression->select.exp.second.Expression);
         printf(")");
-    }
-    else {
-        frontend_print_BNorExp(BOrExp->BNorExp);
-    }
-}
-
-void frontend_print_BNorExp(pBNorExpNode BNorExp) {
-    if (BNorExp->BNorExp) {
+        break;
+    case bit_nor:
         printf("(");
-        frontend_print_BNorExp(BNorExp->BNorExp);
+        frontend_print_Expression(Expression->select.exp.first);
         printf("^");
-        frontend_print_BAndExp(BNorExp->BAndExp);
+        frontend_print_Expression(Expression->select.exp.second.Expression);
         printf(")");
-    }
-    else {
-        frontend_print_BAndExp(BNorExp->BAndExp);
-    }
-}
-
-void frontend_print_BAndExp(pBAndExpNode BAndExp) {
-    if (BAndExp->BAndExp) {
+        break;
+    case bit_and:
         printf("(");
-        frontend_print_BAndExp(BAndExp->BAndExp);
+        frontend_print_Expression(Expression->select.exp.first);
         printf("&");
-        frontend_print_EqExp(BAndExp->EqExp);
+        frontend_print_Expression(Expression->select.exp.second.Expression);
         printf(")");
-    }
-    else {
-        frontend_print_EqExp(BAndExp->EqExp);
-    }
-}
-
-void frontend_print_EqExp(pEqExpNode EqExp) {
-    if (EqExp->EqExp) {
-        printf("(");
-        frontend_print_EqExp(EqExp->EqExp);
-        switch (EqExp->op) {
-        case EQ:
-            printf("==");
-            break;
-        case NEQ:
-            printf("!=");
-            break;
-        }
-        frontend_print_RelExp(EqExp->RelExp);
-        printf(")");
-    }
-    else {
-        frontend_print_RelExp(EqExp->RelExp);
-    }
-}
-
-void frontend_print_RelExp(pRelExpNode RelExp) {
-    if (RelExp->RelExp) {
-        printf("(");
-        frontend_print_RelExp(RelExp->RelExp);
-        switch (RelExp->op) {
-        case '<':
-            printf("<");
-            break;
-        case '>':
-            printf(">");
-            break;
-        case LE:
-            printf("<=");
-            break;
-        case GE:
-            printf(">=");
-            break;
-        }
-        frontend_print_AddExp(RelExp->AddExp);
-        printf(")");
-    }
-    else {
-        frontend_print_AddExp(RelExp->AddExp);
-    }
-}
-
-void frontend_print_AddExp(pAddExpNode AddExp) {
-    if (AddExp->AddExp) {
-        printf("(");
-        frontend_print_AddExp(AddExp->AddExp);
-        printf("%c", AddExp->op);
-        frontend_print_MulExp(AddExp->MulExp);
-        printf(")");
-    }
-    else {
-        frontend_print_MulExp(AddExp->MulExp);
-    }
-}
-
-void frontend_print_MulExp(pMulExpNode MulExp) {
-    if (MulExp->MulExp) {
-        printf("(");
-        frontend_print_MulExp(MulExp->MulExp);
-        printf("%c", MulExp->op);
-        frontend_print_UnaryExp(MulExp->UnaryExp);
-        printf(")");
-    }
-    else {
-        frontend_print_UnaryExp(MulExp->UnaryExp);
-    }
-}
-
-void frontend_print_UnaryExp(pUnaryExpNode UnaryExp) {
-    if (UnaryExp->op != YYEMPTY) {
-        printf("(");
-    }
-    switch (UnaryExp->op) {
-    case '-':
-    case '+':
-    case '!':
-    case '~':
-    case '*':
-    case '&':
-        printf("%c", UnaryExp->op);
-        frontend_print_UnaryExp(UnaryExp->select.UnaryExp);
         break;
-    case SELFADD:
+    case eq:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf("==");
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        printf(")");
+        break;
+    case neq:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf("!=");
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        printf(")");
+        break;
+    case great:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf(">");
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        printf(")");
+        break;
+    case less:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf("<");
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        printf(")");
+        break;
+    case great_eq:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf(">=");
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        printf(")");
+        break;
+    case less_eq:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf("<=");
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        printf(")");
+        break;
+    case binary_add:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf("+");
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        printf(")");
+        break;
+    case binary_sub:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf("-");
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        printf(")");
+        break;
+    case binary_mul:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf("*");
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        printf(")");
+        break;
+    case binary_div:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf("/");
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        printf(")");
+        break;
+    case binary_mod:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf("%%");
+        frontend_print_Expression(Expression->select.exp.second.Expression);
+        printf(")");
+        break;
+    case positive:
+        printf("(");
+        printf("+");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf(")");
+        break;
+    case negative:
+        printf("(");
+        printf("-");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf(")");
+        break;
+    case logic_not:
+        printf("(");
+        printf("!");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf(")");
+        break;
+    case bit_not:
+        printf("(");
+        printf("~");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf(")");
+        break;
+    case deref:
+        printf("(");
+        printf("*");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf(")");
+        break;
+    case ref:
+        printf("(");
+        printf("&");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf(")");
+        break;
+    case selfadd_pre:
+        printf("(");
         printf("++");
-        frontend_print_UnaryExp(UnaryExp->select.UnaryExp);
-        break;
-    case SELFSUB:
-        printf("--");
-        frontend_print_UnaryExp(UnaryExp->select.UnaryExp);
-        break;
-    case YYEMPTY:
-        frontend_print_PostfixExp(UnaryExp->select.PostfixExp);
-        break;
-    }
-    if (UnaryExp->op != YYEMPTY) {
+        frontend_print_Expression(Expression->select.exp.first);
         printf(")");
-    }
-}
-
-void frontend_print_PostfixExp(pPostfixExpNode PostfixExp) {
-    if (PostfixExp->op == SELFADD || PostfixExp->op == SELFSUB) {
+        break;
+    case selfsub_pre:
         printf("(");
-    }
-    switch (PostfixExp->op) {
-    case '[':
-        frontend_print_PostfixExp(PostfixExp->select.PostfixExp);
+        printf("--");
+        frontend_print_Expression(Expression->select.exp.first);
+        printf(")");
+        break;
+    case arrary_index:
+        frontend_print_Expression(Expression->select.exp.first);
         printf("[");
-        frontend_print_Exp(PostfixExp->suffix.Exp);
+        frontend_print_Expression(Expression->select.exp.second.Expression);
         printf("]");
         break;
-    case '(':
-        frontend_print_PostfixExp(PostfixExp->select.PostfixExp);
+    case func_call:
+        frontend_print_Expression(Expression->select.exp.first);
         printf("(");
-        frontend_print_FuncRParams(PostfixExp->suffix.FuncRParams);
+        frontend_print_FuncRParamList(Expression->select.exp.second.FuncRParamList);
         printf(")");
         break;
-    case SELFADD:
-        frontend_print_PostfixExp(PostfixExp->select.PostfixExp);
+    case selfadd:
+        printf("(");
+        frontend_print_Expression(Expression->select.exp.first);
         printf("++");
-        break;
-    case SELFSUB:
-        frontend_print_PostfixExp(PostfixExp->select.PostfixExp);
-        printf("--");
-        break;
-    case YYEMPTY:
-        frontend_print_PrimaryExp(PostfixExp->select.PrimaryExp);
-        break;
-    }
-    if (PostfixExp->op == SELFADD || PostfixExp->op == SELFSUB) {
         printf(")");
-    }
-}
-
-void frontend_print_PrimaryExp(pPrimaryExpNode PrimaryExp) {
-    switch (PrimaryExp->type) {
-    case tExp:
-        frontend_print_Exp(PrimaryExp->select.Exp);
         break;
-    case tCONST:
-        frontend_print_CONSTNUM(PrimaryExp->select.CONSTNUM);
-        break;
-    case tID:
-        frontend_print_ID(PrimaryExp->select.ID);
-        break;
-    }
-}
-
-void frontend_print_Exp(pExpNode Exp) {
-    if (Exp->Exp) {
+    case selfsub:
         printf("(");
-        frontend_print_Exp(Exp->Exp);
-        printf(", ");
-        frontend_print_AssignExp(Exp->AssignExp);
+        frontend_print_Expression(Expression->select.exp.first);
+        printf("--");
         printf(")");
+        break;
+    case type_ID:
+        frontend_print_ID(Expression->select.ID);
+        break;
+    case type_CONSTNUM:
+        frontend_print_CONSTNUM(Expression->select.CONSTNUM);
+        break;
     }
-    else {
-        frontend_print_AssignExp(Exp->AssignExp);
-    }
-}
-
-void frontend_print_FuncRParams(pFuncRParamsNode FuncRParams) {
-    if (FuncRParams->FuncRParamList)
-        frontend_print_FuncRParamList(FuncRParams->FuncRParamList);
 }
 
 void frontend_print_FuncRParamList(pFuncRParamListNode FuncRParamList) {
+    if (!FuncRParamList) return;
     if (FuncRParamList->FuncRParamList) {
         frontend_print_FuncRParamList(FuncRParamList->FuncRParamList);
         printf(", ");
     }
-    frontend_print_FuncRParam(FuncRParamList->FuncRParam);
-}
-
-void frontend_print_FuncRParam(pFuncRParamNode FuncRParam) {
-    frontend_print_AssignExp(FuncRParam->AssignExp);
-}
-
-void frontend_print_Block(pBlockNode Block, int depth) {
-    for (int i = 0; i < depth - 1; ++i) printf("    ");
-    printf("{\n");
-    frontend_print_BlockItems(Block->BlockItems, depth);
-    for (int i = 0; i < depth - 1; ++i) printf("    ");
-    printf("}\n");
+    frontend_print_Expression(FuncRParamList->Expression);
 }
 
 void frontend_print_BlockItems(pBlockItemsNode BlockItems, int depth) {
@@ -521,18 +457,22 @@ void frontend_print_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt, int depth) {
         for (int i = 0; i < depth; ++i) printf("    ");
     switch (IfMatchedStmt->type) {
     case '{':
-        frontend_print_Block(IfMatchedStmt->select.Block, depth);
+        for (int i = 0; i < depth - 1; ++i) printf("    ");
+        printf("{\n");
+        frontend_print_BlockItems(IfMatchedStmt->select.BlockItems, depth);
+        for (int i = 0; i < depth - 1; ++i) printf("    ");
+        printf("}\n");
         break;
     case ';':
-        if (IfMatchedStmt->select.Exp)
-            frontend_print_Exp(IfMatchedStmt->select.Exp);
+        if (IfMatchedStmt->select.Expression)
+            frontend_print_Expression(IfMatchedStmt->select.Expression);
         printf(";\n");
         break;
     case RETURN:
         printf("return");
-        if (IfMatchedStmt->select.Exp){
+        if (IfMatchedStmt->select.Expression){
             printf(" ");
-            frontend_print_Exp(IfMatchedStmt->select.Exp);
+            frontend_print_Expression(IfMatchedStmt->select.Expression);
         }
         printf(";\n");
         break;
@@ -544,7 +484,7 @@ void frontend_print_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt, int depth) {
         break;
     case ELSE:
         printf("if (");
-        frontend_print_Exp(IfMatchedStmt->select.Exp);
+        frontend_print_Expression(IfMatchedStmt->select.Expression);
         printf(")\n");
         frontend_print_IfMatchedStmt(IfMatchedStmt->IfMatchedStmt_1, depth + 1);
         for (int i = 0; i < depth; ++i) printf("    ");
@@ -553,7 +493,7 @@ void frontend_print_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt, int depth) {
         break;
     case WHILE:
         printf("while (");
-        frontend_print_Exp(IfMatchedStmt->select.Exp);
+        frontend_print_Expression(IfMatchedStmt->select.Expression);
         printf(")\n");
         frontend_print_IfMatchedStmt(IfMatchedStmt->IfMatchedStmt_1, depth + 1);
         break;
@@ -565,13 +505,13 @@ void frontend_print_IfUnMatchedStmt(pIfUnMatchedStmtNode IfUnMatchedStmt, int de
     switch (IfUnMatchedStmt->type) {
     case IF:
         printf("if (");
-        frontend_print_Exp(IfUnMatchedStmt->Exp);
+        frontend_print_Expression(IfUnMatchedStmt->Expression);
         printf(")\n");
         frontend_print_Stmt(IfUnMatchedStmt->select.Stmt, depth + 1);
         break;
     case ELSE:
         printf("if (");
-        frontend_print_Exp(IfUnMatchedStmt->Exp);
+        frontend_print_Expression(IfUnMatchedStmt->Expression);
         printf(")\n");
         frontend_print_IfMatchedStmt(IfUnMatchedStmt->select.IfMatchedStmt, depth + 1);
         for (int i = 0; i < depth; ++i) printf("    ");
@@ -580,7 +520,7 @@ void frontend_print_IfUnMatchedStmt(pIfUnMatchedStmtNode IfUnMatchedStmt, int de
         break;
     case WHILE:
         printf("while (");
-        frontend_print_Exp(IfUnMatchedStmt->Exp);
+        frontend_print_Expression(IfUnMatchedStmt->Expression);
         printf(")\n");
         frontend_print_IfUnMatchedStmt(IfUnMatchedStmt->select.IfUnMatchedStmt, depth);
         break;
@@ -588,7 +528,7 @@ void frontend_print_IfUnMatchedStmt(pIfUnMatchedStmtNode IfUnMatchedStmt, int de
 }
 
 void frontend_print_ID(pIDNode ID) {
-    printf("%s", ID->str);
+    printf("%s", ID);
 }
 
 void frontend_print_CONSTNUM(pCONSTNUMNode CONSTNUM) {

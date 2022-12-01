@@ -14,36 +14,18 @@ typedef struct InitDeclaratorNode *pInitDeclaratorNode;
 typedef struct DeclaratorNode *pDeclaratorNode;
 typedef struct PointerNode *pPointerNode;
 typedef struct TypeQualifiersNode *pTypeQualifiersNode;
-typedef struct DirectDeclaratorNode *pDirectDeclaratorNode;
-typedef struct ParametersNode *pParametersNode;
 typedef struct ParameterListNode *pParameterListNode;
 typedef struct ParameterDeclarationNode *pParameterDeclarationNode;
 typedef struct InitializerNode *pInitializerNode;
 typedef struct InitializerListNode *pInitializerListNode;
-typedef struct AssignExpNode *pAssignExpNode;
-typedef struct LOrExpNode *pLOrExpNode;
-typedef struct LAndExpNode *pLAndExpNode;
-typedef struct BOrExpNode *pBOrExpNode;
-typedef struct BNorExpNode *pBNorExpNode;
-typedef struct BAndExpNode *pBAndExpNode;
-typedef struct EqExpNode *pEqExpNode;
-typedef struct RelExpNode *pRelExpNode;
-typedef struct AddExpNode *pAddExpNode;
-typedef struct MulExpNode *pMulExpNode;
-typedef struct UnaryExpNode *pUnaryExpNode;
-typedef struct PostfixExpNode *pPostfixExpNode;
-typedef struct PrimaryExpNode *pPrimaryExpNode;
-typedef struct ExpNode *pExpNode;
-typedef struct FuncRParamsNode *pFuncRParamsNode;
+typedef struct ExpressionNode *pExpressionNode;
 typedef struct FuncRParamListNode *pFuncRParamListNode;
-typedef struct FuncRParamNode *pFuncRParamNode;
-typedef struct BlockNode *pBlockNode;
 typedef struct BlockItemsNode *pBlockItemsNode;
 typedef struct StmtNode *pStmtNode;
 typedef struct IfMatchedStmtNode *pIfMatchedStmtNode;
 typedef struct IfUnMatchedStmtNode *pIfUnMatchedStmtNode;
 
-typedef struct IDNode *pIDNode;
+typedef char *pIDNode;
 typedef struct CONSTNUMNode *pCONSTNUMNode;
 
 void frontend_drop_syntaxtree(pCompUnitNode CompUnit);
@@ -54,12 +36,13 @@ struct CompUnitNode {
 };
 
 struct DeclarationNode {
+    bool is_func_def;
     pDeclarationSpecifiersNode DeclarationSpecifiers;
     union {
-        pInitDeclaratorListNode InitDeclaratorList; // Block == NULL
-        pDeclaratorNode Declarator; // Block != NULL
+        pInitDeclaratorListNode InitDeclaratorList; // false
+        pDeclaratorNode Declarator; // true
     } declarators;
-    pBlockNode Block;
+    pBlockItemsNode BlockItems;
 };
 
 struct DeclarationSpecifiersNode {
@@ -108,8 +91,22 @@ struct InitDeclaratorNode {
 };
 
 struct DeclaratorNode {
-    pPointerNode Pointer;
-    pDirectDeclaratorNode DirectDeclarator;
+    enum {
+        tIDJust,
+        tArrDec,
+        tFunDec,
+        tPointer,
+    } type;
+    union {
+        pDeclaratorNode Declarator; // tArrDec tFunDec tPointer
+        pIDNode ID; // tIDJust
+    } body;
+    union {
+        pPointerNode Pointer; // tPointer
+        pExpressionNode Expression; // tArrDec
+        pParameterListNode ParameterList; // tFunDec
+        void *IDsuffix; // tIDJust
+    } select;
 };
 
 struct PointerNode {
@@ -120,26 +117,6 @@ struct PointerNode {
 struct TypeQualifiersNode {
     pTypeQualifiersNode TypeQualifiers;
     pTypeQualifierNode TypeQualifier;
-};
-
-struct DirectDeclaratorNode {
-    enum {
-        tIDJust,
-        tArrDec,
-        tFunDec,
-        tRecurr,
-    } op;
-    union {
-        pDirectDeclaratorNode DirectDeclarator; // tArrDec tFunDec
-        pDeclaratorNode Declarator; // tRecurr
-        pIDNode ID; // tIDJust
-    } select;
-    pAssignExpNode AssignExp; // tArrDec
-    pParametersNode Parameters; // tFunDec
-};
-
-struct ParametersNode {
-    pParameterListNode ParameterList;
 };
 
 struct ParameterListNode {
@@ -156,7 +133,7 @@ struct InitializerNode {
     bool isList;
     union {
         pInitializerListNode InitializerList; // true
-        pAssignExpNode AssignExp; // false
+        pExpressionNode Expression; // false
     } select;
 };
 
@@ -165,116 +142,35 @@ struct InitializerListNode {
     pInitializerNode Initializer;
 };
 
-struct AssignExpNode {
-    union {
-        pUnaryExpNode UnaryExp; // NOT NULL
-        pLOrExpNode LOrExp; // NULL
-    } select;
-    pAssignExpNode AssignExp;
-};
-
-struct LOrExpNode {
-    pLOrExpNode LOrExp;
-    pLAndExpNode LAndExp;
-};
-
-struct LAndExpNode {
-    pLAndExpNode LAndExp;
-    pBOrExpNode BOrExp;
-};
-
-struct BOrExpNode {
-    pBOrExpNode BOrExp;
-    pBNorExpNode BNorExp;
-};
-
-struct BNorExpNode {
-    pBNorExpNode BNorExp;
-    pBAndExpNode BAndExp;
-};
-
-struct BAndExpNode {
-    pBAndExpNode BAndExp;
-    pEqExpNode EqExp;
-};
-
-struct EqExpNode {
-    int op;
-    pEqExpNode EqExp;
-    pRelExpNode RelExp;
-};
-
-struct RelExpNode {
-    int op;
-    pRelExpNode RelExp;
-    pAddExpNode AddExp;
-};
-
-struct AddExpNode {
-    int op;
-    pAddExpNode AddExp;
-    pMulExpNode MulExp;
-};
-
-struct MulExpNode {
-    int op;
-    pMulExpNode MulExp; 
-    pUnaryExpNode UnaryExp;
-};
-
-struct UnaryExpNode {
-    int op;
-    union {
-        pUnaryExpNode UnaryExp; // '+' '-' '!' '~' '*' '&' SELFADD SELFSUB
-        pPostfixExpNode PostfixExp; // YYEMPTY
-    } select;
-};
-
-struct PostfixExpNode {
-    int op;
-    union {
-        pPostfixExpNode PostfixExp; // '[' '(' SELFADD SELFSUB
-        pPrimaryExpNode PrimaryExp; // YYEMPTY
-    } select;
-    union {
-        pExpNode Exp; // '['
-        pFuncRParamsNode FuncRParams; // '('
-    } suffix;
-};
-
-struct PrimaryExpNode {
+struct ExpressionNode {
     enum {
-        tExp,
-        tID,
-        tCONST,
+        comma, assign,
+        logic_or, logic_and,
+        bit_or, bit_nor, bit_and,
+        eq, neq,
+        great, less, great_eq, less_eq,
+        binary_add, binary_sub,
+        binary_mul, binary_div, binary_mod,
+        positive, negative, logic_not, bit_not, deref, ref, selfadd_pre, selfsub_pre,
+        arrary_index, func_call, selfadd, selfsub,
+        type_ID, type_CONSTNUM,
     } type;
     union {
-        pExpNode Exp;
-        pCONSTNUMNode CONSTNUM;
+        struct {
+            pExpressionNode first;
+            union {
+                pExpressionNode Expression;
+                pFuncRParamListNode FuncRParamList;
+            } second;
+        } exp;
         pIDNode ID;
+        pCONSTNUMNode CONSTNUM;
     } select;
-};
-
-struct ExpNode {
-    pExpNode Exp;
-    pAssignExpNode AssignExp;
-};
-
-struct FuncRParamsNode {
-    pFuncRParamListNode FuncRParamList;
 };
 
 struct FuncRParamListNode {
     pFuncRParamListNode FuncRParamList;
-    pFuncRParamNode FuncRParam;
-};
-
-struct FuncRParamNode {
-    pAssignExpNode AssignExp;
-};
-
-struct BlockNode {
-    pBlockItemsNode BlockItems;
+    pExpressionNode Expression;
 };
 
 struct BlockItemsNode {
@@ -297,8 +193,8 @@ struct StmtNode {
 struct IfMatchedStmtNode {
     int type;
     union {
-        pBlockNode Block; // '{'
-        pExpNode Exp; // ';' RETURN ELSE WHILE
+        pBlockItemsNode BlockItems; // '{'
+        pExpressionNode Expression; // ';' RETURN ELSE WHILE
     } select;
     pIfMatchedStmtNode IfMatchedStmt_1; // ELSE WHILE
     pIfMatchedStmtNode IfMatchedStmt_2; // ELSE
@@ -306,17 +202,13 @@ struct IfMatchedStmtNode {
 
 struct IfUnMatchedStmtNode {
     int type;
-    pExpNode Exp;
+    pExpressionNode Expression;
     union {
         pIfMatchedStmtNode IfMatchedStmt; // ELSE
         pStmtNode Stmt; // IF
         pIfUnMatchedStmtNode IfUnMatchedStmt; // WHILE
     } select;
     pIfUnMatchedStmtNode IfUnMatchedStmt; // ELSE
-};
-
-struct IDNode {
-    char *str;
 };
 
 struct CONSTNUMNode {

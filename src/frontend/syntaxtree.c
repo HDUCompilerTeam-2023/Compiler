@@ -16,30 +16,12 @@ void frontend_drop_InitDeclarator(pInitDeclaratorNode InitDeclarator);
 void frontend_drop_Declarator(pDeclaratorNode Declarator);
 void frontend_drop_Pointer(pPointerNode Pointer);
 void frontend_drop_TypeQualifiers(pTypeQualifiersNode TypeQualifiers);
-void frontend_drop_DirectDeclarator(pDirectDeclaratorNode DirectDeclarator);
-void frontend_drop_Parameters(pParametersNode Parameters);
 void frontend_drop_ParameterList(pParameterListNode ParameterList);
 void frontend_drop_ParameterDeclaration(pParameterDeclarationNode ParameterDeclaration);
 void frontend_drop_Initializer(pInitializerNode Initializer);
 void frontend_drop_InitializerList(pInitializerListNode InitializerList);
-void frontend_drop_AssignExp(pAssignExpNode AssignExp);
-void frontend_drop_LOrExp(pLOrExpNode LOrExp);
-void frontend_drop_LAndExp(pLAndExpNode LAndExp);
-void frontend_drop_BOrExp(pBOrExpNode BOrExp);
-void frontend_drop_BNorExp(pBNorExpNode BNorExp);
-void frontend_drop_BAndExp(pBAndExpNode BAndExp);
-void frontend_drop_EqExp(pEqExpNode EqExp);
-void frontend_drop_RelExp(pRelExpNode RelExp);
-void frontend_drop_AddExp(pAddExpNode AddExp);
-void frontend_drop_MulExp(pMulExpNode MulExp);
-void frontend_drop_UnaryExp(pUnaryExpNode UnaryExp);
-void frontend_drop_PostfixExp(pPostfixExpNode PostfixExp);
-void frontend_drop_PrimaryExp(pPrimaryExpNode PrimaryExp);
-void frontend_drop_Exp(pExpNode Exp);
-void frontend_drop_FuncRParams(pFuncRParamsNode FuncRParams);
+void frontend_drop_Expression(pExpressionNode Expression);
 void frontend_drop_FuncRParamList(pFuncRParamListNode FuncRParamList);
-void frontend_drop_FuncRParam(pFuncRParamNode FuncRParam);
-void frontend_drop_Block(pBlockNode Block);
 void frontend_drop_BlockItems(pBlockItemsNode BlockItems);
 void frontend_drop_Stmt(pStmtNode Stmt);
 void frontend_drop_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt);
@@ -61,9 +43,9 @@ void frontend_drop_CompUnit(pCompUnitNode CompUnit) {
 
 void frontend_drop_Declaration(pDeclarationNode Declaration) {
     frontend_drop_DeclarationSpecifiers(Declaration->DeclarationSpecifiers);
-    if (Declaration->Block) {
+    if (Declaration->is_func_def) {
         frontend_drop_Declarator(Declaration->declarators.Declarator);
-        frontend_drop_Block(Declaration->Block);
+        frontend_drop_BlockItems(Declaration->BlockItems);
     }
     else {
         frontend_drop_InitDeclaratorList(Declaration->declarators.InitDeclaratorList);
@@ -114,8 +96,30 @@ void frontend_drop_InitDeclarator(pInitDeclaratorNode InitDeclarator) {
 }
 
 void frontend_drop_Declarator(pDeclaratorNode Declarator) {
-    frontend_drop_Pointer(Declarator->Pointer);
-    frontend_drop_DirectDeclarator(Declarator->DirectDeclarator);
+    switch (Declarator->type) {
+    case tPointer:
+        if (Declarator->select.Pointer) {
+            frontend_drop_Pointer(Declarator->select.Pointer);
+        }
+        frontend_drop_Declarator(Declarator->body.Declarator);
+        break;
+    case tArrDec:
+        frontend_drop_Declarator(Declarator->body.Declarator);
+        if (Declarator->select.Expression) {
+            frontend_drop_Expression(Declarator->select.Expression);
+        }
+        break;
+    case tFunDec:
+        frontend_drop_Declarator(Declarator->body.Declarator);
+        if (Declarator->select.ParameterList) {
+            frontend_drop_ParameterList(Declarator->select.ParameterList);
+        }
+        break;
+    case tIDJust:
+        frontend_drop_ID(Declarator->body.ID);
+        assert(!Declarator->select.IDsuffix);
+        break;
+    }
     free(Declarator);
 }
 
@@ -135,37 +139,8 @@ void frontend_drop_TypeQualifiers(pTypeQualifiersNode TypeQualifiers) {
     free(TypeQualifiers);
 }
 
-void frontend_drop_DirectDeclarator(pDirectDeclaratorNode DirectDeclarator) {
-    switch (DirectDeclarator->op) {
-    case tRecurr:
-        frontend_drop_Declarator(DirectDeclarator->select.Declarator);
-        break;
-    case tIDJust:
-        frontend_drop_ID(DirectDeclarator->select.ID);
-        break;
-    case tArrDec:
-        frontend_drop_DirectDeclarator(DirectDeclarator->select.DirectDeclarator);
-        if (DirectDeclarator->AssignExp) {
-            frontend_drop_AssignExp(DirectDeclarator->AssignExp);
-        }
-        break;
-    case tFunDec:
-        frontend_drop_DirectDeclarator(DirectDeclarator->select.DirectDeclarator);
-        if (DirectDeclarator->Parameters) {
-            frontend_drop_Parameters(DirectDeclarator->Parameters);
-        }
-        break;
-    }
-    free(DirectDeclarator);
-}
-
-void frontend_drop_Parameters(pParametersNode Parameters) {
-    if (Parameters->ParameterList)
-        frontend_drop_ParameterList(Parameters->ParameterList);
-    free(Parameters);
-}
-
 void frontend_drop_ParameterList(pParameterListNode ParameterList) {
+    if (!ParameterList) return;
     if (ParameterList->ParameterList) {
         frontend_drop_ParameterList(ParameterList->ParameterList);
     }
@@ -185,7 +160,7 @@ void frontend_drop_Initializer(pInitializerNode Initializer) {
             frontend_drop_InitializerList(Initializer->select.InitializerList);
     }
     else {
-        frontend_drop_AssignExp(Initializer->select.AssignExp);
+        frontend_drop_Expression(Initializer->select.Expression);
     }
     free(Initializer);
 }
@@ -198,204 +173,46 @@ void frontend_drop_InitializerList(pInitializerListNode InitializerList) {
     free(InitializerList);
 }
 
-void frontend_drop_AssignExp(pAssignExpNode AssignExp) {
-    if (AssignExp->AssignExp) {
-        frontend_drop_UnaryExp(AssignExp->select.UnaryExp);
-        frontend_drop_AssignExp(AssignExp->AssignExp);
-    }
-    else {
-        frontend_drop_LOrExp(AssignExp->select.LOrExp);
-    }
-    free(AssignExp);
-}
-
-void frontend_drop_LOrExp(pLOrExpNode LOrExp) {
-    if (LOrExp->LOrExp) {
-        frontend_drop_LOrExp(LOrExp->LOrExp);
-        frontend_drop_LAndExp(LOrExp->LAndExp);
-    }
-    else {
-        frontend_drop_LAndExp(LOrExp->LAndExp);
-    }
-    free(LOrExp);
-}
-
-void frontend_drop_LAndExp(pLAndExpNode LAndExp) {
-    if (LAndExp->LAndExp) {
-        frontend_drop_LAndExp(LAndExp->LAndExp);
-        frontend_drop_BOrExp(LAndExp->BOrExp);
-    }
-    else {
-        frontend_drop_BOrExp(LAndExp->BOrExp);
-    }
-    free(LAndExp);
-}
-
-void frontend_drop_BOrExp(pBOrExpNode BOrExp) {
-    if (BOrExp->BOrExp) {
-        frontend_drop_BOrExp(BOrExp->BOrExp);
-        frontend_drop_BNorExp(BOrExp->BNorExp);
-    }
-    else {
-        frontend_drop_BNorExp(BOrExp->BNorExp);
-    }
-    free(BOrExp);
-}
-
-void frontend_drop_BNorExp(pBNorExpNode BNorExp) {
-    if (BNorExp->BNorExp) {
-        frontend_drop_BNorExp(BNorExp->BNorExp);
-        frontend_drop_BAndExp(BNorExp->BAndExp);
-    }
-    else {
-        frontend_drop_BAndExp(BNorExp->BAndExp);
-    }
-    free(BNorExp);
-}
-
-void frontend_drop_BAndExp(pBAndExpNode BAndExp) {
-    if (BAndExp->BAndExp) {
-        frontend_drop_BAndExp(BAndExp->BAndExp);
-        frontend_drop_EqExp(BAndExp->EqExp);
-    }
-    else {
-        frontend_drop_EqExp(BAndExp->EqExp);
-    }
-    free(BAndExp);
-}
-
-void frontend_drop_EqExp(pEqExpNode EqExp) {
-    if (EqExp->EqExp) {
-        frontend_drop_EqExp(EqExp->EqExp);
-        frontend_drop_RelExp(EqExp->RelExp);
-    }
-    else {
-        frontend_drop_RelExp(EqExp->RelExp);
-    }
-    free(EqExp);
-}
-
-void frontend_drop_RelExp(pRelExpNode RelExp) {
-    if (RelExp->RelExp) {
-        frontend_drop_RelExp(RelExp->RelExp);
-        frontend_drop_AddExp(RelExp->AddExp);
-    }
-    else {
-        frontend_drop_AddExp(RelExp->AddExp);
-    }
-    free(RelExp);
-}
-
-void frontend_drop_AddExp(pAddExpNode AddExp) {
-    if (AddExp->AddExp) {
-        frontend_drop_AddExp(AddExp->AddExp);
-        frontend_drop_MulExp(AddExp->MulExp);
-    }
-    else {
-        frontend_drop_MulExp(AddExp->MulExp);
-    }
-    free(AddExp);
-}
-
-void frontend_drop_MulExp(pMulExpNode MulExp) {
-    if (MulExp->MulExp) {
-        frontend_drop_MulExp(MulExp->MulExp);
-        frontend_drop_UnaryExp(MulExp->UnaryExp);
-    }
-    else {
-        frontend_drop_UnaryExp(MulExp->UnaryExp);
-    }
-    free(MulExp);
-}
-
-void frontend_drop_UnaryExp(pUnaryExpNode UnaryExp) {
-    switch (UnaryExp->op) {
-    case '-':
-    case '+':
-    case '!':
-    case '~':
-    case '*':
-    case '&':
-    case SELFADD:
-    case SELFSUB:
-        frontend_drop_UnaryExp(UnaryExp->select.UnaryExp);
+void frontend_drop_Expression(pExpressionNode Expression) {
+    assert(Expression);
+    switch (Expression->type) {
+    case type_ID:
+        frontend_drop_ID(Expression->select.ID);
         break;
-    case YYEMPTY:
-        frontend_drop_PostfixExp(UnaryExp->select.PostfixExp);
+    case type_CONSTNUM:
+        frontend_drop_CONSTNUM(Expression->select.CONSTNUM);
+        break;
+    case func_call:
+        frontend_drop_Expression(Expression->select.exp.first);
+        frontend_drop_FuncRParamList(Expression->select.exp.second.FuncRParamList);
+        break;
+    case positive:
+    case negative:
+    case logic_not:
+    case bit_not:
+    case deref:
+    case ref:
+    case selfadd_pre:
+    case selfsub_pre:
+    case selfadd:
+    case selfsub:
+        frontend_drop_Expression(Expression->select.exp.first);
+        break;
+    default:
+        frontend_drop_Expression(Expression->select.exp.first);
+        frontend_drop_Expression(Expression->select.exp.second.Expression);
         break;
     }
-    free(UnaryExp);
-}
-
-void frontend_drop_PostfixExp(pPostfixExpNode PostfixExp) {
-    switch (PostfixExp->op) {
-    case '[':
-        frontend_drop_PostfixExp(PostfixExp->select.PostfixExp);
-        frontend_drop_Exp(PostfixExp->suffix.Exp);
-        break;
-    case '(':
-        frontend_drop_PostfixExp(PostfixExp->select.PostfixExp);
-        frontend_drop_FuncRParams(PostfixExp->suffix.FuncRParams);
-        break;
-    case SELFADD:
-    case SELFSUB:
-        frontend_drop_PostfixExp(PostfixExp->select.PostfixExp);
-        break;
-    case YYEMPTY:
-        frontend_drop_PrimaryExp(PostfixExp->select.PrimaryExp);
-        break;
-    }
-    free(PostfixExp);
-}
-
-void frontend_drop_PrimaryExp(pPrimaryExpNode PrimaryExp) {
-    switch (PrimaryExp->type) {
-    case tExp:
-        frontend_drop_Exp(PrimaryExp->select.Exp);
-        break;
-    case tCONST:
-        frontend_drop_CONSTNUM(PrimaryExp->select.CONSTNUM);
-        break;
-    case tID:
-        frontend_drop_ID(PrimaryExp->select.ID);
-        break;
-    }
-    free(PrimaryExp);
-}
-
-void frontend_drop_Exp(pExpNode Exp) {
-    if (Exp->Exp) {
-        frontend_drop_Exp(Exp->Exp);
-        frontend_drop_AssignExp(Exp->AssignExp);
-    }
-    else {
-        frontend_drop_AssignExp(Exp->AssignExp);
-    }
-    free(Exp);
-}
-
-void frontend_drop_FuncRParams(pFuncRParamsNode FuncRParams) {
-    if (FuncRParams->FuncRParamList)
-        frontend_drop_FuncRParamList(FuncRParams->FuncRParamList);
-    free(FuncRParams);
+    free(Expression);
 }
 
 void frontend_drop_FuncRParamList(pFuncRParamListNode FuncRParamList) {
+    if (!FuncRParamList) return;
     if (FuncRParamList->FuncRParamList) {
         frontend_drop_FuncRParamList(FuncRParamList->FuncRParamList);
     }
-    frontend_drop_FuncRParam(FuncRParamList->FuncRParam);
+    frontend_drop_Expression(FuncRParamList->Expression);
     free(FuncRParamList);
-}
-
-void frontend_drop_FuncRParam(pFuncRParamNode FuncRParam) {
-    frontend_drop_AssignExp(FuncRParam->AssignExp);
-    free(FuncRParam);
-}
-
-void frontend_drop_Block(pBlockNode Block) {
-    frontend_drop_BlockItems(Block->BlockItems);
-    free(Block);
 }
 
 void frontend_drop_BlockItems(pBlockItemsNode BlockItems) {
@@ -424,23 +241,23 @@ void frontend_drop_Stmt(pStmtNode Stmt) {
 void frontend_drop_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt) {
     switch (IfMatchedStmt->type) {
     case '{':
-        frontend_drop_Block(IfMatchedStmt->select.Block);
+        frontend_drop_BlockItems(IfMatchedStmt->select.BlockItems);
         break;
     case ';':
     case RETURN:
-        if (IfMatchedStmt->select.Exp){
-            frontend_drop_Exp(IfMatchedStmt->select.Exp);
+        if (IfMatchedStmt->select.Expression){
+            frontend_drop_Expression(IfMatchedStmt->select.Expression);
         }
     case BREAK:
     case CONTINUE:
         break;
     case ELSE:
-        frontend_drop_Exp(IfMatchedStmt->select.Exp);
+        frontend_drop_Expression(IfMatchedStmt->select.Expression);
         frontend_drop_IfMatchedStmt(IfMatchedStmt->IfMatchedStmt_1);
         frontend_drop_IfMatchedStmt(IfMatchedStmt->IfMatchedStmt_2);
         break;
     case WHILE:
-        frontend_drop_Exp(IfMatchedStmt->select.Exp);
+        frontend_drop_Expression(IfMatchedStmt->select.Expression);
         frontend_drop_IfMatchedStmt(IfMatchedStmt->IfMatchedStmt_1);
         break;
     }
@@ -450,16 +267,16 @@ void frontend_drop_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt) {
 void frontend_drop_IfUnMatchedStmt(pIfUnMatchedStmtNode IfUnMatchedStmt) {
     switch (IfUnMatchedStmt->type) {
     case IF:
-        frontend_drop_Exp(IfUnMatchedStmt->Exp);
+        frontend_drop_Expression(IfUnMatchedStmt->Expression);
         frontend_drop_Stmt(IfUnMatchedStmt->select.Stmt);
         break;
     case ELSE:
-        frontend_drop_Exp(IfUnMatchedStmt->Exp);
+        frontend_drop_Expression(IfUnMatchedStmt->Expression);
         frontend_drop_IfMatchedStmt(IfUnMatchedStmt->select.IfMatchedStmt);
         frontend_drop_IfUnMatchedStmt(IfUnMatchedStmt->IfUnMatchedStmt);
         break;
     case WHILE:
-        frontend_drop_Exp(IfUnMatchedStmt->Exp);
+        frontend_drop_Expression(IfUnMatchedStmt->Expression);
         frontend_drop_IfUnMatchedStmt(IfUnMatchedStmt->select.IfUnMatchedStmt);
         break;
     }
@@ -467,7 +284,6 @@ void frontend_drop_IfUnMatchedStmt(pIfUnMatchedStmtNode IfUnMatchedStmt) {
 }
 
 void frontend_drop_ID(pIDNode ID) {
-    free(ID->str);
     free(ID);
 }
 
