@@ -19,6 +19,8 @@ unsigned long long int str2ull(const char *text, int base, YYLTYPE *loc, yyscan_
 %x MULTICOMMENT
 %x LINECOMMENT
 
+%x header
+
 LE   (<=)
 GE   (>=)
 EQ   (==)
@@ -357,8 +359,12 @@ L_SUFFIX ([lL])
 <MULTICOMMENT>[*]+/[^/]
 <MULTICOMMENT>[*][/] { BEGIN(INITIAL); }
 
-^[ \t]*#[ \t]*endfile { yyterminate(); }
-<<EOF>>         { yyterminate(); }
+^[ \t]*#[ \t]*include[ \t]* { BEGIN(header); }
+<header>[<][^\n>]+[>] { yytext[yyleng - 1] = '\0'; yyopen_file(yytext + 1, yylloc, yyextra, yyscanner); BEGIN(INITIAL); }
+<header>["][^\n"]+["] { yytext[yyleng - 1] = '\0'; yyopen_file(yytext + 1, yylloc, yyextra, yyscanner); BEGIN(INITIAL); }
+
+^[ \t]*#[ \t]*endfile { if (yypop_file(yyextra, yyscanner)) yyterminate(); }
+<<EOF>> { if (yypop_file(yyextra, yyscanner)) yyterminate(); }
 
 . { yyerror(yylloc, yyscanner, "lexical error, unexpected \"%s\"", yytext); }
 %%

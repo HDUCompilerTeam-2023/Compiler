@@ -10,9 +10,9 @@ int main(int argc, char *argv[])
 	if (argc == 1)
 		argv[argc++] = NULL;
 	for (int i = 1; i < argc; ++i) {
-		yyopen_file(argv[i], &scanner);
+		yyinit(argv[i], &scanner);
 		ret &= yyparse(scanner);
-		yyclose_file(&scanner);
+		yyexit(&scanner);
 	}
 	return ret;
 }
