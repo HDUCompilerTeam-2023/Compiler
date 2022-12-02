@@ -1,6 +1,5 @@
 #include <frontend/syntaxtree_printer.h>
 #include <parser.h>
-#include <lexer.h>
 
 #include <stdio.h>
 

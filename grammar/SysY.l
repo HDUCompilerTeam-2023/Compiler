@@ -3,6 +3,7 @@
  */
 
 %{
+#define __SYSY_LEX__
 #include <limits.h>
 #include <parser.h>
 #include <frontend/log.h>

@@ -6,7 +6,7 @@
 %param { yyscan_t yyscanner }
 
 %{
-#include <lexer.h>
+#include <parser.h>
 #include <frontend/log.h>
 #define extra yyget_extra(yyscanner)
 %}
