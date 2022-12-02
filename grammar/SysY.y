@@ -46,43 +46,81 @@ typedef void *yyscan_t;
 }
 
 %type <CompUnit> CompUnit
+%destructor { frontend_drop_CompUnit($$); } CompUnit
 %type <Declaration> Declaration
+%destructor { frontend_drop_Declaration($$); } Declaration
 %type <DeclarationSpecifiers> DeclarationSpecifiers
+%destructor { frontend_drop_DeclarationSpecifiers($$); } DeclarationSpecifiers
 %type <DeclarationSpecifier> DeclarationSpecifier
+%destructor { frontend_drop_DeclarationSpecifier($$); } DeclarationSpecifier
 %type <TypeSpecifier> TypeSpecifier
+%destructor { frontend_drop_TypeSpecifier($$); } TypeSpecifier
 %type <TypeQualifier> TypeQualifier
+%destructor { frontend_drop_TypeQualifier($$); } TypeQualifier
 %type <InitDeclaratorList> InitDeclaratorList
+%destructor { frontend_drop_InitDeclaratorList($$); } InitDeclaratorList
 %type <InitDeclarator> InitDeclarator
+%destructor { frontend_drop_InitDeclarator($$); } InitDeclarator
 %type <Declarator> Declarator
+%destructor { frontend_drop_Declarator($$); } Declarator
 %type <Pointer> Pointer
+%destructor { frontend_drop_Pointer($$); } Pointer
 %type <TypeQualifiers> TypeQualifiers
+%destructor { frontend_drop_TypeQualifiers($$); } TypeQualifiers
 %type <Declarator> DirectDeclarator
+%destructor { frontend_drop_Declarator($$); } DirectDeclarator
 %type <ParameterList> Parameters
+%destructor { frontend_drop_ParameterList($$); } Parameters
 %type <ParameterList> ParameterList
+%destructor { frontend_drop_ParameterList($$); } ParameterList
 %type <ParameterDeclaration> ParameterDeclaration
+%destructor { frontend_drop_ParameterDeclaration($$); } ParameterDeclaration
 %type <Initializer> Initializer
+%destructor { frontend_drop_Initializer($$); } Initializer
 %type <InitializerList> InitializerList
+%destructor { frontend_drop_InitializerList($$); } InitializerList
 %type <Expression> AssignExp
+%destructor { frontend_drop_Expression($$); } AssignExp
 %type <Expression> LOrExp
+%destructor { frontend_drop_Expression($$); } LOrExp
 %type <Expression> LAndExp
+%destructor { frontend_drop_Expression($$); } LAndExp
 %type <Expression> BOrExp
+%destructor { frontend_drop_Expression($$); } BOrExp
 %type <Expression> BNorExp
+%destructor { frontend_drop_Expression($$); } BNorExp
 %type <Expression> BAndExp
+%destructor { frontend_drop_Expression($$); } BAndExp
 %type <Expression> EqExp
+%destructor { frontend_drop_Expression($$); } EqExp
 %type <Expression> RelExp
+%destructor { frontend_drop_Expression($$); } RelExp
 %type <Expression> AddExp
+%destructor { frontend_drop_Expression($$); } AddExp
 %type <Expression> MulExp
+%destructor { frontend_drop_Expression($$); } MulExp
 %type <Expression> UnaryExp
+%destructor { frontend_drop_Expression($$); } UnaryExp
 %type <Expression> PostfixExp
+%destructor { frontend_drop_Expression($$); } PostfixExp
 %type <Expression> PrimaryExp
+%destructor { frontend_drop_Expression($$); } PrimaryExp
 %type <Expression> Exp
+%destructor { frontend_drop_Expression($$); } Exp
 %type <FuncRParamList> FuncRParams
+%destructor { frontend_drop_FuncRParamList($$); } FuncRParams
 %type <FuncRParamList> FuncRParamList
+%destructor { frontend_drop_FuncRParamList($$); } FuncRParamList
 %type <BlockItems> Block
+%destructor { frontend_drop_BlockItems($$); } Block
 %type <BlockItems> BlockItems
+%destructor { frontend_drop_BlockItems($$); } BlockItems
 %type <Stmt> Stmt
+%destructor { frontend_drop_Stmt($$); } Stmt
 %type <IfMatchedStmt> IfMatchedStmt
+%destructor { frontend_drop_IfMatchedStmt($$); } IfMatchedStmt
 %type <IfUnMatchedStmt> IfUnMatchedStmt
+%destructor { frontend_drop_IfUnMatchedStmt($$); } IfUnMatchedStmt
 
 %locations
 
@@ -96,7 +134,9 @@ typedef void *yyscan_t;
 %token RETURN
 
 %token <ID> ID
+%destructor { frontend_drop_ID($$); } ID
 %token <CONSTNUM> CONSTNUM
+%destructor { frontend_drop_CONSTNUM($$); } CONSTNUM
 %token AND OR LE GE EQ NEQ
 %token SELFADD SELFSUB
 

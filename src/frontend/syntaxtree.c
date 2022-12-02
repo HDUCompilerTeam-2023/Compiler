@@ -5,30 +5,6 @@
 
 #define YYEMPTY -2 // define in bison output .tab.c
 
-void frontend_drop_CompUnit(pCompUnitNode CompUnit);
-void frontend_drop_Declaration(pDeclarationNode Declaration);
-void frontend_drop_DeclarationSpecifiers(pDeclarationSpecifiersNode DeclarationSpecifiers);
-void frontend_drop_DeclarationSpecifier(pDeclarationSpecifierNode DeclarationSpecifier);
-void frontend_drop_TypeSpecifier(pTypeSpecifierNode TypeSpecifier);
-void frontend_drop_TypeQualifier(pTypeQualifierNode TypeQualifier);
-void frontend_drop_InitDeclaratorList(pInitDeclaratorListNode InitDeclaratorList);
-void frontend_drop_InitDeclarator(pInitDeclaratorNode InitDeclarator);
-void frontend_drop_Declarator(pDeclaratorNode Declarator);
-void frontend_drop_Pointer(pPointerNode Pointer);
-void frontend_drop_TypeQualifiers(pTypeQualifiersNode TypeQualifiers);
-void frontend_drop_ParameterList(pParameterListNode ParameterList);
-void frontend_drop_ParameterDeclaration(pParameterDeclarationNode ParameterDeclaration);
-void frontend_drop_Initializer(pInitializerNode Initializer);
-void frontend_drop_InitializerList(pInitializerListNode InitializerList);
-void frontend_drop_Expression(pExpressionNode Expression);
-void frontend_drop_FuncRParamList(pFuncRParamListNode FuncRParamList);
-void frontend_drop_BlockItems(pBlockItemsNode BlockItems);
-void frontend_drop_Stmt(pStmtNode Stmt);
-void frontend_drop_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt);
-void frontend_drop_IfUnMatchedStmt(pIfUnMatchedStmtNode IfUnMatchedStmt);
-void frontend_drop_ID(pIDNode ID);
-void frontend_drop_CONSTNUM(pCONSTNUMNode CONSTNUM);
-
 void frontend_drop_syntaxtree(pCompUnitNode CompUnit) {
     frontend_drop_CompUnit(CompUnit);
 }
