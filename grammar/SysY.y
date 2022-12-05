@@ -151,6 +151,7 @@ begin : CompUnit {
 
 CompUnit : CompUnit Declaration { $$ = malloc(sizeof(*$$)); $$->CompUnit = $1; $$->Declaration = $2; }
          | /* *empty */         { $$ = NULL; }
+         | CompUnit error
          ;
 
 Declaration : DeclarationSpecifiers InitDeclaratorList ';' { $$ = malloc(sizeof(*$$)); $$->is_func_def = false; $$->DeclarationSpecifiers = $1; $$->declarators.InitDeclaratorList = $2; $$->BlockItems = NULL; }
@@ -212,6 +213,7 @@ DirectDeclarator : DirectDeclarator '[' AssignExp ']'  { $$ = malloc(sizeof(*$$)
                  | DirectDeclarator '(' Parameters ')' { $$ = malloc(sizeof(*$$)); $$->type = tFunDec; $$->body.Declarator = $1; $$->select.ParameterList = $3; }
                  | '(' Declarator ')'                  { $$ = $2; }
                  | ID                                  { $$ = malloc(sizeof(*$$)); $$->type = tIDJust; $$->body.ID = $1;         $$->select.IDsuffix = NULL; }
+                 | DirectDeclarator error
                  ;
 
 Parameters : ParameterList { $$ = $1;   }
