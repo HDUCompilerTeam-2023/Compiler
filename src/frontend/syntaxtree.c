@@ -217,6 +217,7 @@ void frontend_drop_Stmt(pStmtNode Stmt) {
     case tIfStmt:
         if (Stmt->Stmt_2)
             frontend_drop_Stmt(Stmt->Stmt_2);
+    case tDoWhileStmt:
     case tWhileStmt:
         frontend_drop_Expression(Stmt->select.Expression);
         frontend_drop_Stmt(Stmt->Stmt_1);

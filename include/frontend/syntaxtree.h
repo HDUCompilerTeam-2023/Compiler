@@ -210,6 +210,7 @@ struct StmtNode {
         tBreakStmt,
         tContinueStmt,
         tWhileStmt,
+        tDoWhileStmt,
         tIfStmt,
     } type;
     union {

@@ -24,8 +24,6 @@ void frontend_print_Expression(pExpressionNode Expression);
 void frontend_print_FuncRParamList(pFuncRParamListNode FuncRParamList);
 void frontend_print_BlockItems(pBlockItemsNode BlockItems, int depth);
 void frontend_print_Stmt(pStmtNode Stmt, int depth);
-void frontend_print_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt, int depth);
-void frontend_print_IfUnMatchedStmt(pIfUnMatchedStmtNode IfUnMatchedStmt, int depth);
 void frontend_print_ID(pIDNode ID);
 void frontend_print_CONSTNUM(pCONSTNUMNode CONSTNUM);
 
@@ -482,6 +480,15 @@ void frontend_print_Stmt(pStmtNode Stmt, int depth) {
             printf("else\n");
             frontend_print_Stmt(Stmt->Stmt_2, depth + 1);
         }
+        break;
+    case tDoWhileStmt:
+        for (int i = 0; i < depth; ++i) printf("    ");
+        printf("do\n");
+        frontend_print_Stmt(Stmt->Stmt_1, depth + 1);
+        for (int i = 0; i < depth; ++i) printf("    ");
+        printf("while (");
+        frontend_print_Expression(Stmt->select.Expression);
+        printf(");\n");
         break;
     case tWhileStmt:
         for (int i = 0; i < depth; ++i) printf("    ");
