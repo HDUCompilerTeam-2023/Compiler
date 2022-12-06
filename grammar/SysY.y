@@ -339,6 +339,7 @@ IfMatchedStmt : Block                                           { $$ = malloc(si
               | CONTINUE ';'                                    { $$ = malloc(sizeof(*$$)); $$->type = tContinueStmt; $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
               | IF '(' Exp ')' IfMatchedStmt ELSE IfMatchedStmt { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;       $$->select.Expression = $3;   $$->Stmt_1 = $5;   $$->Stmt_2 = $7;   }
               | WHILE '(' Exp ')' IfMatchedStmt                 { $$ = malloc(sizeof(*$$)); $$->type = tWhileStmt;    $$->select.Expression = $3;   $$->Stmt_1 = $5;   $$->Stmt_2 = NULL; }
+              | DO Stmt WHILE '(' Exp ')' ';'                   { $$ = malloc(sizeof(*$$)); $$->type = tDoWhileStmt;    $$->select.Expression = $5;   $$->Stmt_1 = $2;   $$->Stmt_2 = NULL; }
               ;
 
 IfUnMatchedStmt : IF '(' Exp ')' IfMatchedStmt ELSE IfUnMatchedStmt { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;    $$->select.Expression = $3; $$->Stmt_1 = $5; $$->Stmt_2 = $7;   }
