@@ -22,8 +22,6 @@ typedef struct ExpressionNode *pExpressionNode;
 typedef struct FuncRParamListNode *pFuncRParamListNode;
 typedef struct BlockItemsNode *pBlockItemsNode;
 typedef struct StmtNode *pStmtNode;
-typedef struct IfMatchedStmtNode *pIfMatchedStmtNode;
-typedef struct IfUnMatchedStmtNode *pIfUnMatchedStmtNode;
 
 typedef char *pIDNode;
 typedef struct CONSTNUMNode *pCONSTNUMNode;
@@ -47,8 +45,6 @@ void frontend_drop_Expression(pExpressionNode Expression);
 void frontend_drop_FuncRParamList(pFuncRParamListNode FuncRParamList);
 void frontend_drop_BlockItems(pBlockItemsNode BlockItems);
 void frontend_drop_Stmt(pStmtNode Stmt);
-void frontend_drop_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt);
-void frontend_drop_IfUnMatchedStmt(pIfUnMatchedStmtNode IfUnMatchedStmt);
 void frontend_drop_ID(pIDNode ID);
 void frontend_drop_CONSTNUM(pCONSTNUMNode CONSTNUM);
 
@@ -207,32 +203,21 @@ struct BlockItemsNode {
 };
 
 struct StmtNode {
-    bool isMatched;
-    union {
-        pIfMatchedStmtNode IfMatchedStmt;
-        pIfUnMatchedStmtNode IfUnMatchedStmt;
-    } select;
-};
-
-struct IfMatchedStmtNode {
-    int type;
+    enum {
+        tBlockStmt,
+        tExpStmt,
+        tReturnStmt,
+        tBreakStmt,
+        tContinueStmt,
+        tWhileStmt,
+        tIfStmt,
+    } type;
     union {
         pBlockItemsNode BlockItems; // '{'
         pExpressionNode Expression; // ';' RETURN ELSE WHILE
     } select;
-    pIfMatchedStmtNode IfMatchedStmt_1; // ELSE WHILE
-    pIfMatchedStmtNode IfMatchedStmt_2; // ELSE
-};
-
-struct IfUnMatchedStmtNode {
-    int type;
-    pExpressionNode Expression;
-    union {
-        pIfMatchedStmtNode IfMatchedStmt; // ELSE
-        pStmtNode Stmt; // IF
-        pIfUnMatchedStmtNode IfUnMatchedStmt; // WHILE
-    } select;
-    pIfUnMatchedStmtNode IfUnMatchedStmt; // ELSE
+    pStmtNode Stmt_1; // ELSE WHILE
+    pStmtNode Stmt_2; // ELSE
 };
 
 struct CONSTNUMNode {

@@ -448,85 +448,55 @@ void frontend_print_BlockItems(pBlockItemsNode BlockItems, int depth) {
 }
 
 void frontend_print_Stmt(pStmtNode Stmt, int depth) {
-    if (Stmt->isMatched) {
-        frontend_print_IfMatchedStmt(Stmt->select.IfMatchedStmt, depth);
-    }
-    else {
-        frontend_print_IfUnMatchedStmt(Stmt->select.IfUnMatchedStmt, depth);
-    }
-}
-
-void frontend_print_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt, int depth) {
-    if (IfMatchedStmt->type != '{')
-        for (int i = 0; i < depth; ++i) printf("    ");
-    switch (IfMatchedStmt->type) {
-    case '{':
+    switch (Stmt->type) {
+    case tBlockStmt:
         for (int i = 0; i < depth - 1; ++i) printf("    ");
         printf("{\n");
-        frontend_print_BlockItems(IfMatchedStmt->select.BlockItems, depth);
+        frontend_print_BlockItems(Stmt->select.BlockItems, depth);
         for (int i = 0; i < depth - 1; ++i) printf("    ");
         printf("}\n");
         break;
-    case ';':
-        if (IfMatchedStmt->select.Expression)
-            frontend_print_Expression(IfMatchedStmt->select.Expression);
+    case tExpStmt:
+        for (int i = 0; i < depth; ++i) printf("    ");
+        if(Stmt->select.Expression)
+            frontend_print_Expression(Stmt->select.Expression);
         printf(";\n");
         break;
-    case RETURN:
+    case tReturnStmt:
+        for (int i = 0; i < depth; ++i) printf("    ");
         printf("return");
-        if (IfMatchedStmt->select.Expression){
+        if (Stmt->select.Expression) {
             printf(" ");
-            frontend_print_Expression(IfMatchedStmt->select.Expression);
+            frontend_print_Expression(Stmt->select.Expression);
         }
         printf(";\n");
         break;
-    case BREAK:
+    case tIfStmt:
+        for (int i = 0; i < depth; ++i) printf("    ");
+        printf("if (");
+        frontend_print_Expression(Stmt->select.Expression);
+        printf(")\n");
+        frontend_print_Stmt(Stmt->Stmt_1, depth + 1);
+        if (Stmt->Stmt_2) {
+            for (int i = 0; i < depth; ++i) printf("    ");
+            printf("else\n");
+            frontend_print_Stmt(Stmt->Stmt_2, depth + 1);
+        }
+        break;
+    case tWhileStmt:
+        for (int i = 0; i < depth; ++i) printf("    ");
+        printf("while (");
+        frontend_print_Expression(Stmt->select.Expression);
+        printf(")\n");
+        frontend_print_Stmt(Stmt->Stmt_1, depth + 1);
+        break;
+    case tBreakStmt:
+        for (int i = 0; i < depth; ++i) printf("    ");
         printf("break;\n");
         break;
-    case CONTINUE:
+    case tContinueStmt:
+        for (int i = 0; i < depth; ++i) printf("    ");
         printf("continue;\n");
-        break;
-    case ELSE:
-        printf("if (");
-        frontend_print_Expression(IfMatchedStmt->select.Expression);
-        printf(")\n");
-        frontend_print_IfMatchedStmt(IfMatchedStmt->IfMatchedStmt_1, depth + 1);
-        for (int i = 0; i < depth; ++i) printf("    ");
-        printf("else\n");
-        frontend_print_IfMatchedStmt(IfMatchedStmt->IfMatchedStmt_2, depth + 1);
-        break;
-    case WHILE:
-        printf("while (");
-        frontend_print_Expression(IfMatchedStmt->select.Expression);
-        printf(")\n");
-        frontend_print_IfMatchedStmt(IfMatchedStmt->IfMatchedStmt_1, depth + 1);
-        break;
-    }
-}
-
-void frontend_print_IfUnMatchedStmt(pIfUnMatchedStmtNode IfUnMatchedStmt, int depth) {
-    for (int i = 0; i < depth; ++i) printf("    ");
-    switch (IfUnMatchedStmt->type) {
-    case IF:
-        printf("if (");
-        frontend_print_Expression(IfUnMatchedStmt->Expression);
-        printf(")\n");
-        frontend_print_Stmt(IfUnMatchedStmt->select.Stmt, depth + 1);
-        break;
-    case ELSE:
-        printf("if (");
-        frontend_print_Expression(IfUnMatchedStmt->Expression);
-        printf(")\n");
-        frontend_print_IfMatchedStmt(IfUnMatchedStmt->select.IfMatchedStmt, depth + 1);
-        for (int i = 0; i < depth; ++i) printf("    ");
-        printf("else\n");
-        frontend_print_IfUnMatchedStmt(IfUnMatchedStmt->IfUnMatchedStmt, depth + 1);
-        break;
-    case WHILE:
-        printf("while (");
-        frontend_print_Expression(IfUnMatchedStmt->Expression);
-        printf(")\n");
-        frontend_print_IfUnMatchedStmt(IfUnMatchedStmt->select.IfUnMatchedStmt, depth);
         break;
     }
 }
