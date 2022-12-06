@@ -205,58 +205,26 @@ void frontend_drop_BlockItems(pBlockItemsNode BlockItems) {
 }
 
 void frontend_drop_Stmt(pStmtNode Stmt) {
-    if (Stmt->isMatched) {
-        frontend_drop_IfMatchedStmt(Stmt->select.IfMatchedStmt);
-    }
-    else {
-        frontend_drop_IfUnMatchedStmt(Stmt->select.IfUnMatchedStmt);
+    switch (Stmt->type) {
+    case tBlockStmt:
+        frontend_drop_BlockItems(Stmt->select.BlockItems);
+        break;
+    case tExpStmt:
+    case tReturnStmt:
+        if(Stmt->select.Expression)
+            frontend_drop_Expression(Stmt->select.Expression);
+        break;
+    case tIfStmt:
+        if (Stmt->Stmt_2)
+            frontend_drop_Stmt(Stmt->Stmt_2);
+    case tWhileStmt:
+        frontend_drop_Expression(Stmt->select.Expression);
+        frontend_drop_Stmt(Stmt->Stmt_1);
+    case tBreakStmt:
+    case tContinueStmt:
+        break;
     }
     free(Stmt);
-}
-
-void frontend_drop_IfMatchedStmt(pIfMatchedStmtNode IfMatchedStmt) {
-    switch (IfMatchedStmt->type) {
-    case '{':
-        frontend_drop_BlockItems(IfMatchedStmt->select.BlockItems);
-        break;
-    case ';':
-    case RETURN:
-        if (IfMatchedStmt->select.Expression){
-            frontend_drop_Expression(IfMatchedStmt->select.Expression);
-        }
-    case BREAK:
-    case CONTINUE:
-        break;
-    case ELSE:
-        frontend_drop_Expression(IfMatchedStmt->select.Expression);
-        frontend_drop_IfMatchedStmt(IfMatchedStmt->IfMatchedStmt_1);
-        frontend_drop_IfMatchedStmt(IfMatchedStmt->IfMatchedStmt_2);
-        break;
-    case WHILE:
-        frontend_drop_Expression(IfMatchedStmt->select.Expression);
-        frontend_drop_IfMatchedStmt(IfMatchedStmt->IfMatchedStmt_1);
-        break;
-    }
-    free(IfMatchedStmt);
-}
-
-void frontend_drop_IfUnMatchedStmt(pIfUnMatchedStmtNode IfUnMatchedStmt) {
-    switch (IfUnMatchedStmt->type) {
-    case IF:
-        frontend_drop_Expression(IfUnMatchedStmt->Expression);
-        frontend_drop_Stmt(IfUnMatchedStmt->select.Stmt);
-        break;
-    case ELSE:
-        frontend_drop_Expression(IfUnMatchedStmt->Expression);
-        frontend_drop_IfMatchedStmt(IfUnMatchedStmt->select.IfMatchedStmt);
-        frontend_drop_IfUnMatchedStmt(IfUnMatchedStmt->IfUnMatchedStmt);
-        break;
-    case WHILE:
-        frontend_drop_Expression(IfUnMatchedStmt->Expression);
-        frontend_drop_IfUnMatchedStmt(IfUnMatchedStmt->select.IfUnMatchedStmt);
-        break;
-    }
-    free(IfUnMatchedStmt);
 }
 
 void frontend_drop_ID(pIDNode ID) {

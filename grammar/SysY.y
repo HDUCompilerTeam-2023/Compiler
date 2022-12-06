@@ -38,8 +38,6 @@ typedef void *yyscan_t;
        pFuncRParamListNode FuncRParamList;
        pBlockItemsNode BlockItems;
        pStmtNode Stmt;
-       pIfMatchedStmtNode IfMatchedStmt;
-       pIfUnMatchedStmtNode IfUnMatchedStmt;
 
        pIDNode ID;
        pCONSTNUMNode CONSTNUM;
@@ -117,10 +115,10 @@ typedef void *yyscan_t;
 %destructor { frontend_drop_BlockItems($$); } BlockItems
 %type <Stmt> Stmt
 %destructor { frontend_drop_Stmt($$); } Stmt
-%type <IfMatchedStmt> IfMatchedStmt
-%destructor { frontend_drop_IfMatchedStmt($$); } IfMatchedStmt
-%type <IfUnMatchedStmt> IfUnMatchedStmt
-%destructor { frontend_drop_IfUnMatchedStmt($$); } IfUnMatchedStmt
+%type <Stmt> IfMatchedStmt
+%destructor { frontend_drop_Stmt($$); } IfMatchedStmt
+%type <Stmt> IfUnMatchedStmt
+%destructor { frontend_drop_Stmt($$); } IfUnMatchedStmt
 
 %locations
 
@@ -328,23 +326,23 @@ BlockItems : BlockItems Declaration { $$ = malloc(sizeof(*$$)); $$->isStmt = fal
            | /* *empty */           { $$ = NULL;                                                                                      }
            ;
 
-Stmt : IfMatchedStmt   { $$ = malloc(sizeof(*$$)); $$->isMatched = true;  $$->select.IfMatchedStmt = $1;   }
-     | IfUnMatchedStmt { $$ = malloc(sizeof(*$$)); $$->isMatched = false; $$->select.IfUnMatchedStmt = $1; }
+Stmt : IfMatchedStmt   { $$ = $1; }
+     | IfUnMatchedStmt { $$ = $1; }
      ;
 
-IfMatchedStmt : Block                                           { $$ = malloc(sizeof(*$$)); $$->type = '{';      $$->select.BlockItems = $1;   $$->IfMatchedStmt_1 = NULL; $$->IfMatchedStmt_2 = NULL; }
-              | ';'                                             { $$ = malloc(sizeof(*$$)); $$->type = ';';      $$->select.Expression = NULL; $$->IfMatchedStmt_1 = NULL; $$->IfMatchedStmt_2 = NULL; }
-              | Exp ';'                                         { $$ = malloc(sizeof(*$$)); $$->type = ';';      $$->select.Expression = $1;   $$->IfMatchedStmt_1 = NULL; $$->IfMatchedStmt_2 = NULL; }
-              | RETURN Exp ';'                                  { $$ = malloc(sizeof(*$$)); $$->type = RETURN;   $$->select.Expression = $2;   $$->IfMatchedStmt_1 = NULL; $$->IfMatchedStmt_2 = NULL; }
-              | RETURN ';'                                      { $$ = malloc(sizeof(*$$)); $$->type = RETURN;   $$->select.Expression = NULL; $$->IfMatchedStmt_1 = NULL; $$->IfMatchedStmt_2 = NULL; }
-              | BREAK ';'                                       { $$ = malloc(sizeof(*$$)); $$->type = BREAK;    $$->select.Expression = NULL; $$->IfMatchedStmt_1 = NULL; $$->IfMatchedStmt_2 = NULL; }
-              | CONTINUE ';'                                    { $$ = malloc(sizeof(*$$)); $$->type = CONTINUE; $$->select.Expression = NULL; $$->IfMatchedStmt_1 = NULL; $$->IfMatchedStmt_2 = NULL; }
-              | IF '(' Exp ')' IfMatchedStmt ELSE IfMatchedStmt { $$ = malloc(sizeof(*$$)); $$->type = ELSE;     $$->select.Expression = $3;   $$->IfMatchedStmt_1 = $5;   $$->IfMatchedStmt_2 = $7;   }
-              | WHILE '(' Exp ')' IfMatchedStmt                 { $$ = malloc(sizeof(*$$)); $$->type = WHILE;    $$->select.Expression = $3;   $$->IfMatchedStmt_1 = $5;   $$->IfMatchedStmt_2 = NULL; }
+IfMatchedStmt : Block                                           { $$ = malloc(sizeof(*$$)); $$->type = tBlockStmt;    $$->select.BlockItems = $1;   $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+              | ';'                                             { $$ = malloc(sizeof(*$$)); $$->type = tExpStmt;      $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+              | Exp ';'                                         { $$ = malloc(sizeof(*$$)); $$->type = tExpStmt;      $$->select.Expression = $1;   $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+              | RETURN Exp ';'                                  { $$ = malloc(sizeof(*$$)); $$->type = tReturnStmt;   $$->select.Expression = $2;   $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+              | RETURN ';'                                      { $$ = malloc(sizeof(*$$)); $$->type = tReturnStmt;   $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+              | BREAK ';'                                       { $$ = malloc(sizeof(*$$)); $$->type = tBreakStmt;    $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+              | CONTINUE ';'                                    { $$ = malloc(sizeof(*$$)); $$->type = tContinueStmt; $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+              | IF '(' Exp ')' IfMatchedStmt ELSE IfMatchedStmt { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;       $$->select.Expression = $3;   $$->Stmt_1 = $5;   $$->Stmt_2 = $7;   }
+              | WHILE '(' Exp ')' IfMatchedStmt                 { $$ = malloc(sizeof(*$$)); $$->type = tWhileStmt;    $$->select.Expression = $3;   $$->Stmt_1 = $5;   $$->Stmt_2 = NULL; }
               ;
 
-IfUnMatchedStmt : IF '(' Exp ')' IfMatchedStmt ELSE IfUnMatchedStmt { $$ = malloc(sizeof(*$$)); $$->type = ELSE;  $$->Expression = $3; $$->select.IfMatchedStmt = $5;   $$->IfUnMatchedStmt = $7;   }
-                | IF '(' Exp ')' Stmt                               { $$ = malloc(sizeof(*$$)); $$->type = IF;    $$->Expression = $3; $$->select.Stmt = $5;            $$->IfUnMatchedStmt = NULL; }
-                | WHILE '(' Exp ')' IfUnMatchedStmt                 { $$ = malloc(sizeof(*$$)); $$->type = WHILE; $$->Expression = $3; $$->select.IfUnMatchedStmt = $5; $$->IfUnMatchedStmt = NULL; }
+IfUnMatchedStmt : IF '(' Exp ')' IfMatchedStmt ELSE IfUnMatchedStmt { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;    $$->select.Expression = $3; $$->Stmt_1 = $5; $$->Stmt_2 = $7;   }
+                | IF '(' Exp ')' Stmt                               { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;    $$->select.Expression = $3; $$->Stmt_1 = $5; $$->Stmt_2 = NULL; }
+                | WHILE '(' Exp ')' IfUnMatchedStmt                 { $$ = malloc(sizeof(*$$)); $$->type = tWhileStmt; $$->select.Expression = $3; $$->Stmt_1 = $5; $$->Stmt_2 = NULL; }
                 ;
 %%
