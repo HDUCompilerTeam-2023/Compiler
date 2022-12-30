@@ -2,6 +2,7 @@
 #define __FRONTEND_SYNTAXTREE__
 
 #include <util.h>
+#include <frontend/type.h>
 
 typedef struct CompUnitNode *pCompUnitNode;
 typedef struct DeclarationNode *pDeclarationNode;
@@ -224,19 +225,7 @@ struct StmtNode {
 };
 
 struct CONSTNUMNode {
-    enum {
-        type_void, // void
-        type_char, // char  signed char
-        type_unsigned_char, // unsigned char
-        type_short_int, // short  signed short  short int  signed short int
-        type_unsigned_short_int, // unsigned short  unsigned short int
-        type_int, // int  signed  signed int
-        type_unsigned_int, // unsigned  unsigned int
-        type_long_int, // long  signed long  long int  signed long int
-        type_unsigned_long_int, // unsigned long  unsigned long int
-        type_long_long_int, // long long  signed long long  long long int  signed long long int
-        type_unsigned_long_long_int, // unsigned long long  unsigned long long int
-    } valtype;
+    basictype valtype;
     union {
         char val_char;
         unsigned char val_unsigned_char;
