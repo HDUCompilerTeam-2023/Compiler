@@ -98,6 +98,7 @@ struct TypeSpecifierNode {
 struct TypeQualifierNode {
     enum {
         qual_CONST,
+        qual_VOLATILE,
     } type;
 };
 

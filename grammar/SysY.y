@@ -126,7 +126,7 @@ typedef void *yyscan_t;
 %token LONG SHORT
 %token INT FLOAT DOUBLE CHAR
 %token VOID
-%token CONST
+%token CONST VOLATILE
 %token DO WHILE FOR BREAK CONTINUE
 %token IF ELSE
 %token RETURN
@@ -175,7 +175,8 @@ TypeSpecifier : VOID     { $$ = malloc(sizeof(*$$)); $$->type = spec_VOID;      
               | CHAR     { $$ = malloc(sizeof(*$$)); $$->type = spec_CHAR;      }
               ;
 
-TypeQualifier : CONST { $$ = malloc(sizeof(*$$)); $$->type = qual_CONST; }
+TypeQualifier : CONST    { $$ = malloc(sizeof(*$$)); $$->type = qual_CONST;    }
+              | VOLATILE { $$ = malloc(sizeof(*$$)); $$->type = qual_VOLATILE; }
               ;
 
 InitDeclaratorList : InitDeclaratorList ',' InitDeclarator { $$ = malloc(sizeof(*$$)); $$->InitDeclaratorList = $1;   $$->InitDeclarator = $3; }

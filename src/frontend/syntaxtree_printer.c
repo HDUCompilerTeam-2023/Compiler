@@ -109,6 +109,9 @@ void frontend_print_TypeQualifier(pTypeQualifierNode TypeQualifier) {
     case qual_CONST:
         printf("const");
         break;
+    case qual_VOLATILE:
+        printf("volatile");
+        break;
     }
 }
 
