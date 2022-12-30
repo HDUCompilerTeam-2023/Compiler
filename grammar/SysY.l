@@ -42,6 +42,7 @@ FLOAT     (float)
 DOUBLE    (double)
 VOID      (void)
 CONST     (const)
+VOLATILE  (volatile)
 DO        (do)
 WHILE     (while)
 FOR       (for)
@@ -93,6 +94,7 @@ L_SUFFIX ([lL])
 {DOUBLE}   { return DOUBLE;   }
 {VOID}     { return VOID;     }
 {CONST}    { return CONST;    }
+{VOLATILE} { return VOLATILE; }
 {DO}       { return DO;       }
 {WHILE}    { return WHILE;    }
 {FOR}      { return FOR;      }
