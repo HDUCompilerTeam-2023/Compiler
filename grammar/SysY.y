@@ -124,7 +124,7 @@ typedef void *yyscan_t;
 
 %token UNSIGNED SIGNED
 %token LONG SHORT
-%token INT FLOAT CHAR
+%token INT FLOAT DOUBLE CHAR
 %token VOID
 %token CONST
 %token DO WHILE FOR BREAK CONTINUE
@@ -171,6 +171,7 @@ TypeSpecifier : VOID     { $$ = malloc(sizeof(*$$)); $$->type = spec_VOID;      
               | SHORT    { $$ = malloc(sizeof(*$$)); $$->type = spec_SHORT;     }
               | INT      { $$ = malloc(sizeof(*$$)); $$->type = spec_INT;       }
               | FLOAT    { $$ = malloc(sizeof(*$$)); $$->type = spec_FLOAT;     }
+              | DOUBLE   { $$ = malloc(sizeof(*$$)); $$->type = spec_DOUBLE;    }
               | CHAR     { $$ = malloc(sizeof(*$$)); $$->type = spec_CHAR;      }
               ;
 
