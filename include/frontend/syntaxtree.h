@@ -90,6 +90,7 @@ struct TypeSpecifierNode {
         spec_SHORT,
         spec_INT,
         spec_FLOAT,
+        spec_DOUBLE,
         spec_CHAR,
     } type;
 };

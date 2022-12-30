@@ -39,6 +39,7 @@ LONG      (long)
 INT       (int)
 CHAR      (char)
 FLOAT     (float)
+DOUBLE    (double)
 VOID      (void)
 CONST     (const)
 DO        (do)
@@ -89,6 +90,7 @@ L_SUFFIX ([lL])
 {CHAR}     { return CHAR;     }
 {INT}      { return INT;      }
 {FLOAT}    { return FLOAT;    }
+{DOUBLE}   { return DOUBLE;   }
 {VOID}     { return VOID;     }
 {CONST}    { return CONST;    }
 {DO}       { return DO;       }

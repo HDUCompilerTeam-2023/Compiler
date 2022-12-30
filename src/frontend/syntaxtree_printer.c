@@ -95,6 +95,9 @@ void frontend_print_TypeSpecifier(pTypeSpecifierNode TypeSpecifier) {
     case spec_FLOAT:
         printf("float");
         break;
+    case spec_DOUBLE:
+        printf("double");
+        break;
     case spec_CHAR:
         printf("char");
         break;
