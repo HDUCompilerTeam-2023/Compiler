@@ -5,8 +5,8 @@
 %{
 #define __SYSY_LEX__
 #include <limits.h>
-#include <parser.h>
-#include <frontend/log.h>
+#include <hir.h>
+#include <hir/log.h>
 
 unsigned long long int str2ull(const char *text, int base, YYLTYPE *loc, yyscan_t scanner);
 %}

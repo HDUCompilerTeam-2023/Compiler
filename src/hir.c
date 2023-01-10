@@ -1,8 +1,8 @@
-#include <parser.h>
+#include <hir.h>
 #include <stdlib.h>
 
-#include <frontend/syntaxtree_printer.h>
-#include <frontend/log.h>
+#include <hir/syntaxtree_printer.h>
+#include <hir/log.h>
 
 pExtraInfo frontend_init_extra() {
     pExtraInfo ret = malloc(sizeof(*ret));

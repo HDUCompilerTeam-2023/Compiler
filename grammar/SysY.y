@@ -6,13 +6,13 @@
 %param { yyscan_t yyscanner }
 
 %{
-#include <parser.h>
-#include <frontend/log.h>
+#include <hir.h>
+#include <hir/log.h>
 #define extra yyget_extra(yyscanner)
 %}
 
 %code requires{
-#include <frontend/syntaxtree.h>
+#include <hir/syntaxtree.h>
 typedef void *yyscan_t;
 }
 

@@ -1,4 +1,4 @@
-#include <frontend/log.h>
+#include <hir/log.h>
 
 int yylog(loglevel level, YYLTYPE *loc, yyscan_t scanner, const char *format, ...) {
     va_list args;

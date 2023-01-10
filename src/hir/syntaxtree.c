@@ -1,5 +1,5 @@
-#include <frontend/syntaxtree.h>
-#include <parser.h>
+#include <hir.h>
+#include <hir/syntaxtree.h>
 
 #include <stdlib.h>
 
