@@ -32,15 +32,19 @@ struct type {
         struct {
             ptype base;
         } point;
+        struct {
+            ptype *types; // length - size + 1, types[0] - ret type, types[1] ~ types[size] - arg type
+        } func;
     } select;
+    uint32_t size;
     enum {
         basic,
         arrary,
         point,
-    } type: 3;
+        func,
+    } type: 2;
     bool const_flag: 1;
     bool volatile_flag: 1;
-    uint16_t size;
 };
 
 #endif
