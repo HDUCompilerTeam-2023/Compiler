@@ -1,5 +1,5 @@
-#ifndef __PARSER__
-#define __PARSER__
+#ifndef __HIR__
+#define __HIR__
 
 #include <grammar/SysY.tab.h>
 

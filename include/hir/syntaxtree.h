@@ -1,8 +1,8 @@
-#ifndef __FRONTEND_SYNTAXTREE__
-#define __FRONTEND_SYNTAXTREE__
+#ifndef __HIR_SYNTAXTREE__
+#define __HIR_SYNTAXTREE__
 
 #include <util.h>
-#include <frontend/type.h>
+#include <hir/type.h>
 
 typedef struct CompUnitNode *pCompUnitNode;
 typedef struct DeclarationNode *pDeclarationNode;

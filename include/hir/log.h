@@ -1,9 +1,9 @@
-#ifndef __FRONTEND_LOG__
-#define __FRONTEND_LOG__
+#ifndef __HIR_LOG__
+#define __HIR_LOG__
 
 #include <stdio.h>
 
-#include <parser.h>
+#include <hir.h>
 
 typedef enum {
     debug,
