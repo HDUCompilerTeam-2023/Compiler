@@ -120,10 +120,6 @@ typedef void *yyscan_t;
 %destructor { frontend_drop_BlockItems($$); } BlockItems
 %type <Stmt> Stmt
 %destructor { frontend_drop_Stmt($$); } Stmt
-%type <Stmt> IfMatchedStmt
-%destructor { frontend_drop_Stmt($$); } IfMatchedStmt
-%type <Stmt> IfUnMatchedStmt
-%destructor { frontend_drop_Stmt($$); } IfUnMatchedStmt
 
 %locations
 
@@ -142,6 +138,9 @@ typedef void *yyscan_t;
 %destructor { frontend_drop_CONSTNUM($$); } CONSTNUM
 %token AND OR LE GE EQ NEQ
 %token SELFADD SELFSUB
+
+%nonassoc NO_ELSE
+%nonassoc ELSE
 
 %%
 begin : {
@@ -336,26 +335,19 @@ BlockItems : BlockItems Declaration { $$ = malloc(sizeof(*$$)); $$->isStmt = fal
            | /* *empty */           { $$ = NULL;                                                                                      }
            ;
 
-Stmt : IfMatchedStmt   { $$ = $1; }
-     | IfUnMatchedStmt { $$ = $1; }
+Stmt : Block                             { $$ = malloc(sizeof(*$$)); $$->type = tBlockStmt;    $$->select.BlockItems = $1;   $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+     | ';'                               { $$ = malloc(sizeof(*$$)); $$->type = tExpStmt;      $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+     | Exp ';'                           { $$ = malloc(sizeof(*$$)); $$->type = tExpStmt;      $$->select.Expression = $1;   $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+     | RETURN ';'                        { $$ = malloc(sizeof(*$$)); $$->type = tReturnStmt;   $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+     | RETURN Exp ';'                    { $$ = malloc(sizeof(*$$)); $$->type = tReturnStmt;   $$->select.Expression = $2;   $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+     | BREAK ';'                         { $$ = malloc(sizeof(*$$)); $$->type = tBreakStmt;    $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+     | CONTINUE ';'                      { $$ = malloc(sizeof(*$$)); $$->type = tContinueStmt; $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+     | IF '(' Exp ')' Stmt ELSE Stmt     { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;       $$->select.Expression = $3;   $$->Stmt_1 = $5;   $$->Stmt_2 = $7;   }
+     | IF '(' Exp ')' Stmt %prec NO_ELSE { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;       $$->select.Expression = $3;   $$->Stmt_1 = $5;   $$->Stmt_2 = NULL; }
+     | WHILE '(' Exp ')' Stmt            { $$ = malloc(sizeof(*$$)); $$->type = tWhileStmt;    $$->select.Expression = $3;   $$->Stmt_1 = $5;   $$->Stmt_2 = NULL; }
+     | DO Stmt WHILE '(' Exp ')' ';'     { $$ = malloc(sizeof(*$$)); $$->type = tDoWhileStmt;  $$->select.Expression = $5;   $$->Stmt_1 = $2;   $$->Stmt_2 = NULL; }
+     | error                             { $$ = malloc(sizeof(*$$)); $$->type = tExpStmt;      $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
      ;
-
-IfMatchedStmt : Block                                           { $$ = malloc(sizeof(*$$)); $$->type = tBlockStmt;    $$->select.BlockItems = $1;   $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-              | ';'                                             { $$ = malloc(sizeof(*$$)); $$->type = tExpStmt;      $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-              | Exp ';'                                         { $$ = malloc(sizeof(*$$)); $$->type = tExpStmt;      $$->select.Expression = $1;   $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-              | RETURN Exp ';'                                  { $$ = malloc(sizeof(*$$)); $$->type = tReturnStmt;   $$->select.Expression = $2;   $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-              | RETURN ';'                                      { $$ = malloc(sizeof(*$$)); $$->type = tReturnStmt;   $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-              | BREAK ';'                                       { $$ = malloc(sizeof(*$$)); $$->type = tBreakStmt;    $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-              | CONTINUE ';'                                    { $$ = malloc(sizeof(*$$)); $$->type = tContinueStmt; $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-              | IF '(' Exp ')' IfMatchedStmt ELSE IfMatchedStmt { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;       $$->select.Expression = $3;   $$->Stmt_1 = $5;   $$->Stmt_2 = $7;   }
-              | WHILE '(' Exp ')' IfMatchedStmt                 { $$ = malloc(sizeof(*$$)); $$->type = tWhileStmt;    $$->select.Expression = $3;   $$->Stmt_1 = $5;   $$->Stmt_2 = NULL; }
-              | DO Stmt WHILE '(' Exp ')' ';'                   { $$ = malloc(sizeof(*$$)); $$->type = tDoWhileStmt;    $$->select.Expression = $5;   $$->Stmt_1 = $2;   $$->Stmt_2 = NULL; }
-              ;
-
-IfUnMatchedStmt : IF '(' Exp ')' IfMatchedStmt ELSE IfUnMatchedStmt { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;    $$->select.Expression = $3; $$->Stmt_1 = $5; $$->Stmt_2 = $7;   }
-                | IF '(' Exp ')' Stmt                               { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;    $$->select.Expression = $3; $$->Stmt_1 = $5; $$->Stmt_2 = NULL; }
-                | WHILE '(' Exp ')' IfUnMatchedStmt                 { $$ = malloc(sizeof(*$$)); $$->type = tWhileStmt; $$->select.Expression = $3; $$->Stmt_1 = $5; $$->Stmt_2 = NULL; }
-                ;
 
 PUSHZONE : /* *empty */ { push_zone; }
          ;
