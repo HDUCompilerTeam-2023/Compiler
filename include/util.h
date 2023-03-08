@@ -6,11 +6,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
-
-typedef _Bool bool;
-enum {
-    false = 0,
-    true,
-};
+#include <stdbool.h>
 
 #endif
