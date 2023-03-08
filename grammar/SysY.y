@@ -9,10 +9,15 @@
 #include <hir.h>
 #include <hir/log.h>
 #define extra yyget_extra(yyscanner)
+#define new_sym(name) symbol_add(extra->pss, name)
+#define find_sym(name) symbol_find(extra->pss, name)
+#define push_zone symbol_push_zone(extra->pss)
+#define pop_zone symbol_pop_zone(extra->pss)
 %}
 
 %code requires{
 #include <hir/syntaxtree.h>
+#include <hir/symbol.h>
 typedef void *yyscan_t;
 }
 
@@ -139,11 +144,14 @@ typedef void *yyscan_t;
 %token SELFADD SELFSUB
 
 %%
-begin : CompUnit {
+begin : {
+              extra->pss = symbol_store_initial();
+       } PUSHZONE CompUnit POPZONE {
               if (extra->root) {
                      frontend_drop_syntaxtree(extra->root);
               }
-              extra->root = $1;
+              extra->root = $3;
+              symbol_store_destroy(extra->pss);
        }
       ;
 
@@ -212,7 +220,7 @@ DirectDeclarator : DirectDeclarator '[' AssignExp ']'  { $$ = malloc(sizeof(*$$)
                  | DirectDeclarator '[' ']'            { $$ = malloc(sizeof(*$$)); $$->type = tArrDec; $$->body.Declarator = $1; $$->select.Expression = NULL;  }
                  | DirectDeclarator '(' Parameters ')' { $$ = malloc(sizeof(*$$)); $$->type = tFunDec; $$->body.Declarator = $1; $$->select.ParameterList = $3; }
                  | '(' Declarator ')'                  { $$ = $2; }
-                 | ID                                  { $$ = malloc(sizeof(*$$)); $$->type = tIDJust; $$->body.ID = $1;         $$->select.IDsuffix = NULL; }
+                 | ID                                  { $$ = malloc(sizeof(*$$)); $$->type = tIDJust; $$->body.ID = $1;         $$->select.IDsuffix = NULL;     if(!new_sym($1)) printf("already creat %s\n", $1); }
                  | DirectDeclarator error
                  ;
 
@@ -305,7 +313,7 @@ PostfixExp : PostfixExp '[' Exp ']'         { $$ = malloc(sizeof(*$$)); $$->type
 
 PrimaryExp : '(' Exp ')' { $$ = $2; }
            | CONSTNUM    { $$ = malloc(sizeof(*$$)); $$->type = type_CONSTNUM; $$->select.CONSTNUM = $1; }
-           | ID          { $$ = malloc(sizeof(*$$)); $$->type = type_ID;       $$->select.ID = $1;       }
+           | ID          { $$ = malloc(sizeof(*$$)); $$->type = type_ID;       $$->select.ID = $1;        if (!find_sym($1)) printf("cant find %s\n", $1); }
            ;
 
 Exp : Exp ',' AssignExp { $$ = malloc(sizeof(*$$)); $$->type = comma; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3;     }
@@ -320,7 +328,7 @@ FuncRParamList : FuncRParamList ',' AssignExp { $$ = malloc(sizeof(*$$)); $$->Fu
                | AssignExp                    { $$ = malloc(sizeof(*$$)); $$->FuncRParamList = NULL; $$->Expression = $1; }
                ;
 
-Block : '{' BlockItems '}' { $$ = $2; }
+Block : '{' PUSHZONE BlockItems POPZONE '}' { $$ = $3; }
       ;
 
 BlockItems : BlockItems Declaration { $$ = malloc(sizeof(*$$)); $$->isStmt = false; $$->BlockItems = $1; $$->select.Declaration = $2; }
@@ -348,4 +356,10 @@ IfUnMatchedStmt : IF '(' Exp ')' IfMatchedStmt ELSE IfUnMatchedStmt { $$ = mallo
                 | IF '(' Exp ')' Stmt                               { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;    $$->select.Expression = $3; $$->Stmt_1 = $5; $$->Stmt_2 = NULL; }
                 | WHILE '(' Exp ')' IfUnMatchedStmt                 { $$ = malloc(sizeof(*$$)); $$->type = tWhileStmt; $$->select.Expression = $3; $$->Stmt_1 = $5; $$->Stmt_2 = NULL; }
                 ;
+
+PUSHZONE : /* *empty */ { push_zone; }
+         ;
+
+POPZONE : /* *empty */ { pop_zone; }
+        ;
 %%
