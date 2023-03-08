@@ -52,6 +52,8 @@ typedef void *yyscan_t;
 %destructor { frontend_drop_CompUnit($$); } CompUnit
 %type <Declaration> Declaration
 %destructor { frontend_drop_Declaration($$); } Declaration
+%type <Declaration> FuncDefine
+%destructor { frontend_drop_Declaration($$); } FuncDefine
 %type <DeclarationSpecifiers> DeclarationSpecifiers
 %destructor { frontend_drop_DeclarationSpecifiers($$); } DeclarationSpecifiers
 %type <DeclarationSpecifier> DeclarationSpecifier
@@ -155,13 +157,16 @@ begin : {
       ;
 
 CompUnit : CompUnit Declaration { $$ = malloc(sizeof(*$$)); $$->CompUnit = $1; $$->Declaration = $2; }
+         | CompUnit FuncDefine  { $$ = malloc(sizeof(*$$)); $$->CompUnit = $1; $$->Declaration = $2; }
          | /* *empty */         { $$ = NULL; }
          | CompUnit error
          ;
 
 Declaration : DeclarationSpecifiers InitDeclaratorList ';' { $$ = malloc(sizeof(*$$)); $$->is_func_def = false; $$->DeclarationSpecifiers = $1; $$->declarators.InitDeclaratorList = $2; $$->BlockItems = NULL; }
-            | DeclarationSpecifiers Declarator Block       { $$ = malloc(sizeof(*$$)); $$->is_func_def = true;  $$->DeclarationSpecifiers = $1; $$->declarators.Declarator = $2;         $$->BlockItems = $3;   }
             ;
+
+FuncDefine : DeclarationSpecifiers Declarator Block { $$ = malloc(sizeof(*$$)); $$->is_func_def = true;  $$->DeclarationSpecifiers = $1; $$->declarators.Declarator = $2;         $$->BlockItems = $3;   }
+           ;
 
 DeclarationSpecifiers : DeclarationSpecifiers DeclarationSpecifier { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1;   $$->DeclarationSpecifier = $2;}
                       | DeclarationSpecifier                       { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = NULL; $$->DeclarationSpecifier = $1;}
