@@ -7,6 +7,7 @@ typedef struct file_stack *pfile_stack;
 typedef struct ExtraInfo {
     pCompUnitNode root;
     pfile_stack fs;
+    p_symbol_store pss;
 } ExtraInfo, *pExtraInfo;
 
 pExtraInfo frontend_init_extra();
