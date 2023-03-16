@@ -6,122 +6,94 @@
 %param { yyscan_t yyscanner }
 
 %{
-#include <hir.h>
-#include <hir/log.h>
+#include <hir_gen/lexer.h>
+#include <hir_gen/log.h>
+
 #define extra yyget_extra(yyscanner)
-#define new_sym(name) symbol_add(extra->pss, name)
-#define find_sym(name) symbol_find(extra->pss, name)
-#define push_zone symbol_push_zone(extra->pss)
-#define pop_zone symbol_pop_zone(extra->pss)
+#define p_ast (extra->p_ast)
+#define pss (p_ast->pss)
+
+#define new_sym(name) symbol_add(pss, name)
+#define find_sym(name) symbol_find(pss, name)
 %}
 
+%initial-action
+{
+       p_ast = hir_program_gen();
+}
+
 %code requires{
-#include <hir/syntaxtree.h>
-#include <hir/symbol.h>
+#include <hir_gen/syntax.h>
 typedef void *yyscan_t;
 }
 
 %define api.pure full
 
 %union {
-       pCompUnitNode CompUnit;
-       pDeclarationNode Declaration;
-       pDeclarationSpecifiersNode DeclarationSpecifiers;
-       pDeclarationSpecifierNode DeclarationSpecifier;
-       pTypeSpecifierNode TypeSpecifier;
-       pTypeQualifierNode TypeQualifier;
-       pInitDeclaratorListNode InitDeclaratorList;
-       pInitDeclaratorNode InitDeclarator;
-       pDeclaratorNode Declarator;
-       pPointerNode Pointer;
-       pTypeQualifiersNode TypeQualifiers;
-       pParameterListNode ParameterList;
-       pParameterDeclarationNode ParameterDeclaration;
-       pInitializerNode Initializer;
-       pInitializerListNode InitializerList;
-       pExpressionNode Expression;
-       pFuncRParamListNode FuncRParamList;
-       pBlockItemsNode BlockItems;
-       pStmtNode Stmt;
+       p_hir_block p_block;
+       p_hir_stmt p_stmt;
+       p_hir_exp p_exp;
 
-       pIDNode ID;
-       pCONSTNUMNode CONSTNUM;
+       p_hir_program p_program;
+       p_hir_func p_func;
+
+       p_hir_param_list p_param_list;
+
+       p_syntax_decl p_decl;
+       p_syntax_decl_list p_decl_list;
+
+       p_syntax_param_decl p_param_decl;
+       p_syntax_param_list p_parameter_list;
+
+       p_syntax_init p_init;
+
+       basic_type type;
+
+       ID_t ID;
+       INTCONST_t INTCONST;
+       FLOATCONST_t FLOATCONST;
 }
 
-%type <CompUnit> CompUnit
-%destructor { frontend_drop_CompUnit($$); } CompUnit
-%type <Declaration> Declaration
-%destructor { frontend_drop_Declaration($$); } Declaration
-%type <Declaration> FuncDefine
-%destructor { frontend_drop_Declaration($$); } FuncDefine
-%type <DeclarationSpecifiers> DeclarationSpecifiers
-%destructor { frontend_drop_DeclarationSpecifiers($$); } DeclarationSpecifiers
-%type <DeclarationSpecifier> DeclarationSpecifier
-%destructor { frontend_drop_DeclarationSpecifier($$); } DeclarationSpecifier
-%type <TypeSpecifier> TypeSpecifier
-%destructor { frontend_drop_TypeSpecifier($$); } TypeSpecifier
-%type <TypeQualifier> TypeQualifier
-%destructor { frontend_drop_TypeQualifier($$); } TypeQualifier
-%type <InitDeclaratorList> InitDeclaratorList
-%destructor { frontend_drop_InitDeclaratorList($$); } InitDeclaratorList
-%type <InitDeclarator> InitDeclarator
-%destructor { frontend_drop_InitDeclarator($$); } InitDeclarator
-%type <Declarator> Declarator
-%destructor { frontend_drop_Declarator($$); } Declarator
-%type <Pointer> Pointer
-%destructor { frontend_drop_Pointer($$); } Pointer
-%type <TypeQualifiers> TypeQualifiers
-%destructor { frontend_drop_TypeQualifiers($$); } TypeQualifiers
-%type <Declarator> DirectDeclarator
-%destructor { frontend_drop_Declarator($$); } DirectDeclarator
-%type <ParameterList> Parameters
-%destructor { frontend_drop_ParameterList($$); } Parameters
-%type <ParameterList> ParameterList
-%destructor { frontend_drop_ParameterList($$); } ParameterList
-%type <ParameterDeclaration> ParameterDeclaration
-%destructor { frontend_drop_ParameterDeclaration($$); } ParameterDeclaration
-%type <Initializer> Initializer
-%destructor { frontend_drop_Initializer($$); } Initializer
-%type <InitializerList> InitializerList
-%destructor { frontend_drop_InitializerList($$); } InitializerList
-%type <Expression> AssignExp
-%destructor { frontend_drop_Expression($$); } AssignExp
-%type <Expression> LOrExp
-%destructor { frontend_drop_Expression($$); } LOrExp
-%type <Expression> LAndExp
-%destructor { frontend_drop_Expression($$); } LAndExp
-%type <Expression> BOrExp
-%destructor { frontend_drop_Expression($$); } BOrExp
-%type <Expression> BNorExp
-%destructor { frontend_drop_Expression($$); } BNorExp
-%type <Expression> BAndExp
-%destructor { frontend_drop_Expression($$); } BAndExp
-%type <Expression> EqExp
-%destructor { frontend_drop_Expression($$); } EqExp
-%type <Expression> RelExp
-%destructor { frontend_drop_Expression($$); } RelExp
-%type <Expression> AddExp
-%destructor { frontend_drop_Expression($$); } AddExp
-%type <Expression> MulExp
-%destructor { frontend_drop_Expression($$); } MulExp
-%type <Expression> UnaryExp
-%destructor { frontend_drop_Expression($$); } UnaryExp
-%type <Expression> PostfixExp
-%destructor { frontend_drop_Expression($$); } PostfixExp
-%type <Expression> PrimaryExp
-%destructor { frontend_drop_Expression($$); } PrimaryExp
-%type <Expression> Exp
-%destructor { frontend_drop_Expression($$); } Exp
-%type <FuncRParamList> FuncRParams
-%destructor { frontend_drop_FuncRParamList($$); } FuncRParams
-%type <FuncRParamList> FuncRParamList
-%destructor { frontend_drop_FuncRParamList($$); } FuncRParamList
-%type <BlockItems> Block
-%destructor { frontend_drop_BlockItems($$); } Block
-%type <BlockItems> BlockItems
-%destructor { frontend_drop_BlockItems($$); } BlockItems
-%type <Stmt> Stmt
-%destructor { frontend_drop_Stmt($$); } Stmt
+%type <p_exp> Exp
+%type <p_exp> AssignExp
+%type <p_exp> LOrExp
+%type <p_exp> LAndExp
+%type <p_exp> EqExp
+%type <p_exp> RelExp
+%type <p_exp> AddExp
+%type <p_exp> MulExp
+%type <p_exp> UnaryExp
+%type <p_exp> PrimaryExp
+
+%type <p_exp> Call
+%type <p_exp> Val
+
+%type <p_exp> StmtExp
+%type <p_stmt> Stmt
+
+%type <p_block> BlockItems
+%type <p_block> Block
+
+%type <p_param_list> FuncRParamList
+%type <p_param_list> FuncRParams
+
+%type <p_func> FuncDeclaration
+%type <p_program> CompUnit
+%type <p_program> CompUnitInit
+
+%type <p_param_decl> ParameterDeclaration
+%type <p_parameter_list> ParameterList
+%type <p_parameter_list> Parameters
+
+%type <p_decl> Declarator
+%type <p_decl> InitDeclarator
+%type <p_decl_list> InitDeclaratorList
+%type <p_decl_list> VarDeclaration
+
+%type <p_init> Initializer
+%type <p_init> InitializerList
+
+%type <type> Type
 
 %locations
 
@@ -134,229 +106,181 @@ typedef void *yyscan_t;
 %token IF ELSE
 %token RETURN
 
-%token <ID> ID
-%destructor { frontend_drop_ID($$); } ID
-%token <CONSTNUM> CONSTNUM
-%destructor { frontend_drop_CONSTNUM($$); } CONSTNUM
 %token AND OR LE GE EQ NEQ
 %token SELFADD SELFSUB
+
+%token <INTCONST> INTCONST
+%token <FLOATCONST> FLOATCONST
+%token <ID> ID
+%destructor { free($$); } ID
 
 %nonassoc NO_ELSE
 %nonassoc ELSE
 
 %%
-begin : {
-              extra->pss = symbol_store_initial();
-       } PUSHZONE CompUnit POPZONE {
-              if (extra->root) {
-                     frontend_drop_syntaxtree(extra->root);
-              }
-              extra->root = $3;
-              symbol_store_destroy(extra->pss);
-       }
+begin : PUSHZONE CompUnit POPZONE
       ;
 
-CompUnit : CompUnit Declaration { $$ = malloc(sizeof(*$$)); $$->CompUnit = $1; $$->Declaration = $2; }
-         | CompUnit FuncDefine  { $$ = malloc(sizeof(*$$)); $$->CompUnit = $1; $$->Declaration = $2; }
-         | /* *empty */         { $$ = NULL; }
+CompUnit : CompUnit VarDeclaration  { syntax_global_vardecl(pss, $2); }
+         | CompUnit FuncDeclaration { $$ = hir_program_add($1, $2); }
+         | CompUnitInit
          | CompUnit error
          ;
 
-Declaration : DeclarationSpecifiers InitDeclaratorList ';' { $$ = malloc(sizeof(*$$)); $$->is_func_def = false; $$->DeclarationSpecifiers = $1; $$->declarators.InitDeclaratorList = $2; $$->BlockItems = NULL; }
-            ;
-
-FuncDefine : DeclarationSpecifiers Declarator Block { $$ = malloc(sizeof(*$$)); $$->is_func_def = true;  $$->DeclarationSpecifiers = $1; $$->declarators.Declarator = $2;         $$->BlockItems = $3;   }
-           ;
-
-DeclarationSpecifiers : DeclarationSpecifiers DeclarationSpecifier { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1;   $$->DeclarationSpecifier = $2;}
-                      | DeclarationSpecifier                       { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = NULL; $$->DeclarationSpecifier = $1;}
-                      ;
-
-DeclarationSpecifier : TypeSpecifier { $$ = malloc(sizeof(*$$)); $$->type = tTypeSpecifier; $$->select.TypeSpecifier = $1; }
-                     | TypeQualifier { $$ = malloc(sizeof(*$$)); $$->type = tTypeQualifier; $$->select.TypeQualifier = $1; }
-                     ;
-
-TypeSpecifier : VOID     { $$ = malloc(sizeof(*$$)); $$->type = spec_VOID;      }
-              | UNSIGNED { $$ = malloc(sizeof(*$$)); $$->type = spec_UNSIGNED;  }
-              | SIGNED   { $$ = malloc(sizeof(*$$)); $$->type = spec_SIGNED;    }
-              | LONG     { $$ = malloc(sizeof(*$$)); $$->type = spec_LONG;      }
-              | SHORT    { $$ = malloc(sizeof(*$$)); $$->type = spec_SHORT;     }
-              | INT      { $$ = malloc(sizeof(*$$)); $$->type = spec_INT;       }
-              | FLOAT    { $$ = malloc(sizeof(*$$)); $$->type = spec_FLOAT;     }
-              | DOUBLE   { $$ = malloc(sizeof(*$$)); $$->type = spec_DOUBLE;    }
-              | CHAR     { $$ = malloc(sizeof(*$$)); $$->type = spec_CHAR;      }
-              ;
-
-TypeQualifier : CONST    { $$ = malloc(sizeof(*$$)); $$->type = qual_CONST;    }
-              | VOLATILE { $$ = malloc(sizeof(*$$)); $$->type = qual_VOLATILE; }
-              ;
-
-InitDeclaratorList : InitDeclaratorList ',' InitDeclarator { $$ = malloc(sizeof(*$$)); $$->InitDeclaratorList = $1;   $$->InitDeclarator = $3; }
-                   | InitDeclarator                        { $$ = malloc(sizeof(*$$)); $$->InitDeclaratorList = NULL; $$->InitDeclarator = $1; }
-                   ;
-
-InitDeclarator : Declarator '=' Initializer { $$ = malloc(sizeof(*$$)); $$->Declarator = $1; $$->Initializer = $3;   }
-               | Declarator                 { $$ = malloc(sizeof(*$$)); $$->Declarator = $1; $$->Initializer = NULL; }
-               ;
-
-Declarator : Pointer DirectDeclarator {
-                     if ($1) {
-                            $$ = malloc(sizeof(*$$));
-                            $$->type = tPointer;
-                            $$->body.Declarator = $2;
-                            $$->select.Pointer = $1;
-                     }
-                     else {
-                            $$ = $2;
-                     }
-              }
-           ;
-
-Pointer : '*' TypeQualifiers Pointer { $$ = malloc(sizeof(*$$)); $$->TypeQualifiers = $2; $$->Pointer = $3; }
-        | /* *empty */               { $$ = NULL;                                                           }
-        ;
-
-TypeQualifiers : TypeQualifiers TypeQualifier { $$ = malloc(sizeof(*$$)); $$->TypeQualifiers = $1; $$->TypeQualifier = $2; }
-               | /* *empty */                 { $$ = NULL;                                                                 }
-               ;
-
-DirectDeclarator : DirectDeclarator '[' AssignExp ']'  { $$ = malloc(sizeof(*$$)); $$->type = tArrDec; $$->body.Declarator = $1; $$->select.Expression = $3;    }
-                 | DirectDeclarator '[' ']'            { $$ = malloc(sizeof(*$$)); $$->type = tArrDec; $$->body.Declarator = $1; $$->select.Expression = NULL;  }
-                 | DirectDeclarator '(' Parameters ')' { $$ = malloc(sizeof(*$$)); $$->type = tFunDec; $$->body.Declarator = $1; $$->select.ParameterList = $3; }
-                 | '(' Declarator ')'                  { $$ = $2; }
-                 | ID                                  { $$ = malloc(sizeof(*$$)); $$->type = tIDJust; $$->body.ID = $1;         $$->select.IDsuffix = NULL;     if(!new_sym($1)) printf("already creat %s\n", $1); }
-                 | DirectDeclarator error
-                 ;
-
-Parameters : ParameterList { $$ = $1;   }
-           | /* *empty */  { $$ = NULL; }
-           ;
-
-ParameterList : ParameterList ',' ParameterDeclaration { $$ = malloc(sizeof(*$$)); $$->ParameterList = $1;   $$->ParameterDeclaration = $3; }
-              | ParameterDeclaration                   { $$ = malloc(sizeof(*$$)); $$->ParameterList = NULL; $$->ParameterDeclaration = $1; }
-              ;
-
-ParameterDeclaration : DeclarationSpecifiers Declarator { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1; $$->Declarator = $2;   }
-                     | DeclarationSpecifiers            { $$ = malloc(sizeof(*$$)); $$->DeclarationSpecifiers = $1; $$->Declarator = NULL; }
-                     ;
-
-Initializer : '{' InitializerList ',' '}' { $$ = malloc(sizeof(*$$)); $$->isList = true;  $$->select.InitializerList = $2;   }
-            | '{' InitializerList '}'     { $$ = malloc(sizeof(*$$)); $$->isList = true;  $$->select.InitializerList = $2;   }
-            | '{' '}'                     { $$ = malloc(sizeof(*$$)); $$->isList = true;  $$->select.InitializerList = NULL; }
-            | AssignExp                   { $$ = malloc(sizeof(*$$)); $$->isList = false; $$->select.Expression = $1;        }
-            ;
-
-InitializerList : InitializerList ',' Initializer { $$ = malloc(sizeof(*$$)); $$->InitializerList = $1;   $$->Initializer = $3; }
-                | Initializer                     { $$ = malloc(sizeof(*$$)); $$->InitializerList = NULL; $$->Initializer = $1; }
-                ;
-
-AssignExp : UnaryExp '=' AssignExp { $$ = malloc(sizeof(*$$)); $$->type = assign; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-          | LOrExp                 { $$ = $1; }
-          ;
-
-LOrExp : LOrExp OR LAndExp { $$ = malloc(sizeof(*$$)); $$->type = logic_or; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-       | LAndExp           { $$ = $1; }
-       ;
-
-LAndExp : LAndExp AND BOrExp { $$ = malloc(sizeof(*$$)); $$->type = logic_and; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-        | BOrExp             { $$ = $1; }
-        ;
-
-BOrExp : BOrExp '|' BNorExp { $$ = malloc(sizeof(*$$)); $$->type = bit_or; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-       | BNorExp            { $$ = $1; }
-       ;
-
-BNorExp : BNorExp '^' BAndExp { $$ = malloc(sizeof(*$$)); $$->type = bit_nor; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-        | BAndExp             { $$ = $1; }
-        ;
-
-BAndExp : BAndExp '&' EqExp { $$ = malloc(sizeof(*$$)); $$->type = bit_and; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-        | EqExp             { $$ = $1; }
-        ;
-
-EqExp : EqExp EQ RelExp  { $$ = malloc(sizeof(*$$)); $$->type = eq;  $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-      | EqExp NEQ RelExp { $$ = malloc(sizeof(*$$)); $$->type = neq; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-      | RelExp           { $$ = $1; }
-      ;
-
-RelExp : RelExp '<' AddExp { $$ = malloc(sizeof(*$$)); $$->type = less;     $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-       | RelExp '>' AddExp { $$ = malloc(sizeof(*$$)); $$->type = great;    $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-       | RelExp LE AddExp  { $$ = malloc(sizeof(*$$)); $$->type = less_eq;  $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-       | RelExp GE AddExp  { $$ = malloc(sizeof(*$$)); $$->type = great_eq; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-       | AddExp            { $$ = $1; }
-       ;
-
-AddExp : AddExp '+' MulExp { $$ = malloc(sizeof(*$$)); $$->type = binary_add; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-       | AddExp '-' MulExp { $$ = malloc(sizeof(*$$)); $$->type = binary_sub; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-       | MulExp            { $$ = $1; }
-       ;
-
-MulExp : MulExp '*' UnaryExp { $$ = malloc(sizeof(*$$)); $$->type = binary_mul; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-       | MulExp '/' UnaryExp { $$ = malloc(sizeof(*$$)); $$->type = binary_div; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-       | MulExp '%' UnaryExp { $$ = malloc(sizeof(*$$)); $$->type = binary_mod; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3; }
-       | UnaryExp            { $$ = $1; }
-       ;
-
-UnaryExp : '-' UnaryExp     { $$ = malloc(sizeof(*$$)); $$->type = negative;    $$->select.exp.first = $2; $$->select.exp.second.Expression = NULL; }
-         | '+' UnaryExp     { $$ = malloc(sizeof(*$$)); $$->type = positive;    $$->select.exp.first = $2; $$->select.exp.second.Expression = NULL; }
-         | '!' UnaryExp     { $$ = malloc(sizeof(*$$)); $$->type = logic_not;   $$->select.exp.first = $2; $$->select.exp.second.Expression = NULL; }
-         | '~' UnaryExp     { $$ = malloc(sizeof(*$$)); $$->type = bit_not;     $$->select.exp.first = $2; $$->select.exp.second.Expression = NULL; }
-         | '*' UnaryExp     { $$ = malloc(sizeof(*$$)); $$->type = deref;       $$->select.exp.first = $2; $$->select.exp.second.Expression = NULL; }
-         | '&' UnaryExp     { $$ = malloc(sizeof(*$$)); $$->type = ref;         $$->select.exp.first = $2; $$->select.exp.second.Expression = NULL; }
-         | SELFADD UnaryExp { $$ = malloc(sizeof(*$$)); $$->type = selfadd_pre; $$->select.exp.first = $2; $$->select.exp.second.Expression = NULL; }
-         | SELFSUB UnaryExp { $$ = malloc(sizeof(*$$)); $$->type = selfsub_pre; $$->select.exp.first = $2; $$->select.exp.second.Expression = NULL; }
-         | PostfixExp       { $$ = $1; }
-         ;
-
-PostfixExp : PostfixExp '[' Exp ']'         { $$ = malloc(sizeof(*$$)); $$->type = arrary_index; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3;     }
-           | PostfixExp '(' FuncRParams ')' { $$ = malloc(sizeof(*$$)); $$->type = func_call;    $$->select.exp.first = $1; $$->select.exp.second.FuncRParamList = $3; }
-           | PostfixExp SELFADD             { $$ = malloc(sizeof(*$$)); $$->type = selfadd;      $$->select.exp.first = $1; $$->select.exp.second.Expression = NULL;   }
-           | PostfixExp SELFSUB             { $$ = malloc(sizeof(*$$)); $$->type = selfsub;      $$->select.exp.first = $1; $$->select.exp.second.Expression = NULL;   }
-           | PrimaryExp                     { $$ = $1; }
-           ;
-
-PrimaryExp : '(' Exp ')' { $$ = $2; }
-           | CONSTNUM    { $$ = malloc(sizeof(*$$)); $$->type = type_CONSTNUM; $$->select.CONSTNUM = $1; }
-           | ID          { $$ = malloc(sizeof(*$$)); $$->type = type_ID;       $$->select.ID = $1;        if (!find_sym($1)) printf("cant find %s\n", $1); }
-           ;
-
-Exp : Exp ',' AssignExp { $$ = malloc(sizeof(*$$)); $$->type = comma; $$->select.exp.first = $1; $$->select.exp.second.Expression = $3;     }
-    | AssignExp         { $$ = $1; }
-    ;
-
-FuncRParams : FuncRParamList { $$ = $1;   }
-            | /* *empty */   { $$ = NULL; }
-            ;
-
-FuncRParamList : FuncRParamList ',' AssignExp { $$ = malloc(sizeof(*$$)); $$->FuncRParamList = $1;   $$->Expression = $3; }
-               | AssignExp                    { $$ = malloc(sizeof(*$$)); $$->FuncRParamList = NULL; $$->Expression = $1; }
-               ;
-
-Block : '{' PUSHZONE BlockItems POPZONE '}' { $$ = $3; }
-      ;
-
-BlockItems : BlockItems Declaration { $$ = malloc(sizeof(*$$)); $$->isStmt = false; $$->BlockItems = $1; $$->select.Declaration = $2; }
-           | BlockItems Stmt        { $$ = malloc(sizeof(*$$)); $$->isStmt = true;  $$->BlockItems = $1; $$->select.Stmt = $2;        }
-           | /* *empty */           { $$ = NULL;                                                                                      }
-           ;
-
-Stmt : Block                             { $$ = malloc(sizeof(*$$)); $$->type = tBlockStmt;    $$->select.BlockItems = $1;   $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-     | ';'                               { $$ = malloc(sizeof(*$$)); $$->type = tExpStmt;      $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-     | Exp ';'                           { $$ = malloc(sizeof(*$$)); $$->type = tExpStmt;      $$->select.Expression = $1;   $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-     | RETURN ';'                        { $$ = malloc(sizeof(*$$)); $$->type = tReturnStmt;   $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-     | RETURN Exp ';'                    { $$ = malloc(sizeof(*$$)); $$->type = tReturnStmt;   $$->select.Expression = $2;   $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-     | BREAK ';'                         { $$ = malloc(sizeof(*$$)); $$->type = tBreakStmt;    $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-     | CONTINUE ';'                      { $$ = malloc(sizeof(*$$)); $$->type = tContinueStmt; $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
-     | IF '(' Exp ')' Stmt ELSE Stmt     { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;       $$->select.Expression = $3;   $$->Stmt_1 = $5;   $$->Stmt_2 = $7;   }
-     | IF '(' Exp ')' Stmt %prec NO_ELSE { $$ = malloc(sizeof(*$$)); $$->type = tIfStmt;       $$->select.Expression = $3;   $$->Stmt_1 = $5;   $$->Stmt_2 = NULL; }
-     | WHILE '(' Exp ')' Stmt            { $$ = malloc(sizeof(*$$)); $$->type = tWhileStmt;    $$->select.Expression = $3;   $$->Stmt_1 = $5;   $$->Stmt_2 = NULL; }
-     | DO Stmt WHILE '(' Exp ')' ';'     { $$ = malloc(sizeof(*$$)); $$->type = tDoWhileStmt;  $$->select.Expression = $5;   $$->Stmt_1 = $2;   $$->Stmt_2 = NULL; }
-     | error                             { $$ = malloc(sizeof(*$$)); $$->type = tExpStmt;      $$->select.Expression = NULL; $$->Stmt_1 = NULL; $$->Stmt_2 = NULL; }
+Type : INT   { $$ = type_int; }
+     | FLOAT { $$ = type_float; }
      ;
 
-PUSHZONE : /* *empty */ { push_zone; }
+VarDeclaration : CONST Type InitDeclaratorList ';' { $$ = syntax_decl_list_set($3, true, $2); }
+               | Type InitDeclaratorList ';'       { $$ = syntax_decl_list_set($2, false, $1); }
+               ;
+
+InitDeclaratorList : InitDeclaratorList ',' InitDeclarator { $$ = syntax_decl_list_add($1, $3); }
+                   | InitDeclarator                        { $$ = syntax_decl_list_add(syntax_decl_list_gen(), $1); }
+                   ;
+
+InitDeclarator : Declarator '=' Initializer { $$ = syntax_decl_init($1, $3); }
+               | Declarator                 { $$ = syntax_decl_init($1, NULL); }
+               ;
+
+Declarator : Declarator '[' Exp ']' { $$ = syntax_decl_arr($1, $3); }
+           | Declarator '[' ']'     { $$ = syntax_decl_arr($1, NULL); }
+           | ID                     { $$ = syntax_decl_gen($1); }
+           | Declarator error
+           ;
+
+FuncDeclaration : Type ID '(' Parameters ')'
+                     { syntax_func_define(pss, $1, $2, $4); }
+                  PUSHZONE
+                     { syntax_func_param(pss, $4); }
+                  Block
+                  POPZONE
+                     { $$ = hir_func_gen(find_sym($2), $9); free($2); }
+                | VOID ID '(' Parameters ')'
+                     { syntax_func_define(pss, type_void, $2, $4); }
+                  PUSHZONE
+                     { syntax_func_param(pss, $4); }
+                  Block
+                  POPZONE
+                     { $$ = hir_func_gen(find_sym($2), $9); free($2); }
+                ;
+
+Parameters : ParameterList
+           | /* *empty */  { $$ = syntax_param_list_gen(); }
+           ;
+
+ParameterList : ParameterList ',' ParameterDeclaration { $$ = syntax_param_list_add($1, $3); }
+              | ParameterDeclaration                   { $$ = syntax_param_list_add(NULL, $1); }
+              ;
+
+ParameterDeclaration : Type Declarator { $$ = syntax_param_decl_gen($1, $2); }
+                     ;
+
+Initializer : '{' InitializerList '}'     { $$ = $2; }
+            | '{' '}'                     { $$ = syntax_init_list_gen(); }
+            | AssignExp                   { $$ = syntax_init_exp_gen($1); }
+            ;
+
+InitializerList : InitializerList ',' Initializer { $$ = syntax_init_list_add($1, $3); }
+                | Initializer                     { $$ = syntax_init_list_add(syntax_init_list_gen(), $1); }
+                ;
+
+AssignExp : UnaryExp '=' AssignExp { $$ = hir_exp_assign_gen($1, $3); }
+          | LOrExp
+          ;
+
+LOrExp : LOrExp OR LAndExp { $$ = hir_exp_lexec_gen(hir_exp_op_bool_or, $1, $3); }
+       | LAndExp
+       ;
+
+LAndExp : LAndExp AND EqExp { $$ = hir_exp_lexec_gen(hir_exp_op_bool_and, $1, $3); }
+        | EqExp
+        ;
+
+EqExp : EqExp EQ RelExp  { $$ = hir_exp_lexec_gen(hir_exp_op_eq, $1, $3); }
+      | EqExp NEQ RelExp { $$ = hir_exp_lexec_gen(hir_exp_op_neq, $1, $3); }
+      | RelExp
+      ;
+
+RelExp : RelExp '<' AddExp { $$ = hir_exp_lexec_gen(hir_exp_op_l, $1, $3); }
+       | RelExp '>' AddExp { $$ = hir_exp_lexec_gen(hir_exp_op_g, $1, $3); }
+       | RelExp LE AddExp  { $$ = hir_exp_lexec_gen(hir_exp_op_leq, $1, $3); }
+       | RelExp GE AddExp  { $$ = hir_exp_lexec_gen(hir_exp_op_geq, $1, $3); }
+       | AddExp
+       ;
+
+AddExp : AddExp '+' MulExp { $$ = hir_exp_exec_gen(hir_exp_op_add, $1, $3); }
+       | AddExp '-' MulExp { $$ = hir_exp_exec_gen(hir_exp_op_sub, $1, $3); }
+       | MulExp
+       ;
+
+MulExp : MulExp '*' UnaryExp { $$ = hir_exp_exec_gen(hir_exp_op_mul, $1, $3); }
+       | MulExp '/' UnaryExp { $$ = hir_exp_exec_gen(hir_exp_op_div, $1, $3); }
+       | MulExp '%' UnaryExp { $$ = hir_exp_exec_gen(hir_exp_op_mod, $1, $3); }
+       | UnaryExp
+       ;
+
+UnaryExp : '-' UnaryExp     { $$ = hir_exp_uexec_gen(hir_exp_op_minus, $2); }
+         | '+' UnaryExp     { $$ = $2; }
+         | '!' UnaryExp     { $$ = hir_exp_uexec_gen(hir_exp_op_bool_not, $2); }
+         | PrimaryExp
          ;
 
-POPZONE : /* *empty */ { pop_zone; }
+PrimaryExp : '(' Exp ')' { $$ = $2; }
+           | INTCONST    { $$ = hir_exp_int_gen($1); }
+           | FLOATCONST  { $$ = hir_exp_float_gen($1); }
+           | Val         { $$ = $1; }
+           | Call        { $$ = $1; }
+           ;
+
+Call : ID '(' FuncRParams ')' { $$ = hir_exp_call_gen(find_sym($1), $3); free($1); }
+     ;
+
+Val : ID                 { $$ = hir_exp_id_gen(find_sym($1)); free($1); }
+    | Val '[' Exp ']'    { $$ = hir_exp_arr_gen($1, $3); }
+    ;
+
+Exp : Exp ',' AssignExp { $$ = hir_exp_dot_gen($1, $3); }
+    | AssignExp
+    ;
+
+FuncRParams : FuncRParamList { $$ = $1; }
+            | /* *empty */   { $$ = hir_param_list_init(); }
+            ;
+
+FuncRParamList : FuncRParamList ',' AssignExp { $$ = hir_param_list_add($1, $3); }
+               | AssignExp                    { $$ = hir_param_list_add(hir_param_list_init(), $1); }
+               ;
+
+Block : '{' BlockItems '}' { $$ = $2; }
+      ;
+
+BlockItems : BlockItems VarDeclaration { $$ = syntax_local_vardecl(pss, $1, $2); }
+           | BlockItems Stmt           { $$ = hir_block_add($1, $2); }
+           | /* *empty */              { $$ = hir_block_gen(); }
+           ;
+
+StmtExp : /* *empty */ { $$ = NULL; }
+        | Exp
         ;
+
+Stmt : PUSHZONE Block POPZONE            { $$ = hir_stmt_block_gen($2); }
+     | StmtExp ';'                       { $$ = hir_stmt_exp_gen($1); }
+     | RETURN StmtExp ';'                { $$ = hir_stmt_return_gen($2); }
+     | BREAK ';'                         { $$ = hir_stmt_break_gen(); }
+     | CONTINUE ';'                      { $$ = hir_stmt_continue_gen(); }
+     | IF '(' Exp ')' Stmt ELSE Stmt     { $$ = hir_stmt_if_else_gen($3, $5, $7); }
+     | IF '(' Exp ')' Stmt %prec NO_ELSE { $$ = hir_stmt_if_gen($3, $5); }
+     | WHILE '(' Exp ')' Stmt            { $$ = hir_stmt_while_gen($3, $5); }
+     | error                             { $$ = hir_stmt_exp_gen(NULL); }
+     ;
+
+PUSHZONE : /* *empty */ { symbol_push_zone(pss); }
+         ;
+
+POPZONE : /* *empty */ { symbol_pop_zone(pss); }
+        ;
+
+CompUnitInit : /* *empty */ { $$ = p_ast; }
+             ;
 %%

@@ -1,7 +1,7 @@
-#ifndef __LIST__
-#define __LIST__
+#ifndef __UTIL_LIST__
+#define __UTIL_LIST__
 
-#include <util.h>
+#include <stdbool.h>
 
 typedef struct list_head list_head, *p_list_head;
 struct list_head {

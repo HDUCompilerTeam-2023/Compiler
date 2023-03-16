@@ -3,21 +3,47 @@
 
 #include <util.h>
 
-typedef enum basictype {
-    type_void, // void
-    type_char, // char  signed char
-    type_unsigned_char, // unsigned char
-    type_short_int, // short  signed short  short int  signed short int
-    type_unsigned_short_int, // unsigned short  unsigned short int
-    type_int, // int  signed  signed int
-    type_unsigned_int, // unsigned  unsigned int
-    type_long_int, // long  signed long  long int  signed long int
-    type_unsigned_long_int, // unsigned long  unsigned long int
-    type_long_long_int, // long long  signed long long  long long int  signed long long int
-    type_unsigned_long_long_int, // unsigned long long  unsigned long long int
-    type_float, // float
-    type_double, // double
-    type_long_double, // long double
-} basictype;
+typedef enum basic_type basic_type;
+enum basic_type {
+    type_void,
+    type_int,
+    type_float,
+};
+
+typedef struct symbol_type symbol_type, *p_symbol_type;
+struct symbol_type {
+    enum {
+        type_var, type_arrary,
+        type_func, type_param,
+    } kind;
+    union {
+        p_symbol_type p_item;
+        basic_type basic;
+    };
+    union {
+        size_t size;
+        p_symbol_type p_params;
+    };
+};
+
+struct type {
+    enum {
+        tval, tarr,
+        tfunc, tparam,
+    };
+    union {
+        struct type * p_son;
+        basic_type basic;
+    };
+    struct type * params;
+};
+
+p_symbol_type symbol_type_var_gen(basic_type basic);
+p_symbol_type symbol_type_arrary_gen(size_t size);
+p_symbol_type symbol_type_func_gen(void);
+p_symbol_type symbol_type_param_gen(p_symbol_type p_param);
+
+void symbol_type_drop(p_symbol_type p_type);
+void symbol_type_print(p_symbol_type p_type);
 
 #endif

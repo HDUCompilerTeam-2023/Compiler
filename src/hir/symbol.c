@@ -1,9 +1,49 @@
 #include <hir/symbol.h>
 
-#include <hlist.h>
-
 #define hash_P (65537)
 #define hash_MOD (109)
+
+p_symbol_init_list symbol_init_list_gen(void) {
+    p_symbol_init_list p_init_list = malloc(sizeof(*p_init_list));
+    *p_init_list = (symbol_init_list) {
+        .init = list_head_init(&p_init_list->init),
+        .syntax_const = true,
+    };
+    return p_init_list;
+}
+p_symbol_init_list symbol_init_list_add(p_symbol_init_list p_list, p_symbol_init p_init) {
+    p_list->syntax_const = p_list->syntax_const && p_init->syntax_const;
+    assert(list_add_prev(&p_init->node, &p_list->init));
+    return p_list;
+}
+p_symbol_init symbol_init_gen_exp(p_hir_exp p_exp) {
+    p_symbol_init p_init = malloc(sizeof(*p_init));
+    *p_init = (symbol_init) {
+        .is_exp = true,
+        .syntax_const = p_exp->syntax_const_exp,
+        .p_exp = p_exp,
+        .node = list_head_init(&p_init->node),
+    };
+    return p_init;
+}
+p_symbol_init symbol_init_gen_list(p_symbol_init_list p_list) {
+    p_symbol_init p_init = malloc(sizeof(*p_init));
+    *p_init = (symbol_init) {
+        .is_exp = false,
+        .syntax_const = p_list->syntax_const,
+        .p_list = p_list,
+        .node = list_head_init(&p_init->node),
+    };
+    return p_init;
+}
+void symbol_init_drop(p_symbol_init p_init) {
+    if (!p_init) return;
+
+}
+
+typedef struct symbol_item symbol_item, *p_symbol_item;
+typedef struct symbol_name symbol_name, *p_symbol_name;
+typedef struct symbol_table symbol_table, *p_symbol_table;
 
 struct symbol_item {
     p_symbol_name p_name;
@@ -12,7 +52,7 @@ struct symbol_item {
     uint16_t level;
     p_symbol_item p_next;
 
-    p_symbol_info p_info;
+    p_symbol_sym p_info;
 };
 
 struct symbol_name {
@@ -32,7 +72,7 @@ struct symbol_table {
 struct symbol_store {
     hlist_hash hash;
 
-    p_symbol_info p_info;
+    p_symbol_sym p_info;
 
     uint16_t level;
     p_symbol_table p_top_table;
@@ -100,6 +140,7 @@ void symbol_pop_zone(p_symbol_store pss) {
     free(del_table);
 }
 
+#include <stdio.h>
 void symbol_store_destroy(p_symbol_store pss) {
     assert(pss->p_top_table == NULL);
     assert(pss->level == 0);
@@ -108,9 +149,14 @@ void symbol_store_destroy(p_symbol_store pss) {
     }
 
     while (pss->p_info) {
-        p_symbol_info del = pss->p_info;
-        pss->p_info = del->p_next;
-        free(del);
+        p_symbol_sym p_del = pss->p_info;
+        pss->p_info = p_del->p_next;
+        printf("type of %s : ", p_del->name);
+        symbol_type_print(p_del->p_type);
+        printf("\n");
+        symbol_type_drop(p_del->p_type);
+        free(p_del->name);
+        free(p_del);
     }
 
     free(pss->hash);
@@ -139,7 +185,7 @@ static inline p_symbol_name symbol_add_name(p_hlist_head p_head, size_t hash_tag
     return p_name;
 }
 
-bool symbol_add(p_symbol_store pss, const char *name) {
+p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_type, bool is_const, bool is_global, p_symbol_init p_init) {
     assert(pss->level > 0);
 
     size_t hash_tag = symbol_str_tag("name");
@@ -149,13 +195,19 @@ bool symbol_add(p_symbol_store pss, const char *name) {
     if (!p_name) {
         p_name = symbol_add_name(p_head, hash_tag, name);
     }
-    else if (p_name->p_item->level == pss->level) return false;
+    else if (p_name->p_item->level == pss->level) return NULL;
     else assert(p_name->p_item->level < pss->level);
 
-    p_symbol_info p_info = malloc(sizeof(*p_info));
-    *p_info = (symbol_info) {
+    p_symbol_sym p_info = malloc(sizeof(*p_info));
+    *p_info = (symbol_sym) {
         .p_next = NULL,
+        .p_init = p_init,
+        .is_global = is_global,
+        .is_const = is_const,
+        .name = malloc(sizeof(char) * (strlen(name) + 1)),
+        .p_type = p_type,
     };
+    strcpy(p_info->name, name);
 
     p_symbol_item p_item = malloc(sizeof(*p_item));
     *p_item = (symbol_item) {
@@ -167,10 +219,10 @@ bool symbol_add(p_symbol_store pss, const char *name) {
     };
     pss->p_top_table->p_item = p_item;
     p_name->p_item = p_item;
-    return true;
+    return p_info;
 }
 
-p_symbol_info symbol_find(p_symbol_store pss, const char *name) {
+p_symbol_sym symbol_find(p_symbol_store pss, const char *name) {
     assert(pss->level > 0);
 
     size_t hash_tag = symbol_str_tag("name");

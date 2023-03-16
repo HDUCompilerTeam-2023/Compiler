@@ -1,7 +1,7 @@
-#ifndef __HLIST__
-#define __HLIST__
+#ifndef __UTIL_HLIST__
+#define __UTIL_HLIST__
 
-#include <util.h>
+#include <stdbool.h>
 
 typedef struct hlist_node hlist_node, *p_hlist_node, **pp_hlist_node;
 typedef struct hlist_head hlist_head, *p_hlist_head, *hlist_hash;

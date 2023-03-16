@@ -1,4 +1,4 @@
-#include <hir/log.h>
+#include <hir_gen/log.h>
 
 #include <stdarg.h>
 
