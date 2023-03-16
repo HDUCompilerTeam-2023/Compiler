@@ -1,4 +1,4 @@
-#include <list.h>
+#include <util/list.h>
 
 static inline void __list_add(p_list_head p_new, p_list_head p_prev, p_list_head p_next) {
     p_next->p_prev = p_new;
@@ -69,7 +69,7 @@ bool list_blk_add_next(p_list_head p_new, p_list_head p_pos) {
     return true;
 }
 
-bool list_blk_add_list_prev(p_list_head p_new, p_list_head p_pos) {
+bool list_blk_add_prev(p_list_head p_new, p_list_head p_pos) {
     if (list_head_alone(p_new) || list_head_alone(p_pos)) return false;
     __list_add_list(p_new, p_pos->p_prev, p_pos);
     return true;

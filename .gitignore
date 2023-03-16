@@ -6,6 +6,7 @@
 build/
 output/
 tmp-src/
+store/
 
 !.gitignore
 !*.md
