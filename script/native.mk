@@ -21,5 +21,10 @@ run: $(BINARY)
 	@$(BINARY)
 PHONY += run
 
+gdb: $(BINARY)
+	@echo '> gdb $^'
+	@gdb -q $(BINARY)
+PHONY += run
+
 test: $(TESTSRC:%.sy=$(OUTPUT_DIR)/%.out)
 PHONY += test
