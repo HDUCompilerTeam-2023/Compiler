@@ -3,9 +3,9 @@
  */
 
 %{
-#include <hir_gen/yyextra.h>
-#include <hir_gen/parser.h>
-#include <hir_gen/log.h>
+#include <frontend/yyextra.h>
+#include <frontend/parser.h>
+#include <frontend/log.h>
 
 #include <limits.h>
 

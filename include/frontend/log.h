@@ -1,9 +1,7 @@
-#ifndef __GRAMMAR_LOG__
-#define __GRAMMAR_LOG__
+#ifndef __HIR_GEN_LOG__
+#define __HIR_GEN_LOG__
 
-#include <stdio.h>
-
-#include <hir_gen/parser.h>
+#include <frontend/parser.h>
 
 typedef enum {
     debug,

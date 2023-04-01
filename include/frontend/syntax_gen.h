@@ -1,17 +1,7 @@
-#ifndef __HIR_SYNTAX__
-#define __HIR_SYNTAX__
+#ifndef __FRONTEND_SYNTAX_GEN__
+#define __FRONTEND_SYNTAX_GEN__
 
-typedef struct syntax_init syntax_init, *p_syntax_init;
-
-typedef enum syntax_decl_spec syntax_decl_spec, *syntax_decl_spec_arr;
-
-typedef struct syntax_decl syntax_decl, *p_syntax_decl;
-typedef struct syntax_decl_list syntax_decl_list, *p_syntax_decl_list;
-
-typedef struct syntax_param_decl syntax_param_decl, *p_syntax_param_decl;
-typedef struct syntax_param_list syntax_param_list, *p_syntax_param_list;
-
-#include <hir.h>
+#include <frontend/syntax.h>
 
 struct syntax_init {
     bool is_exp;
@@ -30,7 +20,7 @@ p_syntax_init syntax_init_list_add(p_syntax_init p_list, p_syntax_init p_init);
 struct syntax_decl {
     char *name;
     p_symbol_type p_type;
-    p_symbol_type *pp_tail;
+    p_symbol_type p_tail;
     p_syntax_init p_init;
 
     list_head node;
@@ -65,5 +55,7 @@ void syntax_func_param(p_symbol_store pss, p_syntax_param_list p_param_list);
 
 p_hir_block syntax_local_vardecl(p_symbol_store pss, p_hir_block p_block, p_syntax_decl_list p_decl_list);
 void syntax_global_vardecl(p_symbol_store pss, p_syntax_decl_list p_decl_list);
+
+#include <hir_gen.h>
 
 #endif

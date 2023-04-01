@@ -1,4 +1,6 @@
-#include <hir/symbol.h>
+#include <hir_gen/symbol.h>
+
+#include <hir_gen.h>
 
 #define hash_P (65537)
 #define hash_MOD (109)

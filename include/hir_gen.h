@@ -1,10 +1,16 @@
-#ifndef __GRAMMAR__
-#define __GRAMMAR__
+#ifndef __HIR_GEN__
+#define __HIR_GEN__
 
-#include <hir_gen/parser.h>
-#include <hir_gen/lexer.h>
+#include <hir_gen/program.h>
+#include <hir_gen/func.h>
+#include <hir_gen/param.h>
+#include <hir_gen/block.h>
+#include <hir_gen/stmt.h>
+#include <hir_gen/exp.h>
 
-p_hir_program hir_gen(const char *file_name);
-void hir_drop(p_hir_program p_hir);
+#include <hir_gen/symbol.h>
+#include <hir_gen/type.h>
+
+extern int deep;
 
 #endif
