@@ -31,19 +31,21 @@ include $(BUILD_SCIRPT)
 
 # Compile rules
 INC_PATH += include $(TMP_DIR)
-INCLUDES = $(addprefix -I, $(INC_PATH))
-CFLAGS  += -Wall -Werror -O2 -MMD $(INCLUDES)
-CXXFLAGS += $(CFLAGS)
+INCLUDES  = $(addprefix -I, $(INC_PATH))
 
-LDFLAGS += $(CXXFLAGS)
-LDLIBS += -lfl
+C_FLAGS  += -fPIE -g -Wall -Werror -O2 -MMD
+CCFLAGS   = $(LDFLAGS) $(C_FLAGS) $(INCLUDES)
+CXXFLAGS  = $(LDFLAGS) $(C_FLAGS) $(INCLUDES)
+
+LDFLAGS  +=
+LDLIBS   +=
 
 -include $(OBJS:%.o=%.d)
 
 $(OBJ_DIR)/%.o: %.c
 	@echo + CC $<
 	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS) -c -o $@ $<
+	@$(CC) $(CCFLAGS) -c -o $@ $<
 
 $(OBJ_DIR)/%.o: %.cc
 	@echo + CXX $<
