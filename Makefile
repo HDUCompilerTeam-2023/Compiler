@@ -10,14 +10,12 @@ CC = clang
 
 # Debug args only
 YACCFLAGS = -r solved
-LEXFLAGS =
+LEXFLAGS  =
 
 INC_PATH =
-CFLAGS = -DDEBUG -fsanitize=address -fsanitize=leak
-CXXFLAGS =
-
-LDFLAGS =
-LDLIBS =
+C_FLAGS  = -DDEBUG
+LDFLAGS  = -fsanitize=address -fsanitize=leak
+LDLIBS   =
 
 
 # Source
@@ -48,7 +46,7 @@ compinfo:
 	@echo '  LEXFLAGS  : $(LEXFLAGS)'
 	@echo '  YACCFLAGS : $(YACCFLAGS)'
 	@echo '  INCLUDES  : $(INCLUDES)'
-	@echo '  C_FLAGS   : $(CFLAGS)'
+	@echo '  C_FLAGS   : $(C_FLAGS)'
 	@echo '  LDFLAGS   : $(LDFLAGS)'
 	@echo '  LDLIBS    : $(LDLIBS)'
 PHONY += compinfo
