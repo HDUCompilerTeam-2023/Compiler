@@ -1,7 +1,7 @@
-#ifndef __GRAMMAR_YYEXTRA__
-#define __GRAMMAR_YYEXTRA__
+#ifndef __FRONTEND_YYEXTRA__
+#define __FRONTEND_YYEXTRA__
 
-#include <hir_gen/parser.h>
+#include <frontend/parser.h>
 
 typedef struct extra_info extra_info, *p_extra_info;
 typedef struct file_stack file_stack, *p_file_stack;

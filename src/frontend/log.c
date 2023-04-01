@@ -1,6 +1,7 @@
-#include <hir_gen/log.h>
+#include <frontend/log.h>
 
 #include <stdarg.h>
+#include <stdio.h>
 
 int yylog(loglevel level, YYLTYPE *loc, yyscan_t scanner, const char *format, ...) {
     va_list args;

@@ -1,4 +1,4 @@
-#include <hir_gen/syntax.h>
+#include <frontend/syntax_gen.h>
 
 p_syntax_init syntax_init_list_gen(void) {
     p_syntax_init p_init = malloc(sizeof(*p_init));
@@ -45,16 +45,16 @@ void syntax_init_drop(p_syntax_init p_init) {
 }
 
 void syntax_decl_type_add(p_syntax_decl p_decl, p_symbol_type p_tail) {
-    if (p_decl->pp_tail) *p_decl->pp_tail = p_tail;
+    if (p_decl->p_tail) p_decl->p_tail->p_item = p_tail;
     else p_decl->p_type = p_tail;
-    p_decl->pp_tail = &p_tail->p_item;
+    p_decl->p_tail = p_tail;
 }
 p_syntax_decl syntax_decl_gen(char *name) {
     p_syntax_decl p_decl = malloc(sizeof(*p_decl));
     *p_decl = (syntax_decl) {
         .name = name,
         .p_type = NULL,
-        .pp_tail = NULL,
+        .p_tail = NULL,
         .p_init = NULL,
         .node = list_head_init(&p_decl->node),
     };

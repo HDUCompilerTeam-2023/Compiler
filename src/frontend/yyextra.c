@@ -1,6 +1,6 @@
-#include <hir_gen/yyextra.h>
-#include <hir_gen/lexer.h>
-#include <hir_gen/log.h>
+#include <frontend/yyextra.h>
+#include <frontend/lexer.h>
+#include <frontend/log.h>
 
 struct file_stack {
     p_file_stack prev;

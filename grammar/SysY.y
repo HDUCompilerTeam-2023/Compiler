@@ -6,8 +6,9 @@
 %param { yyscan_t yyscanner }
 
 %{
-#include <hir_gen/lexer.h>
-#include <hir_gen/log.h>
+#include <frontend/lexer.h>
+#include <frontend/log.h>
+#include <frontend/syntax_gen.h>
 
 #define extra yyget_extra(yyscanner)
 #define p_ast (extra->p_ast)
@@ -23,8 +24,7 @@
 }
 
 %code requires{
-#include <hir_gen/syntax.h>
-typedef void *yyscan_t;
+#include <frontend/syntax.h>
 }
 
 %define api.pure full
