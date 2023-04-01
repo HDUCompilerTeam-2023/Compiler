@@ -39,6 +39,20 @@ include script/native.mk
 
 
 # Phony rules
+compinfo:
+	@echo ': Compiler Info'
+	@echo '  LEX  : $(LEX)'
+	@echo '  YACC : $(YACC)'
+	@echo '  CC   : $(CC)'
+	@echo '  CXX  : $(CXX)'
+	@echo '  LEXFLAGS  : $(LEXFLAGS)'
+	@echo '  YACCFLAGS : $(YACCFLAGS)'
+	@echo '  INCLUDES  : $(INCLUDES)'
+	@echo '  C_FLAGS   : $(CFLAGS)'
+	@echo '  LDFLAGS   : $(LDFLAGS)'
+	@echo '  LDLIBS    : $(LDLIBS)'
+PHONY += compinfo
+
 clean:
 	@echo - CLEAN $(CLEAN)
 	@rm -rf $(CLEAN)
@@ -46,7 +60,7 @@ PHONY += clean
 
 help:
 	@echo : commands
-	@echo $(PHONY)
+	@echo '  $(PHONY)'
 PHONY += help
 
 
