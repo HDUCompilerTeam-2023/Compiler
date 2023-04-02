@@ -1,17 +1,17 @@
-#ifndef __HIR_GEN_LOG__
-#define __HIR_GEN_LOG__
+#ifndef __FRONTEND_LOG__
+#define __FRONTEND_LOG__
 
 #include <frontend/parser.h>
 
 typedef enum {
-    debug,
+    trace,
     log,
-    err,
+    error,
 } loglevel;
 
-int yylog(loglevel level, YYLTYPE *loc, yyscan_t scanner, const char *format, ...);
+void frontend_log(loglevel level, YYLTYPE *loc, yyscan_t scanner, const char *format, ...);
 
-#define yyerror(loc, scan, fmt, ...) yylog(err, loc, scan, fmt, ##__VA_ARGS__)
-#define yydebug(loc, scan, fmt, ...) yylog(debug, loc, scan, fmt, ##__VA_ARGS__)
+#define yyerror(loc, scan, fmt, ...) frontend_log(error, loc, scan, fmt, ##__VA_ARGS__)
+#define yylog(loc, scan, fmt, ...) frontend_log(log, loc, scan, fmt, ##__VA_ARGS__)
 
 #endif
