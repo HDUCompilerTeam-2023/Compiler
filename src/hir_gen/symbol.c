@@ -190,7 +190,7 @@ static inline p_symbol_name symbol_add_name(p_hlist_head p_head, size_t hash_tag
 p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_type, bool is_const, bool is_global, p_symbol_init p_init) {
     assert(pss->level > 0);
 
-    size_t hash_tag = symbol_str_tag("name");
+    size_t hash_tag = symbol_str_tag(name);
     p_hlist_head p_head = pss->hash + (hash_tag % hash_MOD);
 
     p_symbol_name p_name = symbol_find_name(p_head, name);
@@ -227,7 +227,7 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
 p_symbol_sym symbol_find(p_symbol_store pss, const char *name) {
     assert(pss->level > 0);
 
-    size_t hash_tag = symbol_str_tag("name");
+    size_t hash_tag = symbol_str_tag(name);
     p_hlist_head p_head = pss->hash + (hash_tag % hash_MOD);
 
     p_symbol_name p_name = symbol_find_name(p_head, name);
