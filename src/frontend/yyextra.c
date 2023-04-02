@@ -1,4 +1,5 @@
 #include <frontend/yyextra.h>
+
 #include <frontend/lexer.h>
 #include <frontend/log.h>
 
@@ -33,11 +34,11 @@ void frontend_push_file(const char *file_name, YYLTYPE *loc, YY_EXTRA_TYPE extra
     if (file_name) {
         fs->filename = malloc(strlen(file_name) + 1);
         strcpy(fs->filename, file_name);
-        yylog(log, yyget_lloc(scanner), scanner, "in %s", extra->fs->filename);
+        yylog(yyget_lloc(scanner), scanner, "in %s", extra->fs->filename);
     }
     else {
         fs->filename = NULL;
-        yylog(log, yyget_lloc(scanner), scanner, "in stdin");
+        yylog(yyget_lloc(scanner), scanner, "in stdin");
     }
 }
 
@@ -59,10 +60,10 @@ bool frontend_pop_file(YY_EXTRA_TYPE extra, yyscan_t scanner) {
     yyset_lloc(extra->fs->loc, scanner);
 
     if (extra->fs->filename) {
-        yylog(log, yyget_lloc(scanner), scanner, "in %s", extra->fs->filename);
+        yylog(yyget_lloc(scanner), scanner, "in %s", extra->fs->filename);
     }
     else {
-        yylog(log, yyget_lloc(scanner), scanner, "in stdin");
+        yylog(yyget_lloc(scanner), scanner, "in stdin");
     }
     return false;
 }

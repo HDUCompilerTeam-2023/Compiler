@@ -1,36 +1,24 @@
 #include <frontend/log.h>
 
+#include <util/log.h>
 #include <stdarg.h>
-#include <stdio.h>
 
-int yylog(loglevel level, YYLTYPE *loc, yyscan_t scanner, const char *format, ...) {
+void frontend_log(loglevel level, YYLTYPE *yylloc, yyscan_t yyscanner, const char *format, ...) {
     va_list args;
-    int ret;
-    FILE *output = stdout;
-
-    if (level == err) {
-        output = stderr;
-    }
-
+    const char *tag;
     switch (level) {
-    case err:
-        fprintf(output, "[Error] ");
+    case error:
+        tag = "ERROR";
         break;
     case log:
-        fprintf(output, "[Trace] ");
-        break;
-    case debug:
-        fprintf(output, "[Debug] ");
+    case trace:
+        tag = "FRONTEND";
         break;
     }
 
-    if (loc) {
-        fprintf(output, "At line %d, ", loc->first_line);
-    }
+    const char *pos = "Line 1";
 
     va_start(args, format);
-    ret = vfprintf(output, format, args);
+    LOG(tag, pos, format, args);
     va_end(args);
-    fprintf(output, "\n");
-    return ret;
 }
