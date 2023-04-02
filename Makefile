@@ -1,5 +1,6 @@
 # Info
 NAME ?= SysYParser
+VERSION ?= debug
 
 
 # Compiler
@@ -13,9 +14,14 @@ YACCFLAGS = -r solved
 LEXFLAGS  =
 
 INC_PATH =
-C_FLAGS  = -DDEBUG
-LDFLAGS  = -fsanitize=address -fsanitize=leak
-LDLIBS   =
+
+debug_C_SETS   = -g -Wall -Werror -DDEBUG
+debug_LDSETS   = -fsanitize=address -fsanitize=leak
+debug_LDLIBS   =
+
+release_C_SETS = -O2
+release_LDSETS =
+release_LDLIBS =
 
 
 # Source
@@ -37,20 +43,6 @@ include script/native.mk
 
 
 # Phony rules
-compinfo:
-	@echo ': Compiler Info'
-	@echo '  LEX  : $(LEX)'
-	@echo '  YACC : $(YACC)'
-	@echo '  CC   : $(CC)'
-	@echo '  CXX  : $(CXX)'
-	@echo '  LEXFLAGS  : $(LEXFLAGS)'
-	@echo '  YACCFLAGS : $(YACCFLAGS)'
-	@echo '  INCLUDES  : $(INCLUDES)'
-	@echo '  C_FLAGS   : $(C_FLAGS)'
-	@echo '  LDFLAGS   : $(LDFLAGS)'
-	@echo '  LDLIBS    : $(LDLIBS)'
-PHONY += compinfo
-
 clean:
 	@echo - CLEAN $(CLEAN)
 	@rm -rf $(CLEAN)
@@ -61,6 +53,13 @@ help:
 	@echo '  $(PHONY)'
 PHONY += help
 
+
+# Sanity check
+ifneq ($(VERSION),debug)
+  ifneq ($(VERSION),release)
+$(error $$(VERSION) ($(VERSION)) is not correct, need 'debug' or 'release')
+  endif
+endif
 
 
 # Settings
