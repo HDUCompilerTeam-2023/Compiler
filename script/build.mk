@@ -9,10 +9,10 @@ CLEAN += $(BUILD_DIR)/
 TMP_DIR = tmp-src
 CLEAN += $(TMP_DIR)/
 
-OBJ_DIR = $(BUILD_DIR)/obj-$(NAME)$(SO)
+OBJ_DIR = $(BUILD_DIR)/obj-$(NAME)-$(VERSION)
 OBJS = $(CSRCS:%.c=$(OBJ_DIR)/%.o) $(CXXSRCS:%.cc=$(OBJ_DIR)/%.o)
 
-BINARY = $(BUILD_DIR)/$(NAME)
+BINARY = $(BUILD_DIR)/$(NAME)-$(VERSION)
 
 
 # Compilers
@@ -33,33 +33,43 @@ include $(BUILD_SCIRPT)
 INC_PATH += include $(TMP_DIR)
 INCLUDES  = $(addprefix -I, $(INC_PATH))
 
-C_FLAGS  += -fPIE -g -Wall -Werror -O2 -MMD
-CCFLAGS   = $(LDFLAGS) $(C_FLAGS) $(INCLUDES)
-CXXFLAGS  = $(LDFLAGS) $(C_FLAGS) $(INCLUDES)
+C_SETS   = $($(VERSION)_C_SETS) -MMD -c
+LDSETS   = $($(VERSION)_LDSETS)
+LDLIBS   = $($(VERSION)_LDLIBS)
 
-LDFLAGS  +=
-LDLIBS   +=
+CC_STD   = --std=gnu11
+CXXSTD   = --std=c++17
+
+CCFLAGS  = $(LDSETS) $(C_SETS) $(INCLUDES) $(CC_STD)
+CXXFLAGS = $(LDSETS) $(C_SETS) $(INCLUDES) $(CXXSTD)
+LDFLAGS  = $(LDSETS) $(LDLIBS)
 
 -include $(OBJS:%.o=%.d)
 
 $(OBJ_DIR)/%.o: %.c
 	@echo + CC $<
 	@mkdir -p $(dir $@)
-	@$(CC) $(CCFLAGS) -c -o $@ $<
+	@$(CC) $(CCFLAGS) -o $@ $<
 
 $(OBJ_DIR)/%.o: %.cc
 	@echo + CXX $<
 	@mkdir -p $(dir $@)
-	@$(CXX) $(CXXFLAGS) -c -o $@ $<
+	@$(CXX) $(CXXFLAGS) -o $@ $<
 
 
 # Link rules
 $(BINARY): $(CSRCS) $(CXXSRCS) $(OBJS)
 	@echo + LD $(OBJS)
 	@mkdir -p $(dir $@)
-	@$(LD) $(LDFLAGS) $(LDLIBS) -o $@ $(OBJS)
+	@$(LD) $(LDFLAGS) -o $@ $(OBJS)
 
 
 # Phony rules
 app: $(BINARY)
+	$(info : Compiler Info)
+	$(info   LEX  : $(LEX) $(LEXFLAGS))
+	$(info   YACC : $(YACC) $(YACCFLAGS))
+	$(info   CC   : $(CC) $(CCFLAGS))
+	$(info   CXX  : $(CXX) $(CXXFLAGS))
+	$(info   LD   : $(LD) $(LDFLAGS))
 PHONY += app
