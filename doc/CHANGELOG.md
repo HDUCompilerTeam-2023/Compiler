@@ -1,5 +1,27 @@
 # Change log
 
+## 0.25.0
+
+- 对各个功能模块做了划分
+  - frontend 模块实现前端分析，读入源代码进行语法分析于语义分析；
+    - 依赖于 hir_gen 模块与 frontend_grammar 模块
+  - frontend_grammar 模块使用 bison 和 fleax 实现了解析功能；
+    - 依赖于 frontend_syntax 模块
+  - frontend_syntax 模块定义了语法分析过程中的语义处理函数；
+    - 依赖于 hir_gen 模块
+  - frontend_log 模块提供了前端部分的调试输出功能；
+    - 依赖于 log 模块
+  - hir_gen 模块定义了 hir 的数据结构与生成析构的函数；
+    - 依赖于 hir 模块
+  - hir 模块定义了高级中间语言 hir 的数据接口；
+- hir 高级中间语言定义
+  - hir 由 ast、type 和 symbol_table 组成
+  - symbol_table 使用一张哈希表实现访问
+
+## 0.24.0
+
+略过没记录的修改
+
 ## 0.23.1
 
 词法分析时，使用函数 atoi 获得整型常量的值时，只能解析十进制常量
