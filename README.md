@@ -4,6 +4,8 @@
 
 使用 GNU make 构建，通过`make help`查看可支持的命令
 
+通过`VERSION`参数传递编译版本，可选值为`debug`与`release`，默认为`debug`
+
 ## Commit
 
      <type>[<scope>]: <description>
@@ -36,7 +38,7 @@
 ## Directories
 
     /
-    ├── doc/       --- 文档 （ 目前暂无 ）
+    ├── doc/       --- 文档
     ├── build/     --- 构建目标 （ 由 make clean 删除 ）
     ├── tmp-src/   --- flex 与 bison 生成的 C 文件 （ 由 make clean 删除 ）
     ├── grammar/   --- flex 与 bison 的文法定义
