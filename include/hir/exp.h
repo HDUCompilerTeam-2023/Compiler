@@ -16,9 +16,6 @@ enum hir_exp_op {
     hir_exp_op_add, hir_exp_op_sub,
     hir_exp_op_mul, hir_exp_op_div, hir_exp_op_mod,
 
-    // hir_exp_op_fadd, hir_exp_op_fsub,
-    // hir_exp_op_fmul, hir_exp_op_fdiv, hir_exp_op_fmod,
-
     hir_exp_op_bool_not, hir_exp_op_minus,
 
     hir_exp_op_arr,
