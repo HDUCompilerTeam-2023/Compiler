@@ -18,16 +18,4 @@ struct symbol_type {
     };
 };
 
-struct type {
-    enum {
-        tval, tarr,
-        tfunc, tparam,
-    };
-    union {
-        struct type * p_son;
-        basic_type basic;
-    };
-    struct type * params;
-};
-
 #endif
