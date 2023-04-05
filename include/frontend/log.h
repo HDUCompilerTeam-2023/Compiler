@@ -3,11 +3,7 @@
 
 #include <frontend/parser.h>
 
-typedef enum {
-    trace,
-    log,
-    error,
-} loglevel;
+#include <util/log.h>
 
 void frontend_log(loglevel level, YYLTYPE *loc, yyscan_t scanner, const char *format, ...);
 
