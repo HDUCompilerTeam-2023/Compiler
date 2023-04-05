@@ -4,21 +4,10 @@
 #include <stdarg.h>
 
 void frontend_log(loglevel level, YYLTYPE *yylloc, yyscan_t yyscanner, const char *format, ...) {
-    va_list args;
-    const char *tag;
-    switch (level) {
-    case error:
-        tag = "ERROR";
-        break;
-    case log:
-    case trace:
-        tag = "FRONTEND";
-        break;
-    }
-
     const char *pos = "Line 1";
 
+    va_list args;
     va_start(args, format);
-    vaLOG(tag, pos, format, args);
+    vaLOG(level, "frontend", pos, format, args);
     va_end(args);
 }
