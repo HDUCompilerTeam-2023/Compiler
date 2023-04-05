@@ -19,6 +19,6 @@ void frontend_log(loglevel level, YYLTYPE *yylloc, yyscan_t yyscanner, const cha
     const char *pos = "Line 1";
 
     va_start(args, format);
-    LOG(tag, pos, format, args);
+    vaLOG(tag, pos, format, args);
     va_end(args);
 }
