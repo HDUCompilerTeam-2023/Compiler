@@ -12,22 +12,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
 
-    - name: Install LLVM and Clang
-      uses: KyleMayes/install-llvm-action@v1.8.0
-      with:
-        version: 10
-        force-version: 1
-        ubuntu-version: 20.04
-        cached: 1
-        env: 1
+    - name: Make debug
+      run: make VERSION=debug
+  
+    - name: Make release
+      run: make VERSION=release
 
-    - name: Install dependencies
-      run: make
+    - name: Test debug
+      run: make test VERSION=debug
 
-    - name: Run check
-      run: make test
-
-    - name: Run distcheck
+    - name: Test release
       run: make test VERSION=release
