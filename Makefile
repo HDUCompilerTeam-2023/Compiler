@@ -61,14 +61,6 @@ $(error $$(VERSION) ($(VERSION)) is not correct, need 'debug' or 'release')
   endif
 endif
 
-ifneq ($(shell bison --version | grep bison | awk '{print $$4}'), 3.5.1)
-$(error need bison-3.5.1)
-endif
-
-ifneq ($(shell flex --version | grep flex | awk '{print $$2}'), 2.6.4)
-$(error need flex-2.6.4)
-endif
-
 
 # Settings
 .PHONY: $(PHONY)
