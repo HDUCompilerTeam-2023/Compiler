@@ -24,7 +24,7 @@ PHONY += run
 gdb: $(BINARY)
 	@echo '> gdb $^'
 	@gdb -q $(BINARY)
-PHONY += run
+PHONY += gdb
 
 test: $(TESTSRC:%.sy=$(OUTPUT_DIR)/%.out)
 	@test -f $(OUTPUT_FAILURE) \
