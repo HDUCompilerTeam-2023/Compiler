@@ -58,7 +58,8 @@ $(OBJ_DIR)/%.o: %.cc
 
 
 # Link rules
-$(BINARY): $(CSRCS) $(CXXSRCS) $(OBJS)
+$(OBJS): $(CSRCS) $(CXXSRCS)
+$(BINARY): $(OBJS)
 	@echo '+ LD $(OBJS)'
 	@mkdir -p $(dir $@)
 	@$(LD) $(LDFLAGS) -o $@ $(OBJS)
