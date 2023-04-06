@@ -65,5 +65,9 @@ endif
 # Settings
 .PHONY: $(PHONY)
 
+## Always tag
+ALWAYS:
+.PHONY: ALWAYS
+
 ## do not remove secondary file
 .SECONDARY:

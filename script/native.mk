@@ -9,11 +9,7 @@ CLEAN += $(OUTPUT_DIR)/
 
 
 # Test rules
-$(OUTPUT_FAILURE): $(BINARY)
-	@mkdir -p $(dir $@)
-	@rm -f $@
-
-$(OUTPUT_DIR)/%.out: %.sy $(BINARY)
+$(OUTPUT_DIR)/%.out: %.sy $(BINARY) ALWAYS
 	@echo '> test $<'
 	@mkdir -p $(dir $@)
 	@$(BINARY) $< > $@ 2>&1 || echo $@ >> $(OUTPUT_FAILURE)
@@ -30,6 +26,6 @@ gdb: $(BINARY)
 	@gdb -q $(BINARY)
 PHONY += run
 
-test: $(OUTPUT_FAILURE) $(TESTSRC:%.sy=$(OUTPUT_DIR)/%.out)
-	@cat $(OUTPUT_FAILURE) 2> /dev/null && exit 1 || echo no error
+test: $(TESTSRC:%.sy=$(OUTPUT_DIR)/%.out)
+	@cat $(OUTPUT_FAILURE) 2> /dev/null && rm $(OUTPUT_FAILURE) && exit 1 || echo no error
 PHONY += test
