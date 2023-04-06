@@ -47,29 +47,36 @@ LDFLAGS  = $(LDSETS) $(LDLIBS)
 -include $(OBJS:%.o=%.d)
 
 $(OBJ_DIR)/%.o: %.c
-	@echo + CC $<
+	@echo '+ CC $<'
 	@mkdir -p $(dir $@)
 	@$(CC) $(CCFLAGS) -o $@ $<
 
 $(OBJ_DIR)/%.o: %.cc
-	@echo + CXX $<
+	@echo '+ CXX $<'
 	@mkdir -p $(dir $@)
 	@$(CXX) $(CXXFLAGS) -o $@ $<
 
 
 # Link rules
 $(BINARY): $(CSRCS) $(CXXSRCS) $(OBJS)
-	@echo + LD $(OBJS)
+	@echo '+ LD $(OBJS)'
 	@mkdir -p $(dir $@)
 	@$(LD) $(LDFLAGS) -o $@ $(OBJS)
 
 
 # Phony rules
-app: $(BINARY)
-	$(info : Compiler Info)
-	$(info   LEX  : $(LEX) $(LEXFLAGS))
-	$(info   YACC : $(YACC) $(YACCFLAGS))
-	$(info   CC   : $(CC) $(CCFLAGS))
-	$(info   CXX  : $(CXX) $(CXXFLAGS))
-	$(info   LD   : $(LD) $(LDFLAGS))
+compiler_version:
+	@echo ': Compiler version'
+	@echo '  $(shell $(LEX) --version | grep $(LEX))'
+	@echo '  $(shell $(YACC) --version | grep $(YACC))'
+	@echo '  $(shell $(CC) --version | grep $(CC))'
+PHONY += compiler_version
+
+app: compiler_version $(BINARY)
+	@echo ': Compiler arguments'
+	@echo '  LEX  : $(LEX) $(LEXFLAGS)'
+	@echo '  YACC : $(YACC) $(YACCFLAGS)'
+	@echo '  CC   : $(CC) $(CCFLAGS)'
+	@echo '  CXX  : $(CXX) $(CXXFLAGS)'
+	@echo '  LD   : $(LD) $(LDFLAGS)'
 PHONY += app
