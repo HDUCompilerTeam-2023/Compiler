@@ -1,0 +1,77 @@
+name: build-bison
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: get version
+        run: echo "RELEASE_VERSION=3.5.1" >> $GITHUB_ENV
+
+      - name: create bison dir
+        run: |
+          sudo mkdir /bison-$RELEASE_VERSION
+          sudo chown runner:docker /bison-$RELEASE_VERSION
+          cd /bison-$RELEASE_VERSION
+      - name: download bison
+        run: |
+          cd /bison-$RELEASE_VERSION
+          export BISON_URL=http://ftp.gnu.org/gnu/bison/bison-$RELEASE_VERSION.tar.gz
+          echo $BISON_URL
+          wget -q $BISON_URL -O bison.tar.gz
+      - name: untar
+        run: |
+          cd /bison-$RELEASE_VERSION
+          tar -xvf bison.tar.gz
+          mv bison-$RELEASE_VERSION src
+          ls -l
+          ls -l src/
+      - name: print info
+        run: |
+          cd /bison-$RELEASE_VERSION/src
+          cat INSTALL
+      - name: configure
+        run: |
+          cd /bison-$RELEASE_VERSION/src
+          ./configure --prefix=/bison-$RELEASE_VERSION
+      - name: make
+        run: |
+          cd /bison-$RELEASE_VERSION/src
+          make
+
+      - name: make install
+        run: |
+          cd /bison-$RELEASE_VERSION/src
+          make install
+      - name: delete src files
+        run: |
+          rm /bison-$RELEASE_VERSION/bison.tar.gz
+          rm -r /bison-$RELEASE_VERSION/src
+      - name: show compiled build
+        run: |
+          cd /bison-$RELEASE_VERSION
+          find .
+      - name: print build info
+        run: /bison-$RELEASE_VERSION/bin/bison --version
+
+      - name: tar compiled build
+        run: |
+          cd /bison-$RELEASE_VERSION
+          tar -czvf bison-$RELEASE_VERSION.tar.gz *
+          cd $GITHUB_WORKSPACE
+          mv /bison-$RELEASE_VERSION/bison-$RELEASE_VERSION.tar.gz .
+      - name: check tar archive
+        run: tar -ztvf bison-$RELEASE_VERSION.tar.gz
+
+      - name: release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: "*.tar.gz"
+          token: ${{ secrets.GITHUB_TOKEN }}
