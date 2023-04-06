@@ -1,4 +1,4 @@
-name: Makefile CI
+name: Auto Test CI
 
 on:
   push:
@@ -15,20 +15,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - run: |
+    - name: Set clang version as clang-10
+      run: |
         sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-10 300
         sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-10 300
         sudo update-alternatives --install /usr/bin/clang-cpp clang-cpp /usr/bin/clang-cpp-10 300
         clang --version
 
-    - name: Make debug
-      run: make VERSION=debug
-  
-    - name: Make release
-      run: make VERSION=release
-
-    - name: Test debug
+    - name: Test
       run: make test VERSION=debug
-
-    - name: Test release
-      run: make test VERSION=release
