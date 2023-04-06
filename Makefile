@@ -44,12 +44,12 @@ include script/native.mk
 
 # Phony rules
 clean:
-	@echo - CLEAN $(CLEAN)
+	@echo '- CLEAN $(CLEAN)'
 	@rm -rf $(CLEAN)
 PHONY += clean
 
 help:
-	@echo : commands
+	@echo ': commands'
 	@echo '  $(PHONY)'
 PHONY += help
 
