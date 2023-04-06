@@ -1,12 +1,6 @@
+# Files
 *
 *.*
-
-!*/
-.*/
-build/
-output/
-tmp-src/
-store/
 
 !.gitignore
 !*.md
@@ -14,17 +8,21 @@ store/
 !Makefile
 !*.mk
 
-!include/
-!grammar/
-!script/
-!test/
-!src/
-!doc/
-
+!*.[ly]
 !*.[ch]
 !*.cc
 
-!*.l
-!*.y
-
 !*.sy
+
+
+# Directory
+!*/
+
+build/
+output/
+tmp-src/
+store/
+
+
+# Invisible directory
+.*/
