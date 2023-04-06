@@ -14,8 +14,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-   
-    - name: version
+ 
     - run: clang --version
     - run: flex --version
     - run: bison --version
