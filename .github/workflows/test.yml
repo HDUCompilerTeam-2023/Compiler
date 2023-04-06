@@ -1,0 +1,25 @@
+name: Auto Test CI
+
+on:
+  push:
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Set clang version as clang-10
+      run: |
+        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-10 300
+        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-10 300
+        sudo update-alternatives --install /usr/bin/clang-cpp clang-cpp /usr/bin/clang-cpp-10 300
+        clang --version
+
+    - name: Test
+      run: make test VERSION=debug
