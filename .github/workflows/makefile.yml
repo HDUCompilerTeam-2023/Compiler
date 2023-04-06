@@ -9,11 +9,16 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+     
+    - name: version
+      run: clang --version
+           flex --version
+           bison --version
 
     - name: Make debug
       run: make VERSION=debug
