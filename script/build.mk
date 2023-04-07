@@ -1,7 +1,3 @@
-# Settings
-.DEFAULT_GOAL = app
-
-
 # Directorys
 BUILD_DIR = build
 CLEAN += $(BUILD_DIR)/
@@ -63,21 +59,3 @@ $(BINARY): $(OBJS)
 	@echo '+ LD $(OBJS)'
 	@mkdir -p $(dir $@)
 	@$(LD) $(LDFLAGS) -o $@ $(OBJS)
-
-
-# Phony rules
-compiler_version:
-	@  echo ': Compiler version' \
-	&& echo '  $(shell $(LEX) --version | grep $(LEX))' \
-	&& echo '  $(shell $(YACC) --version | grep $(YACC))' \
-	&& echo '  $(shell $(CC) --version | grep $(CC))'
-PHONY += compiler_version
-
-app: compiler_version $(BINARY)
-	@  echo ': Compiler arguments' \
-	&& echo '  LEX  : $(LEX) $(LEXFLAGS)' \
-	&& echo '  YACC : $(YACC) $(YACCFLAGS)' \
-	&& echo '  CC   : $(CC) $(CCFLAGS)' \
-	&& echo '  CXX  : $(CXX) $(CXXFLAGS)' \
-	&& echo '  LD   : $(LD) $(LDFLAGS)'
-PHONY += app

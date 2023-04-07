@@ -43,6 +43,15 @@ include script/native.mk
 
 
 # Phony rules
+app: pre-app $(BINARY)
+	@  echo ': Compiler arguments' \
+	&& echo '  LEX  : $(LEX) $(LEXFLAGS)' \
+	&& echo '  YACC : $(YACC) $(YACCFLAGS)' \
+	&& echo '  CC   : $(CC) $(CCFLAGS)' \
+	&& echo '  CXX  : $(CXX) $(CXXFLAGS)' \
+	&& echo '  LD   : $(LD) $(LDFLAGS)'
+PHONY += app
+
 clean:
 	@echo '- CLEAN $(CLEAN)'
 	@rm -rf $(CLEAN)
@@ -52,6 +61,15 @@ help:
 	@  echo ': commands' \
 	&& echo '  $(PHONY)'
 PHONY += help
+
+
+# Inner phony target
+pre-app:
+	@  echo ': Compiler version' \
+	&& echo '  $(shell $(LEX) --version | grep $(LEX))' \
+	&& echo '  $(shell $(YACC) --version | grep $(YACC))' \
+	&& echo '  $(shell $(CC) --version | grep $(CC))'
+.PHONY : pre-app
 
 
 # Sanity check
@@ -71,3 +89,6 @@ ALWAYS:
 
 ## do not remove secondary file
 .SECONDARY:
+
+## Default target
+.DEFAULT_GOAL = app
