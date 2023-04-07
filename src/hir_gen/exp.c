@@ -7,67 +7,10 @@ static inline void hir_exp_can_exec(p_hir_exp p_exp) {
     assert(p_exp->basic != type_void);
 }
 
-p_hir_exp hir_exp_trans_int2float(p_hir_exp p_int) {
-    hir_exp_can_exec(p_int);
-    p_hir_exp p_float = malloc(sizeof(*p_float));
-    *p_float = (hir_exp) {
-        .kind = hir_exp_exec,
-        .op = hir_exp_op_int2float,
-        .p_src_1 = p_int,
-        .basic = type_float,
-        .is_basic = true,
-        .syntax_const_exp = p_int->syntax_const_exp,
-    };
-    return p_float;
-}
-p_hir_exp hir_exp_trans_float2int(p_hir_exp p_float) {
-    hir_exp_can_exec(p_float);
-    p_hir_exp p_int = malloc(sizeof(*p_int));
-    *p_int = (hir_exp) {
-        .kind = hir_exp_exec,
-        .op = hir_exp_op_float2int,
-        .p_src_1 = p_float,
-        .basic = type_float,
-        .is_basic = true,
-        .syntax_const_exp = p_float->syntax_const_exp,
-    };
-    return p_int;
-}
-
-p_hir_exp hir_exp_dot_gen(p_hir_exp p_src_1, p_hir_exp p_src_2) {
-    assert(p_src_1 && p_src_2);
-
-    p_hir_exp p_exp = malloc(sizeof(*p_exp));
-    *p_exp = (hir_exp) {
-        .kind = hir_exp_exec,
-        .op = hir_exp_op_dot,
-        .p_src_1 = p_src_1,
-        .p_src_2 = p_src_2,
-        .is_basic = p_src_2->is_basic,
-        .syntax_const_exp = false, // TODO ?
-    };
-    if (p_exp->is_basic) {
-        p_exp->basic = p_src_2->basic;
-    }
-    else {
-        p_exp->p_type = p_src_2->p_type;
-    }
-    return p_exp;
-}
 p_hir_exp hir_exp_assign_gen(p_hir_exp lval, p_hir_exp rval) {
     assert(lval && rval);
     hir_exp_can_exec(lval);
     hir_exp_can_exec(rval);
-
-    basic_type type = lval->basic;
-    if (rval->basic != type) {
-        if (rval->basic == type_float) {
-            rval = hir_exp_trans_int2float(rval);
-        }
-        else {
-            rval = hir_exp_trans_int2float(rval);
-        }
-    }
 
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
@@ -75,7 +18,7 @@ p_hir_exp hir_exp_assign_gen(p_hir_exp lval, p_hir_exp rval) {
         .op = hir_exp_op_assign,
         .p_src_1 = lval,
         .p_src_2 = rval,
-        .basic = type,
+        .basic = lval->basic,
         .is_basic = true,
         .syntax_const_exp = false, // TODO ?
     };
@@ -89,12 +32,6 @@ p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) 
     basic_type type = p_src_1->basic;
     if (p_src_2->basic != type) {
         type = type_float;
-        if (p_src_2->basic == type_float) {
-            p_src_1 = hir_exp_trans_int2float(p_src_1);
-        }
-        else {
-            p_src_2 = hir_exp_trans_int2float(p_src_2);
-        }
     }
 
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
@@ -114,15 +51,13 @@ p_hir_exp hir_exp_lexec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2)
     hir_exp_can_exec(p_src_1);
     hir_exp_can_exec(p_src_2);
 
-    basic_type type = type_int;
-
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
         .kind = hir_exp_exec,
         .op = op,
         .p_src_1 = p_src_1,
         .p_src_2 = p_src_2,
-        .basic = type,
+        .basic = type_int,
         .is_basic = true,
         .syntax_const_exp = p_src_1->syntax_const_exp && p_src_2->syntax_const_exp,
     };
@@ -229,17 +164,8 @@ void hir_exp_drop(p_hir_exp p_exp) {
     case hir_exp_exec:
         switch (p_exp->op) {
         case hir_exp_op_assign:
-            if (p_exp->basic == type_float) printf("f");
-            printf("= ");
             hir_exp_drop(p_exp->p_src_1);
-            printf(" ");
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_dot:
-            if (p_exp->basic == type_float) printf("f");
-            printf(", ");
-            hir_exp_drop(p_exp->p_src_1);
-            printf(" ");
+            printf(" = ");
             hir_exp_drop(p_exp->p_src_2);
             break;
         case hir_exp_op_add:
@@ -341,14 +267,6 @@ void hir_exp_drop(p_hir_exp p_exp) {
         case hir_exp_op_minus:
             if (p_exp->basic == type_float) printf("f");
             printf("minus ");
-            hir_exp_drop(p_exp->p_src_1);
-            break;
-        case hir_exp_op_int2float:
-            printf("int2float ");
-            hir_exp_drop(p_exp->p_src_1);
-            break;
-        case hir_exp_op_float2int:
-            printf("float2int ");
             hir_exp_drop(p_exp->p_src_1);
             break;
         case hir_exp_op_arr:

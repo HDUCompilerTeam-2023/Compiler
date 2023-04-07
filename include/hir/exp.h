@@ -4,7 +4,6 @@
 #include <hir.h>
 
 enum hir_exp_op {
-    hir_exp_op_dot,
     hir_exp_op_assign,
 
     hir_exp_op_bool_or,
@@ -19,9 +18,6 @@ enum hir_exp_op {
     hir_exp_op_bool_not, hir_exp_op_minus,
 
     hir_exp_op_arr,
-
-    hir_exp_op_int2float,
-    hir_exp_op_float2int,
 };
 struct hir_exp {
     enum {
