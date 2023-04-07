@@ -43,14 +43,17 @@ include script/native.mk
 
 
 # Phony rules
-app: pre-app $(BINARY)
+build: pre-build $(BINARY)
 	@  echo ': Compiler arguments' \
 	&& echo '  LEX  : $(LEX) $(LEXFLAGS)' \
 	&& echo '  YACC : $(YACC) $(YACCFLAGS)' \
 	&& echo '  CC   : $(CC) $(CCFLAGS)' \
 	&& echo '  CXX  : $(CXX) $(CXXFLAGS)' \
 	&& echo '  LD   : $(LD) $(LDFLAGS)'
-PHONY += app
+PHONY += build
+
+rebuild: clean build
+PHONY += rebuild
 
 clean:
 	@echo '- CLEAN $(CLEAN)'
@@ -64,12 +67,12 @@ PHONY += help
 
 
 # Inner phony target
-pre-app:
+pre-build:
 	@  echo ': Compiler version' \
 	&& echo '  $(shell $(LEX) --version | grep $(LEX))' \
 	&& echo '  $(shell $(YACC) --version | grep $(YACC))' \
 	&& echo '  $(shell $(CC) --version | grep $(CC))'
-.PHONY : pre-app
+.PHONY : pre-build
 
 
 # Sanity check
@@ -91,4 +94,4 @@ ALWAYS:
 .SECONDARY:
 
 ## Default target
-.DEFAULT_GOAL = app
+.DEFAULT_GOAL = build
