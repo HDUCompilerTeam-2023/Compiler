@@ -3,7 +3,6 @@
 
 #include <hir/exp.h>
 
-p_hir_exp hir_exp_dot_gen(p_hir_exp p_src_1, p_hir_exp p_src_2);
 p_hir_exp hir_exp_assign_gen(p_hir_exp lval, p_hir_exp rval);
 p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2);
 p_hir_exp hir_exp_lexec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2);
