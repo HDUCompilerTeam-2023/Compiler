@@ -49,8 +49,8 @@ clean:
 PHONY += clean
 
 help:
-	@echo ': commands'
-	@echo '  $(PHONY)'
+	@  echo ': commands' \
+	&& echo '  $(PHONY)'
 PHONY += help
 
 
