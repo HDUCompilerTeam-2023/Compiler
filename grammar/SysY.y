@@ -242,7 +242,7 @@ RelExp : RelExp '<' AddExp { $$ = hir_exp_lexec_gen(hir_exp_op_l, $1, $3); }
        | AddExp
        ;
 
-ConstExp : Exp
+ConstExp : Exp { $$ = syntax_const_check($1); }
          ;
 
 Exp : AddExp
