@@ -2,22 +2,22 @@
 
 #include <hir_gen.h>
 
-static inline void hir_exp_can_exec(p_hir_exp p_exp) {
-    if (p_exp->kind == hir_exp_call) {
-        assert(p_exp->p_type->kind == type_func);
-        assert(p_exp->p_type->basic != type_void);
-    }
-    else if (p_exp->kind == hir_exp_val) {
-        assert(p_exp->p_type->kind == type_var);
-        assert(p_exp->p_type->basic != type_void);
-    }
+static inline basic_type exp_basic(p_hir_exp p_exp) {
+  if (p_exp->kind == hir_exp_call) {
+    assert(p_exp->p_type->kind == type_func);
+    return p_exp->p_type->basic;
+  } else if (p_exp->kind == hir_exp_val) {
+    assert(p_exp->p_type->kind == type_var);
+    return p_exp->p_type->basic;
+  }
+  return p_exp->basic;
 }
 
 p_hir_exp hir_exp_assign_gen(p_hir_exp lval, p_hir_exp rval) {
     assert(lval && rval);
     assert(lval->kind == hir_exp_val);
-    hir_exp_can_exec(lval);
-    hir_exp_can_exec(rval);
+    assert(exp_basic(lval) != type_void);
+    assert(exp_basic(rval) != type_void);
 
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
@@ -25,18 +25,19 @@ p_hir_exp hir_exp_assign_gen(p_hir_exp lval, p_hir_exp rval) {
         .op = hir_exp_op_assign,
         .p_src_1 = lval,
         .p_src_2 = rval,
-        .basic = lval->basic,
+        .basic = exp_basic(lval),
         .syntax_const_exp = false, // TODO ?
     };
     return p_exp;
 }
 p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) {
     assert(p_src_1 && p_src_2);
-    hir_exp_can_exec(p_src_1);
-    hir_exp_can_exec(p_src_2);
+    assert(exp_basic(p_src_1) != type_void);
+    assert(exp_basic(p_src_2) != type_void);
+    if (op == hir_exp_op_mod) assert(exp_basic(p_src_1) == type_int && exp_basic(p_src_1) == type_int);
 
-    basic_type type = p_src_1->basic;
-    if (p_src_2->basic != type) {
+    basic_type type = exp_basic(p_src_1);
+    if (exp_basic(p_src_1) != type) {
         type = type_float;
     }
 
@@ -53,8 +54,8 @@ p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) 
 }
 p_hir_exp hir_exp_lexec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) {
     assert(p_src_1 && p_src_2);
-    hir_exp_can_exec(p_src_1);
-    hir_exp_can_exec(p_src_2);
+    assert(exp_basic(p_src_1) != type_void);
+    assert(exp_basic(p_src_2) != type_void);
 
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
@@ -69,9 +70,9 @@ p_hir_exp hir_exp_lexec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2)
 }
 p_hir_exp hir_exp_uexec_gen(hir_exp_op op, p_hir_exp p_src_1) {
     assert(p_src_1);
-    hir_exp_can_exec(p_src_1);
+    assert(exp_basic(p_src_1) != type_void);
 
-    basic_type type = p_src_1->basic;
+    basic_type type = exp_basic(p_src_1);
     if (op == hir_exp_op_bool_not) {
         type = type_int;
     }
