@@ -16,35 +16,33 @@ enum hir_exp_op {
     hir_exp_op_mul, hir_exp_op_div, hir_exp_op_mod,
 
     hir_exp_op_bool_not, hir_exp_op_minus,
-
-    hir_exp_op_arr,
 };
 struct hir_exp {
     enum {
         hir_exp_exec,
         hir_exp_call,
-        hir_exp_id,
+        hir_exp_val,
         hir_exp_num,
     } kind;
     union {
         struct {
             p_hir_exp p_src_1, p_src_2;
             hir_exp_op op;
-        }; // exec 2
+        }; // exec
         struct {
             p_symbol_sym p_sym;
-            p_hir_param_list p_param_list;
-        }; // call id
+            union {
+                p_hir_param_list p_param_list;
+                p_hir_exp p_offset;
+            };
+            p_symbol_type p_type;
+        }; // call val
         union {
             INTCONST_t intconst; // int
             FLOATCONST_t floatconst; // float
         };
     };
-    bool is_basic;
-    union {
-        basic_type basic;
-        p_symbol_type p_type;
-    };
+    basic_type basic;
     bool syntax_const_exp;
 };
 
