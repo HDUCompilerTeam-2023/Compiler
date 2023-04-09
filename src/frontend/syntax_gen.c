@@ -21,7 +21,7 @@ p_syntax_init syntax_init_list_add(p_syntax_init p_list, p_syntax_init p_init) {
 p_syntax_init syntax_init_exp_gen(p_hir_exp p_exp) {
     p_syntax_init p_init = malloc(sizeof(*p_init));
     *p_init = (syntax_init) {
-        .syntax_const = p_exp->syntax_const_exp,
+        .syntax_const = (p_exp->kind == hir_exp_num),
         .is_exp = true,
         .p_exp = p_exp,
         .node = list_head_init(&p_init->node),
@@ -65,9 +65,9 @@ p_syntax_decl syntax_decl_gen(char *name) {
 p_syntax_decl syntax_decl_arr(p_syntax_decl p_decl, p_hir_exp p_exp) {
     size_t size = 0;
     if (p_exp) { // TODO
-        // assert(p_exp->kind == hir_exp_num);
+        assert(p_exp->basic == type_int);
         size = p_exp->intconst;
-        hir_exp_drop(p_exp);
+        free(p_exp);
     }
     p_symbol_type p_arrary = symbol_type_arrary_gen(size);
     syntax_decl_type_add(p_decl, p_arrary);
@@ -202,4 +202,9 @@ void syntax_global_vardecl(p_symbol_store pss, p_syntax_decl_list p_decl_list) {
         free(p_decl);
     }
     free(p_decl_list);
+}
+
+p_hir_exp syntax_const_check(p_hir_exp p_exp) {
+    assert(p_exp->kind == hir_exp_num);
+    return p_exp;
 }

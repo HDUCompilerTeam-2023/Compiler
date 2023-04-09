@@ -22,7 +22,7 @@ p_symbol_init symbol_init_gen_exp(p_hir_exp p_exp) {
     p_symbol_init p_init = malloc(sizeof(*p_init));
     *p_init = (symbol_init) {
         .is_exp = true,
-        .syntax_const = p_exp->syntax_const_exp,
+        .syntax_const = (p_exp->kind == hir_exp_num),
         .p_exp = p_exp,
         .node = list_head_init(&p_init->node),
     };

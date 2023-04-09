@@ -56,6 +56,8 @@ void syntax_func_param(p_symbol_store pss, p_syntax_param_list p_param_list);
 p_hir_block syntax_local_vardecl(p_symbol_store pss, p_hir_block p_block, p_syntax_decl_list p_decl_list);
 void syntax_global_vardecl(p_symbol_store pss, p_syntax_decl_list p_decl_list);
 
+p_hir_exp syntax_const_check(p_hir_exp p_exp);
+
 #include <hir_gen.h>
 
 #endif
