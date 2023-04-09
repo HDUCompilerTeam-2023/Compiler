@@ -3,12 +3,19 @@
 #include <hir_gen.h>
 
 static inline void hir_exp_can_exec(p_hir_exp p_exp) {
-    assert(p_exp->is_basic);
-    assert(p_exp->basic != type_void);
+    if (p_exp->kind == hir_exp_call) {
+        assert(p_exp->p_type->kind == type_func);
+        assert(p_exp->p_type->basic != type_void);
+    }
+    else if (p_exp->kind == hir_exp_val) {
+        assert(p_exp->p_type->kind == type_var);
+        assert(p_exp->p_type->basic != type_void);
+    }
 }
 
 p_hir_exp hir_exp_assign_gen(p_hir_exp lval, p_hir_exp rval) {
     assert(lval && rval);
+    assert(lval->kind == hir_exp_val);
     hir_exp_can_exec(lval);
     hir_exp_can_exec(rval);
 
@@ -19,7 +26,6 @@ p_hir_exp hir_exp_assign_gen(p_hir_exp lval, p_hir_exp rval) {
         .p_src_1 = lval,
         .p_src_2 = rval,
         .basic = lval->basic,
-        .is_basic = true,
         .syntax_const_exp = false, // TODO ?
     };
     return p_exp;
@@ -41,7 +47,6 @@ p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) 
         .p_src_1 = p_src_1,
         .p_src_2 = p_src_2,
         .basic = type,
-        .is_basic = true,
         .syntax_const_exp = p_src_1->syntax_const_exp && p_src_2->syntax_const_exp,
     };
     return p_exp;
@@ -58,7 +63,6 @@ p_hir_exp hir_exp_lexec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2)
         .p_src_1 = p_src_1,
         .p_src_2 = p_src_2,
         .basic = type_int,
-        .is_basic = true,
         .syntax_const_exp = p_src_1->syntax_const_exp && p_src_2->syntax_const_exp,
     };
     return p_exp;
@@ -79,59 +83,49 @@ p_hir_exp hir_exp_uexec_gen(hir_exp_op op, p_hir_exp p_src_1) {
         .p_src_1 = p_src_1,
         .p_src_2 = NULL,
         .basic = type,
-        .is_basic = true,
         .syntax_const_exp = p_src_1->syntax_const_exp,
     };
     return p_exp;
 }
 
 p_hir_exp hir_exp_call_gen(p_symbol_sym p_sym, p_hir_param_list p_param_list) {
+    assert(p_sym);
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
         .kind = hir_exp_call,
         .p_sym = p_sym,
         .p_param_list = p_param_list,
-        .basic = p_sym->p_type->basic,
-        .is_basic = true,
+        .p_type = p_sym->p_type,
         .syntax_const_exp = false,
     };
     return p_exp;
 }
-p_hir_exp hir_exp_id_gen(p_symbol_sym p_sym) {
+
+p_hir_exp hir_exp_val_gen(p_symbol_sym p_sym) {
     assert(p_sym);
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
-    *p_exp = (hir_exp) {
-        .kind = hir_exp_id,
+    *p_exp = (hir_exp){
+        .kind = hir_exp_val,
         .p_sym = p_sym,
+        .p_offset = NULL,
         .p_type = p_sym->p_type,
-        .is_basic = false,
         .syntax_const_exp = false,
     };
-    assert(p_exp->p_type);
-    if (p_exp->p_type->kind == type_var) {
-        p_exp->is_basic = true;
-        p_exp->basic = p_exp->p_type->basic;
-    }
     return p_exp;
 }
-p_hir_exp hir_exp_arr_gen(p_hir_exp p_arrary, p_hir_exp p_index) {
-    assert(!p_arrary->is_basic);
-    p_hir_exp p_exp = malloc(sizeof(*p_exp));
-    *p_exp = (hir_exp) {
-        .kind = hir_exp_exec,
-        .op = hir_exp_op_arr,
-        .p_src_1 = p_arrary,
-        .p_src_2 = p_index,
-        .p_type = p_arrary->p_type->p_item,
-        .is_basic = false,
-        .syntax_const_exp = false,
-    };
-    assert(p_exp->p_type);
-    if (p_exp->p_type->kind == type_var) {
-        p_exp->basic = p_exp->p_type->basic;
-        p_exp->is_basic = true;
+p_hir_exp hir_exp_val_offset(p_hir_exp p_val, p_hir_exp p_offset) {
+    assert(p_val->p_type->kind == type_arrary);
+    uint64_t size = p_val->p_type->size;
+    p_val->p_type = p_val->p_type->p_item;
+    if (p_val->p_offset) {
+        p_hir_exp p_length = hir_exp_int_gen(size);
+        p_val->p_offset = hir_exp_exec_gen(hir_exp_op_mul, p_val->p_offset, p_length);
+        p_val->p_offset = hir_exp_exec_gen(hir_exp_op_add, p_val->p_offset, p_offset);
     }
-    return p_exp;
+    else {
+        p_val->p_offset = p_offset;
+    }
+    return p_val;
 }
 
 p_hir_exp hir_exp_int_gen(INTCONST_t num) {
@@ -140,7 +134,6 @@ p_hir_exp hir_exp_int_gen(INTCONST_t num) {
         .kind = hir_exp_num,
         .intconst = num,
         .basic = type_int,
-        .is_basic = true,
         .syntax_const_exp = true,
     };
     return p_exp;
@@ -151,7 +144,6 @@ p_hir_exp hir_exp_float_gen(FLOATCONST_t num) {
         .kind = hir_exp_num,
         .floatconst = num,
         .basic = type_float,
-        .is_basic = true,
         .syntax_const_exp = true,
     };
     return p_exp;
@@ -269,12 +261,6 @@ void hir_exp_drop(p_hir_exp p_exp) {
             printf("minus ");
             hir_exp_drop(p_exp->p_src_1);
             break;
-        case hir_exp_op_arr:
-            hir_exp_drop(p_exp->p_src_1);
-            printf("[");
-            hir_exp_drop(p_exp->p_src_2);
-            printf("]");
-            break;
         }
         break;
     case hir_exp_call:
@@ -282,8 +268,13 @@ void hir_exp_drop(p_hir_exp p_exp) {
         hir_param_list_drop(p_exp->p_param_list);
         printf(")");
         break;
-    case hir_exp_id:
+    case hir_exp_val:
         printf("%s", p_exp->p_sym->name);
+        if (p_exp->p_offset) {
+            printf("[");
+            hir_exp_drop(p_exp->p_offset);
+            printf("]");
+        }
         break;
     case hir_exp_num:
         if (p_exp->basic == type_float) printf("%lf", p_exp->floatconst);

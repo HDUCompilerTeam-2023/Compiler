@@ -13,7 +13,7 @@ struct symbol_type {
         basic_type basic;
     };
     union {
-        size_t size;
+        uint64_t size;
         p_symbol_type p_params;
     };
 };
