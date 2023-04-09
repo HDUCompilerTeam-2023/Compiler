@@ -9,8 +9,8 @@
 
 #include <limits.h>
 
-uint64_t str2ull(const char *text, int base, YYLTYPE *loc, yyscan_t scanner);
-double str2float(const char *text, YYLTYPE *loc, yyscan_t scanner);
+INTCONST_t str2int(const char *text, int base, YYLTYPE *loc, yyscan_t scanner);
+FLOATCONST_t str2float(const char *text, YYLTYPE *loc, yyscan_t scanner);
 %}
 
 %option reentrant bison-bridge bison-locations
@@ -88,31 +88,31 @@ DECFLOATCONST  (([0-9]+[eE][-+]?[0-9]+)|((([0-9]+\.)|([0-9]*\.[0-9]+))([eE][-+]?
 }
 
 {DECINTCONST} {
-    uint64_t val = str2ull(yytext, 10, yylloc, yyscanner);
+    INTCONST_t val = str2int(yytext, 10, yylloc, yyscanner);
 
     yylval->INTCONST = val;
     return INTCONST;
 }
 {OCTINTCONST} {
-    uint64_t val = str2ull(yytext, 8, yylloc, yyscanner);
+    INTCONST_t val = str2int(yytext, 8, yylloc, yyscanner);
 
     yylval->INTCONST = val;
     return INTCONST;
 }
 {HEXINTCONST} {
-    uint64_t val = str2ull(yytext, 16, yylloc, yyscanner);
+    INTCONST_t val = str2int(yytext, 16, yylloc, yyscanner);
 
     yylval->INTCONST = val;
     return INTCONST;
 }
 
 {DECFLOATCONST} {
-    double val = str2float(yytext, yylloc, yyscanner);
+    FLOATCONST_t val = str2float(yytext, yylloc, yyscanner);
     yylval->FLOATCONST = val;
     return FLOATCONST;
 }
 {HEXFLOATCONST} {
-    double val = str2float(yytext, yylloc, yyscanner);
+    FLOATCONST_t val = str2float(yytext, yylloc, yyscanner);
     yylval->FLOATCONST = val;
     return FLOATCONST;
 }
@@ -137,13 +137,12 @@ DECFLOATCONST  (([0-9]+[eE][-+]?[0-9]+)|((([0-9]+\.)|([0-9]*\.[0-9]+))([eE][-+]?
 
 . { yyerror(yylloc, yyscanner, "lexical error, unexpected \"%s\"", yytext); }
 %%
-uint64_t str2ull(const char *text, int base, YYLTYPE *loc, yyscan_t scanner) {
+INTCONST_t str2int(const char *text, int base, YYLTYPE *loc, yyscan_t scanner) {
     char *endptr;
     errno = 0;
-    uint64_t tmp = strtoull(text, &endptr, base);
-    if ((errno == ERANGE && tmp == ULLONG_MAX)
-        || (errno == EINVAL && tmp == 0)) {
-        yyerror(loc, scanner, "lexical error, wrong integer constant \"%s\": %m", text);
+    INTCONST_t tmp = strtoll(text, &endptr, base);
+    if ((errno == ERANGE && tmp == LLONG_MAX)) {
+        yyerror(loc, scanner, "lexical error, integer constant too big\"%s\": %m", text);
         tmp = 0;
         errno = 0;
     }
@@ -152,10 +151,10 @@ uint64_t str2ull(const char *text, int base, YYLTYPE *loc, yyscan_t scanner) {
     }
     return tmp;
 }
-double str2float(const char *text, YYLTYPE *loc, yyscan_t scanner) {
+FLOATCONST_t str2float(const char *text, YYLTYPE *loc, yyscan_t scanner) {
     char *endptr;
     errno = 0;
-    double tmp = strtod(text, &endptr);
+    FLOATCONST_t tmp = strtod(text, &endptr);
     if (errno == ERANGE) {
         yyerror(loc, scanner, "lexical error, wrong float constant \"%s\": %m", text);
         tmp = 0;

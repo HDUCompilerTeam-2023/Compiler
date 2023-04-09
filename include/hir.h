@@ -3,7 +3,7 @@
 
 #include <util.h>
 
-typedef uint64_t INTCONST_t;
+typedef int64_t INTCONST_t;
 typedef double FLOATCONST_t;
 typedef char *ID_t;
 
