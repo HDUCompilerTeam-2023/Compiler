@@ -275,8 +275,8 @@ PrimaryExp : '(' Exp ')' { $$ = $2; }
 Call : ID '(' FuncRParams ')' { $$ = hir_exp_call_gen(find_sym($1), $3); free($1); }
      ;
 
-Val : ID                 { $$ = hir_exp_id_gen(find_sym($1)); free($1); }
-    | Val '[' Exp ']'    { $$ = hir_exp_arr_gen($1, $3); }
+Val : ID                 { $$ = hir_exp_val_gen(find_sym($1)); free($1); }
+    | Val '[' Exp ']'    { $$ = hir_exp_val_offset($1, $3); }
     ;
 
 FuncRParams : FuncRParamList { $$ = $1; }
