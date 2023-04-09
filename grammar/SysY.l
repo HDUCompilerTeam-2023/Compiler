@@ -31,23 +31,11 @@ NEQ  (!=)
 AND  (&&)
 OR   (\|\|)
 
-SELFADD ([+][+])
-SELFSUB ([-][-])
-
-UNSIGNED  (unsigned)
-SIGNED    (signed)
-SHORT     (short)
-LONG      (long)
 INT       (int)
-CHAR      (char)
 FLOAT     (float)
-DOUBLE    (double)
 VOID      (void)
 CONST     (const)
-VOLATILE  (volatile)
-DO        (do)
 WHILE     (while)
-FOR       (for)
 BREAK     (break)
 CONTINUE  (continue)
 IF        (if)
@@ -70,9 +58,6 @@ DECFLOATCONST  (([0-9]+[eE][-+]?[0-9]+)|((([0-9]+\.)|([0-9]*\.[0-9]+))([eE][-+]?
 
 [-+*/%,()\[\]{};<=>!] { return yytext[0]; }
 
-{SELFADD} { return SELFADD; }
-{SELFSUB} { return SELFSUB; }
-
 {LE}  { return LE;  }
 {GE}  { return GE;  }
 {EQ}  { return EQ;  }
@@ -84,20 +69,11 @@ DECFLOATCONST  (([0-9]+[eE][-+]?[0-9]+)|((([0-9]+\.)|([0-9]*\.[0-9]+))([eE][-+]?
 {BLANK}+   { /* empty space */ }
 {NEWLINE}+ { /* empty lines */ }
 
-{UNSIGNED} { return UNSIGNED; }
-{SIGNED}   { return SIGNED;   }
-{SHORT}    { return SHORT;    }
-{LONG}     { return LONG;     }
-{CHAR}     { return CHAR;     }
 {INT}      { return INT;      }
 {FLOAT}    { return FLOAT;    }
-{DOUBLE}   { return DOUBLE;   }
 {VOID}     { return VOID;     }
 {CONST}    { return CONST;    }
-{VOLATILE} { return VOLATILE; }
-{DO}       { return DO;       }
 {WHILE}    { return WHILE;    }
-{FOR}      { return FOR;      }
 {BREAK}    { return BREAK;    }
 {CONTINUE} { return CONTINUE; }
 {IF}       { return IF;       }
