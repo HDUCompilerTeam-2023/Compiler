@@ -26,7 +26,6 @@ p_hir_exp hir_exp_assign_gen(p_hir_exp lval, p_hir_exp rval) {
         .p_src_1 = lval,
         .p_src_2 = rval,
         .basic = exp_basic(lval),
-        .syntax_const_exp = false, // TODO ?
     };
     return p_exp;
 }
@@ -136,7 +135,6 @@ p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) 
         .p_src_1 = p_src_1,
         .p_src_2 = p_src_2,
         .basic = type,
-        .syntax_const_exp = p_src_1->syntax_const_exp && p_src_2->syntax_const_exp,
     };
     return p_exp;
 }
@@ -152,7 +150,6 @@ p_hir_exp hir_exp_lexec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2)
         .p_src_1 = p_src_1,
         .p_src_2 = p_src_2,
         .basic = type_int,
-        .syntax_const_exp = p_src_1->syntax_const_exp && p_src_2->syntax_const_exp,
     };
     return p_exp;
 }
@@ -189,7 +186,6 @@ p_hir_exp hir_exp_uexec_gen(hir_exp_op op, p_hir_exp p_src_1) {
         .p_src_1 = p_src_1,
         .p_src_2 = NULL,
         .basic = type,
-        .syntax_const_exp = p_src_1->syntax_const_exp,
     };
     return p_exp;
 }
@@ -202,7 +198,6 @@ p_hir_exp hir_exp_call_gen(p_symbol_sym p_sym, p_hir_param_list p_param_list) {
         .p_sym = p_sym,
         .p_param_list = p_param_list,
         .p_type = p_sym->p_type,
-        .syntax_const_exp = false,
     };
     return p_exp;
 }
@@ -215,7 +210,6 @@ p_hir_exp hir_exp_val_gen(p_symbol_sym p_sym) {
         .p_sym = p_sym,
         .p_offset = NULL,
         .p_type = p_sym->p_type,
-        .syntax_const_exp = false,
     };
     return p_exp;
 }
@@ -240,7 +234,6 @@ p_hir_exp hir_exp_int_gen(INTCONST_t num) {
         .kind = hir_exp_num,
         .intconst = num,
         .basic = type_int,
-        .syntax_const_exp = true,
     };
     return p_exp;
 }
@@ -250,7 +243,6 @@ p_hir_exp hir_exp_float_gen(FLOATCONST_t num) {
         .kind = hir_exp_num,
         .floatconst = num,
         .basic = type_float,
-        .syntax_const_exp = true,
     };
     return p_exp;
 }

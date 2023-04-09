@@ -43,7 +43,6 @@ struct hir_exp {
         };
     };
     basic_type basic;
-    bool syntax_const_exp;
 };
 
 #endif
