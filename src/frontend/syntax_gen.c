@@ -47,7 +47,17 @@ void syntax_init_drop(p_syntax_init p_init) {
 }
 
 void syntax_decl_type_add(p_syntax_decl p_decl, p_symbol_type p_tail) {
-    if (p_decl->p_tail) p_decl->p_tail->p_item = p_tail;
+    if (p_decl->p_tail) {
+        p_decl->p_tail->p_item = p_tail;
+        if (p_tail->kind == type_arrary) {
+            assert(p_decl->p_type->kind == type_arrary);
+            p_symbol_type p_node = p_decl->p_type;
+            while (p_node != p_tail) {
+                p_node->size *= p_tail->size;
+                p_node = p_node->p_item;
+            }
+        }
+    }
     else p_decl->p_type = p_tail;
     p_decl->p_tail = p_tail;
 }

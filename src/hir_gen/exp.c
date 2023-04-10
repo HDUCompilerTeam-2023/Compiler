@@ -215,10 +215,13 @@ p_hir_exp hir_exp_val_gen(p_symbol_sym p_sym) {
 }
 p_hir_exp hir_exp_val_offset(p_hir_exp p_val, p_hir_exp p_offset) {
     assert(p_val->p_type->kind == type_arrary);
-    uint64_t size = p_val->p_type->size;
+    uint64_t length = p_val->p_type->size;
+    if (p_val->p_type->p_item->kind == type_arrary) {
+        length /= p_val->p_type->p_item->size;
+    }
     p_val->p_type = p_val->p_type->p_item;
     if (p_val->p_offset) {
-        p_hir_exp p_length = hir_exp_int_gen(size);
+        p_hir_exp p_length = hir_exp_int_gen(length);
         p_val->p_offset = hir_exp_exec_gen(hir_exp_op_mul, p_val->p_offset, p_length);
         p_val->p_offset = hir_exp_exec_gen(hir_exp_op_add, p_val->p_offset, p_offset);
     }
