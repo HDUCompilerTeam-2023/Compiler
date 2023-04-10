@@ -317,6 +317,29 @@ PUSHZONE : /* *empty */ { symbol_push_zone(pss); }
 POPZONE : /* *empty */ { symbol_pop_zone(pss); }
         ;
 
-CompUnitInit : /* *empty */ { $$ = p_ast; }
+CompUnitInit : /* *empty */ {
+                     $$ = p_ast;
+                     syntax_rtlib_decl(pss, type_int, "getint", NULL, NULL);
+                     syntax_rtlib_decl(pss, type_int, "getch", NULL, NULL);
+                     syntax_rtlib_decl(pss, type_float, "getfloat", NULL, NULL);
+
+                     p_symbol_type p_type = symbol_type_arrary_gen(0);
+                     p_type->p_item = symbol_type_var_gen(type_int);
+                     syntax_rtlib_decl(pss, type_int, "getarray", p_type, NULL);
+                     p_type = symbol_type_arrary_gen(0);
+                     p_type->p_item = symbol_type_var_gen(type_float);
+                     syntax_rtlib_decl(pss, type_int, "getfarray", p_type, NULL);
+
+                     syntax_rtlib_decl(pss, type_void, "putint", symbol_type_var_gen(type_int), NULL);
+                     syntax_rtlib_decl(pss, type_void, "putch", symbol_type_var_gen(type_int), NULL);
+                     syntax_rtlib_decl(pss, type_void, "putfloat", symbol_type_var_gen(type_float), NULL);
+
+                     p_type = symbol_type_arrary_gen(0);
+                     p_type->p_item = symbol_type_var_gen(type_int);
+                     syntax_rtlib_decl(pss, type_void, "putarray", symbol_type_var_gen(type_int), p_type);
+                     p_type = symbol_type_arrary_gen(0);
+                     p_type->p_item = symbol_type_var_gen(type_float);
+                     syntax_rtlib_decl(pss, type_void, "putfarray", symbol_type_var_gen(type_int), p_type);
+              }
              ;
 %%

@@ -26,7 +26,13 @@ void symbol_store_print(p_symbol_store pss) {
         printf(" -> ");
         symbol_sym_print(p_node);
         if (p_node->p_type->kind == type_func) {
-            hir_func_print(p_node->p_func);
+            if (p_node->p_func) {
+                printf("\n");
+                hir_func_print(p_node->p_func);
+            }
+            else {
+                printf(";");
+            }
         } else {
             symbol_init_print(p_node->p_init);
         }
