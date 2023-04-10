@@ -13,6 +13,10 @@ static inline basic_type exp_basic(p_hir_exp p_exp) {
   return p_exp->basic;
 }
 
+
+basic_type hir_exp_get_basic(p_hir_exp p_exp) {
+    return exp_basic(p_exp);
+}
 p_hir_exp hir_exp_assign_gen(p_hir_exp lval, p_hir_exp rval) {
     assert(lval && rval);
     assert(lval->kind == hir_exp_val);
