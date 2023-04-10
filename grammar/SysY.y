@@ -130,7 +130,7 @@ begin : PUSHZONE CompUnit POPZONE
       ;
 
 CompUnit : CompUnit Declaration     { syntax_global_vardecl(pss, $2); }
-         | CompUnit FuncDeclaration { $$ = hir_program_add($1, $2); }
+         | CompUnit FuncDeclaration
          | CompUnitInit
          | CompUnit error
          ;

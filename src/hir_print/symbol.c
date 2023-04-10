@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include <hir/symbol.h>
+#include <hir/type.h>
 
 void symbol_sym_print(p_symbol_sym p_sym) {
     printf("%s", p_sym->name);
@@ -24,7 +25,11 @@ void symbol_store_print(p_symbol_store pss) {
         symbol_type_print(p_node->p_type);
         printf(" -> ");
         symbol_sym_print(p_node);
-        symbol_init_print(p_node->p_init);
+        if (p_node->p_type->kind == type_func) {
+            hir_func_print(p_node->p_func);
+        } else {
+            symbol_init_print(p_node->p_init);
+        }
         printf("\n");
 
         p_node = p_node->p_next;

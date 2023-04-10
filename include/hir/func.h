@@ -6,8 +6,6 @@
 struct hir_func {
     p_hir_block p_block;
     p_symbol_sym p_sym;
-
-    list_head node;
 };
 
 #endif

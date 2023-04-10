@@ -8,6 +8,6 @@
 void hir_func_print(p_hir_func p_func) {
     assert(p_func);
 
-    printf("%s ()\n", p_func->p_sym->name);
+    printf("\n");
     hir_block_print(p_func->p_block);
 }
