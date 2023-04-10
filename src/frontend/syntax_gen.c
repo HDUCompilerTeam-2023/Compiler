@@ -226,6 +226,20 @@ void syntax_global_vardecl(p_symbol_store pss, p_syntax_decl_list p_decl_list) {
     free(p_decl_list);
 }
 
+void syntax_rtlib_decl(p_symbol_store pss, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2) {
+    p_symbol_type p_type = symbol_type_func_gen();
+    p_type->basic = type;
+
+    if (p_param1) {
+        p_type->p_params = symbol_type_param_gen(p_param1);
+        if (p_param2) {
+            p_type->p_params->p_params = symbol_type_param_gen(p_param2);
+        }
+    }
+
+    symbol_add(pss, name, p_type, false, true, NULL);
+}
+
 p_hir_exp syntax_const_check(p_hir_exp p_exp) {
     assert(p_exp->kind == hir_exp_num);
     return p_exp;

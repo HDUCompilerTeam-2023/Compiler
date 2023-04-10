@@ -37,6 +37,15 @@ p_symbol_type symbol_type_param_gen(p_symbol_type p_param) {
     return p_type;
 }
 
+void symbol_type_drop_param(p_symbol_type p_type) {
+    assert(p_type->kind == type_func);
+    p_symbol_type p_param = p_type->p_params;
+    while (p_param) {
+        symbol_type_drop(p_param->p_item);
+        p_param = p_param->p_params;
+    }
+}
+
 void symbol_type_drop(p_symbol_type p_type) {
     assert(p_type);
     if (p_type->kind == type_var) {
