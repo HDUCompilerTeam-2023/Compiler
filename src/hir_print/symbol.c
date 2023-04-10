@@ -5,7 +5,7 @@
 #include <hir/type.h>
 
 void symbol_sym_print(p_symbol_sym p_sym) {
-    printf("%s", p_sym->name);
+    printf("<%s,%ld>", p_sym->name, p_sym->id);
 }
 
 void symbol_init_print(p_symbol_init p_init) {

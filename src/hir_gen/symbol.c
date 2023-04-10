@@ -76,6 +76,12 @@ void symbol_pop_zone(p_symbol_store pss) {
     p_symbol_item p_item = del_table->p_item;
     while(p_item) {
         p_item->p_info->p_next = pss->p_info;
+        if (pss->p_info) {
+            p_item->p_info->id = pss->p_info->id + 1;
+        }
+        else {
+            p_item->p_info->id = 0;
+        }
         pss->p_info = p_item->p_info;
 
         p_item->p_name->p_item = p_item->p_prev;
