@@ -2,8 +2,6 @@
 
 #include <hir_gen.h>
 
-int deep = 0;
-
 p_hir_program hir_program_gen(void) {
     p_hir_program p_program = malloc(sizeof(*p_program));
     *p_program = (hir_program) {
