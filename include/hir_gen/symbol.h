@@ -3,10 +3,7 @@
 
 #include <hir/symbol.h>
 
-p_symbol_init_list symbol_init_list_gen(void);
-p_symbol_init_list symbol_init_list_add(p_symbol_init_list p_list, p_symbol_init p_init);
-p_symbol_init symbol_init_gen_exp(p_hir_exp p_exp);
-p_symbol_init symbol_init_gen_list(p_symbol_init_list p_list);
+p_symbol_init symbol_init_gen(size_t size);
 void symbol_init_drop(p_symbol_init p_init);
 
 p_symbol_store symbol_store_initial();
