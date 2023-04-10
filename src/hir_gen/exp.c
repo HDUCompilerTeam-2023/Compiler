@@ -13,6 +13,30 @@ static inline basic_type exp_basic(p_hir_exp p_exp) {
   return p_exp->basic;
 }
 
+static inline void exp_val_const(p_hir_exp p_exp) {
+    if (!p_exp->p_sym->is_const)
+        return;
+    if (p_exp->p_type->kind == type_arrary)
+        return;
+
+    if (!p_exp->p_offset) {
+        p_hir_exp p_val = p_exp->p_sym->p_init->memory[0];
+        *p_exp = *p_val;
+        return;
+    }
+
+    if (p_exp->p_offset->kind != hir_exp_num)
+        return;
+
+    assert(p_exp->p_offset->basic == type_int);
+    size_t offset = p_exp->p_offset->intconst;
+    free(p_exp->p_offset);
+
+    assert(offset < p_exp->p_sym->p_type->size);
+    p_hir_exp p_val = p_exp->p_sym->p_init->memory[offset];
+
+    *p_exp = *p_val;
+}
 
 basic_type hir_exp_get_basic(p_hir_exp p_exp) {
     return exp_basic(p_exp);
@@ -215,6 +239,7 @@ p_hir_exp hir_exp_val_gen(p_symbol_sym p_sym) {
         .p_offset = NULL,
         .p_type = p_sym->p_type,
     };
+    exp_val_const(p_exp);
     return p_exp;
 }
 p_hir_exp hir_exp_val_offset(p_hir_exp p_val, p_hir_exp p_offset) {
@@ -232,6 +257,7 @@ p_hir_exp hir_exp_val_offset(p_hir_exp p_val, p_hir_exp p_offset) {
     else {
         p_val->p_offset = p_offset;
     }
+    exp_val_const(p_val);
     return p_val;
 }
 
