@@ -104,7 +104,8 @@ void symbol_store_destroy(p_symbol_store pss) {
         p_symbol_sym p_del = pss->p_info;
         pss->p_info = p_del->p_next;
         if (p_del->p_type->kind == type_func) {
-            hir_func_drop(p_del->p_func);
+            if (p_del->p_func) hir_func_drop(p_del->p_func);
+            else symbol_type_drop_param(p_del->p_type);
         } else {
             symbol_init_drop(p_del->p_init);
         }
