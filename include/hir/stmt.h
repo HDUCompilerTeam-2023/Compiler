@@ -5,6 +5,7 @@
 
 struct hir_stmt {
     enum {
+        hir_stmt_init, // p_sym
         hir_stmt_return, hir_stmt_exp, // p_exp (can null)
         hir_stmt_block, // p_block
         hir_stmt_if_else, // p_exp p_stmt_1 p_stmt_2
@@ -13,6 +14,7 @@ struct hir_stmt {
     } type;
 
     union {
+        p_symbol_sym p_sym;
         struct {
             p_hir_exp p_exp;
             p_hir_stmt p_stmt_1, p_stmt_2;

@@ -2,6 +2,16 @@
 
 #include <hir_gen.h>
 
+
+p_hir_stmt hir_stmt_init_gen(p_symbol_sym p_sym) {
+    p_hir_stmt p_stmt = malloc(sizeof(*p_stmt));
+    *p_stmt = (hir_stmt) {
+        .node = list_head_init(&p_stmt->node),
+        .type = hir_stmt_init,
+        .p_sym = p_sym,
+    };
+    return p_stmt;
+}
 p_hir_stmt hir_stmt_return_gen(p_hir_exp p_exp) {
     p_hir_stmt p_stmt = malloc(sizeof(*p_stmt));
     *p_stmt = (hir_stmt) {
@@ -117,6 +127,7 @@ void hir_stmt_drop(p_hir_stmt p_stmt) {
         hir_exp_drop(p_stmt->p_exp);
         hir_stmt_drop(p_stmt->p_stmt_1);
         break;
+    case hir_stmt_init:
     case hir_stmt_break:
     case hir_stmt_continue:
         break;

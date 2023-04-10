@@ -47,6 +47,11 @@ void hir_stmt_print(p_hir_stmt p_stmt) {
         hir_stmt_print(p_stmt->p_stmt_1);
         deep -= 4;
         break;
+    case hir_stmt_init:
+        printf("%*sinit ", deep, "");
+        symbol_sym_print(p_stmt->p_sym);
+        printf(";\n");
+        break;
     case hir_stmt_break:
         printf("%*sbreak;\n", deep, "");
         break;
