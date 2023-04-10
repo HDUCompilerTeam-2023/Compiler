@@ -4,6 +4,7 @@
 #include <hir.h>
 
 struct hir_block {
+    uint64_t length;
     list_head stmt;
 };
 
