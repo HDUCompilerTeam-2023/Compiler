@@ -16,7 +16,6 @@ typedef struct hir_stmt hir_stmt, *p_hir_stmt;
 typedef struct hir_exp hir_exp, *p_hir_exp;
 typedef enum hir_exp_op hir_exp_op;
 
-typedef struct symbol_init_list symbol_init_list, *p_symbol_init_list;
 typedef struct symbol_init symbol_init, *p_symbol_init;
 typedef struct symbol_sym symbol_sym, *p_symbol_sym;
 typedef struct symbol_store symbol_store, *p_symbol_store;

@@ -3,19 +3,9 @@
 
 #include <hir.h>
 
-struct symbol_init_list {
-    list_head init;
-    bool syntax_const;
-};
 struct symbol_init {
-    bool is_exp;
-    bool syntax_const;
-    union {
-        p_hir_exp p_exp;
-        p_symbol_init_list p_list;
-    };
-
-    list_head node;
+    size_t size;
+    p_hir_exp *memory;
 };
 
 struct symbol_sym {
