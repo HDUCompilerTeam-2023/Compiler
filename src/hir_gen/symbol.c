@@ -19,19 +19,14 @@ p_symbol_init symbol_init_add(p_symbol_init p_init, size_t offset, p_hir_exp p_e
     p_init->memory[offset] = p_exp;
     return p_init;
 }
-#include <stdio.h>
 void symbol_init_drop(p_symbol_init p_init) {
     if(!p_init)
         return;
     for(size_t i = 0; i < p_init->size; ++i) {
         if (p_init->memory[i]) {
-            if (i > 0) printf(", ");
             hir_exp_drop(p_init->memory[i]);
-        } else {
-            printf("0");
         }
     }
-    printf("\n");
     free(p_init->memory);
     free(p_init);
 }
@@ -98,7 +93,6 @@ void symbol_pop_zone(p_symbol_store pss) {
     free(del_table);
 }
 
-#include <stdio.h>
 void symbol_store_destroy(p_symbol_store pss) {
     assert(pss->p_top_table == NULL);
     assert(pss->level == 0);
@@ -109,10 +103,8 @@ void symbol_store_destroy(p_symbol_store pss) {
     while (pss->p_info) {
         p_symbol_sym p_del = pss->p_info;
         pss->p_info = p_del->p_next;
-        printf("type of %s : ", p_del->name);
-        symbol_type_print(p_del->p_type);
-        printf("\n");
         symbol_type_drop(p_del->p_type);
+        symbol_init_drop(p_del->p_init);
         free(p_del->name);
         free(p_del);
     }
@@ -157,8 +149,6 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
     else assert(p_name->p_item->level < pss->level);
 
     p_symbol_sym p_info = malloc(sizeof(*p_info));
-    symbol_init_drop(p_init);
-    p_init = NULL;
     *p_info = (symbol_sym) {
         .p_next = NULL,
         .p_init = p_init,

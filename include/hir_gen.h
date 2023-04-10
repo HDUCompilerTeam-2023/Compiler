@@ -11,6 +11,4 @@
 #include <hir_gen/symbol.h>
 #include <hir_gen/type.h>
 
-extern int deep;
-
 #endif

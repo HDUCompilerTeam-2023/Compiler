@@ -188,7 +188,6 @@ p_hir_exp syntax_local_symbol_init(p_symbol_sym p_sym) {
 
     return NULL;
 }
-#include <stdio.h>
 p_hir_block syntax_local_vardecl(p_symbol_store pss, p_hir_block p_block, p_syntax_decl_list p_decl_list) {
     while (!list_head_alone(&p_decl_list->decl)) {
         p_syntax_decl p_decl = list_entry(p_decl_list->decl.p_next, syntax_decl, node);

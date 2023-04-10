@@ -9,6 +9,5 @@ p_symbol_type symbol_type_func_gen(void);
 p_symbol_type symbol_type_param_gen(p_symbol_type p_param);
 
 void symbol_type_drop(p_symbol_type p_type);
-void symbol_type_print(p_symbol_type p_type);
 
 #endif

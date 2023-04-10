@@ -25,13 +25,9 @@ void hir_param_drop (p_hir_param p_param) {
     free(p_param);
 }
 
-#include <stdio.h>
 void hir_param_list_drop(p_hir_param_list p_param_list) {
     assert(p_param_list);
-    bool is_first = true;
     while(!list_head_alone(&p_param_list->param)) {
-        if (!is_first) printf(", ");
-        else is_first = false;
         p_hir_param p_param = list_entry(p_param_list->param.p_next, hir_param, node);
         list_del(&p_param->node);
         hir_param_drop(p_param);
