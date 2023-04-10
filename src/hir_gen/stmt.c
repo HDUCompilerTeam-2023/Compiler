@@ -74,6 +74,16 @@ p_hir_stmt hir_stmt_while_gen(p_hir_exp p_exp, p_hir_stmt p_stmt_1) {
 }
 p_hir_stmt hir_stmt_block_gen(p_hir_block p_block) {
     assert(p_block);
+    if (p_block->length == 0) {
+        free(p_block);
+        return hir_stmt_exp_gen(NULL);
+    }
+    if (p_block->length == 1) {
+        p_hir_stmt p_stmt = list_entry(p_block->stmt.p_next, hir_stmt, node);
+        list_del(&p_stmt->node);
+        free(p_block);
+        return p_stmt;
+    }
     p_hir_stmt p_stmt = malloc(sizeof(*p_stmt));
     *p_stmt = (hir_stmt) {
         .node = list_head_init(&p_stmt->node),
