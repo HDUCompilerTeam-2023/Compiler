@@ -28,23 +28,6 @@ p_syntax_init syntax_init_exp_gen(p_hir_exp p_exp) {
     };
     return p_init;
 }
-void syntax_init_drop(p_syntax_init p_init) {
-    assert(p_init);
-    if (p_init->is_exp) {
-        hir_exp_drop(p_init->p_exp);
-        free(p_init);
-        return;
-    }
-
-    while (!list_head_alone(&p_init->list)) {
-        p_syntax_init p_del = list_entry(p_init->list.p_next, syntax_init, node);
-        list_del(&p_del->node);
-
-        syntax_init_drop(p_del);
-    }
-
-    free(p_init);
-}
 
 void syntax_decl_type_add(p_syntax_decl p_decl, p_symbol_type p_tail) {
     if (p_decl->p_tail) {
@@ -164,8 +147,45 @@ void syntax_func_param(p_symbol_store pss, p_syntax_param_list p_param_list) {
     free(p_param_list);
 }
 
-p_hir_exp syntax_local_symbol_init(p_symbol_sym p_sym, p_syntax_init p_init) {
-    syntax_init_drop(p_init);
+static inline void syntax_init_list_trans(p_symbol_type p_type, p_syntax_init p_srcs, p_hir_exp *memory) {
+    assert(!p_srcs->is_exp);
+
+    size_t offset = 0;
+    while (!list_head_alone(&p_srcs->list)) {
+        p_syntax_init p_init = list_entry(p_srcs->list.p_next, syntax_init, node);
+        list_del(&p_init->node);
+
+        if (p_init->is_exp) {
+            assert(offset < p_type->size);
+            memory[offset++] = p_init->p_exp;
+        }
+        else {
+            assert(p_type->kind == type_arrary);
+            assert(offset % p_type->p_item->size == 0);
+            syntax_init_list_trans(p_type->p_item, p_init, memory + offset);
+            offset += p_type->p_item->size;
+        }
+        free(p_init);
+    }
+}
+static inline p_symbol_init syntax_init_trans(p_syntax_decl p_decl) {
+    if (!p_decl->p_init)
+        return NULL;
+
+    p_symbol_init p_init = symbol_init_gen(p_decl->p_type->size);
+    if (p_decl->p_init->is_exp) {
+        assert(p_decl->p_type->kind == type_var);
+        p_init->memory[0] = p_decl->p_init->p_exp;
+    }
+    else {
+        assert(p_decl->p_type->kind == type_arrary);
+        syntax_init_list_trans(p_decl->p_type, p_decl->p_init, p_init->memory);
+    }
+    free(p_decl->p_init);
+    return p_init;
+}
+p_hir_exp syntax_local_symbol_init(p_symbol_sym p_sym) {
+
     return NULL;
 }
 #include <stdio.h>
@@ -175,26 +195,23 @@ p_hir_block syntax_local_vardecl(p_symbol_store pss, p_hir_block p_block, p_synt
         list_del(&p_decl->node);
 
         syntax_decl_type_add(p_decl, symbol_type_var_gen(p_decl_list->type));
-        
-        p_symbol_sym p_sym = symbol_add(pss, p_decl->name, p_decl->p_type, p_decl_list->is_const, false, NULL);
+
+        p_symbol_init p_init = syntax_init_trans(p_decl);
+
+        p_symbol_sym p_sym = symbol_add(pss, p_decl->name, p_decl->p_type, p_decl_list->is_const, false, p_init);
         free(p_decl->name);
-        if (p_decl->p_init) {
-            printf("init ");
+        if (p_init) {
             hir_block_add(p_block,
                 hir_stmt_exp_gen(
-                    syntax_local_symbol_init(p_sym, p_decl->p_init)
+                    syntax_local_symbol_init(p_sym)
                 )
             );
-            printf("\n");
         }
 
         free(p_decl);
     }
     free(p_decl_list);
     return p_block;
-}
-void syntax_global_symbol_init(p_symbol_sym p_sym, p_syntax_init p_init) {
-    syntax_init_drop(p_init);
 }
 void syntax_global_vardecl(p_symbol_store pss, p_syntax_decl_list p_decl_list) {
     while (!list_head_alone(&p_decl_list->decl)) {
@@ -203,13 +220,10 @@ void syntax_global_vardecl(p_symbol_store pss, p_syntax_decl_list p_decl_list) {
 
         syntax_decl_type_add(p_decl, symbol_type_var_gen(p_decl_list->type));
 
-        p_symbol_sym p_sym = symbol_add(pss, p_decl->name, p_decl->p_type, p_decl_list->is_const, true, NULL);
+        p_symbol_init p_init = syntax_init_trans(p_decl);
+        symbol_add(pss, p_decl->name, p_decl->p_type, p_decl_list->is_const, true, p_init);
+
         free(p_decl->name);
-        if (p_decl->p_init) {
-            printf("init ");
-            syntax_global_symbol_init(p_sym, p_decl->p_init);
-            printf("\n");
-        }
         free(p_decl);
     }
     free(p_decl_list);
