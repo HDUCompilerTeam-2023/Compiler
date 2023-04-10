@@ -5,7 +5,7 @@ p_symbol_type symbol_type_var_gen(basic_type basic) {
     *p_type = (symbol_type) {
         .kind = type_var,
         .basic = basic,
-        .p_params = NULL,
+        .size = 1,
     };
     return p_type;
 }

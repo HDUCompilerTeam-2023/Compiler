@@ -11,6 +11,7 @@ p_symbol_init symbol_init_gen(size_t size) {
         .size = size,
         .memory = malloc(sizeof(**p_init->memory) * size)
     };
+    memset(p_init->memory, 0, sizeof(**p_init->memory) * size);
     return p_init;
 }
 p_symbol_init symbol_init_add(p_symbol_init p_init, size_t offset, p_hir_exp p_exp) {
@@ -18,9 +19,21 @@ p_symbol_init symbol_init_add(p_symbol_init p_init, size_t offset, p_hir_exp p_e
     p_init->memory[offset] = p_exp;
     return p_init;
 }
+#include <stdio.h>
 void symbol_init_drop(p_symbol_init p_init) {
-    if (!p_init) return;
-
+    if(!p_init)
+        return;
+    for(size_t i = 0; i < p_init->size; ++i) {
+        if (p_init->memory[i]) {
+            if (i > 0) printf(", ");
+            hir_exp_drop(p_init->memory[i]);
+        } else {
+            printf("0");
+        }
+    }
+    printf("\n");
+    free(p_init->memory);
+    free(p_init);
 }
 
 typedef struct symbol_item symbol_item, *p_symbol_item;
@@ -181,6 +194,8 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
     else assert(p_name->p_item->level < pss->level);
 
     p_symbol_sym p_info = malloc(sizeof(*p_info));
+    symbol_init_drop(p_init);
+    p_init = NULL;
     *p_info = (symbol_sym) {
         .p_next = NULL,
         .p_init = p_init,
