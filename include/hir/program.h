@@ -6,7 +6,6 @@
 struct hir_program {
     // list_head init;
     p_symbol_store pss;
-    list_head func;
 };
 
 #endif

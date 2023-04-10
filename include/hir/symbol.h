@@ -54,6 +54,7 @@ struct symbol_sym {
 
     char *name;
     union {
+        p_hir_func p_func;
         p_symbol_init p_init;
     };
 
