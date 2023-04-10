@@ -147,7 +147,7 @@ void syntax_func_param(p_symbol_store pss, p_syntax_param_list p_param_list) {
     free(p_param_list);
 }
 
-static inline void syntax_init_list_trans(p_symbol_type p_type, p_syntax_init p_srcs, p_hir_exp *memory) {
+static inline void syntax_init_list_trans(p_symbol_type p_type, basic_type basic, p_syntax_init p_srcs, p_hir_exp *memory) {
     assert(!p_srcs->is_exp);
 
     size_t offset = 0;
@@ -157,15 +157,20 @@ static inline void syntax_init_list_trans(p_symbol_type p_type, p_syntax_init p_
 
         if (p_init->is_exp) {
             assert(offset < p_type->size);
+            assert(basic == hir_exp_get_basic(p_init->p_exp));
             memory[offset++] = p_init->p_exp;
         }
         else {
             assert(p_type->kind == type_arrary);
             assert(offset % p_type->p_item->size == 0);
-            syntax_init_list_trans(p_type->p_item, p_init, memory + offset);
+            syntax_init_list_trans(p_type->p_item, basic, p_init, memory + offset);
             offset += p_type->p_item->size;
         }
         free(p_init);
+    }
+    for (; offset < p_type->size; ++offset) {
+        if (basic == type_int) memory[offset] = hir_exp_int_gen(0);
+        else memory[offset] = hir_exp_float_gen(0);
     }
 }
 static inline p_symbol_init syntax_init_trans(p_syntax_decl p_decl) {
@@ -175,11 +180,12 @@ static inline p_symbol_init syntax_init_trans(p_syntax_decl p_decl) {
     p_symbol_init p_init = symbol_init_gen(p_decl->p_type->size);
     if (p_decl->p_init->is_exp) {
         assert(p_decl->p_type->kind == type_var);
+        assert(p_decl->p_type->basic == hir_exp_get_basic(p_decl->p_init->p_exp));
         p_init->memory[0] = p_decl->p_init->p_exp;
     }
     else {
         assert(p_decl->p_type->kind == type_arrary);
-        syntax_init_list_trans(p_decl->p_type, p_decl->p_init, p_init->memory);
+        syntax_init_list_trans(p_decl->p_type, p_decl->p_tail->basic, p_decl->p_init, p_init->memory);
     }
     free(p_decl->p_init);
     return p_init;

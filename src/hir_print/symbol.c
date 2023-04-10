@@ -13,12 +13,7 @@ void symbol_init_print(p_symbol_init p_init) {
     printf(" = {");
     for (size_t i = 0; i < p_init->size; ++i) {
         if (i > 0) printf(", ");
-        if (p_init->memory[i]) {
-            hir_exp_print(p_init->memory[i]);
-        }
-        else {
-            printf("0");
-        }
+        hir_exp_print(p_init->memory[i]);
     }
     printf("}");
 }
