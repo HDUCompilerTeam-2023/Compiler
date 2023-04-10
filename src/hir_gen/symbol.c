@@ -5,37 +5,17 @@
 #define hash_P (65537)
 #define hash_MOD (109)
 
-p_symbol_init_list symbol_init_list_gen(void) {
-    p_symbol_init_list p_init_list = malloc(sizeof(*p_init_list));
-    *p_init_list = (symbol_init_list) {
-        .init = list_head_init(&p_init_list->init),
-        .syntax_const = true,
-    };
-    return p_init_list;
-}
-p_symbol_init_list symbol_init_list_add(p_symbol_init_list p_list, p_symbol_init p_init) {
-    p_list->syntax_const = p_list->syntax_const && p_init->syntax_const;
-    assert(list_add_prev(&p_init->node, &p_list->init));
-    return p_list;
-}
-p_symbol_init symbol_init_gen_exp(p_hir_exp p_exp) {
+p_symbol_init symbol_init_gen(size_t size) {
     p_symbol_init p_init = malloc(sizeof(*p_init));
     *p_init = (symbol_init) {
-        .is_exp = true,
-        .syntax_const = (p_exp->kind == hir_exp_num),
-        .p_exp = p_exp,
-        .node = list_head_init(&p_init->node),
+        .size = size,
+        .memory = malloc(sizeof(**p_init->memory) * size)
     };
     return p_init;
 }
-p_symbol_init symbol_init_gen_list(p_symbol_init_list p_list) {
-    p_symbol_init p_init = malloc(sizeof(*p_init));
-    *p_init = (symbol_init) {
-        .is_exp = false,
-        .syntax_const = p_list->syntax_const,
-        .p_list = p_list,
-        .node = list_head_init(&p_init->node),
-    };
+p_symbol_init symbol_init_add(p_symbol_init p_init, size_t offset, p_hir_exp p_exp) {
+    assert(offset < p_init->size);
+    p_init->memory[offset] = p_exp;
     return p_init;
 }
 void symbol_init_drop(p_symbol_init p_init) {
