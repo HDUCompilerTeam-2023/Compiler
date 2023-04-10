@@ -53,6 +53,7 @@ struct symbol_sym {
     bool is_global;
 
     char *name;
+    uint64_t id;
     union {
         p_hir_func p_func;
         p_symbol_init p_init;
