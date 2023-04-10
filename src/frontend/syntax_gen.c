@@ -76,6 +76,7 @@ p_syntax_decl syntax_decl_arr(p_syntax_decl p_decl, p_hir_exp p_exp) {
     size_t size = 0;
     if (p_exp) { // TODO
         assert(p_exp->basic == type_int);
+        assert(p_exp->intconst > 0);
         size = p_exp->intconst;
         free(p_exp);
     }
