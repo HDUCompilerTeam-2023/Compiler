@@ -184,10 +184,6 @@ static inline p_symbol_init syntax_init_trans(p_syntax_decl p_decl) {
     free(p_decl->p_init);
     return p_init;
 }
-p_hir_exp syntax_local_symbol_init(p_symbol_sym p_sym) {
-
-    return NULL;
-}
 p_hir_block syntax_local_vardecl(p_symbol_store pss, p_hir_block p_block, p_syntax_decl_list p_decl_list) {
     while (!list_head_alone(&p_decl_list->decl)) {
         p_syntax_decl p_decl = list_entry(p_decl_list->decl.p_next, syntax_decl, node);
@@ -199,12 +195,8 @@ p_hir_block syntax_local_vardecl(p_symbol_store pss, p_hir_block p_block, p_synt
 
         p_symbol_sym p_sym = symbol_add(pss, p_decl->name, p_decl->p_type, p_decl_list->is_const, false, p_init);
         free(p_decl->name);
-        if (p_init) {
-            hir_block_add(p_block,
-                hir_stmt_exp_gen(
-                    syntax_local_symbol_init(p_sym)
-                )
-            );
+        if (p_init && !p_sym->is_const) {
+            hir_block_add(p_block, hir_stmt_init_gen(p_sym));
         }
 
         free(p_decl);
