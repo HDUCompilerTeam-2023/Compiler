@@ -50,7 +50,6 @@ static inline size_t symbol_str_tag(const char *name) {
 p_symbol_store symbol_store_initial() {
     p_symbol_store pss = malloc(sizeof(*pss));
     *pss = (typeof(*pss)){
-        .p_local = NULL,
         .p_global = NULL,
         .p_def_function = NULL,
         .p_ndef_function = NULL,
@@ -104,6 +103,14 @@ void symbol_store_destroy(p_symbol_store pss) {
     while (pss->p_def_function) {
         p_symbol_sym p_del = pss->p_def_function;
         pss->p_def_function = p_del->p_next;
+        while (p_del->p_local) {
+            p_symbol_sym p_del_l = p_del->p_local;
+            p_del->p_local = p_del_l->p_next;
+            symbol_init_drop(p_del_l->p_init);
+            symbol_type_drop(p_del_l->p_type);
+            free(p_del_l->name);
+            free(p_del_l);
+        }
         hir_func_drop(p_del->p_func);
         symbol_type_drop(p_del->p_type);
         free(p_del->name);
@@ -122,15 +129,6 @@ void symbol_store_destroy(p_symbol_store pss) {
     while (pss->p_global) {
         p_symbol_sym p_del = pss->p_global;
         pss->p_global = p_del->p_next;
-        symbol_init_drop(p_del->p_init);
-        symbol_type_drop(p_del->p_type);
-        free(p_del->name);
-        free(p_del);
-    }
-
-    while (pss->p_local) {
-        p_symbol_sym p_del = pss->p_local;
-        pss->p_local = p_del->p_next;
         symbol_init_drop(p_del->p_init);
         symbol_type_drop(p_del->p_type);
         free(p_del->name);
@@ -187,14 +185,16 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
     strcpy(p_info->name, name);
     if (p_type->kind == type_func) {
         p_info->p_func = (p_hir_func) p_data;
+        p_info->p_local = NULL;
     }
     else {
         p_info->p_init = (p_symbol_init) p_data;
+        p_info->id = pss->next_id++;
     }
 
     p_symbol_sym *p_store;
     if (pss->p_top_table->p_prev) {
-        p_store = &pss->p_local;
+        p_store = &pss->p_def_function->p_local;
     }
     else {
         if (p_info->p_type->kind == type_func) {
@@ -209,7 +209,6 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
             p_store = &pss->p_global;
         }
     }
-    p_info->id = pss->next_id++;
     p_info->p_next = *p_store;
     *p_store = p_info;
 
