@@ -52,8 +52,6 @@ struct symbol_sym {
     // type info
     p_symbol_type p_type;
     bool is_const;
-    // store info
-    bool is_global;
     bool is_def;
 
     char *name;
@@ -65,6 +63,7 @@ struct symbol_sym {
         struct {
             p_symbol_init p_init;
             uint64_t id;
+            bool is_global;
         };
     };
 
