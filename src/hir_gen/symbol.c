@@ -177,6 +177,7 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
     p_symbol_sym p_info = malloc(sizeof(*p_info));
     *p_info = (symbol_sym) {
         .p_next = NULL,
+        .is_global = !pss->p_top_table->p_prev,
         .is_def = is_def,
         .is_const = is_const,
         .name = malloc(sizeof(char) * (strlen(name) + 1)),
@@ -193,7 +194,7 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
     }
 
     p_symbol_sym *p_store;
-    if (pss->p_top_table->p_prev) {
+    if (!p_info->is_global) {
         p_store = &pss->p_def_function->p_local;
     }
     else {
