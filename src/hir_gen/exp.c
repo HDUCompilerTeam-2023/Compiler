@@ -3,14 +3,15 @@
 #include <hir_gen.h>
 
 static inline basic_type exp_basic(p_hir_exp p_exp) {
-  if (p_exp->kind == hir_exp_call) {
-    assert(p_exp->p_type->kind == type_func);
-    return p_exp->p_type->basic;
-  } else if (p_exp->kind == hir_exp_val) {
-    assert(p_exp->p_type->kind == type_var);
-    return p_exp->p_type->basic;
-  }
-  return p_exp->basic;
+    if (p_exp->kind == hir_exp_call) {
+        assert(p_exp->p_type->kind >= type_func);
+        return p_exp->p_type->basic;
+    }
+    if (p_exp->kind == hir_exp_val) {
+        assert(p_exp->p_type->kind == type_var);
+        return p_exp->p_type->basic;
+    }
+    return p_exp->basic;
 }
 
 static inline void exp_val_const(p_hir_exp p_exp) {
