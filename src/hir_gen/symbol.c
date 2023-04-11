@@ -49,8 +49,11 @@ static inline size_t symbol_str_tag(const char *name) {
 
 p_symbol_store symbol_store_initial() {
     p_symbol_store pss = malloc(sizeof(*pss));
-    *pss = (typeof(*pss)) {
-        .p_info = NULL,
+    *pss = (typeof(*pss)){
+        .p_local = NULL,
+        .p_global = NULL,
+        .p_def_function = NULL,
+        .p_ndef_function = NULL,
         .p_top_table = NULL,
         .hash = init_hash(),
         .level = 0,
@@ -75,14 +78,32 @@ void symbol_pop_zone(p_symbol_store pss) {
 
     p_symbol_item p_item = del_table->p_item;
     while(p_item) {
-        p_item->p_info->p_next = pss->p_info;
-        if (pss->p_info) {
-            p_item->p_info->id = pss->p_info->id + 1;
+        p_symbol_sym *p_store;
+        if (p_item->p_info->p_type->kind == type_func) {
+            if (p_item->p_info->is_def) {
+                p_store = &pss->p_def_function;
+            }
+            else {
+                p_store = &pss->p_ndef_function;
+            }
+        }
+        else {
+            if (p_item->p_info->is_global) {
+                p_store = &pss->p_global;
+            }
+            else {
+                p_store = &pss->p_local;
+            }
+        }
+
+        p_item->p_info->p_next = *p_store;
+        if (*p_store) {
+            p_item->p_info->id = (*p_store)->id + 1;
         }
         else {
             p_item->p_info->id = 0;
         }
-        pss->p_info = p_item->p_info;
+        *p_store = p_item->p_info;
 
         p_item->p_name->p_item = p_item->p_prev;
         if (!p_item->p_name->p_item) {
@@ -106,15 +127,37 @@ void symbol_store_destroy(p_symbol_store pss) {
         assert(hlist_head_empty(pss->hash + i));
     }
 
-    while (pss->p_info) {
-        p_symbol_sym p_del = pss->p_info;
-        pss->p_info = p_del->p_next;
-        if (p_del->p_type->kind == type_func) {
-            if (p_del->p_func) hir_func_drop(p_del->p_func);
-            else symbol_type_drop_param(p_del->p_type);
-        } else {
-            symbol_init_drop(p_del->p_init);
-        }
+    while (pss->p_def_function) {
+        p_symbol_sym p_del = pss->p_def_function;
+        pss->p_def_function = p_del->p_next;
+        hir_func_drop(p_del->p_func);
+        symbol_type_drop(p_del->p_type);
+        free(p_del->name);
+        free(p_del);
+    }
+
+    while (pss->p_ndef_function) {
+        p_symbol_sym p_del = pss->p_ndef_function;
+        pss->p_ndef_function = p_del->p_next;
+        symbol_type_drop_param(p_del->p_type);
+        symbol_type_drop(p_del->p_type);
+        free(p_del->name);
+        free(p_del);
+    }
+
+    while (pss->p_global) {
+        p_symbol_sym p_del = pss->p_global;
+        pss->p_global = p_del->p_next;
+        symbol_init_drop(p_del->p_init);
+        symbol_type_drop(p_del->p_type);
+        free(p_del->name);
+        free(p_del);
+    }
+
+    while (pss->p_local) {
+        p_symbol_sym p_del = pss->p_local;
+        pss->p_local = p_del->p_next;
+        symbol_init_drop(p_del->p_init);
         symbol_type_drop(p_del->p_type);
         free(p_del->name);
         free(p_del);
@@ -146,7 +189,7 @@ static inline p_symbol_name symbol_add_name(p_hlist_head p_head, size_t hash_tag
     return p_name;
 }
 
-p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_type, bool is_const, bool is_global, void *p_data) {
+p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_type, bool is_const, bool is_global, bool is_def, void *p_data) {
     assert(pss->level > 0);
 
     size_t hash_tag = symbol_str_tag(name);
@@ -162,6 +205,7 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
     p_symbol_sym p_info = malloc(sizeof(*p_info));
     *p_info = (symbol_sym) {
         .p_next = NULL,
+        .is_def = is_def,
         .is_global = is_global,
         .is_const = is_const,
         .name = malloc(sizeof(char) * (strlen(name) + 1)),
