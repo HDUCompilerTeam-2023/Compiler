@@ -120,7 +120,7 @@ p_syntax_param_list syntax_param_list_add(p_syntax_param_list p_list, p_syntax_p
     return p_list;
 }
 
-void syntax_func_define(p_symbol_store pss, basic_type type, char *name, p_syntax_param_list p_param_list) {
+p_syntax_funchead syntax_func_define(p_symbol_store pss, basic_type type, char *name, p_syntax_param_list p_param_list) {
     p_symbol_type p_type = symbol_type_func_gen();
     p_type->basic = type;
 
@@ -133,7 +133,12 @@ void syntax_func_define(p_symbol_store pss, basic_type type, char *name, p_synta
         p_param = p_param->p_params;
     }
 
-    symbol_add(pss, name, p_type, false, true, NULL);
+    p_syntax_funchead p_func = malloc(sizeof(*p_func));
+
+    p_func->p_func = symbol_add(pss, name, p_type, false, true, NULL);
+    p_func->p_param_list = p_param_list;
+    free(name);
+    return p_func;
 }
 void syntax_func_param(p_symbol_store pss, p_syntax_param_list p_param_list) {
     while (!list_head_alone(&p_param_list->param_decl)) {
