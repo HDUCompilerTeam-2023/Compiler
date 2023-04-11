@@ -12,7 +12,11 @@ CLEAN += $(OUTPUT_DIR)/
 $(OUTPUT_DIR)/%.out: %.sy $(BINARY) ALWAYS
 	@echo '  * $<'
 	@mkdir -p $(dir $@)
-	@$(BINARY) $< > $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
+	@echo '=====' >  $@
+	@cat $<       >> $@
+	@echo ''      >> $@
+	@echo '=====' >> $@
+	@$(BINARY) $< >> $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
 
 
 # Phony rules
