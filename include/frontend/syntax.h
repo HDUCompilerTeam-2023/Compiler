@@ -5,8 +5,6 @@ typedef void *yyscan_t;
 
 typedef struct syntax_init syntax_init, *p_syntax_init;
 
-typedef enum syntax_decl_spec syntax_decl_spec, *syntax_decl_spec_arr;
-
 typedef struct syntax_funchead syntax_funchead, *p_syntax_funchead;
 
 typedef struct syntax_decl syntax_decl, *p_syntax_decl;

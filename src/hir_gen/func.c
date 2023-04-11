@@ -5,7 +5,6 @@
 p_hir_func hir_func_gen(p_symbol_sym p_sym, p_hir_block p_block) {
     p_hir_func p_func = malloc(sizeof(*p_func));
     *p_func = (hir_func) {
-        .p_sym = p_sym,
         .p_block = p_block,
     };
     p_sym->p_func = p_func;
