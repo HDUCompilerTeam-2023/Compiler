@@ -34,7 +34,6 @@ struct symbol_table {
 struct symbol_store {
     hlist_hash hash;
 
-    p_symbol_sym p_local;
     p_symbol_sym p_global;
     p_symbol_sym p_def_function;
     p_symbol_sym p_ndef_function;
@@ -57,10 +56,15 @@ struct symbol_sym {
     bool is_def;
 
     char *name;
-    uint64_t id;
     union {
-        p_hir_func p_func;
-        p_symbol_init p_init;
+        struct {
+            p_hir_func p_func;
+            p_symbol_sym p_local;
+        };
+        struct {
+            p_symbol_init p_init;
+            uint64_t id;
+        };
     };
 
     p_symbol_sym p_next;
