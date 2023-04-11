@@ -62,7 +62,7 @@ void syntax_global_vardecl(p_symbol_store pss, p_syntax_decl_list p_decl_list);
 
 p_hir_exp syntax_const_check(p_hir_exp p_exp);
 
-void syntax_rtlib_decl(p_symbol_store pss, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2);
+void syntax_rtlib_decl(p_symbol_store pss, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2, bool is_va);
 
 #include <hir_gen.h>
 
