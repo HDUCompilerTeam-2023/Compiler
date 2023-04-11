@@ -30,12 +30,15 @@ void symbol_define_print(p_symbol_sym p_sym) {
 }
 
 void symbol_name_print(p_symbol_sym p_sym) {
+    if (p_sym->p_type->kind == type_func) {
+        printf("@%s", p_sym->name);
+        return;
+    }
     if (p_sym->is_global) {
         printf("@%s", p_sym->name);
+        return;
     }
-    else {
-        printf("%%%s", p_sym->name);
-    }
+    printf("%%%s", p_sym->name);
 }
 
 void symbol_init_print(p_symbol_sym p_sym) {

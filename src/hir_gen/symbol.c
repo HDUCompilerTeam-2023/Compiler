@@ -177,7 +177,6 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
     p_symbol_sym p_info = malloc(sizeof(*p_info));
     *p_info = (symbol_sym) {
         .node = list_head_init(&p_info->node),
-        .is_global = !pss->p_top_table->p_prev,
         .is_def = is_def,
         .is_const = is_const,
         .name = malloc(sizeof(char) * (strlen(name) + 1)),
@@ -191,24 +190,25 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
     else {
         p_info->p_init = (p_symbol_init) p_data;
         p_info->id = pss->next_id++;
+        p_info->is_global = !pss->p_top_table->p_prev;
     }
 
-    if (!p_info->is_global) {
-        assert(!list_head_alone(&pss->def_function));
-        p_symbol_sym p_func = list_entry(pss->def_function.p_prev, symbol_sym, node);
-        list_add_prev(&p_info->node, &p_func->local);
-    }
-    else {
-        if (p_info->p_type->kind == type_func) {
-            if (p_info->is_def) {
-                list_add_prev(&p_info->node, &pss->def_function);
-            }
-            else {
-                list_add_prev(&p_info->node, &pss->ndef_function);
-            }
+    if (p_info->p_type->kind == type_func) {
+        if (p_info->is_def) {
+            list_add_prev(&p_info->node, &pss->def_function);
         }
         else {
+            list_add_prev(&p_info->node, &pss->ndef_function);
+        }
+    }
+    else {
+        if (p_info->is_global) {
             list_add_prev(&p_info->node, &pss->global);
+        }
+        else {
+            assert(!list_head_alone(&pss->def_function));
+            p_symbol_sym p_func = list_entry(pss->def_function.p_prev, symbol_sym, node);
+            list_add_prev(&p_info->node, &p_func->local);
         }
     }
 
