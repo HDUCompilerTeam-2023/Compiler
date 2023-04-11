@@ -347,6 +347,9 @@ CompUnitInit : /* *empty */ {
                      p_type = symbol_type_arrary_gen(0);
                      p_type->p_item = symbol_type_var_gen(type_int);
                      syntax_rtlib_decl(pss, type_void, "putf", p_type, NULL, true);
+
+                     syntax_rtlib_decl(pss, type_void, "starttime", NULL, NULL, false);
+                     syntax_rtlib_decl(pss, type_void, "stoptime", NULL, NULL, false);
               }
              ;
 %%
