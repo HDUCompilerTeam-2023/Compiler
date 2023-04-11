@@ -11,10 +11,13 @@ void symbol_define_print(p_symbol_sym p_sym) {
     }
 
     if (p_sym->p_type->kind == type_func) {
-        printf("\nlocal:\n");
+        printf("\nparam:\n");
         p_list_head p_node;
+        p_symbol_type p_param_type = p_sym->p_type->p_params;
         list_for_each(p_node, &p_sym->local) {
+            if (!p_param_type) break;
             symbol_init_print(list_entry(p_node, symbol_sym, node));
+            p_param_type = p_param_type->p_params;
         }
         hir_func_print(p_sym->p_func);
     }
