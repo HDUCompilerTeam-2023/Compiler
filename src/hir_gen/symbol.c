@@ -79,27 +79,6 @@ void symbol_pop_zone(p_symbol_store pss) {
 
     p_symbol_item p_item = del_table->p_item;
     while(p_item) {
-        p_symbol_sym *p_store;
-        if (del_table->p_prev) {
-            p_store = &pss->p_local;
-        }
-        else {
-            if (p_item->p_info->p_type->kind == type_func) {
-                if (p_item->p_info->is_def) {
-                    p_store = &pss->p_def_function;
-                }
-                else {
-                    p_store = &pss->p_ndef_function;
-                }
-            }
-            else {
-                p_store = &pss->p_global;
-            }
-        }
-        p_item->p_info->id = pss->next_id++;
-        p_item->p_info->p_next = *p_store;
-        *p_store = p_item->p_info;
-
         p_item->p_name->p_item = p_item->p_prev;
         if (!p_item->p_name->p_item) {
             hlist_node_del(&p_item->p_name->node);
@@ -212,6 +191,27 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
     else {
         p_info->p_init = (p_symbol_init) p_data;
     }
+
+    p_symbol_sym *p_store;
+    if (pss->p_top_table->p_prev) {
+        p_store = &pss->p_local;
+    }
+    else {
+        if (p_info->p_type->kind == type_func) {
+            if (p_info->is_def) {
+                p_store = &pss->p_def_function;
+            }
+            else {
+                p_store = &pss->p_ndef_function;
+            }
+        }
+        else {
+            p_store = &pss->p_global;
+        }
+    }
+    p_info->id = pss->next_id++;
+    p_info->p_next = *p_store;
+    *p_store = p_info;
 
     p_symbol_item p_item = malloc(sizeof(*p_item));
     *p_item = (symbol_item) {
