@@ -57,6 +57,7 @@ p_symbol_store symbol_store_initial() {
         .p_top_table = NULL,
         .hash = init_hash(),
         .level = 0,
+        .next_id = 0,
     };
     return pss;
 }
@@ -79,30 +80,24 @@ void symbol_pop_zone(p_symbol_store pss) {
     p_symbol_item p_item = del_table->p_item;
     while(p_item) {
         p_symbol_sym *p_store;
-        if (p_item->p_info->p_type->kind == type_func) {
-            if (p_item->p_info->is_def) {
-                p_store = &pss->p_def_function;
-            }
-            else {
-                p_store = &pss->p_ndef_function;
-            }
+        if (del_table->p_prev) {
+            p_store = &pss->p_local;
         }
         else {
-            if (p_item->p_info->is_global) {
+            if (p_item->p_info->p_type->kind == type_func) {
+                if (p_item->p_info->is_def) {
+                    p_store = &pss->p_def_function;
+                }
+                else {
+                    p_store = &pss->p_ndef_function;
+                }
+            }
+            else {
                 p_store = &pss->p_global;
             }
-            else {
-                p_store = &pss->p_local;
-            }
         }
-
+        p_item->p_info->id = pss->next_id++;
         p_item->p_info->p_next = *p_store;
-        if (*p_store) {
-            p_item->p_info->id = (*p_store)->id + 1;
-        }
-        else {
-            p_item->p_info->id = 0;
-        }
         *p_store = p_item->p_info;
 
         p_item->p_name->p_item = p_item->p_prev;
@@ -189,7 +184,7 @@ static inline p_symbol_name symbol_add_name(p_hlist_head p_head, size_t hash_tag
     return p_name;
 }
 
-p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_type, bool is_const, bool is_global, bool is_def, void *p_data) {
+p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_type, bool is_const, bool is_def, void *p_data) {
     assert(pss->level > 0);
 
     size_t hash_tag = symbol_str_tag(name);
@@ -206,7 +201,6 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
     *p_info = (symbol_sym) {
         .p_next = NULL,
         .is_def = is_def,
-        .is_global = is_global,
         .is_const = is_const,
         .name = malloc(sizeof(char) * (strlen(name) + 1)),
         .p_type = p_type,

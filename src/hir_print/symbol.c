@@ -5,12 +5,7 @@
 #include <hir/type.h>
 
 void symbol_sym_print(p_symbol_sym p_sym) {
-    if (p_sym->is_global) {
-        printf("@%s", p_sym->name);
-    }
-    else {
-        printf("%%<%s,%ld>", p_sym->name, p_sym->id);
-    }
+    printf("@%s", p_sym->name);
 }
 
 void symbol_init_print(p_symbol_init p_init) {
