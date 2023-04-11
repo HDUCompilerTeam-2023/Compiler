@@ -31,12 +31,12 @@ void symbol_store_print(p_symbol_store pss) {
                 hir_func_print(p_node->p_func);
             }
             else {
-                printf(";");
+                printf(";\n");
             }
         } else {
             symbol_init_print(p_node->p_init);
+            printf("\n");
         }
-        printf("\n");
 
         p_node = p_node->p_next;
     }
