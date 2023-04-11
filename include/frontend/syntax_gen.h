@@ -17,6 +17,13 @@ p_syntax_init syntax_init_list_gen(void);
 p_syntax_init syntax_init_exp_gen(p_hir_exp p_exp);
 p_syntax_init syntax_init_list_add(p_syntax_init p_list, p_syntax_init p_init);
 
+struct syntax_funchead {
+    p_symbol_sym p_func;
+    p_syntax_param_list p_param_list;
+};
+p_syntax_funchead syntax_func_define(p_symbol_store pss, basic_type type, char *name, p_syntax_param_list p_param_list);
+void syntax_func_param(p_symbol_store pss, p_syntax_param_list p_param_list);
+
 struct syntax_decl {
     char *name;
     p_symbol_type p_type;
@@ -49,9 +56,6 @@ struct syntax_param_list {
 };
 p_syntax_param_list syntax_param_list_gen(void);
 p_syntax_param_list syntax_param_list_add(p_syntax_param_list p_list, p_syntax_param_decl p_decl);
-
-void syntax_func_define(p_symbol_store pss, basic_type type, char *name, p_syntax_param_list p_param_list);
-void syntax_func_param(p_symbol_store pss, p_syntax_param_list p_param_list);
 
 p_hir_block syntax_local_vardecl(p_symbol_store pss, p_hir_block p_block, p_syntax_decl_list p_decl_list);
 void syntax_global_vardecl(p_symbol_store pss, p_syntax_decl_list p_decl_list);

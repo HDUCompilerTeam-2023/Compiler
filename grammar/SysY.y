@@ -47,6 +47,8 @@
 
        p_syntax_init p_init;
 
+       p_syntax_funchead p_funchead;
+
        basic_type type;
 
        ID_t ID;
@@ -78,6 +80,7 @@
 %type <p_param_list> FuncRParamList
 %type <p_param_list> FuncRParams
 
+%type <p_funchead> FuncHead
 %type <p_func> FuncDeclaration
 %type <p_program> CompUnit
 %type <p_program> CompUnitInit
@@ -187,20 +190,20 @@ VarInitializerList : VarInitializerList ',' VarInitializer { $$ = syntax_init_li
                    | VarInitializer                        { $$ = syntax_init_list_add(syntax_init_list_gen(), $1); }
                    ;
 
-FuncDeclaration : Type ID '(' Parameters ')'
-                     { syntax_func_define(pss, $1, $2, $4); }
+FuncHead : Type ID '(' Parameters ')' { $$ = syntax_func_define(pss, $1, $2, $4); }
+         | VOID ID '(' Parameters ')' { $$ = syntax_func_define(pss, type_void, $2, $4); }
+         ;
+
+FuncDeclaration : FuncHead
                   PUSHZONE
-                     { syntax_func_param(pss, $4); }
+                     {
+                            syntax_func_param(pss, $1->p_param_list);
+                     }
                   Block
                   POPZONE
-                     { $$ = hir_func_gen(find_sym($2), $9); free($2); }
-                | VOID ID '(' Parameters ')'
-                     { syntax_func_define(pss, type_void, $2, $4); }
-                  PUSHZONE
-                     { syntax_func_param(pss, $4); }
-                  Block
-                  POPZONE
-                     { $$ = hir_func_gen(find_sym($2), $9); free($2); }
+                     {
+                            $$ = hir_func_gen($1->p_func, $4); free($1);
+                     }
                 ;
 
 Parameters : ParameterList
