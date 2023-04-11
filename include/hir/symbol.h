@@ -40,6 +40,7 @@ struct symbol_store {
     p_symbol_sym p_ndef_function;
 
     uint16_t level;
+    uint16_t next_id;
     p_symbol_table p_top_table;
 };
 
@@ -53,7 +54,6 @@ struct symbol_sym {
     p_symbol_type p_type;
     bool is_const;
     // store info
-    bool is_global;
     bool is_def;
 
     char *name;

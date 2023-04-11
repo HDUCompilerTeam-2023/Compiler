@@ -133,14 +133,14 @@ void syntax_func_define(p_symbol_store pss, basic_type type, char *name, p_synta
         p_param = p_param->p_params;
     }
 
-    symbol_add(pss, name, p_type, false, true, true, NULL);
+    symbol_add(pss, name, p_type, false, true, NULL);
 }
 void syntax_func_param(p_symbol_store pss, p_syntax_param_list p_param_list) {
     while (!list_head_alone(&p_param_list->param_decl)) {
         p_syntax_param_decl p_decl = list_entry(p_param_list->param_decl.p_next, syntax_param_decl, node);
         list_del(&p_decl->node);
 
-        symbol_add(pss, p_decl->name, p_decl->p_type, false, false, false, NULL);
+        symbol_add(pss, p_decl->name, p_decl->p_type, false, false, NULL);
         free(p_decl->name);
         free(p_decl);
     }
@@ -199,7 +199,7 @@ p_hir_block syntax_local_vardecl(p_symbol_store pss, p_hir_block p_block, p_synt
 
         p_symbol_init p_init = syntax_init_trans(p_decl);
 
-        p_symbol_sym p_sym = symbol_add(pss, p_decl->name, p_decl->p_type, p_decl_list->is_const, false, p_init != NULL, p_init);
+        p_symbol_sym p_sym = symbol_add(pss, p_decl->name, p_decl->p_type, p_decl_list->is_const, p_init != NULL, p_init);
         free(p_decl->name);
         if (p_init && !p_sym->is_const) {
             hir_block_add(p_block, hir_stmt_init_gen(p_sym));
@@ -218,7 +218,7 @@ void syntax_global_vardecl(p_symbol_store pss, p_syntax_decl_list p_decl_list) {
         syntax_decl_type_add(p_decl, symbol_type_var_gen(p_decl_list->type));
 
         p_symbol_init p_init = syntax_init_trans(p_decl);
-        symbol_add(pss, p_decl->name, p_decl->p_type, p_decl_list->is_const, true, p_init != NULL, p_init);
+        symbol_add(pss, p_decl->name, p_decl->p_type, p_decl_list->is_const, p_init != NULL, p_init);
 
         free(p_decl->name);
         free(p_decl);
@@ -237,7 +237,7 @@ void syntax_rtlib_decl(p_symbol_store pss, basic_type type, char *name, p_symbol
         }
     }
 
-    symbol_add(pss, name, p_type, false, true, false, NULL);
+    symbol_add(pss, name, p_type, false, false, NULL);
 }
 
 p_hir_exp syntax_const_check(p_hir_exp p_exp) {
