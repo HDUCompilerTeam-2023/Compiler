@@ -183,7 +183,7 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
         .p_type = p_type,
     };
     strcpy(p_info->name, name);
-    if (p_type->kind == type_func) {
+    if (p_type->kind >= type_func) {
         p_info->p_func = (p_hir_func) p_data;
         p_info->local = list_head_init(&p_info->local);
     }
@@ -193,7 +193,7 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
         p_info->is_global = !pss->p_top_table->p_prev;
     }
 
-    if (p_info->p_type->kind == type_func) {
+    if (p_info->p_type->kind >= type_func) {
         if (p_info->is_def) {
             list_add_prev(&p_info->node, &pss->def_function);
         }

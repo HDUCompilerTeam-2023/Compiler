@@ -10,7 +10,7 @@ void symbol_define_print(p_symbol_sym p_sym) {
         return;
     }
 
-    if (p_sym->p_type->kind == type_func) {
+    if (p_sym->p_type->kind >= type_func) {
         printf("\n");
         p_list_head p_node;
         p_symbol_type p_param_type = p_sym->p_type->p_params;
@@ -36,7 +36,7 @@ void symbol_define_print(p_symbol_sym p_sym) {
 }
 
 void symbol_name_print(p_symbol_sym p_sym) {
-    if (p_sym->p_type->kind == type_func) {
+    if (p_sym->p_type->kind >= type_func) {
         printf("@%s", p_sym->name);
         return;
     }

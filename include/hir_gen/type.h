@@ -5,7 +5,7 @@
 
 p_symbol_type symbol_type_var_gen(basic_type basic);
 p_symbol_type symbol_type_arrary_gen(size_t size);
-p_symbol_type symbol_type_func_gen(void);
+p_symbol_type symbol_type_func_gen(bool is_va);
 p_symbol_type symbol_type_param_gen(p_symbol_type p_param);
 
 

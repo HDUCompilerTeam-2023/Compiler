@@ -121,7 +121,7 @@ p_syntax_param_list syntax_param_list_add(p_syntax_param_list p_list, p_syntax_p
 }
 
 p_syntax_funchead syntax_func_define(p_symbol_store pss, basic_type type, char *name, p_syntax_param_list p_param_list) {
-    p_symbol_type p_type = symbol_type_func_gen();
+    p_symbol_type p_type = symbol_type_func_gen(false);
     p_type->basic = type;
 
     p_symbol_type p_param = p_type;
@@ -231,8 +231,8 @@ void syntax_global_vardecl(p_symbol_store pss, p_syntax_decl_list p_decl_list) {
     free(p_decl_list);
 }
 
-void syntax_rtlib_decl(p_symbol_store pss, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2) {
-    p_symbol_type p_type = symbol_type_func_gen();
+void syntax_rtlib_decl(p_symbol_store pss, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2, bool is_va) {
+    p_symbol_type p_type = symbol_type_func_gen(is_va);
     p_type->basic = type;
 
     if (p_param1) {
