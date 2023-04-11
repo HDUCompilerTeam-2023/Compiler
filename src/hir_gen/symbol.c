@@ -50,9 +50,9 @@ static inline size_t symbol_str_tag(const char *name) {
 p_symbol_store symbol_store_initial() {
     p_symbol_store pss = malloc(sizeof(*pss));
     *pss = (typeof(*pss)){
-        .p_global = NULL,
-        .p_def_function = NULL,
-        .p_ndef_function = NULL,
+        .global = list_head_init(&pss->global),
+        .def_function = list_head_init(&pss->def_function),
+        .ndef_function = list_head_init(&pss->ndef_function),
         .p_top_table = NULL,
         .hash = init_hash(),
         .level = 0,
@@ -100,12 +100,12 @@ void symbol_store_destroy(p_symbol_store pss) {
         assert(hlist_head_empty(pss->hash + i));
     }
 
-    while (pss->p_def_function) {
-        p_symbol_sym p_del = pss->p_def_function;
-        pss->p_def_function = p_del->p_next;
-        while (p_del->p_local) {
-            p_symbol_sym p_del_l = p_del->p_local;
-            p_del->p_local = p_del_l->p_next;
+    while (!list_head_alone(&pss->def_function)) {
+        p_symbol_sym p_del = list_entry(pss->def_function.p_next, symbol_sym, node);
+        list_del(&p_del->node);
+        while (!list_head_alone(&p_del->local)) {
+            p_symbol_sym p_del_l = list_entry(p_del->local.p_next, symbol_sym, node);
+            list_del(&p_del_l->node);
             symbol_init_drop(p_del_l->p_init);
             symbol_type_drop(p_del_l->p_type);
             free(p_del_l->name);
@@ -117,18 +117,18 @@ void symbol_store_destroy(p_symbol_store pss) {
         free(p_del);
     }
 
-    while (pss->p_ndef_function) {
-        p_symbol_sym p_del = pss->p_ndef_function;
-        pss->p_ndef_function = p_del->p_next;
+    while (!list_head_alone(&pss->ndef_function)) {
+        p_symbol_sym p_del = list_entry(pss->ndef_function.p_next, symbol_sym, node);
+        list_del(&p_del->node);
         symbol_type_drop_param(p_del->p_type);
         symbol_type_drop(p_del->p_type);
         free(p_del->name);
         free(p_del);
     }
 
-    while (pss->p_global) {
-        p_symbol_sym p_del = pss->p_global;
-        pss->p_global = p_del->p_next;
+    while (!list_head_alone(&pss->global)) {
+        p_symbol_sym p_del = list_entry(pss->global.p_next, symbol_sym, node);
+        list_del(&p_del->node);
         symbol_init_drop(p_del->p_init);
         symbol_type_drop(p_del->p_type);
         free(p_del->name);
@@ -176,7 +176,7 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
 
     p_symbol_sym p_info = malloc(sizeof(*p_info));
     *p_info = (symbol_sym) {
-        .p_next = NULL,
+        .node = list_head_init(&p_info->node),
         .is_global = !pss->p_top_table->p_prev,
         .is_def = is_def,
         .is_const = is_const,
@@ -186,32 +186,31 @@ p_symbol_sym symbol_add(p_symbol_store pss, const char *name, p_symbol_type p_ty
     strcpy(p_info->name, name);
     if (p_type->kind == type_func) {
         p_info->p_func = (p_hir_func) p_data;
-        p_info->p_local = NULL;
+        p_info->local = list_head_init(&p_info->local);
     }
     else {
         p_info->p_init = (p_symbol_init) p_data;
         p_info->id = pss->next_id++;
     }
 
-    p_symbol_sym *p_store;
     if (!p_info->is_global) {
-        p_store = &pss->p_def_function->p_local;
+        assert(!list_head_alone(&pss->def_function));
+        p_symbol_sym p_func = list_entry(pss->def_function.p_prev, symbol_sym, node);
+        list_add_prev(&p_info->node, &p_func->local);
     }
     else {
         if (p_info->p_type->kind == type_func) {
             if (p_info->is_def) {
-                p_store = &pss->p_def_function;
+                list_add_prev(&p_info->node, &pss->def_function);
             }
             else {
-                p_store = &pss->p_ndef_function;
+                list_add_prev(&p_info->node, &pss->ndef_function);
             }
         }
         else {
-            p_store = &pss->p_global;
+            list_add_prev(&p_info->node, &pss->global);
         }
     }
-    p_info->p_next = *p_store;
-    *p_store = p_info;
 
     p_symbol_item p_item = malloc(sizeof(*p_item));
     *p_item = (symbol_item) {

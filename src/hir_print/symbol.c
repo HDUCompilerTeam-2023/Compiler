@@ -11,12 +11,12 @@ void symbol_define_print(p_symbol_sym p_sym) {
     }
 
     if (p_sym->p_type->kind == type_func) {
-        p_symbol_sym p_node = p_sym->p_local;
         printf("\nlocal:\n");
-        while (p_node) {
-            symbol_init_print(p_node);
-            p_node = p_node->p_next;
+        p_list_head p_node;
+        list_for_each(p_node, &p_sym->local) {
+            symbol_init_print(list_entry(p_node, symbol_sym, node));
         }
+        hir_func_print(p_sym->p_func);
     }
     else {
         assert(p_sym->p_init);
@@ -46,32 +46,22 @@ void symbol_init_print(p_symbol_sym p_sym) {
 }
 
 void symbol_store_print(p_symbol_store pss) {
-    p_symbol_sym p_node;
+    p_list_head p_node;
     printf("global:\n");
-    p_node = pss->p_global;
-    while (p_node) {
-        symbol_init_print(p_node);
-
-        p_node = p_node->p_next;
+    list_for_each(p_node, &pss->global) {
+        symbol_init_print(list_entry(p_node, symbol_sym, node));
     }
     printf("\n");
 
-    p_node = pss->p_def_function;
     printf("functions:\n");
-    while (p_node) {
-        symbol_init_print(p_node);
-
-        hir_func_print(p_node->p_func);
-
-        p_node = p_node->p_next;
+    list_for_each(p_node, &pss->def_function) {
+        symbol_init_print(list_entry(p_node, symbol_sym, node));
     }
     printf("\n");
 
-    p_node = pss->p_ndef_function;
-    printf("extern:\n");
-    while (p_node) {
-        symbol_init_print(p_node);
 
-        p_node = p_node->p_next;
+    printf("extern:\n");
+    list_for_each(p_node, &pss->ndef_function) {
+        symbol_init_print(list_entry(p_node, symbol_sym, node));
     }
 }
