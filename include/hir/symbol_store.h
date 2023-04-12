@@ -33,10 +33,12 @@ struct symbol_table {
 
 struct symbol_store {
     hlist_hash hash;
+    hlist_hash string_hash;
 
     list_head global;
     list_head def_function;
     list_head ndef_function;
+    list_head string;
 
     uint16_t level;
     uint16_t next_id;

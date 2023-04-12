@@ -30,4 +30,13 @@ void symbol_store_print(p_symbol_store pss) {
     list_for_each(p_node, &pss->ndef_function) {
         symbol_init_print(list_entry(p_node, symbol_sym, node));
     }
+
+    if (!list_head_alone(&pss->string)) {
+        if (!list_head_alone(&pss->ndef_function))
+            printf("\n");
+        printf("string:\n");
+    }
+    list_for_each(p_node, &pss->string) {
+        printf("%s\n", list_entry(p_node, symbol_str, node)->string);
+    }
 }

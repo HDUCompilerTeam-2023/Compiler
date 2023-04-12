@@ -12,4 +12,7 @@ p_symbol_sym symbol_func_gen(const char *name, p_symbol_type p_type, bool is_con
 void symbol_var_drop(p_symbol_sym p_sym);
 void symbol_func_drop(p_symbol_sym p_sym);
 
+p_symbol_str symbol_str_gen(const char *string);
+void symbol_str_drop(p_symbol_str p_str);
+
 #endif

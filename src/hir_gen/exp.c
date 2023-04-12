@@ -11,6 +11,9 @@ static inline basic_type exp_basic(p_hir_exp p_exp) {
         assert(p_exp->p_type->kind == type_var);
         return p_exp->p_type->basic;
     }
+    if (p_exp->kind == hir_exp_str) {
+        return type_str;
+    }
     return p_exp->basic;
 }
 
@@ -310,6 +313,15 @@ p_hir_exp hir_exp_float_gen(FLOATCONST_t num) {
     return p_exp;
 }
 
+p_hir_exp hir_exp_str_gen(p_symbol_str p_str) {
+    p_hir_exp p_exp = malloc(sizeof(*p_exp));
+    *p_exp = (hir_exp) {
+        .kind = hir_exp_str,
+        .p_str = p_str,
+    };
+    return p_exp;
+}
+
 void hir_exp_drop(p_hir_exp p_exp) {
     assert(p_exp);
     switch (p_exp->kind) {
@@ -388,6 +400,8 @@ void hir_exp_drop(p_hir_exp p_exp) {
         }
         break;
     case hir_exp_num:
+        break;
+    case hir_exp_str:
         break;
     }
     free(p_exp);

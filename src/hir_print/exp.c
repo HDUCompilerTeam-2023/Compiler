@@ -135,5 +135,8 @@ void hir_exp_print(p_hir_exp p_exp) {
         if (p_exp->basic == type_float) printf("%lf", p_exp->floatconst);
         else printf("%ld", p_exp->intconst);
         break;
+    case hir_exp_str:
+        printf("\"%s\"", p_exp->p_str->string);
+        break;
     }
 }

@@ -47,8 +47,10 @@ p_symbol_store symbol_store_initial() {
         .global = list_head_init(&pss->global),
         .def_function = list_head_init(&pss->def_function),
         .ndef_function = list_head_init(&pss->ndef_function),
+        .string = list_head_init(&pss->string),
         .p_top_table = NULL,
         .hash = init_hash(),
+        .string_hash = init_hash(),
         .level = 0,
         .next_id = 0,
     };
@@ -76,6 +78,12 @@ void symbol_store_destroy(p_symbol_store pss) {
         symbol_var_drop(p_del);
     }
 
+    while (!list_head_alone(&pss->string)) {
+        p_symbol_str p_del = list_entry(pss->string.p_next, symbol_str, node);
+        symbol_str_drop(p_del);
+    }
+
+    free(pss->string_hash);
     free(pss->hash);
     free(pss);
 }
@@ -177,4 +185,21 @@ p_symbol_sym symbol_find(p_symbol_store pss, const char *name) {
     if (!p_name) return NULL;
 
     return p_name->p_item->p_info;
+}
+
+p_symbol_str symbol_str_find(p_symbol_store pss, const char *string) {
+    size_t hash_tag = symbol_str_tag(string);
+    p_hlist_head p_head = pss->string_hash + (hash_tag % hash_MOD);
+
+    p_hlist_node p_node;
+    hlist_for_each(p_node, p_head) {
+        p_symbol_str p_str = hlist_entry(p_node, symbol_str, h_node);
+        if (!strcmp(p_str->string, string)) return p_str;
+    }
+
+    p_symbol_str p_str = symbol_str_gen(string);
+    hlist_node_add(p_head, &p_str->h_node);
+
+    list_add_prev(&p_str->node, &pss->string);
+    return p_str;
 }
