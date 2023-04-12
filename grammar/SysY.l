@@ -54,6 +54,8 @@ DECINTCONST  ([1-9][0-9]*)
 HEXFLOATCONST  ((0[xX])(([0-9a-fA-F]*\.?[0-9a-fA-F]+)|([0-9a-fA-F]+\.))([pP][-+]?[0-9]+))
 DECFLOATCONST  (([0-9]+[eE][-+]?[0-9]+)|((([0-9]+\.)|([0-9]*\.[0-9]+))([eE][-+]?[0-9]+)?))
 
+STRING (["][^"\n]*["])
+
 %%
 
 [-+*/%,()\[\]{};<=>!] { return yytext[0]; }
@@ -115,6 +117,15 @@ DECFLOATCONST  (([0-9]+[eE][-+]?[0-9]+)|((([0-9]+\.)|([0-9]*\.[0-9]+))([eE][-+]?
     FLOATCONST_t val = str2float(yytext, yylloc, yyscanner);
     yylval->FLOATCONST = val;
     return FLOATCONST;
+}
+
+{STRING} {
+    size_t length = strlen(yytext) - 2;
+    char *str = malloc(sizeof(*str) * length + 1);
+    strncpy(str, yytext + 1, length);
+    str[length] = '\0';
+    yylval->STRING = str;
+    return STRING;
 }
 
 [/][/] { BEGIN(LINECOMMENT); }

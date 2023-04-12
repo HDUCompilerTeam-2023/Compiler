@@ -11,4 +11,6 @@ void symbol_pop_zone(p_symbol_store pss);
 bool symbol_add(p_symbol_store pss, p_symbol_sym p_sym);
 p_symbol_sym symbol_find(p_symbol_store pss, const char *name);
 
+p_symbol_str symbol_str_find(p_symbol_store pss, const char *string);
+
 #endif

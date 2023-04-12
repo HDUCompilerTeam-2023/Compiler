@@ -16,6 +16,7 @@
 
 #define new_sym(name) symbol_add(pss, name)
 #define find_sym(name) symbol_find(pss, name)
+#define find_str(str) symbol_str_find(pss, str)
 %}
 
 %initial-action
@@ -54,6 +55,7 @@
        ID_t ID;
        INTCONST_t INTCONST;
        FLOATCONST_t FLOATCONST;
+       STRING_t STRING;
 }
 %type <p_exp> Cond
 %type <p_exp> LOrExp
@@ -70,6 +72,7 @@
 
 %type <p_exp> Call
 %type <p_exp> Val
+%type <p_exp> Str
 
 %type <p_exp> StmtExp
 %type <p_stmt> Stmt
@@ -124,6 +127,8 @@
 %token <FLOATCONST> FLOATCONST
 %token <ID> ID
 %destructor { free($$); } ID
+%token <STRING> STRING
+%destructor { free($$); } STRING
 
 %nonassoc NO_ELSE
 %nonassoc ELSE
@@ -273,6 +278,7 @@ PrimaryExp : '(' Exp ')' { $$ = $2; }
            | FLOATCONST  { $$ = hir_exp_float_gen($1); }
            | Val         { $$ = $1; }
            | Call        { $$ = $1; }
+           | Str         { $$ = $1; }
            ;
 
 Call : ID '(' FuncRParams ')' { $$ = hir_exp_call_gen(find_sym($1), $3); free($1); }
@@ -280,6 +286,9 @@ Call : ID '(' FuncRParams ')' { $$ = hir_exp_call_gen(find_sym($1), $3); free($1
 
 Val : ID                 { $$ = hir_exp_val_gen(find_sym($1)); free($1); }
     | Val '[' Exp ']'    { $$ = hir_exp_val_offset($1, $3); }
+    ;
+
+Str : STRING { $$ = hir_exp_str_gen(find_str($1)); free($1); }
     ;
 
 FuncRParams : FuncRParamList { $$ = $1; }
@@ -344,9 +353,7 @@ CompUnitInit : /* *empty */ {
                      p_type->p_item = symbol_type_var_gen(type_float);
                      syntax_rtlib_decl(pss, type_void, "putfarray", symbol_type_var_gen(type_int), p_type, false);
 
-                     p_type = symbol_type_arrary_gen(0);
-                     p_type->p_item = symbol_type_var_gen(type_int);
-                     syntax_rtlib_decl(pss, type_void, "putf", p_type, NULL, true);
+                     syntax_rtlib_decl(pss, type_void, "putf", symbol_type_var_gen(type_str), NULL, true);
 
                      syntax_rtlib_decl(pss, type_void, "starttime", NULL, NULL, false);
                      syntax_rtlib_decl(pss, type_void, "stoptime", NULL, NULL, false);
