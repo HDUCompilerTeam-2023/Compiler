@@ -8,6 +8,6 @@ struct mir_param{
 
 struct mir_param_list{
     list_head param;
-}
+};
 
 #endif
