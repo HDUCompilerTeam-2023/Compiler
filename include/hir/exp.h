@@ -23,6 +23,7 @@ struct hir_exp {
         hir_exp_call,
         hir_exp_val,
         hir_exp_num,
+        hir_exp_str,
     } kind;
     union {
         struct {
@@ -41,6 +42,7 @@ struct hir_exp {
             INTCONST_t intconst; // int
             FLOATCONST_t floatconst; // float
         };
+        p_symbol_str p_str;
     };
     basic_type basic;
 };

@@ -14,6 +14,7 @@ p_hir_exp hir_exp_val_gen(p_symbol_sym p_sym);
 p_hir_exp hir_exp_val_offset(p_hir_exp p_val, p_hir_exp p_offset);
 p_hir_exp hir_exp_int_gen(INTCONST_t num);
 p_hir_exp hir_exp_float_gen(FLOATCONST_t num);
+p_hir_exp hir_exp_str_gen(p_symbol_str p_str);
 void hir_exp_drop(p_hir_exp p_exp);
 
 #endif

@@ -10,6 +10,7 @@ void symbol_type_print(p_symbol_type p_type) {
 
         if (p_type->basic == type_int) printf("int");
         else if (p_type->basic == type_float) printf("float");
+        else if (p_type->basic == type_str) printf("string");
     }
     else if (p_type->kind >= type_func) {
         if (p_type->basic == type_void) printf("void ");

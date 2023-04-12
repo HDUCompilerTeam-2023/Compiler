@@ -5,6 +5,7 @@
 
 typedef int64_t INTCONST_t;
 typedef double FLOATCONST_t;
+typedef char *STRING_t;
 typedef char *ID_t;
 
 typedef struct hir_program hir_program, *p_hir_program;
@@ -18,10 +19,12 @@ typedef enum hir_exp_op hir_exp_op;
 
 typedef struct symbol_init symbol_init, *p_symbol_init;
 typedef struct symbol_sym symbol_sym, *p_symbol_sym;
+typedef struct symbol_str symbol_str, *p_symbol_str;
 typedef struct symbol_store symbol_store, *p_symbol_store;
 
 typedef enum {
     type_void,
+    type_str,
     type_int,
     type_float,
 } basic_type;

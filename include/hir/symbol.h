@@ -30,4 +30,12 @@ struct symbol_sym {
     list_head node;
 };
 
+struct symbol_str {
+    char * string;
+    size_t length;
+
+    hlist_node h_node;
+    list_head node;
+};
+
 #endif
