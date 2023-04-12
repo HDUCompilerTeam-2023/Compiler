@@ -1,8 +1,9 @@
-#include<util.h>
-#include<hir/symbol.h>
+#include <util.h>
+#include <hir/symbol.h>
+#include <hir/type.h>
 
+typedef struct mir_program mir_program, *p_mir_program;
 typedef struct mir_func mir_func, *p_mir_func;
-typedef struct mir_linear_instr mir_linear_instr, *p_mir_linear_instr;
 typedef struct mir_basic_block mir_basic_block, *p_mir_basic_block;
 
 typedef struct mir_param mir_param, *p_mir_param;
@@ -11,7 +12,7 @@ typedef struct mir_param_list mir_param_list, *p_mir_param_list;
 typedef struct mir_symbol mir_symbol, *p_mir_symbol;
 typedef struct mir_operand mir_operand, *p_mir_operand;
 
-
+typedef enum mir_instr_type mir_instr_type;
 typedef struct mir_instr mir_instr, *p_mir_instr;
 
 typedef struct mir_binary_instr mir_binary_instr, *p_mir_binary_instr;
