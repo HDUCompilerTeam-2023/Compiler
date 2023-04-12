@@ -5,6 +5,5 @@
 
 void symbol_name_print(p_symbol_sym p_sym);
 void symbol_init_print(p_symbol_sym p_sym);
-void symbol_store_print(p_symbol_store pss);
 
 #endif
