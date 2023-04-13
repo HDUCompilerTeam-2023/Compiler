@@ -7,4 +7,5 @@
 #include <mir_gen/instr.h>
 #include <mir_gen/operand.h>
 #include <mir_gen/param.h>
+#include <mir_gen/symbol.h>
 #endif
