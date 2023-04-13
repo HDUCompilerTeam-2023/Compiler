@@ -46,7 +46,7 @@ struct mir_instr{
         p_mir_br_instr p_mir_br;
         p_mir_condbr_instr p_mir_condbr;
     };
-    int index; // 指令编号
+    size_t index; // 指令编号
 
     list_head node; // 下一条指令
 };
