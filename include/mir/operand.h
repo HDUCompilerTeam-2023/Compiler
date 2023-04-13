@@ -10,9 +10,10 @@ struct mir_operand{
         float floatconst;
     };
     enum{
-         int_val,
-         float_val,
-         sym,
+        int_val,
+        float_val,
+        void_val, // 主要用做函数返回值 
+        sym,
     }irop_kind;
 };
 
