@@ -1,6 +1,5 @@
 #include <mir_gen/instr.h>
 #include <mir_gen.h>
-#include <stdlib.h>
 
 p_mir_instr mir_binary_instr_gen(mir_instr_type mir_type, p_mir_operand p_src1, p_mir_operand p_src2, p_mir_symbol p_des)
 {
