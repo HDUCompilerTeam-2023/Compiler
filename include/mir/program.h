@@ -3,7 +3,7 @@
 #define __MIR_PROGRAM__
 #include <mir.h>
 struct mir_program{
-    list_head globalvar_init_list;// 全局变量初始化 ir
+    p_list_head p_globalvar_head;
     list_head func;
 };
 
