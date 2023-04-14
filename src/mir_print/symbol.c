@@ -22,7 +22,9 @@ void mir_symbol_type_print(p_symbol_type p_mir_type){
     if(p_mir_type->kind == type_arrary){
         p_symbol_type p_type = p_mir_type;
         while(p_type == type_arrary)p_type = p_mir_type->p_item;
+        printf("[%ld X ", p_mir_type->size);
         mir_basic_type_print(p_type->basic);
+        printf("]");
         p_type = p_mir_type;
         while (p_type == type_arrary){ 
             printf("*");
