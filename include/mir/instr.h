@@ -35,21 +35,6 @@ enum mir_instr_type{
     mir_br,
     mir_condbr,
 };
-struct mir_instr{
-    mir_instr_type irkind;
-    union{
-        p_mir_binary_instr p_mir_binary;
-        p_mir_unary_instr p_mir_unary;
-        p_mir_call_instr p_mir_call;
-        p_mir_array_instr p_mir_array;
-        p_mir_ret_instr p_mir_ret;
-        p_mir_br_instr p_mir_br;
-        p_mir_condbr_instr p_mir_condbr;
-    };
-    size_t index; // 指令编号
-
-    list_head node; // 下一条指令
-};
 
 struct mir_binary_instr{
     p_mir_operand p_src1, p_src2;
@@ -85,6 +70,23 @@ struct mir_condbr_instr{
     p_mir_instr p_target_true, p_target_false;
     p_mir_operand p_cond;
 };
+
+struct mir_instr{
+    mir_instr_type irkind;
+    union{
+        mir_binary_instr mir_binary;
+        mir_unary_instr mir_unary;
+        mir_call_instr mir_call;
+        mir_array_instr mir_array;
+        mir_ret_instr mir_ret;
+        mir_br_instr mir_br;
+        mir_condbr_instr mir_condbr;
+    };
+    size_t index; // 指令编号
+
+    list_head node; // 下一条指令
+};
+
 
 // 分配 des 的类型 变量给 des
 // struct mir_alloca_instr{
