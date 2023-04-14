@@ -41,10 +41,10 @@ void mir_symbol_print(p_mir_symbol p_mir_sym)
     assert(p_mir_sym);
     mir_symbol_type_print(p_mir_sym->p_type);
 
-    if (p_mir_sym->irsym_kind == global_var){
+    if (p_mir_sym->kind == global_var){
         printf("@%s ", p_mir_sym->name);
     }
-    else if(p_mir_sym->irsym_kind == temp_var)
+    else if(p_mir_sym->kind == temp_var)
         printf("%%%ld(temp) ", p_mir_sym->id);
     else{
         switch (p_mir_sym->p_type->kind) {

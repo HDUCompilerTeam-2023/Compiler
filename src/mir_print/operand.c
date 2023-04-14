@@ -5,7 +5,7 @@
 
 void mir_operand_print(p_mir_operand p_operand)
 {
-    switch (p_operand->irop_kind) {
+    switch (p_operand->kind) {
         case int_val:
             printf("i32 %d ", p_operand->intconst);
             break;
