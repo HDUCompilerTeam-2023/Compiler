@@ -1,12 +1,12 @@
 
 #include <mir_print.h>
 #include <mir/instr.h>
+#include <mir/basic_block.h>
 #include <stdio.h>
 
 void mir_instr_print(p_mir_instr p_instr)
 {
     assert(p_instr);
-    printf("i%ld:  ", p_instr->index);
     switch (p_instr->irkind) {
         case mir_add_op:
         case mir_sub_op:
@@ -133,7 +133,7 @@ void mir_ret_instr_print(p_mir_ret_instr p_instr)
 void mir_br_instr_print(p_mir_br_instr p_instr)
 {
     printf("br ");
-    printf("i%ld", p_instr->p_target->index);
+    printf("b%ld", p_instr->p_target->block_id);
 }
 
 void mir_condbr_instr_print(p_mir_condbr_instr p_instr)
@@ -141,8 +141,8 @@ void mir_condbr_instr_print(p_mir_condbr_instr p_instr)
     printf("br ");
     mir_operand_print(p_instr->p_cond);
     printf(", ");
-    printf("i%ld, ", p_instr->p_target_true->index);
-    printf("i%ld", p_instr->p_target_false->index);
+    printf("b%ld, ", p_instr->p_target_true->block_id);
+    printf("b%ld", p_instr->p_target_false->block_id);
 }
 
 void mir_call_instr_print(p_mir_call_instr p_instr)
