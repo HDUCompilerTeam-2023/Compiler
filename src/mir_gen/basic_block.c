@@ -2,13 +2,13 @@
 #include <mir_gen.h>
 #include <mir_gen/basic_block.h>
 
-p_mir_basic_block mir_basic_block_gen(p_mir_func p_func)
+p_mir_basic_block mir_basic_block_gen(size_t block_id)
 {
     p_mir_basic_block p_mir_block = malloc(sizeof(*p_mir_block));
     *p_mir_block = (mir_basic_block){
         .instr_list = list_init_head(&p_mir_block->instr_list),
         .block_prev = list_init_head(&p_mir_block->block_prev),
-        .block_id = p_func->temp_id ++,
+        .block_id = block_id,
     };
     return p_mir_block;
 }

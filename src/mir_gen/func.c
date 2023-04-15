@@ -7,7 +7,6 @@ p_mir_func mir_func_gen(p_symbol_sym p_func_sym){
         .p_func_sym = p_func_sym,
         .p_basic_block = NULL,
         .node = list_head_init(&p_func->node),
-        .temp_id = 0,
     };
     return p_func;
 }
