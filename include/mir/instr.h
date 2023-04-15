@@ -37,25 +37,23 @@ enum mir_instr_type{
 };
 
 struct mir_binary_instr{
-    p_mir_operand p_src1, p_src2;
-    p_mir_symbol p_des;
+    p_mir_operand p_src1, p_src2, p_des;
 };
 
 struct mir_unary_instr{
-    p_mir_operand p_src;
-    p_mir_symbol p_des;
+    p_mir_operand p_src, p_des;
 };
 
 struct mir_call_instr{
     p_mir_symbol p_func;
     p_mir_param_list p_param_list;
-    p_mir_symbol p_des;
+    p_mir_operand p_des;
 };
 
 struct mir_array_instr{
     p_mir_symbol p_array;
     p_mir_operand p_offset;
-    p_mir_symbol p_des;
+    p_mir_operand p_des;
 };
 
 struct mir_ret_instr{
