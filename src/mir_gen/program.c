@@ -1,5 +1,3 @@
-#include "mir_gen/program.h"
-#include "util/list.h"
 #include <mir/program.h>
 #include <mir_gen.h>
 
@@ -13,13 +11,13 @@ p_mir_program mir_program_gen(void)
     return p_program;
 }
 
-p_mir_program mir_func_add(p_mir_program p_program, p_mir_func p_func)
+p_mir_program mir_program_func_add(p_mir_program p_program, p_mir_func p_func)
 {
     list_add_prev(&p_func->node, &p_program->func);
     return p_program;
 }
 
-p_mir_program mir_global_set(p_mir_program p_program, p_list_head p_head)
+p_mir_program mir_program_global_set(p_mir_program p_program, p_list_head p_head)
 {
     p_program->p_globalvar_head = p_head;
     return p_program;
