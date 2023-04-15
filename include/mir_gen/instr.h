@@ -8,8 +8,8 @@ p_mir_instr mir_unary_instr_gen(mir_instr_type mir_type, p_mir_operand p_src, p_
 p_mir_instr mir_call_instr_gen(p_mir_symbol p_func_sym, p_mir_param_list p_param_list, p_mir_symbol p_des);
 p_mir_instr mir_array_instr_gen(p_mir_symbol p_array, p_mir_operand p_offset, p_mir_symbol p_des);
 p_mir_instr mir_ret_instr_gen(p_mir_operand p_src);
-p_mir_instr mir_br_instr_gen(p_mir_instr p_target);
-p_mir_instr mir_condbr_instr_gen(p_mir_operand p_cond, p_mir_instr p_target_true, p_mir_instr p_target_false);
+p_mir_instr mir_br_instr_gen(p_mir_basic_block p_target);
+p_mir_instr mir_condbr_instr_gen(p_mir_operand p_cond, p_mir_basic_block p_target_true, p_mir_basic_block p_target_false);
 
 void mir_instr_drop(p_mir_instr p_instr);
 #endif
