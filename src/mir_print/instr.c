@@ -51,7 +51,7 @@ void mir_instr_print(p_mir_instr p_instr)
 
 void mir_binary_instr_print(mir_instr_type instr_type, p_mir_binary_instr p_instr)
 {
-    mir_symbol_print(p_instr->p_des);
+    mir_operand_print(p_instr->p_des);
     printf("= ");
     mir_operand_print(p_instr->p_src1);
     switch (instr_type) {
@@ -101,7 +101,7 @@ void mir_binary_instr_print(mir_instr_type instr_type, p_mir_binary_instr p_inst
 
 void mir_unary_instr_print(mir_instr_type instr_type, p_mir_unary_instr p_instr)
 {
-    mir_symbol_print(p_instr->p_des);
+    mir_operand_print(p_instr->p_des);
     printf("= ");
     switch (instr_type) {
         case mir_minus_op:
@@ -147,14 +147,14 @@ void mir_condbr_instr_print(p_mir_condbr_instr p_instr)
 
 void mir_call_instr_print(p_mir_call_instr p_instr)
 {
-    mir_symbol_print(p_instr->p_des);
+    mir_operand_print(p_instr->p_des);
     printf("= ");
     mir_param_list_print(p_instr->p_param_list);
 }
 
 void mir_array_instr_print(p_mir_array_instr p_instr)
 {
-    mir_symbol_print(p_instr->p_des);
+    mir_operand_print(p_instr->p_des);
     printf("= ");
     mir_symbol_print(p_instr->p_array);
     printf("[");
