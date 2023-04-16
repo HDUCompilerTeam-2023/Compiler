@@ -153,6 +153,86 @@ p_mir_instr mir_array_assign_instr_gen(p_mir_operand p_array, p_mir_operand p_of
 }
 
 
+p_mir_operand mir_instr_get_src1(p_mir_instr p_instr)
+{
+    switch (p_instr->irkind) {
+        case mir_add_op:
+        case mir_sub_op:
+        case mir_mul_op:
+        case mir_div_op:
+        case mir_mod_op:
+        case mir_and_op:
+        case mir_or_op:
+        case mir_eq_op:
+        case mir_neq_op:
+        case mir_l_op:
+        case mir_leq_op:
+        case mir_g_op:
+        case mir_geq_op:
+            return p_instr->mir_binary.p_src1;
+        case mir_minus_op:
+        case mir_not_op:
+        case mir_int2float_op:
+        case mir_float2int_op:
+        case mir_val_assign:
+            return p_instr->mir_unary.p_src;
+        default:
+            assert(0);
+    }
+}
+p_mir_operand mir_instr_get_src2(p_mir_instr p_instr)
+{
+    switch (p_instr->irkind) {
+        case mir_add_op:
+        case mir_sub_op:
+        case mir_mul_op:
+        case mir_div_op:
+        case mir_mod_op:
+        case mir_and_op:
+        case mir_or_op:
+        case mir_eq_op:
+        case mir_neq_op:
+        case mir_l_op:
+        case mir_leq_op:
+        case mir_g_op:
+        case mir_geq_op:
+            return p_instr->mir_binary.p_src2;
+        default:
+            assert(0);
+    }
+}
+p_mir_operand mir_instr_get_des(p_mir_instr p_instr)
+{
+    switch (p_instr->irkind) {
+        case mir_add_op:
+        case mir_sub_op:
+        case mir_mul_op:
+        case mir_div_op:
+        case mir_mod_op:
+        case mir_and_op:
+        case mir_or_op:
+        case mir_eq_op:
+        case mir_neq_op:
+        case mir_l_op:
+        case mir_leq_op:
+        case mir_g_op:
+        case mir_geq_op:
+            return p_instr->mir_binary.p_des;
+        case mir_minus_op:
+        case mir_not_op:
+        case mir_int2float_op:
+        case mir_float2int_op:
+        case mir_val_assign:
+            return p_instr->mir_unary.p_des;
+        case mir_call:
+            return p_instr->mir_call.p_des;
+        case mir_array:
+            return p_instr->mir_array.p_des;
+        default:
+            assert(0);
+    }
+}
+
 void mir_instr_drop(p_mir_instr p_instr)
 {
     assert(p_instr);
