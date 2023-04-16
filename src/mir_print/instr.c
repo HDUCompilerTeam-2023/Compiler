@@ -45,7 +45,7 @@ void mir_instr_print(p_mir_instr p_instr)
         case mir_array:
             mir_array_instr_print(&p_instr->mir_array);
             break;
-    }
+   }
     printf("\n");
 }
 
@@ -149,6 +149,7 @@ void mir_call_instr_print(p_mir_call_instr p_instr)
 {
     mir_operand_print(p_instr->p_des);
     printf("= ");
+    mir_operand_print(p_instr->p_func);
     mir_param_list_print(p_instr->p_param_list);
 }
 
@@ -156,7 +157,7 @@ void mir_array_instr_print(p_mir_array_instr p_instr)
 {
     mir_operand_print(p_instr->p_des);
     printf("= ");
-    mir_symbol_print(p_instr->p_array);
+    mir_operand_print(p_instr->p_array);
     printf("[");
     mir_operand_print(p_instr->p_offset);
     printf("]");

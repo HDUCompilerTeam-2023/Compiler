@@ -45,13 +45,13 @@ struct mir_unary_instr{
 };
 
 struct mir_call_instr{
-    p_mir_symbol p_func;
+    p_mir_operand p_func;
     p_mir_param_list p_param_list;
     p_mir_operand p_des;
 };
 
 struct mir_array_instr{
-    p_mir_symbol p_array;
+    p_mir_operand p_array;
     p_mir_operand p_offset;
     p_mir_operand p_des;
 };
