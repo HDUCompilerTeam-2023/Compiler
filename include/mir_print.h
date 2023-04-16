@@ -6,5 +6,4 @@
 #include <mir_print/instr.h>
 #include <mir_print/param.h>
 #include <mir_print/operand.h>
-#include <mir_print/symbol.h>
 #endif
