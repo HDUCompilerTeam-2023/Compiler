@@ -12,5 +12,10 @@ p_mir_instr mir_ret_instr_gen(p_mir_operand p_src);
 p_mir_instr mir_br_instr_gen(p_mir_basic_block p_target);
 p_mir_instr mir_condbr_instr_gen(p_mir_operand p_cond, p_mir_basic_block p_target_true, p_mir_basic_block p_target_false);
 
+
+p_mir_operand mir_instr_get_src1(p_mir_instr p_instr);
+p_mir_operand mir_instr_get_src2(p_mir_instr p_instr);
+p_mir_operand mir_instr_get_des(p_mir_instr p_instr);
+
 void mir_instr_drop(p_mir_instr p_instr);
 #endif
