@@ -10,4 +10,6 @@ void mir_ret_instr_print(p_mir_ret_instr p_instr);
 void mir_br_instr_print(p_mir_br_instr p_instr);
 void mir_condbr_instr_print(p_mir_condbr_instr p_instr);
 void mir_array_instr_print(p_mir_array_instr p_instr);
+void mir_array_assign_instr_print(p_mir_array_assign_instr p_instr);
+
 #endif

@@ -44,7 +44,7 @@ p_mir_instr mir_unary_instr_gen(mir_instr_type mir_type, p_mir_operand p_src, p_
         case mir_not_op:
         case mir_int2float_op:
         case mir_float2int_op:
-        case mir_assign:
+        case mir_val_assign:
 
         p_instr = malloc(sizeof(*p_instr));
         *p_instr = (mir_instr){
@@ -138,6 +138,21 @@ p_mir_instr mir_array_instr_gen(p_mir_operand p_array, p_mir_operand p_offset, p
     return p_instr;
 }
 
+p_mir_instr mir_array_assign_instr_gen(p_mir_operand p_array, p_mir_operand p_offset, p_mir_operand p_src)
+{
+    p_mir_instr p_instr = malloc(sizeof(*p_instr));
+    *p_instr = (mir_instr){
+        .mir_array_assign = (mir_array_assign_instr){
+            .p_array = p_array,
+            .p_src = p_src,
+            .p_offset = p_offset,
+        },
+        .node = list_head_init(&p_instr->node),
+    };
+    return p_instr;
+}
+
+
 void mir_instr_drop(p_mir_instr p_instr)
 {
     assert(p_instr);
@@ -163,7 +178,7 @@ void mir_instr_drop(p_mir_instr p_instr)
         case mir_not_op:
         case mir_int2float_op:
         case mir_float2int_op:
-        case mir_assign:
+        case mir_val_assign:
             mir_operand_drop(p_instr->mir_unary.p_src);
             mir_operand_drop(p_instr->mir_unary.p_des);
             break;
@@ -175,6 +190,11 @@ void mir_instr_drop(p_mir_instr p_instr)
             mir_operand_drop(p_instr->mir_array.p_array);// maybe not need ?
             mir_operand_drop(p_instr->mir_array.p_offset);
             mir_operand_drop(p_instr->mir_array.p_des);
+            break;
+        case mir_array_assign:
+            mir_operand_drop(p_instr->mir_array_assign.p_array);// maybe not need ?
+            mir_operand_drop(p_instr->mir_array_assign.p_offset);
+            mir_operand_drop(p_instr->mir_array_assign.p_src);
             break;
         case mir_ret:
             mir_operand_drop(p_instr->mir_ret.p_ret);
