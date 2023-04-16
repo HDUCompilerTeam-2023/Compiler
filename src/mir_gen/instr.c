@@ -36,7 +36,7 @@ p_mir_instr mir_binary_instr_gen(mir_instr_type mir_type, p_mir_operand p_src1, 
     return p_instr;
 }
 
-p_mir_instr mir_unnary_instr_gen(mir_instr_type mir_type, p_mir_operand p_src, p_mir_operand p_des)
+p_mir_instr mir_unary_instr_gen(mir_instr_type mir_type, p_mir_operand p_src, p_mir_operand p_des)
 {
     p_mir_instr p_instr = NULL;
     switch (mir_type) {
@@ -95,7 +95,6 @@ p_mir_instr mir_br_instr_gen(p_mir_basic_block p_target)
 p_mir_instr mir_condbr_instr_gen(p_mir_operand p_cond, p_mir_basic_block p_target_false, p_mir_basic_block p_target_true)
 {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
-    
 
     *p_instr = (mir_instr){
         .irkind = mir_condbr,
@@ -110,13 +109,13 @@ p_mir_instr mir_condbr_instr_gen(p_mir_operand p_cond, p_mir_basic_block p_targe
     return p_instr;
 }
 
-p_mir_instr mir_call_instr_gen(p_mir_symbol p_func_sym, p_mir_param_list p_param_list, p_mir_operand p_des)
+p_mir_instr mir_call_instr_gen(p_mir_operand p_func, p_mir_param_list p_param_list, p_mir_operand p_des)
 {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
 
     *p_instr = (mir_instr){
         .mir_call = (mir_call_instr){
-            .p_func = p_func_sym,
+            .p_func = p_func,
             .p_des = p_des,
             .p_param_list = p_param_list,
         },
@@ -125,7 +124,7 @@ p_mir_instr mir_call_instr_gen(p_mir_symbol p_func_sym, p_mir_param_list p_param
     return p_instr;
 }
 
-p_mir_instr mir_array_instr_gen(p_mir_symbol p_array, p_mir_operand p_offset, p_mir_operand p_des)
+p_mir_instr mir_array_instr_gen(p_mir_operand p_array, p_mir_operand p_offset, p_mir_operand p_des)
 {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
     *p_instr = (mir_instr){
@@ -173,7 +172,7 @@ void mir_instr_drop(p_mir_instr p_instr)
             mir_operand_drop(p_instr->mir_unary.p_des);
             break;
         case mir_array:
-            mir_symbol_drop(p_instr->mir_array.p_array);// maybe not need ?
+            mir_operand_drop(p_instr->mir_array.p_array);// maybe not need ?
             mir_operand_drop(p_instr->mir_array.p_offset);
             mir_operand_drop(p_instr->mir_array.p_des);
             break;
