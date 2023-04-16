@@ -46,7 +46,7 @@ p_mir_operand mir_operand_declared_sym_gen(p_symbol_sym p_h_sym)
     }
     else{
         p_sym->id = p_h_sym->id;
-        p_sym->kind = temp_var;
+        p_sym->kind = local_var;
     }
     return p_sym;
 }
