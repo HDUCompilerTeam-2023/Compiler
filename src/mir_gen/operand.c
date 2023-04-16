@@ -24,7 +24,7 @@ p_mir_operand mir_operand_float_gen(float floatconst)
     return p_mir_float;
 }
 
-p_mir_operand p_mir_operand_void_gen(void)
+p_mir_operand mir_operand_void_gen(void)
 {
     p_mir_operand p_mir_float = malloc(sizeof(*p_mir_float));
     *p_mir_float = (mir_operand){
