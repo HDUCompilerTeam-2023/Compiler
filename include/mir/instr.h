@@ -22,13 +22,14 @@ enum mir_instr_type{
     mir_not_op,
     mir_int2float_op,
     mir_float2int_op,
-    mir_assign,
+    mir_val_assign,
     // memory instr
     // mir_alloca,
     // mir_store,
     // mir_load,
 
     // other
+    mir_array_assign,
     mir_call,
     mir_array,
     mir_ret,
@@ -56,6 +57,11 @@ struct mir_array_instr{
     p_mir_operand p_des;
 };
 
+struct mir_array_assign_instr{
+    p_mir_operand p_array;
+    p_mir_operand p_offset;
+    p_mir_operand p_src;
+};
 struct mir_ret_instr{
     p_mir_operand p_ret;//  NULL 时返回 void
 };
@@ -76,6 +82,7 @@ struct mir_instr{
         mir_unary_instr mir_unary;
         mir_call_instr mir_call;
         mir_array_instr mir_array;
+        mir_array_assign_instr mir_array_assign;
         mir_ret_instr mir_ret;
         mir_br_instr mir_br;
         mir_condbr_instr mir_condbr;
