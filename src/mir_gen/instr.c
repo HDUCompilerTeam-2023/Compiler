@@ -241,6 +241,7 @@ p_mir_operand mir_instr_get_des(p_mir_instr p_instr)
 void mir_instr_drop(p_mir_instr p_instr)
 {
     assert(p_instr);
-
+    if(p_instr->irkind == mir_call)
+        mir_param_list_drop(p_instr->mir_call.p_param_list);
     free(p_instr);
 }
