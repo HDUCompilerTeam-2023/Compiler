@@ -26,7 +26,7 @@ void mir_param_list_drop(p_mir_param_list p_param_list)
 {
     assert(p_param_list);
     while (!list_head_alone(&p_param_list->param)) {
-        p_mir_param p_param = list_entry(&p_param_list->param.p_next, mir_param, node);
+        p_mir_param p_param = list_entry(p_param_list->param.p_next, mir_param, node);
         list_del(&p_param->node);
         mir_operand_drop(p_param->p_param);
         free(p_param);
