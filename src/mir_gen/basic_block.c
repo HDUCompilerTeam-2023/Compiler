@@ -25,6 +25,16 @@ void mir_basic_block_drop(p_mir_basic_block p_basic_block)
     while (!list_head_alone(&p_basic_block->instr_list)) {
         p_instr = list_entry(p_basic_block->instr_list.p_next, mir_instr, node);
         list_del(&p_instr->node);
+        if (p_instr->irkind == mir_br ) {
+            if (p_instr->mir_br.p_target->block_id > p_basic_block->block_id)
+                mir_basic_block_drop(p_instr->mir_br.p_target);
+        }
+        if (p_instr->irkind == mir_condbr) {
+            if (p_instr->mir_condbr.p_target_true->block_id > p_basic_block->block_id)
+                mir_basic_block_drop(p_instr->mir_condbr.p_target_true);
+            if (p_instr->mir_condbr.p_target_false->block_id > p_basic_block->block_id)
+                mir_basic_block_drop(p_instr->mir_condbr.p_target_false);
+        }
         mir_instr_drop(p_instr);
     }
     free(p_basic_block);
