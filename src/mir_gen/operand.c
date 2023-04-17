@@ -71,17 +71,30 @@ p_mir_operand mir_operand_declared_sym_gen(p_symbol_sym p_h_sym)
     return p_sym;
 }
 
-p_mir_operand mir_operand_temp_sym_gen(size_t id, p_symbol_type p_type)
+p_mir_operand mir_operand_temp_sym_array_gen(size_t id, p_symbol_type p_type)
 {
     p_mir_operand p_sym = malloc(sizeof(*p_sym));
     *p_sym = (mir_operand){
-        .kind = temp_var,
+        .kind = temp_var_array,
         .id = id,
         .p_type = p_type,
         .node = list_head_init(&p_sym->node),
     };
     return p_sym;
 }
+
+p_mir_operand mir_operand_temp_sym_basic_gen(size_t id, basic_type b_type)
+{
+    p_mir_operand p_sym = malloc(sizeof(*p_sym));
+    *p_sym = (mir_operand){
+        .kind = temp_var_basic,
+        .id = id,
+        .b_type = b_type,
+        .node = list_head_init(&p_sym->node),
+    };
+    return p_sym;
+}
+
 // 临时变量在一些情况下需要将 立即数的基本类型转换为 type
 p_symbol_type mir_operand_sym_type_gen(basic_type b_type)
 {

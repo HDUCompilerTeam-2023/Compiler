@@ -6,7 +6,8 @@
 enum mir_operand_kind{
     global_var,
     local_var,
-    temp_var,
+    temp_var_basic,
+    temp_var_array,
     immedicate_val,
 };
 struct mir_operand{

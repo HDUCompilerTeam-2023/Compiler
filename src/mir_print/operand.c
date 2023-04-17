@@ -63,8 +63,13 @@ void mir_operand_print(p_mir_operand p_operand)
             mir_symbol_type_print(p_operand->p_type);
             printf("%%l%ld ", p_operand->id);
             break;
-        case temp_var:
+        case temp_var_array:
             mir_symbol_type_print(p_operand->p_type);
+            printf("%%t%ld ", p_operand->id);
+            break;
+        case temp_var_basic:
+            mir_basic_type_print(p_operand->b_type);
+            printf(" ");
             printf("%%t%ld ", p_operand->id);
             break;
     }
