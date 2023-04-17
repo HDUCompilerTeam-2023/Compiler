@@ -9,17 +9,21 @@ void mir_basic_type_print(basic_type b_type)
     switch (b_type) {
         case type_int:
             printf("i32");
+            break;
         case type_float:
             printf("f32");
+            break;
         case type_void:
             printf("void");
+            break;
         case type_str:
             printf("str");
+            break;
     }
 }
 
 void mir_symbol_type_print(p_symbol_type p_mir_type){
-    
+
     if(p_mir_type->kind == type_arrary){
         p_symbol_type p_type = p_mir_type;
         while(p_type == type_arrary)p_type = p_mir_type->p_item;
@@ -53,12 +57,25 @@ void mir_operand_print(p_mir_operand p_operand)
         case global_var:
             mir_symbol_type_print(p_operand->p_type);
             printf("@%s ", p_operand->name);
+            break;
         case local_var:
             mir_symbol_type_print(p_operand->p_type);
-            printf("%%%ld", p_operand->id);
+            printf("%%l%ld ", p_operand->id);
+            break;
         case temp_var:
             mir_symbol_type_print(p_operand->p_type);
-            printf("%%%ld", p_operand->id);
+            printf("%%t%ld ", p_operand->id);
+            break;
+    }
+}
+
+void mir_operand_list_print(p_mir_operand_list p_list)
+{
+    p_list_head p_node;
+    list_for_each(p_node, &p_list->operand){
+        p_mir_operand p_operand = list_entry(p_node, mir_operand, node);
+        mir_operand_print(p_operand);
+        printf("\n");
     }
 }
 

@@ -21,8 +21,13 @@ struct mir_operand{
         p_symbol_type p_type;
         basic_type b_type;
     };
+
+    list_head node; // operand 只能在 list 中存在
 };
 
+struct mir_operand_list{
+    list_head operand;
+};
 
 
 
