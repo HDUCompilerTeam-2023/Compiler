@@ -32,7 +32,7 @@ void mir_program_drop(p_mir_program p_program)
     //     mir_instr_drop(p_instr);
     // }
     while (!list_head_alone(&p_program->func)) {
-        p_mir_func p_func = list_entry(&p_program->func.p_next, mir_func, node);
+        p_mir_func p_func = list_entry(p_program->func.p_next, mir_func, node);
         list_del(&p_func->node);
         mir_func_drop(p_func);
     }

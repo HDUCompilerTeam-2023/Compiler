@@ -21,8 +21,9 @@ p_mir_basic_block mir_basic_block_addinstr(p_mir_basic_block p_basic_block, p_mi
 void mir_basic_block_drop(p_mir_basic_block p_basic_block)
 {
     assert(p_basic_block);
+    p_mir_instr p_instr;
     while (!list_head_alone(&p_basic_block->instr_list)) {
-        p_mir_instr p_instr = list_entry(&p_basic_block->instr_list.p_next, mir_instr, node);
+        p_instr = list_entry(p_basic_block->instr_list.p_next, mir_instr, node);
         list_del(&p_instr->node);
         mir_instr_drop(p_instr);
     }
