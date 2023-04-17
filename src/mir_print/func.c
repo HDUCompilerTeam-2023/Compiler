@@ -17,7 +17,7 @@ void mir_func_print(p_mir_func p_func)
         p_param_type = p_param_type->p_params;
         if(p_param_type)printf(", ");
     }
-    printf("{\n");
+    printf("){\n");
     mir_basic_block_print(p_func->p_basic_block);
     printf("}\n");
 }

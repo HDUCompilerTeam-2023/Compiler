@@ -23,15 +23,15 @@ void mir_basic_type_print(basic_type b_type)
 }
 
 void mir_symbol_type_print(p_symbol_type p_mir_type){
-
+    assert(p_mir_type);
     if(p_mir_type->kind == type_arrary){
         p_symbol_type p_type = p_mir_type;
-        while(p_type == type_arrary)p_type = p_mir_type->p_item;
+        while(p_type->kind == type_arrary)p_type = p_type->p_item;
         printf("[%ld X ", p_mir_type->size);
         mir_basic_type_print(p_type->basic);
         printf("]");
         p_type = p_mir_type;
-        while (p_type == type_arrary){ 
+        while (p_type->kind == type_arrary){ 
             printf("*");
             p_type = p_type->p_item;
         }
@@ -48,6 +48,7 @@ void mir_operand_print(p_mir_operand p_operand)
     switch (p_operand->kind) {
         case immedicate_val:
             mir_basic_type_print(p_operand->b_type);
+            printf(" ");
             if (p_operand->b_type == type_int) 
                 printf("%d ", p_operand->intconst);
             else if (p_operand->b_type == type_float)
