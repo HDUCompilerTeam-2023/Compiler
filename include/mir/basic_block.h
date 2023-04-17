@@ -7,6 +7,12 @@ struct mir_basic_block{
     list_head instr_list;
     list_head block_prev;
     size_t block_id;
+
+    list_head node;
+};
+
+struct mir_basic_block_list{
+    list_head basic_block;
 };
 
 #endif
