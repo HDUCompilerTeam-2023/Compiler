@@ -56,6 +56,7 @@ void mir_operand_print(p_mir_operand p_operand)
             // else ?
             break;
         case global_var:
+        case func_var:
             mir_symbol_type_print(p_operand->p_type);
             printf("@%s ", p_operand->name);
             break;
