@@ -1,3 +1,4 @@
+#include "mir/instr.h"
 #include <mir_gen/instr.h>
 #include <mir_gen.h>
 
@@ -114,6 +115,7 @@ p_mir_instr mir_call_instr_gen(p_mir_operand p_func, p_mir_param_list p_param_li
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
 
     *p_instr = (mir_instr){
+        .irkind = mir_call,
         .mir_call = (mir_call_instr){
             .p_func = p_func,
             .p_des = p_des,
@@ -128,6 +130,7 @@ p_mir_instr mir_array_instr_gen(p_mir_operand p_array, p_mir_operand p_offset, p
 {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
     *p_instr = (mir_instr){
+        .irkind = mir_array,
         .mir_array = (mir_array_instr){
             .p_array = p_array,
             .p_des = p_des,
@@ -142,6 +145,7 @@ p_mir_instr mir_array_assign_instr_gen(p_mir_operand p_array, p_mir_operand p_of
 {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
     *p_instr = (mir_instr){
+        .irkind = mir_array_assign,
         .mir_array_assign = (mir_array_assign_instr){
             .p_array = p_array,
             .p_src = p_src,
