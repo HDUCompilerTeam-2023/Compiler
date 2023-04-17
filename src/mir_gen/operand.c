@@ -65,8 +65,15 @@ p_mir_operand mir_operand_declared_sym_gen(p_symbol_sym p_h_sym)
         p_sym->kind = global_var;
     }
     else{
-        p_sym->id = p_h_sym->id;
-        p_sym->kind = local_var;
+        if (p_h_sym->p_type->kind == type_func)
+        {
+            p_sym->name = p_h_sym->name;
+            p_sym->kind = func_var;
+        }
+        else {
+            p_sym->id = p_h_sym->id;
+            p_sym->kind = local_var;
+        }
     }
     return p_sym;
 }

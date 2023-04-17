@@ -6,6 +6,7 @@
 enum mir_operand_kind{
     global_var,
     local_var,
+    func_var,
     temp_var_basic,
     temp_var_array,
     immedicate_val,
