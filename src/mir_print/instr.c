@@ -1,4 +1,5 @@
 
+#include "mir_print/basic_block.h"
 #include <mir_print.h>
 #include <mir/instr.h>
 #include <mir/basic_block.h>
@@ -7,6 +8,7 @@
 void mir_instr_print(p_mir_instr p_instr)
 {
     assert(p_instr);
+    printf("    ");
     switch (p_instr->irkind) {
         case mir_add_op:
         case mir_sub_op:
@@ -128,7 +130,7 @@ void mir_unary_instr_print(mir_instr_type instr_type, p_mir_unary_instr p_instr)
 
 void mir_ret_instr_print(p_mir_ret_instr p_instr)
 {
-    printf("return ");
+    printf("ret ");
     mir_operand_print(p_instr->p_ret);
 }
 
