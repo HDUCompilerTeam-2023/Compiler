@@ -36,5 +36,6 @@ void mir_program_drop(p_mir_program p_program)
         list_del(&p_func->node);
         mir_func_drop(p_func);
     }
+    mir_operand_list_drop(p_program->p_operand_list);
     free(p_program);
 }
