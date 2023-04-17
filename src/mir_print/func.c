@@ -12,8 +12,8 @@ void mir_func_print(p_mir_func p_func)
     list_for_each(p_node, &p_func->p_func_sym->local) {
         if (!p_param_type) break;
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
-        mir_symbol_type_print(p_sym->p_type->p_item);
-        printf("%ld(param)", p_sym->id);
+        mir_symbol_type_print(p_sym->p_type);
+        printf("%%%ld", p_sym->id);
         p_param_type = p_param_type->p_params;
         if(p_param_type)printf(", ");
     }
