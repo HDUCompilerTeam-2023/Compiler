@@ -30,6 +30,13 @@ p_mir_operand hir2mir_operand_num_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
     }
 }
 
+p_mir_operand hir2mir_operand_void_gen(p_hir2mir_info p_info)
+{
+    p_mir_operand p_new_op = mir_operand_void_gen();
+    mir_operand_list_add(p_info->p_operand_list, p_new_op);
+    return p_new_op;
+}
+
 p_mir_operand hir2mir_operand_declared_sym_gen(p_hir2mir_info p_info, p_symbol_sym p_sym)
 {
     p_mir_operand p_new_op = mir_operand_declared_sym_gen(p_sym);

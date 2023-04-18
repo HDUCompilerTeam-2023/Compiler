@@ -50,19 +50,20 @@ p_mir_instr hir2mir_stmt_init_gen(p_hir2mir_info p_info, p_symbol_sym p_sym)
 // TODU: 将返回值全部放到 0 号变量
 p_mir_instr hir2mir_stmt_return_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
 {   
+    p_mir_operand p_ret = hir2mir_operand_void_gen(p_info);
     if (p_exp) {
-        p_mir_operand p_ret_op = hir2mir_exp_get_operand(p_info, p_exp);
+        p_ret = hir2mir_exp_get_operand(p_info, p_exp);
         // p_mir_operand p_des = NULL;
         // if (p_ret_op->kind == immedicate_val) 
         //     p_des = mir_operand_temp_sym_gen(0, mir_operand_sym_type_gen(p_ret_op->b_type));
         // else 
         //     p_des = mir_operand_temp_sym_gen(0, p_ret_op->p_type);
         // p_mir_instr p_new_instr = mir_unary_instr_gen(mir_val_assign, p_ret_op, p_des);
-        p_mir_instr p_new_instr = mir_ret_instr_gen(p_ret_op);
-        mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
-        return p_new_instr;
+
     }
-    return NULL;
+    p_mir_instr p_new_instr = mir_ret_instr_gen(p_ret);
+    mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
+    return p_new_instr;
 }
 p_mir_instr hir2mir_stmt_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
 {
