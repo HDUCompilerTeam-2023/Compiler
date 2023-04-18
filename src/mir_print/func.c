@@ -13,7 +13,7 @@ void mir_func_print(p_mir_func p_func)
         if (!p_param_type) break;
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
         mir_symbol_type_print(p_sym->p_type);
-        printf("%%%ld", p_sym->id);
+        printf("%%l%ld", p_sym->id);
         p_param_type = p_param_type->p_params;
         if(p_param_type)printf(", ");
     }
