@@ -62,9 +62,8 @@ p_mir_instr hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
             case hir_exp_op_bool_not:
             case hir_exp_op_minus:
                 return hir2mir_exp_uexec_gen(p_info, p_exp);
-            case hir_exp_op_bool_or:
-            case hir_exp_op_bool_and:
-                return hir2mir_exp_lexec_gen(p_info, p_exp);
+            default: // 逻辑运算先进行 condbr判断, 不会到达此
+                assert(0);
         }
         case hir_exp_call:
             return hir2mir_exp_call_gen(p_info, p_exp);
@@ -166,20 +165,37 @@ p_mir_instr hir2mir_exp_uexec_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
     return p_new_instr;
 }
-
-p_mir_instr hir2mir_exp_lexec_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
+// exp 正确则跳向 true, 错误跳向 false
+p_mir_instr hir2mir_exp_cond_gen(p_hir2mir_info p_info, p_mir_basic_block p_true_block, p_mir_basic_block p_false_block, p_hir_exp p_exp)
 {
-    assert(p_exp && p_exp->p_src_1 && p_exp->p_src_2);
-    //p_mir_instr p_new_instr = NULL; 
-    //p_mir_basic_block p_current_basic_block = p_info->p_current_basic_block;
-    // 短路求值
-    if (p_exp->op == hir_exp_op_bool_and) {
-
-    }
-    else if (p_exp->op == hir_exp_op_bool_or){
+    assert(p_exp );
+    p_mir_basic_block p_current_basic_block = p_info->p_current_basic_block;
+    p_mir_instr p_new_instr = NULL;
+    if (p_exp->op == hir_exp_op_bool_or) {
+        // 在新block 生成右边代码， 该block 也是左边的 false block
+        p_mir_basic_block p_new_false_block = hir2mir_basic_block_gen(p_info);
+        p_info->p_current_basic_block = p_new_false_block;
+        p_new_instr = hir2mir_exp_cond_gen(p_info, p_true_block, p_false_block, p_exp->p_src_2);
+        // 在当前 block 生成 左边代码
+        p_info->p_current_basic_block = p_current_basic_block;
+        hir2mir_exp_cond_gen(p_info, p_true_block, p_new_false_block, p_exp->p_src_1);
         
     }
-    return hir2mir_exp_gen(p_info, p_exp->p_src_1);
+    else if (p_exp->op == hir_exp_op_bool_and) {
+        // 在新block 生成右边代码， 该block 也是左边的 true block
+        p_mir_basic_block p_new_true_block = hir2mir_basic_block_gen(p_info);
+        p_info->p_current_basic_block = p_new_true_block;
+        p_new_instr = hir2mir_exp_cond_gen(p_info, p_true_block, p_false_block, p_exp->p_src_2);
+        // 在当前 block 生成 左边代码
+        p_info->p_current_basic_block = p_current_basic_block;
+        hir2mir_exp_cond_gen(p_info, p_new_true_block, p_false_block, p_exp->p_src_1);   
+    }
+    else {
+        p_mir_operand p_cond =  hir2mir_exp_get_operand(p_info, p_exp);
+        p_new_instr = mir_condbr_instr_gen(p_cond, p_true_block, p_false_block);
+        mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
+    }
+    return p_new_instr;
 }
 
 p_mir_instr hir2mir_exp_assign_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
