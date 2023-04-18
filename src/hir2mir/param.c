@@ -1,6 +1,6 @@
 #include <hir2mir.h>
 #include <hir/param.h>
-
+// hir_param_list 转为 mir_param_list
 p_mir_param_list hir2mir_param_list_gen(p_hir2mir_info p_info, p_hir_param_list p_h_param_list)
 {
     assert(p_h_param_list);

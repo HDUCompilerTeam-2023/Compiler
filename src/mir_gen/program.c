@@ -26,11 +26,6 @@ p_mir_program mir_program_global_set(p_mir_program p_program, p_list_head p_head
 void mir_program_drop(p_mir_program p_program)
 {
     assert(p_program);
-    // while (!list_head_alone(&p_program->globalvar)) {
-    //     p_mir_instr p_instr = list_entry(&p_program->globalvar, mir_instr, node);
-    //     list_del(&p_instr->node);
-    //     mir_instr_drop(p_instr);
-    // }
     while (!list_head_alone(&p_program->func)) {
         p_mir_func p_func = list_entry(p_program->func.p_next, mir_func, node);
         list_del(&p_func->node);

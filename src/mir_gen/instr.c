@@ -1,4 +1,3 @@
-#include "mir/instr.h"
 #include <mir_gen/instr.h>
 #include <mir_gen.h>
 
