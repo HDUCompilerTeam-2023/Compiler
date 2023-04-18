@@ -18,9 +18,10 @@ p_mir_operand hir2mir_exp_get_operand(p_hir2mir_info p_info, p_hir_exp p_exp)
 {
     p_mir_operand p_operand;
     switch (p_exp->kind) {
-        case hir_exp_num:
+        case hir_exp_num:// 若是常量 直接返回该常量对应的操作数
             return hir2mir_operand_num_gen(p_info, p_exp);
         case hir_exp_val:
+        // 若是变量 直接返回该变量对应的操作数
             p_operand = hir2mir_operand_declared_sym_gen(p_info, p_exp->p_sym);
             if (p_exp->p_offset) // 若是数组元素赋值 需要新增一条语句将数组元素赋值给临时变量
             {
@@ -71,8 +72,7 @@ p_mir_instr hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
             assert(0);
     }
 }
-// 经过常量传播后若非倒数第二层节点 左操作数必定至少存在一个变量
-// 而倒数第二层节点两个操作数必定存在一个变量
+
 p_mir_instr hir2mir_exp_exec_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
 {
     assert(p_exp && p_exp->p_src_1 && p_exp->p_src_2);
@@ -186,7 +186,7 @@ p_mir_instr hir2mir_exp_assign_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
 
     p_mir_instr p_new_instr = NULL;
     p_mir_operand p_des = hir2mir_operand_declared_sym_gen(p_info, p_exp->p_src_1->p_sym);
-    if (p_exp->p_src_1->p_type->kind == type_arrary) {
+    if (p_exp->p_src_1->p_type->kind == type_arrary) { // 左值为数组对应指令为 数组赋值指令
         p_mir_operand p_offset = hir2mir_exp_get_operand(p_info, p_exp->p_src_1->p_offset);
         p_mir_operand p_src = hir2mir_exp_get_operand(p_info, p_exp->p_src_2);
         p_new_instr = mir_array_assign_instr_gen(p_des, p_offset, p_src);
