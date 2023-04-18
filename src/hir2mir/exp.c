@@ -141,18 +141,22 @@ p_mir_instr hir2mir_exp_uexec_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
     assert(p_exp && p_exp->p_src_1);
     p_mir_operand p_operand = hir2mir_exp_get_operand(p_info, p_exp->p_src_1);
     p_mir_operand p_temp_des = NULL;
+    p_mir_instr p_new_instr = NULL;
     switch (p_exp->op) {
         case hir_exp_op_bool_not:
         // 需要转换为 int 型
             p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, type_int);
-            return mir_unary_instr_gen(mir_not_op, p_operand, p_temp_des);
+            p_new_instr = mir_unary_instr_gen(mir_not_op, p_operand, p_temp_des);
+            break;
         case hir_exp_op_minus:
             p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, mir_operand_get_basic_type(p_operand));
-            return mir_unary_instr_gen(mir_minus_op, p_operand, p_temp_des);
- 
+            p_new_instr = mir_unary_instr_gen(mir_minus_op, p_operand, p_temp_des);
+            break;
         default:
             assert(0);
     }
+    mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
+    return p_new_instr;
 }
 
 p_mir_instr hir2mir_exp_lexec_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
