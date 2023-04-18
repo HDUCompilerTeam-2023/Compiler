@@ -93,17 +93,17 @@ p_mir_instr hir2mir_stmt_if_gen(p_hir2mir_info p_info, p_mir_basic_block p_while
     p_mir_basic_block p_true_block = hir2mir_basic_block_gen(p_info);
     p_info->p_current_basic_block = p_true_block;
     hir2mir_stmt_gen(p_info, p_while_start, p_while_end_next, p_stmt_1);
-    p_mir_basic_block p_false_block = hir2mir_basic_block_gen(p_info);
+    p_mir_basic_block p_next_block = hir2mir_basic_block_gen(p_info);
 
     // true block 的末尾添加跳转
-    p_mir_instr p_true_block_br = mir_br_instr_gen(p_false_block);
+    p_mir_instr p_true_block_br = mir_br_instr_gen(p_next_block);
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_true_block_br);
 
     // 当前 block 添加条件跳转
     p_mir_instr p_new_instr = mir_condbr_instr_gen(p_cond, p_true_block, p_next_block );
     mir_basic_block_addinstr(p_current_basic_block, p_new_instr);
     
-    p_info->p_current_basic_block = p_false_block;
+    p_info->p_current_basic_block = p_next_block;
     return p_new_instr;
 }
 
@@ -142,18 +142,18 @@ p_mir_instr hir2mir_stmt_while_gen(p_hir2mir_info p_info, p_hir_exp p_exp, p_hir
     p_mir_operand p_cond1 = hir2mir_exp_get_operand(p_info, p_exp);
     // 转换成  do while
     p_mir_basic_block p_true_block = hir2mir_basic_block_gen(p_info);
-    p_mir_basic_block p_false_block = hir2mir_basic_block_gen(p_info);
+    p_mir_basic_block p_next_block = hir2mir_basic_block_gen(p_info);
     p_info->p_current_basic_block = p_true_block;
-    hir2mir_stmt_gen(p_info, p_true_block, p_false_block, p_stmt_1);
+    hir2mir_stmt_gen(p_info, p_true_block, p_next_block, p_stmt_1);
     p_mir_operand p_cond2 = hir2mir_exp_get_operand(p_info, p_exp);
     
     // 在循环开始前的判断和 循环内末尾的判断新建 跳转指令
-    p_mir_instr p_condbr_outwhile = mir_condbr_instr_gen(p_cond1, p_true_block, p_false_block);
-    p_mir_instr p_condbr_inwhile = mir_condbr_instr_gen(p_cond2, p_true_block, p_false_block);
+    p_mir_instr p_condbr_outwhile = mir_condbr_instr_gen(p_cond1, p_true_block, p_next_block);
+    p_mir_instr p_condbr_inwhile = mir_condbr_instr_gen(p_cond2, p_true_block, p_next_block);
     mir_basic_block_addinstr(p_current_basic_block, p_condbr_outwhile);
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_condbr_inwhile);
 
-    p_info->p_current_basic_block = p_false_block;
+    p_info->p_current_basic_block = p_next_block;
     
     return p_condbr_outwhile;
 }
