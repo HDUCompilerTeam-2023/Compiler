@@ -82,73 +82,76 @@ p_mir_instr hir2mir_stmt_continue_gen(p_hir2mir_info p_info, p_mir_basic_block p
 }
 
 p_mir_instr hir2mir_stmt_if_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start, p_mir_basic_block p_while_end_next, p_hir_exp p_exp, p_hir_stmt p_stmt_1)
-{
-    p_mir_basic_block p_current_basic_block = p_info->p_current_basic_block;
-    
-    p_mir_operand p_cond = hir2mir_exp_get_operand(p_info, p_exp);
+{    
+
     p_mir_basic_block p_true_block = hir2mir_basic_block_gen(p_info);
+    p_mir_basic_block p_next_block = hir2mir_basic_block_gen(p_info);
+    
+    // 解析条件表达式
+    p_mir_instr p_new_instr = hir2mir_exp_cond_gen(p_info, p_true_block, p_next_block, p_exp);
+
+    // 解析 true 的 block
     p_info->p_current_basic_block = p_true_block;
     hir2mir_stmt_gen(p_info, p_while_start, p_while_end_next, p_stmt_1);
-    p_mir_basic_block p_next_block = hir2mir_basic_block_gen(p_info);
 
     // true block 的末尾添加跳转
     p_mir_instr p_true_block_br = mir_br_instr_gen(p_next_block);
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_true_block_br);
 
-    // 当前 block 添加条件跳转
-    p_mir_instr p_new_instr = mir_condbr_instr_gen(p_cond, p_true_block, p_next_block );
-    mir_basic_block_addinstr(p_current_basic_block, p_new_instr);
-    
+    // 重新置当前写 block 为 p_next_block
     p_info->p_current_basic_block = p_next_block;
     return p_new_instr;
 }
 
 p_mir_instr hir2mir_stmt_if_else_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start, p_mir_basic_block p_while_end_next, p_hir_exp p_exp, p_hir_stmt p_stmt_1, p_hir_stmt p_stmt_2)
 {
-    p_mir_basic_block p_current_basic_block = p_info->p_current_basic_block;
     
-    p_mir_operand p_cond = hir2mir_exp_get_operand(p_info, p_exp);
     p_mir_basic_block p_true_block = hir2mir_basic_block_gen(p_info);
-    p_info->p_current_basic_block = p_true_block;
-    hir2mir_stmt_gen(p_info, p_while_start, p_while_end_next, p_stmt_1);
-    p_true_block = p_info->p_current_basic_block; // 更新 p_true_block 的末尾
     p_mir_basic_block p_false_block = hir2mir_basic_block_gen(p_info);
-    p_info->p_current_basic_block = p_false_block;
-    hir2mir_stmt_gen(p_info, p_while_start, p_while_end_next, p_stmt_2);
-    p_false_block = p_info->p_current_basic_block;
-
     p_mir_basic_block p_next_block = hir2mir_basic_block_gen(p_info);
 
-    // true 和 false 的末尾block 添加跳转
-    p_mir_instr p_true_block_br = mir_br_instr_gen(p_next_block);
-    p_mir_instr p_false_block_br = mir_br_instr_gen(p_next_block);
-    mir_basic_block_addinstr(p_true_block, p_true_block_br);
-    mir_basic_block_addinstr(p_false_block, p_false_block_br);
+    // 生成条件表达式
+    p_mir_instr p_new_instr = hir2mir_exp_cond_gen(p_info, p_true_block, p_false_block, p_exp);
 
-    p_mir_instr p_new_instr = mir_condbr_instr_gen(p_cond, p_true_block, p_false_block );
-    mir_basic_block_addinstr(p_current_basic_block, p_new_instr);
-    
+    // 生成 true 情况下的语句
+    p_info->p_current_basic_block = p_true_block;
+    hir2mir_stmt_gen(p_info, p_while_start, p_while_end_next, p_stmt_1);
+
+    // 在 true_block 末尾添加跳转
+    p_mir_instr p_true_block_br = mir_br_instr_gen(p_next_block);
+    mir_basic_block_addinstr(p_info->p_current_basic_block, p_true_block_br);
+
+    // 生成 false 情况下的语句
+    p_info->p_current_basic_block = p_false_block;
+    hir2mir_stmt_gen(p_info, p_while_start, p_while_end_next, p_stmt_2);
+
+    // false 的末尾block 添加跳转
+    p_mir_instr p_false_block_br = mir_br_instr_gen(p_next_block);
+    mir_basic_block_addinstr(p_info->p_current_basic_block, p_false_block_br);
+
+    // 重新置当前写 block 为 p_next_block
     p_info->p_current_basic_block = p_next_block;
     return p_new_instr;
 }
 
 p_mir_instr hir2mir_stmt_while_gen(p_hir2mir_info p_info, p_hir_exp p_exp, p_hir_stmt p_stmt_1)
 {
-    p_mir_basic_block p_current_basic_block = p_info->p_current_basic_block;
-    p_mir_operand p_cond1 = hir2mir_exp_get_operand(p_info, p_exp);
     // 转换成  do while
+
+
     p_mir_basic_block p_true_block = hir2mir_basic_block_gen(p_info);
     p_mir_basic_block p_next_block = hir2mir_basic_block_gen(p_info);
+
+    // 解析条件表达式， 在当前块已经生成 条件跳转
+    p_mir_instr p_condbr_outwhile = hir2mir_exp_cond_gen(p_info, p_true_block, p_next_block, p_exp);
+
+    // 解析 while 循环体
     p_info->p_current_basic_block = p_true_block;
     hir2mir_stmt_gen(p_info, p_true_block, p_next_block, p_stmt_1);
-    p_mir_operand p_cond2 = hir2mir_exp_get_operand(p_info, p_exp);
-    
-    // 在循环开始前的判断和 循环内末尾的判断新建 跳转指令
-    p_mir_instr p_condbr_outwhile = mir_condbr_instr_gen(p_cond1, p_true_block, p_next_block);
-    p_mir_instr p_condbr_inwhile = mir_condbr_instr_gen(p_cond2, p_true_block, p_next_block);
-    mir_basic_block_addinstr(p_current_basic_block, p_condbr_outwhile);
-    mir_basic_block_addinstr(p_info->p_current_basic_block, p_condbr_inwhile);
+    hir2mir_exp_cond_gen(p_info, p_true_block, p_next_block, p_exp);
+    // 条件语句跳转已经生成完成，不用添加
 
+    // 置当前写的块为下一块
     p_info->p_current_basic_block = p_next_block;
     
     return p_condbr_outwhile;
