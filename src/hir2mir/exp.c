@@ -86,50 +86,54 @@ p_mir_instr hir2mir_exp_exec_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
     if (b_type1 == type_float && b_type2 == type_int) {
            
     }
-    p_mir_operand p_temp_des;
-    p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, b_type1);
+    p_mir_operand p_temp_des = NULL;
 
     p_mir_instr p_new_instr = NULL;
     mir_instr_type mir_instr_kind;
     switch (p_exp->op) {
         case hir_exp_op_add:
             mir_instr_kind = mir_add_op;
+            p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, b_type1);
             break;
         case hir_exp_op_sub:
             mir_instr_kind = mir_sub_op;
+            p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, b_type1);
             break;
         case hir_exp_op_mul:
             mir_instr_kind = mir_mul_op;
+            p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, b_type1);
             break;
         case hir_exp_op_div:
             mir_instr_kind = mir_div_op;
+            p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, b_type1);
             break;
         case hir_exp_op_mod:
             mir_instr_kind = mir_div_op;
+            p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, b_type1);
             break;
         case hir_exp_op_eq:
             mir_instr_kind = mir_eq_op;
-            p_temp_des->b_type = type_int;
+            p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, type_int);
             break;
         case hir_exp_op_neq:
             mir_instr_kind = mir_neq_op;
-            p_temp_des->b_type = type_int;
+            p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, type_int);
             break;
         case hir_exp_op_g:
             mir_instr_kind = mir_g_op;
-            p_temp_des->b_type = type_int;
+            p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, type_int);
             break;
         case hir_exp_op_geq:
             mir_instr_kind = mir_geq_op;
-            p_temp_des->b_type = type_int;
+            p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, type_int);
             break;
         case hir_exp_op_l:
             mir_instr_kind = mir_l_op;
-            p_temp_des->b_type = type_int;
+            p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, type_int);
             break;
         case hir_exp_op_leq:
             mir_instr_kind = mir_leq_op;
-            p_temp_des->b_type = type_int;
+            p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, type_int);
             break;
         default:
             assert(0);
