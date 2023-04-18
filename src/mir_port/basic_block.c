@@ -6,6 +6,11 @@ p_mir_instr mir_basic_block_get_last_instr(p_mir_basic_block p_basic_block)
     return list_entry(p_basic_block->node.p_prev, mir_instr, node);
 }
 
+bool mir_basic_block_get_if_visited(p_mir_basic_block p_basic_block)
+{
+    return p_basic_block->if_visited;
+}
+
 size_t mir_basic_block_get_id(p_mir_basic_block p_basic_block)
 {
     return p_basic_block->block_id;
