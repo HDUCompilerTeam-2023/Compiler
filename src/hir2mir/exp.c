@@ -111,6 +111,10 @@ p_mir_instr hir2mir_exp_exec_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
             mir_instr_kind = mir_eq_op;
             p_temp_des->b_type = type_int;
             break;
+        case hir_exp_op_neq:
+            mir_instr_kind = mir_neq_op;
+            p_temp_des->b_type = type_int;
+            break;
         case hir_exp_op_g:
             mir_instr_kind = mir_g_op;
             p_temp_des->b_type = type_int;
