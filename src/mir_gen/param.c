@@ -18,7 +18,7 @@ p_mir_param_list mir_param_list_add(p_mir_param_list p_param_list, p_mir_operand
         .node = list_init_head(&p_ir_param->node),
     };
 
-    list_add_prev(&p_param_list->param, &p_ir_param->node);
+    list_add_prev( &p_ir_param->node, &p_param_list->param);
     return p_param_list;
 }
 
