@@ -51,6 +51,12 @@ void mir_basic_block_visited_init(p_mir_basic_block p_basic_block)
     }
 }
 
+bool mir_basic_block_if_ret(p_mir_basic_block p_basic_block)
+{
+    p_mir_instr p_last_instr = list_entry(p_basic_block->instr_list.p_prev, mir_instr, node);
+    return p_last_instr->irkind == mir_ret;
+}
+
  // 对basic_block 及所有后继 block 设置id, 返回最后的 id 值
 #include <stdio.h>
 size_t mir_basic_block_set_id(size_t id, p_mir_basic_block p_basic_block)
