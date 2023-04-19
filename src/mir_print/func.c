@@ -1,6 +1,8 @@
 #include "mir_gen/basic_block.h" // 这边有问题， 各模块之间应该如何包含？
 #include <mir_print.h>
 #include <mir/func.h>
+
+#include <mir/instr.h>// 包含问题？
 #include <stdio.h>
 void mir_func_print(p_mir_func p_func)
 {
@@ -39,5 +41,12 @@ void mir_func_print(p_mir_func p_func)
 
     mir_basic_block_visited_init(p_func->p_basic_block);
     mir_basic_block_print(p_func->p_basic_block);
+    // 输出 return 块
+    printf("b%ld:\n", p_func->p_ret_block->block_id);
+    list_for_each(p_node, &p_func->p_ret_block->instr_list)
+    {
+        p_mir_instr p_instr = list_entry(p_node, mir_instr, node);
+        mir_instr_print(p_instr);
+    }
     printf("}\n");
 }

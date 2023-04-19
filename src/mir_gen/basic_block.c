@@ -62,6 +62,8 @@ bool mir_basic_block_if_ret(p_mir_basic_block p_basic_block)
 size_t mir_basic_block_set_id(size_t id, p_mir_basic_block p_basic_block)
 {
     if (p_basic_block->block_id) return id;
+    // return 语句最后设置
+    if (mir_basic_block_if_ret(p_basic_block)) return id;
     p_basic_block->block_id = ++ id;
     
     p_mir_instr p_instr = NULL;

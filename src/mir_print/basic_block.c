@@ -1,4 +1,5 @@
 
+#include "mir_gen/basic_block.h" // 头文件包含还需考虑
 #include <mir_print.h>
 #include <mir/basic_block.h>
 #include <mir/instr.h>
@@ -8,6 +9,7 @@ void mir_basic_block_print(p_mir_basic_block p_basic_block)
 {
     assert(p_basic_block);
     if (p_basic_block->if_visited) return;
+    if (mir_basic_block_if_ret(p_basic_block)) return; // 最后输出return
     p_basic_block->if_visited = true;
 
     printf("b%ld: \n", p_basic_block->block_id);
