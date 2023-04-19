@@ -4,7 +4,6 @@
 #include <hir2mir/info.h>
 
 struct hir2mir_info{
-    size_t id;
     p_mir_basic_block p_current_basic_block;
     p_mir_operand_list p_operand_list;
     p_mir_basic_block_list p_basic_block_list;
