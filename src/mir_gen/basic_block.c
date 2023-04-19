@@ -72,11 +72,13 @@ size_t mir_basic_block_set_id(size_t id, p_mir_basic_block p_basic_block)
         p_instr = list_entry(p_node, mir_instr, node);
         id = mir_instr_set_temp_var_id(id, p_instr);
     }
-    if (p_instr->irkind == mir_br) 
-        return mir_basic_block_set_id(id, p_instr->mir_br.p_target);
-    else if (p_instr->irkind == mir_condbr) {
-        id = mir_basic_block_set_id(id, p_instr->mir_condbr.p_target_true);
-        return mir_basic_block_set_id(id, p_instr->mir_condbr.p_target_false);
+    if(p_instr){
+        if (p_instr->irkind == mir_br) 
+            return mir_basic_block_set_id(id, p_instr->mir_br.p_target);
+        else if (p_instr->irkind == mir_condbr) {
+            id = mir_basic_block_set_id(id, p_instr->mir_condbr.p_target_true);
+            return mir_basic_block_set_id(id, p_instr->mir_condbr.p_target_false);
+        }
     }
     return id;
 }
