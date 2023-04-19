@@ -192,7 +192,7 @@ p_mir_instr hir2mir_exp_cond_gen(p_hir2mir_info p_info, p_mir_basic_block p_true
     }
     else {
         p_mir_operand p_cond =  hir2mir_exp_get_operand(p_info, p_exp);
-        p_new_instr = mir_condbr_instr_gen(p_cond, p_true_block, p_false_block);
+        p_new_instr = mir_condbr_instr_gen(p_info->p_current_basic_block, p_cond, p_true_block, p_false_block);
         mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
     }
     return p_new_instr;

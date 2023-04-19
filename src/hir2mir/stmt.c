@@ -47,7 +47,7 @@ p_mir_instr hir2mir_stmt_init_gen(p_hir2mir_info p_info, p_symbol_sym p_sym)
     return p_new_instr;
 }
 
-// 将返回值全部放到 0 号变量, 并跳转到 ret 块
+// 将返回值全部放到 一个变量, 并跳转到 ret 块
 p_mir_instr hir2mir_stmt_return_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
 {   
     p_mir_operand p_ret = hir2mir_operand_void_gen(p_info);
@@ -55,7 +55,7 @@ p_mir_instr hir2mir_stmt_return_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
         p_ret = hir2mir_exp_get_operand(p_info, p_exp);
     p_mir_instr p_ret_assign_instr = mir_unary_instr_gen(mir_val_assign, p_ret, p_info->p_ret_operand);
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_ret_assign_instr);
-    p_mir_instr p_br_ret_instr = mir_br_instr_gen(p_info->p_ret_block);
+    p_mir_instr p_br_ret_instr = mir_br_instr_gen(p_info->p_current_basic_block, p_info->p_ret_block);
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_br_ret_instr);
     p_info->p_current_basic_block = hir2mir_basic_block_gen(p_info);
     return p_br_ret_instr;
@@ -67,7 +67,7 @@ p_mir_instr hir2mir_stmt_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
 // 跳转到循环体外并新建一个基本块作为之后指令写入的基本块
 p_mir_instr hir2mir_stmt_break_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_end_next)
 {
-    p_mir_instr p_br = mir_br_instr_gen(p_while_end_next);
+    p_mir_instr p_br = mir_br_instr_gen(p_info->p_current_basic_block, p_while_end_next);
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_br);
     p_info->p_current_basic_block = hir2mir_basic_block_gen(p_info);
     return p_br;
@@ -75,7 +75,7 @@ p_mir_instr hir2mir_stmt_break_gen(p_hir2mir_info p_info, p_mir_basic_block p_wh
 
 p_mir_instr hir2mir_stmt_continue_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start)
 {
-    p_mir_instr p_br = mir_br_instr_gen(p_while_start);
+    p_mir_instr p_br = mir_br_instr_gen(p_info->p_current_basic_block, p_while_start);
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_br);
     p_info->p_current_basic_block = hir2mir_basic_block_gen(p_info);
     return p_br;
@@ -95,7 +95,7 @@ p_mir_instr hir2mir_stmt_if_gen(p_hir2mir_info p_info, p_mir_basic_block p_while
     hir2mir_stmt_gen(p_info, p_while_start, p_while_end_next, p_stmt_1);
 
     // true block 的末尾添加跳转
-    p_mir_instr p_true_block_br = mir_br_instr_gen(p_next_block);
+    p_mir_instr p_true_block_br = mir_br_instr_gen(p_info->p_current_basic_block, p_next_block);
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_true_block_br);
 
     // 重新置当前写 block 为 p_next_block
@@ -118,7 +118,7 @@ p_mir_instr hir2mir_stmt_if_else_gen(p_hir2mir_info p_info, p_mir_basic_block p_
     hir2mir_stmt_gen(p_info, p_while_start, p_while_end_next, p_stmt_1);
 
     // 在 true_block 末尾添加跳转
-    p_mir_instr p_true_block_br = mir_br_instr_gen(p_next_block);
+    p_mir_instr p_true_block_br = mir_br_instr_gen(p_info->p_current_basic_block, p_next_block);
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_true_block_br);
 
     // 生成 false 情况下的语句
@@ -126,7 +126,7 @@ p_mir_instr hir2mir_stmt_if_else_gen(p_hir2mir_info p_info, p_mir_basic_block p_
     hir2mir_stmt_gen(p_info, p_while_start, p_while_end_next, p_stmt_2);
 
     // false 的末尾block 添加跳转
-    p_mir_instr p_false_block_br = mir_br_instr_gen(p_next_block);
+    p_mir_instr p_false_block_br = mir_br_instr_gen(p_info->p_current_basic_block, p_next_block);
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_false_block_br);
 
     // 重新置当前写 block 为 p_next_block
