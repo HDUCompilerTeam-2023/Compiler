@@ -19,11 +19,13 @@ void mir_basic_block_print(p_mir_basic_block p_basic_block)
         p_instr = list_entry(p_node, mir_instr, node);
         mir_instr_print(p_instr);
     }
-    if (p_instr->irkind == mir_br) 
-        mir_basic_block_print(p_instr->mir_br.p_target);
-    else if (p_instr->irkind == mir_condbr) {
-        mir_basic_block_print(p_instr->mir_condbr.p_target_true);
-        mir_basic_block_print(p_instr->mir_condbr.p_target_false);
+    if(p_instr){
+        if (p_instr->irkind == mir_br) 
+            mir_basic_block_print(p_instr->mir_br.p_target);
+        else if (p_instr->irkind == mir_condbr) {
+            mir_basic_block_print(p_instr->mir_condbr.p_target_true);
+            mir_basic_block_print(p_instr->mir_condbr.p_target_false);
+        }
     }
 }
 
