@@ -42,7 +42,7 @@ void mir_basic_block_visited_init(p_mir_basic_block p_basic_block)
     if (!p_basic_block->if_visited) 
         return;
     p_basic_block->if_visited = false;
-    p_mir_instr p_last_instr = list_entry(p_basic_block->node.p_prev, mir_instr, node);
+    p_mir_instr p_last_instr = list_entry(p_basic_block->instr_list.p_prev, mir_instr, node);
     if (p_last_instr->irkind == mir_br) 
         mir_basic_block_visited_init(p_last_instr->mir_br.p_target);
     else if (p_last_instr->irkind == mir_condbr) {
