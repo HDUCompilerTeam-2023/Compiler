@@ -9,8 +9,8 @@ p_mir_instr mir_call_instr_gen(p_mir_operand p_func_sym, p_mir_param_list p_para
 p_mir_instr mir_array_instr_gen(p_mir_operand p_array, p_mir_operand p_offset, p_mir_operand p_des);
 p_mir_instr mir_array_assign_instr_gen(p_mir_operand p_sym, p_mir_operand p_offset, p_mir_operand p_src);
 p_mir_instr mir_ret_instr_gen(p_mir_operand p_src);
-p_mir_instr mir_br_instr_gen(p_mir_basic_block p_target);
-p_mir_instr mir_condbr_instr_gen(p_mir_operand p_cond, p_mir_basic_block p_target_true, p_mir_basic_block p_target_false);
+p_mir_instr mir_br_instr_gen(p_mir_basic_block p_current_basic_block, p_mir_basic_block p_target);
+p_mir_instr mir_condbr_instr_gen(p_mir_basic_block p_current_basic_block, p_mir_operand p_cond, p_mir_basic_block p_target_true, p_mir_basic_block p_target_false);
 
 size_t mir_instr_set_temp_var_id(size_t id, p_mir_instr p_instr);
 

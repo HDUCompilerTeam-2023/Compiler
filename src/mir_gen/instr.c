@@ -77,7 +77,7 @@ p_mir_instr mir_ret_instr_gen(p_mir_operand p_src)
     return p_instr;
 }
 
-p_mir_instr mir_br_instr_gen(p_mir_basic_block p_target)
+p_mir_instr mir_br_instr_gen(p_mir_basic_block p_current_basic_block, p_mir_basic_block p_target)
 {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
 
@@ -88,11 +88,11 @@ p_mir_instr mir_br_instr_gen(p_mir_basic_block p_target)
         },
         .node = list_head_init(&p_instr->node),
     };
-
+    mir_basic_block_add_prev(p_current_basic_block, p_target);
     return p_instr;
 }
 
-p_mir_instr mir_condbr_instr_gen(p_mir_operand p_cond, p_mir_basic_block p_target_true, p_mir_basic_block p_target_false)
+p_mir_instr mir_condbr_instr_gen(p_mir_basic_block p_current_basic_block, p_mir_operand p_cond, p_mir_basic_block p_target_true, p_mir_basic_block p_target_false)
 {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
 
@@ -105,7 +105,8 @@ p_mir_instr mir_condbr_instr_gen(p_mir_operand p_cond, p_mir_basic_block p_targe
         },
         .node = list_head_init(&p_instr->node),
     };
-
+    mir_basic_block_add_prev(p_current_basic_block, p_target_true);
+    mir_basic_block_add_prev(p_current_basic_block, p_target_false);
     return p_instr;
 }
 
