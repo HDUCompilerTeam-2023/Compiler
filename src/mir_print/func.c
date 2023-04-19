@@ -42,7 +42,19 @@ void mir_func_print(p_mir_func p_func)
     mir_basic_block_visited_init(p_func->p_basic_block);
     mir_basic_block_print(p_func->p_basic_block);
     // 输出 return 块
-    printf("b%ld:\n", p_func->p_ret_block->block_id);
+    // 输出前驱节点
+    printf("b%ld:", p_func->p_ret_block->block_id);
+    if (!list_head_alone(&p_func->p_ret_block->p_prev_block_list->basic_block_list)) {
+        printf("                        ; preds = ");
+        p_list_head p_node;
+        list_for_each(p_node, &p_func->p_ret_block->p_prev_block_list->basic_block_list){
+            size_t id = list_entry(p_node, mir_basic_block_list_node, node)->p_basic_block->block_id;
+            printf("b%ld", id);
+            if(p_node->p_next != &p_func->p_ret_block->p_prev_block_list->basic_block_list)
+                printf(", ");
+        }
+    }
+    printf("\n");
     list_for_each(p_node, &p_func->p_ret_block->instr_list)
     {
         p_mir_instr p_instr = list_entry(p_node, mir_instr, node);

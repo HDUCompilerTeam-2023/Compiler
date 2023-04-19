@@ -8,11 +8,17 @@ p_mir_basic_block mir_basic_block_gen()
     p_mir_basic_block p_mir_block = malloc(sizeof(*p_mir_block));
     *p_mir_block = (mir_basic_block){
         .instr_list = list_head_init(&p_mir_block->instr_list),
-        .block_prev = list_head_init(&p_mir_block->block_prev),
+        .p_prev_block_list = mir_basic_block_list_gen(),
         .block_id = 0,
         .if_visited = false,
     };
     return p_mir_block;
+}
+// 插入前驱节点列表
+p_mir_basic_block mir_basic_block_add_prev(p_mir_basic_block p_prev, p_mir_basic_block p_next)
+{
+    mir_basic_block_list_add(p_next->p_prev_block_list, p_prev);
+    return p_next;
 }
 
 p_mir_basic_block_list mir_basic_block_list_gen(void)
@@ -95,6 +101,12 @@ void mir_basic_block_drop(p_mir_basic_block p_basic_block)
         list_del(&p_instr->node);
         mir_instr_drop(p_instr);
     }
+    while (!list_head_alone(&p_basic_block->p_prev_block_list->basic_block_list)) {
+        p_mir_basic_block_list_node p_basic_block_list_node = list_entry(p_basic_block->p_prev_block_list->basic_block_list.p_next, mir_basic_block_list_node, node);
+        list_del(&p_basic_block_list_node->node);
+        free(p_basic_block_list_node);
+    }
+    free(p_basic_block->p_prev_block_list);
     free(p_basic_block);
 }
 

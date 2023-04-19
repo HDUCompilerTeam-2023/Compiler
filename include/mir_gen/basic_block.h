@@ -2,6 +2,8 @@
 #define __MIR_GEN_BASIC_BLOCK__
 #include <mir/basic_block.h>
 p_mir_basic_block mir_basic_block_gen();
+p_mir_basic_block mir_basic_block_add_prev(p_mir_basic_block p_prev, p_mir_basic_block p_next);
+
 p_mir_basic_block_list mir_basic_block_list_gen(void);
 p_mir_basic_block_list mir_basic_block_list_add(p_mir_basic_block_list p_basic_block_list, p_mir_basic_block p_basic_block);
 
