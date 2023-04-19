@@ -12,7 +12,19 @@ void mir_basic_block_print(p_mir_basic_block p_basic_block)
     if (mir_basic_block_if_ret(p_basic_block)) return; // 最后输出return
     p_basic_block->if_visited = true;
 
-    printf("b%ld: \n", p_basic_block->block_id);
+    printf("b%ld: ", p_basic_block->block_id);
+    if (!list_head_alone(&p_basic_block->p_prev_block_list->basic_block_list)) {
+        printf("                        ; preds = ");
+        p_list_head p_node;
+        list_for_each(p_node, &p_basic_block->p_prev_block_list->basic_block_list){
+            size_t id = list_entry(p_node, mir_basic_block_list_node, node)->p_basic_block->block_id;
+            printf("b%ld", id);
+            if(p_node->p_next != &p_basic_block->p_prev_block_list->basic_block_list)
+                printf(", ");
+        }
+    }
+    printf("\n");
+
     p_list_head p_node;
     p_mir_instr p_instr = NULL;
     list_for_each(p_node, &p_basic_block->instr_list){

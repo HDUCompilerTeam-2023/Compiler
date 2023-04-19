@@ -5,7 +5,7 @@
 
 struct mir_basic_block{
     list_head instr_list;
-    list_head block_prev;
+    p_mir_basic_block_list p_prev_block_list;
     size_t block_id;
 
     bool if_visited;// 是否访问过， 用于遍历
