@@ -3,6 +3,7 @@
 #include <mir.h>
 struct mir_func{
     p_mir_basic_block p_basic_block;
+    p_mir_basic_block p_ret_block;
     p_symbol_sym p_func_sym;
 
     p_mir_operand_list p_operand_list;

@@ -9,7 +9,7 @@ p_mir_func hir2mir_func_gen(p_symbol_sym p_func_sym)
     mir_func_set_block(p_m_func, p_block);
     p_m_func->p_basic_block_list = p_info->p_basic_block_list;
     p_m_func->p_operand_list = p_info->p_operand_list;
-    mir_basic_block_set_id(0, p_block);
+    p_m_func->p_ret_block = p_info->p_ret_block;
     hir2mir_info_drop(p_info);
     return p_m_func;
 }

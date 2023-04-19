@@ -6,6 +6,7 @@ p_mir_func mir_func_gen(p_symbol_sym p_func_sym){
     *p_func = (mir_func){
         .p_func_sym = p_func_sym,
         .p_basic_block = NULL,
+        .p_ret_block = NULL,
         .node = list_head_init(&p_func->node),
         .p_basic_block_list = NULL,
         .p_operand_list = NULL,
