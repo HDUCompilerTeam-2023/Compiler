@@ -58,12 +58,17 @@ size_t mir_basic_block_set_id(size_t id, p_mir_basic_block p_basic_block)
     if (p_basic_block->block_id) return id;
     p_basic_block->block_id = ++ id;
     
-    p_mir_instr p_last_instr = list_entry(p_basic_block->instr_list.p_prev, mir_instr, node);
-    if (p_last_instr->irkind == mir_br) 
-        return mir_basic_block_set_id(id, p_last_instr->mir_br.p_target);
-    else if (p_last_instr->irkind == mir_condbr) {
-        id = mir_basic_block_set_id(id, p_last_instr->mir_condbr.p_target_true);
-        return mir_basic_block_set_id(id, p_last_instr->mir_condbr.p_target_false);
+    p_mir_instr p_instr = NULL;
+    p_list_head p_node;
+    list_for_each(p_node, &p_basic_block->instr_list){
+        p_instr = list_entry(p_node, mir_instr, node);
+        id = mir_instr_set_temp_var_id(id, p_instr);
+    }
+    if (p_instr->irkind == mir_br) 
+        return mir_basic_block_set_id(id, p_instr->mir_br.p_target);
+    else if (p_instr->irkind == mir_condbr) {
+        id = mir_basic_block_set_id(id, p_instr->mir_condbr.p_target_true);
+        return mir_basic_block_set_id(id, p_instr->mir_condbr.p_target_false);
     }
     return id;
 }
