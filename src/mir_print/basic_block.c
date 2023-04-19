@@ -33,8 +33,8 @@ void mir_basic_block_list_print(p_mir_basic_block_list p_basic_block_list)
 {
     assert(p_basic_block_list);
     p_list_head p_node;
-    list_for_each(p_node, &p_basic_block_list->basic_block){
-        p_mir_basic_block p_basic_block = list_entry(p_node, mir_basic_block, node);
+    list_for_each(p_node, &p_basic_block_list->basic_block_list){
+        p_mir_basic_block p_basic_block = list_entry(p_node, mir_basic_block_list_node, node)->p_basic_block;
         mir_basic_block_print(p_basic_block);
     }
 }
