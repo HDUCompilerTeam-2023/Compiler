@@ -2,13 +2,14 @@
 #include <mir_gen.h>
 #include <mir_gen/basic_block.h>
 
-p_mir_basic_block mir_basic_block_gen(size_t block_id)
+
+p_mir_basic_block mir_basic_block_gen()
 {
     p_mir_basic_block p_mir_block = malloc(sizeof(*p_mir_block));
     *p_mir_block = (mir_basic_block){
         .instr_list = list_head_init(&p_mir_block->instr_list),
         .block_prev = list_head_init(&p_mir_block->block_prev),
-        .block_id = block_id,
+        .block_id = 0,
         .node = list_head_init(&p_mir_block->node),
         .if_visited = false,
     };
@@ -48,6 +49,23 @@ void mir_basic_block_visited_init(p_mir_basic_block p_basic_block)
         mir_basic_block_visited_init(p_last_instr->mir_condbr.p_target_false);
         mir_basic_block_visited_init(p_last_instr->mir_condbr.p_target_true);
     }
+}
+
+ // 对basic_block 及所有后继 block 设置id, 返回最后的 id 值
+#include <stdio.h>
+size_t mir_basic_block_set_id(size_t id, p_mir_basic_block p_basic_block)
+{
+    if (p_basic_block->block_id) return id;
+    p_basic_block->block_id = ++ id;
+    
+    p_mir_instr p_last_instr = list_entry(p_basic_block->instr_list.p_prev, mir_instr, node);
+    if (p_last_instr->irkind == mir_br) 
+        return mir_basic_block_set_id(id, p_last_instr->mir_br.p_target);
+    else if (p_last_instr->irkind == mir_condbr) {
+        id = mir_basic_block_set_id(id, p_last_instr->mir_condbr.p_target_true);
+        return mir_basic_block_set_id(id, p_last_instr->mir_condbr.p_target_false);
+    }
+    return id;
 }
 
 void mir_basic_block_drop(p_mir_basic_block p_basic_block)
