@@ -19,6 +19,24 @@ void mir_func_print(p_mir_func p_func)
         if(p_param_type)printf(", ");
     }
     printf("){\n");
+    p_param_type = p_func->p_func_sym->p_type->p_params;
+    list_for_each(p_node, &p_func->p_func_sym->local) {
+        if (!p_param_type) break;
+        p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
+        printf("param ");
+        mir_symbol_type_print(p_sym->p_type);
+        printf("%%l%ld\n", p_sym->id);
+        p_param_type = p_param_type->p_params;
+    }
+
+    while (p_node != &p_func->p_func_sym->local) {
+        p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
+        printf("local ");
+        mir_symbol_type_print(p_sym->p_type);
+        printf("%%l%ld\n", p_sym->id);
+        p_node = p_node->p_next;
+    }
+
     mir_basic_block_visited_init(p_func->p_basic_block);
     mir_basic_block_print(p_func->p_basic_block);
     printf("}\n");
