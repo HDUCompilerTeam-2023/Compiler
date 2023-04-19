@@ -102,6 +102,14 @@ p_mir_operand mir_operand_temp_sym_basic_gen(basic_type b_type)
     return p_sym;
 }
 
+size_t mir_operand_set_temp_var_id(size_t id, p_mir_operand p_operand)
+{
+    if (p_operand->kind == temp_var_array || p_operand->kind == temp_var_basic) {
+        if (!p_operand->id) 
+            p_operand->id = ++ id;
+    }
+    return id;
+}
 
 void mir_operand_drop(p_mir_operand p_operand)
 {
