@@ -180,7 +180,7 @@ p_mir_operand mir_instr_get_src1(p_mir_instr p_instr)
         case mir_val_assign:
             return p_instr->mir_unary.p_src;
         default:
-            assert(0);
+            return NULL;
     }
 }
 p_mir_operand mir_instr_get_src2(p_mir_instr p_instr)
@@ -201,7 +201,7 @@ p_mir_operand mir_instr_get_src2(p_mir_instr p_instr)
         case mir_geq_op:
             return p_instr->mir_binary.p_src2;
         default:
-            assert(0);
+            return NULL;
     }
 }
 p_mir_operand mir_instr_get_des(p_mir_instr p_instr)
@@ -232,7 +232,7 @@ p_mir_operand mir_instr_get_des(p_mir_instr p_instr)
         case mir_array:
             return p_instr->mir_array.p_des;
         default:
-            assert(0);
+            return NULL;
     }
 }
 
