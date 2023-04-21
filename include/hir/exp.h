@@ -32,12 +32,13 @@ struct hir_exp {
         }; // exec
         struct {
             p_symbol_sym p_sym;
-            union {
-                p_hir_param_list p_param_list;
-                p_hir_exp p_offset;
-            };
+            p_hir_exp p_offset;
             p_symbol_type p_type;
         }; // call val
+        struct {
+            p_hir_func p_func;
+            p_hir_param_list p_param_list;
+        };
         union {
             INTCONST_t intconst; // int
             FLOATCONST_t floatconst; // float

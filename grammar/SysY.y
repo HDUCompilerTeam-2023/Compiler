@@ -13,8 +13,8 @@
 #define extra yyget_extra(yyscanner)
 #define p_ast (extra->p_ast)
 
-#define new_sym(name) hir_symbol_sym_add(p_ast, name)
-#define find_sym(name) hir_symbol_sym_find(p_ast, name)
+#define new_sym(name) hir_symbol_item_add(p_ast, name)
+#define find_sym(name) hir_symbol_item_find(p_ast, name)
 #define find_str(str) hir_symbol_str_get(p_ast, str)
 %}
 
@@ -137,7 +137,7 @@ begin : PUSHZONE CompUnit POPZONE
       ;
 
 CompUnit : CompUnit Declaration     { syntax_global_vardecl(p_ast, $2); }
-         | CompUnit FuncDeclaration
+         | CompUnit FuncDeclaration { $$ = hir_program_func_add(p_ast, $2); }
          | CompUnitInit
          | CompUnit error
          ;
@@ -283,7 +283,7 @@ PrimaryExp : '(' Exp ')' { $$ = $2; }
 Call : ID '(' FuncRParams ')' { $$ = hir_exp_call_gen(find_sym($1), $3); free($1); }
      ;
 
-Val : ID                 { $$ = hir_exp_val_gen(find_sym($1)); free($1); }
+Val : ID                 { $$ = hir_exp_val_gen(find_sym($1)->p_info); free($1); }
     | Val '[' Exp ']'    { $$ = hir_exp_val_offset($1, $3); }
     ;
 

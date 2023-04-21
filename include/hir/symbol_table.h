@@ -1,6 +1,7 @@
 #ifndef __HIR_SYMBOL_TABLE__
 #define __HIR_SYMBOL_TABLE__
 
+#include <hir.h>
 #include <symbol.h>
 
 typedef struct symbol_item symbol_item, *p_symbol_item;
@@ -16,6 +17,9 @@ struct symbol_item {
     p_symbol_item p_next;
 
     p_symbol_sym p_info;
+    union {
+        p_hir_func p_func;
+    };
 };
 
 struct symbol_name {

@@ -13,27 +13,16 @@ void symbol_define_print(p_symbol_sym p_sym) {
 
     if (p_sym->p_type->kind >= type_func) {
         printf("\n");
-        p_list_head p_node;
-        p_symbol_type p_param_type = p_sym->p_type->p_params;
-        if (p_param_type) {
-            printf("param:\n");
-        }
-        list_for_each(p_node, &p_sym->local) {
-            if (!p_param_type) break;
-            symbol_init_print(list_entry(p_node, symbol_sym, node));
-            p_param_type = p_param_type->p_params;
-        }
-        hir_func_print(p_sym->p_func);
+        return;
     }
-    else {
-        assert(p_sym->p_init);
-        printf(" = {");
-        for (size_t i = 0; i < p_sym->p_init->size; ++i) {
-            if (i > 0) printf(", ");
-            hir_exp_print(p_sym->p_init->memory[i]);
-        }
-        printf("}\n");
+
+    assert(p_sym->p_init);
+    printf(" = {");
+    for (size_t i = 0; i < p_sym->p_init->size; ++i) {
+        if (i > 0) printf(", ");
+        hir_exp_print(p_sym->p_init->memory[i]);
     }
+    printf("}\n");
 }
 
 void symbol_name_print(p_symbol_sym p_sym) {
@@ -53,4 +42,17 @@ void symbol_init_print(p_symbol_sym p_sym) {
     printf(" -> ");
     symbol_type_print(p_sym->p_type);
     symbol_define_print(p_sym);
+}
+
+void symbol_param_print(p_symbol_sym p_sym) {
+    p_list_head p_node;
+    p_symbol_type p_param_type = p_sym->p_type->p_params;
+    if (p_param_type) {
+        printf("param:\n");
+    }
+    list_for_each(p_node, &p_sym->local) {
+        if (!p_param_type) break;
+        symbol_init_print(list_entry(p_node, symbol_sym, node));
+        p_param_type = p_param_type->p_params;
+    }
 }

@@ -7,7 +7,6 @@ p_symbol_store symbol_store_gen(void) {
     *p_store = (symbol_store) {
         .global = list_head_init(&p_store->global),
         .def_function = list_head_init(&p_store->def_function),
-        .ndef_function = list_head_init(&p_store->ndef_function),
         .string = list_head_init(&p_store->string),
     };
     return p_store;
@@ -15,11 +14,6 @@ p_symbol_store symbol_store_gen(void) {
 void symbol_store_drop(p_symbol_store p_store) {
     while (!list_head_alone(&p_store->def_function)) {
         p_symbol_sym p_del = list_entry(p_store->def_function.p_next, symbol_sym, node);
-        symbol_func_drop(p_del);
-    }
-
-    while (!list_head_alone(&p_store->ndef_function)) {
-        p_symbol_sym p_del = list_entry(p_store->ndef_function.p_next, symbol_sym, node);
         symbol_func_drop(p_del);
     }
 
@@ -51,7 +45,4 @@ bool symbol_store_add_local(p_symbol_store p_store, p_symbol_sym p_sym) {
 
 bool symbol_store_add_def_function(p_symbol_store p_store, p_symbol_sym p_sym) {
     return list_add_prev(&p_sym->node, &p_store->def_function);
-}
-bool symbol_store_add_ndef_function(p_symbol_store p_store, p_symbol_sym p_sym) {
-    return list_add_prev(&p_sym->node, &p_store->ndef_function);
 }
