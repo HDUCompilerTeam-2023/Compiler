@@ -2,6 +2,7 @@
 #define __FRONTEND_SYNTAX_GEN__
 
 #include <frontend/syntax.h>
+#include <hir/symbol_table.h>
 
 struct syntax_init {
     bool is_exp;
@@ -18,7 +19,7 @@ p_syntax_init syntax_init_exp_gen(p_hir_exp p_exp);
 p_syntax_init syntax_init_list_add(p_syntax_init p_list, p_syntax_init p_init);
 
 struct syntax_funchead {
-    p_symbol_sym p_func;
+    p_symbol_item p_func;
     p_syntax_param_list p_param_list;
 };
 p_syntax_funchead syntax_func_define(p_hir_program p_program, basic_type type, char *name, p_syntax_param_list p_param_list);

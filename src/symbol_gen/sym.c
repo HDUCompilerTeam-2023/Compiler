@@ -33,17 +33,16 @@ static inline p_symbol_sym symbol_gen(const char *name, p_symbol_type p_type, bo
     p_symbol_sym p_info = malloc(sizeof(*p_info));
     *p_info = (symbol_sym) {
         .node = list_head_init(&p_info->node),
-        .is_def = is_def,
-        .is_const = is_const,
         .name = malloc(sizeof(char) * (strlen(name) + 1)),
         .p_type = p_type,
     };
     strcpy(p_info->name, name);
     if (p_type->kind >= type_func) {
-        p_info->p_func = (p_hir_func) p_data;
         p_info->local = list_head_init(&p_info->local);
     }
     else {
+        p_info->is_def = is_def,
+        p_info->is_const = is_const,
         p_info->p_init = (p_symbol_init) p_data;
     }
     return p_info;
@@ -51,8 +50,8 @@ static inline p_symbol_sym symbol_gen(const char *name, p_symbol_type p_type, bo
 p_symbol_sym symbol_var_gen(const char *name, p_symbol_type p_type, bool is_const, bool is_def, void *p_data) {
     return symbol_gen(name, p_type, is_const, is_def, p_data);
 }
-p_symbol_sym symbol_func_gen(const char *name, p_symbol_type p_type, bool is_const, bool is_def, void *p_data) {
-    return symbol_gen(name, p_type, is_const, is_def, p_data);
+p_symbol_sym symbol_func_gen(const char *name, p_symbol_type p_type) {
+    return symbol_gen(name, p_type, false, false, NULL);
 }
 
 void symbol_var_drop(p_symbol_sym p_sym) {
@@ -65,15 +64,9 @@ void symbol_var_drop(p_symbol_sym p_sym) {
 
 void symbol_func_drop(p_symbol_sym p_sym) {
     list_del(&p_sym->node);
-    if (!p_sym->is_def) {
-        symbol_type_drop_param(p_sym->p_type);
-    }
-    else {
-        while (!list_head_alone(&p_sym->local)) {
-            p_symbol_sym p_del = list_entry(p_sym->local.p_next, symbol_sym, node);
-            symbol_var_drop(p_del);
-        }
-        hir_func_drop(p_sym->p_func);
+    while (!list_head_alone(&p_sym->local)) {
+        p_symbol_sym p_del = list_entry(p_sym->local.p_next, symbol_sym, node);
+        symbol_var_drop(p_del);
     }
     symbol_type_drop(p_sym->p_type);
     free(p_sym->name);

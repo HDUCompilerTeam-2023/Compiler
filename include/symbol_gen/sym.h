@@ -7,7 +7,7 @@ p_symbol_init symbol_init_gen(size_t size);
 void symbol_init_drop(p_symbol_init p_init);
 
 p_symbol_sym symbol_var_gen(const char *name, p_symbol_type p_type, bool is_const, bool is_def, void *p_data);
-p_symbol_sym symbol_func_gen(const char *name, p_symbol_type p_type, bool is_const, bool is_def, void *p_data);
+p_symbol_sym symbol_func_gen(const char *name, p_symbol_type p_type);
 
 void symbol_var_drop(p_symbol_sym p_sym);
 void symbol_func_drop(p_symbol_sym p_sym);
