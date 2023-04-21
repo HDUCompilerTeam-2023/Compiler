@@ -2,6 +2,9 @@
 #include <hir/block.h>
 #include <hir/stmt.h>
 
+#include <symbol/sym.h>
+#include <symbol/type.h>
+
 p_mir_instr hir2mir_stmt_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start, p_mir_basic_block p_while_end_next, p_hir_stmt p_stmt)
 {
     switch (p_stmt->type) {

@@ -8,10 +8,6 @@
 #include <hir_print/stmt.h>
 #include <hir_print/exp.h>
 
-#include <hir_print/symbol_store.h>
-#include <hir_print/symbol.h>
-#include <hir_print/type.h>
-
 extern int deep;
 
 #endif

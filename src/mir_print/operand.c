@@ -3,6 +3,7 @@
 #include <mir/operand.h>
 
 #include <stdio.h>
+#include <symbol/type.h>
 
 void mir_basic_type_print(basic_type b_type)
 {

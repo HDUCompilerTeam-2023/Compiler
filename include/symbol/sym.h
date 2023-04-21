@@ -1,6 +1,7 @@
-#ifndef __HIR_SYMBOL__
-#define __HIR_SYMBOL__
+#ifndef __SYMBOL_SYM__
+#define __SYMBOL_SYM__
 
+#include <symbol.h>
 #include <hir.h>
 
 struct symbol_init {
@@ -27,14 +28,6 @@ struct symbol_sym {
         };
     };
 
-    list_head node;
-};
-
-struct symbol_str {
-    char * string;
-    size_t length;
-
-    hlist_node h_node;
     list_head node;
 };
 

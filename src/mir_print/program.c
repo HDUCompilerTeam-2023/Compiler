@@ -7,6 +7,8 @@
 #include <hir_print/exp.h> // how to not include it ?
 #include <stdio.h>
 
+#include <symbol/sym.h>
+
 void mir_program_print(p_mir_program p_program)
 {
     assert(p_program);

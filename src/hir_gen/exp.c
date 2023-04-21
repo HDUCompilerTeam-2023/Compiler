@@ -2,6 +2,8 @@
 
 #include <hir_gen.h>
 
+#include <symbol_gen.h>
+
 static inline basic_type exp_basic(p_hir_exp p_exp) {
     if (p_exp->kind == hir_exp_call) {
         assert(p_exp->p_type->kind >= type_func);

@@ -2,10 +2,13 @@
 #define __HIR_PROGRAM__
 
 #include <hir.h>
+#include <hir/symbol_table.h>
 
 struct hir_program {
     // list_head init;
-    p_symbol_store pss;
+    p_symbol_table p_table;
+
+    p_symbol_store p_store;
 };
 
 #endif

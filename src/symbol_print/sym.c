@@ -1,8 +1,9 @@
-#include <hir_print.h>
+#include <symbol_print.h>
 #include <stdio.h>
 
-#include <hir/symbol.h>
-#include <hir/type.h>
+#include <symbol/type.h>
+#include <symbol/sym.h>
+#include <hir_print.h>
 
 void symbol_define_print(p_symbol_sym p_sym) {
     if (!p_sym->is_def) {

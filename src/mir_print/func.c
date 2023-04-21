@@ -4,6 +4,10 @@
 
 #include <mir/instr.h>// 包含问题？
 #include <stdio.h>
+
+#include <symbol/sym.h>
+#include <symbol/type.h>
+
 void mir_func_print(p_mir_func p_func)
 {
     assert(p_func);
