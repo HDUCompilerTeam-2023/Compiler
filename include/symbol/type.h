@@ -1,7 +1,7 @@
-#ifndef __HIR_TYPE__
-#define __HIR_TYPE__
+#ifndef __SYMBOL_TYPE__
+#define __SYMBOL_TYPE__
 
-#include <hir.h>
+#include <symbol.h>
 
 struct symbol_type {
     enum {

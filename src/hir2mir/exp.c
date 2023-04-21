@@ -2,6 +2,8 @@
 #include <hir2mir.h>
 #include <hir/exp.h>
 
+#include <symbol/type.h>
+
 static inline basic_type mir_operand_get_basic_type(p_mir_operand p_operand)
 {
     if (p_operand->kind == immedicate_val || p_operand->kind == temp_var_basic) 

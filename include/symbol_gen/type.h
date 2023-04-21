@@ -1,7 +1,7 @@
-#ifndef __HIR_GEN_TYPE__
-#define __HIR_GEN_TYPE__
+#ifndef __SYMBOL_GEN_TYPE__
+#define __SYMBOL_GEN_TYPE__
 
-#include <hir/type.h>
+#include <symbol/type.h>
 
 p_symbol_type symbol_type_var_gen(basic_type basic);
 p_symbol_type symbol_type_arrary_gen(size_t size);

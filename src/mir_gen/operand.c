@@ -2,6 +2,9 @@
 #include <mir_gen.h>
 #include <mir_gen/operand.h>
 
+#include <symbol/sym.h>
+#include <symbol/type.h>
+
 p_mir_operand_list mir_operand_list_gen()
 {
     p_mir_operand_list p_list = malloc(sizeof(*p_list));

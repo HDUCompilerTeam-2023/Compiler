@@ -1,7 +1,7 @@
-#include <hir_print.h>
+#include <symbol_print.h>
 #include <stdio.h>
 
-#include <hir/type.h>
+#include <symbol/type.h>
 
 void symbol_type_print(p_symbol_type p_type) {
     assert(p_type);
