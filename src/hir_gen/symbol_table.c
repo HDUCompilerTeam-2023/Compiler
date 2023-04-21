@@ -98,7 +98,7 @@ void symbol_table_zone_pop(p_symbol_table p_table) {
     free(del_table);
 }
 
-bool symbol_table_sym_add(p_symbol_table p_table, p_symbol_sym p_sym) {
+p_symbol_item symbol_table_item_add(p_symbol_table p_table, p_symbol_sym p_sym) {
     assert(p_table->level > 0);
 
     size_t hash_tag = symbol_str_tag(p_sym->name);
@@ -113,7 +113,7 @@ bool symbol_table_sym_add(p_symbol_table p_table, p_symbol_sym p_sym) {
         } else {
         symbol_var_drop(p_sym);
         }
-        return false;
+        return NULL;
     } else
         assert(p_name->p_item->level < p_table->level);
 
@@ -134,10 +134,10 @@ bool symbol_table_sym_add(p_symbol_table p_table, p_symbol_sym p_sym) {
         p_sym->is_global = !p_table->p_top_table->p_prev;
     }
 
-    return true;
+    return p_item;
 }
 
-p_symbol_sym symbol_table_sym_find(p_symbol_table p_table, const char *name) {
+p_symbol_item symbol_table_item_find(p_symbol_table p_table, const char *name) {
     assert(p_table->level > 0);
 
     size_t hash_tag = symbol_str_tag(name);
@@ -147,7 +147,7 @@ p_symbol_sym symbol_table_sym_find(p_symbol_table p_table, const char *name) {
     if (!p_name)
         return NULL;
 
-    return p_name->p_item->p_info;
+    return p_name->p_item;
 }
 
 p_symbol_str symbol_table_str_get(p_symbol_table p_table, const char *string) {

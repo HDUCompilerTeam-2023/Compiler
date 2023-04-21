@@ -1,6 +1,6 @@
-
 #include <hir2mir.h>
 #include <hir/exp.h>
+#include <hir/func.h>
 
 #include <symbol/type.h>
 
@@ -225,7 +225,7 @@ p_mir_instr hir2mir_exp_call_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
 {
     assert(p_exp && p_exp->kind == hir_exp_call);
 
-    p_mir_operand p_func = hir2mir_operand_declared_sym_gen(p_info, p_exp->p_sym);
+    p_mir_operand p_func = hir2mir_operand_declared_sym_gen(p_info, p_exp->p_func->p_sym);
 
     p_mir_operand p_des = hir2mir_operand_temp_sym_basic_gen(p_info, p_func->p_type->basic);
 

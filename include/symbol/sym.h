@@ -18,7 +18,6 @@ struct symbol_sym {
     char *name;
     union {
         struct {
-            p_hir_func p_func;
             list_head local;
         };
         struct {

@@ -23,17 +23,8 @@ void symbol_store_print(p_symbol_store p_store) {
         symbol_init_print(list_entry(p_node, symbol_sym, node));
     }
 
-    if (!list_head_alone(&p_store->ndef_function)) {
-        if (!list_head_alone(&p_store->def_function))
-            printf("\n");
-        printf("extern:\n");
-    }
-    list_for_each(p_node, &p_store->ndef_function) {
-        symbol_init_print(list_entry(p_node, symbol_sym, node));
-    }
-
     if (!list_head_alone(&p_store->string)) {
-        if (!list_head_alone(&p_store->ndef_function))
+        if (!list_head_alone(&p_store->def_function))
             printf("\n");
         printf("string:\n");
     }

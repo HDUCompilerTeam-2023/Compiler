@@ -6,8 +6,8 @@
 
 static inline basic_type exp_basic(p_hir_exp p_exp) {
     if (p_exp->kind == hir_exp_call) {
-        assert(p_exp->p_type->kind >= type_func);
-        return p_exp->p_type->basic;
+        assert(p_exp->p_func->p_sym->p_type->kind >= type_func);
+        return p_exp->p_func->p_sym->p_type->basic;
     }
     if (p_exp->kind == hir_exp_val) {
         assert(p_exp->p_type->kind == type_var);
@@ -233,21 +233,21 @@ static inline bool param_arr_check(p_symbol_type p_type_1, p_symbol_type p_type_
     return (p_type_2->kind == type_var && p_type_1->kind == type_var);
 }
 
-p_hir_exp hir_exp_call_gen(p_symbol_sym p_sym, p_hir_param_list p_param_list) {
-    assert(p_sym);
-    assert(p_sym->p_type->kind >= type_func);
+p_hir_exp hir_exp_call_gen(p_symbol_item p_item, p_hir_param_list p_param_list) {
+    assert(p_item);
+    assert(p_item->p_info->p_type->kind >= type_func);
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
         .kind = hir_exp_call,
-        .p_sym = p_sym,
+        .p_func = p_item->p_func,
         .p_param_list = p_param_list,
-        .p_type = p_sym->p_type,
     };
-    p_symbol_type p_param_type = p_sym->p_type->p_params;
+
+    p_symbol_type p_param_type = p_item->p_info->p_type->p_params;
     p_list_head p_node;
     list_for_each(p_node, &p_param_list->param) {
         if (!p_param_type) {
-            assert(p_sym->p_type->kind == type_va_func);
+            assert( p_item->p_info->p_type->kind == type_va_func);
             break;
         }
 
