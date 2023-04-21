@@ -1,4 +1,7 @@
 #include <hir2mir/info_gen.h>
+#include <symbol/sym.h>
+#include <symbol/type.h>
+
 // 根据函数信息 生成接下来需要收集的信息的返回值类型
 p_hir2mir_info hir2mir_info_gen(p_symbol_sym p_func_sym){
     p_hir2mir_info p_info = malloc(sizeof(*p_info));

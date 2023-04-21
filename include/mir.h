@@ -1,6 +1,5 @@
 #include <util.h>
-#include <hir/symbol.h>
-#include <hir/type.h>
+#include <symbol.h>
 
 typedef struct mir_program mir_program, *p_mir_program;
 typedef struct mir_func mir_func, *p_mir_func;

@@ -1,10 +1,11 @@
-#ifndef __HIR_SYMBOL_STORE__
-#define __HIR_SYMBOL_STORE__
+#ifndef __HIR_SYMBOL_TABLE__
+#define __HIR_SYMBOL_TABLE__
 
-#include <hir.h>
+#include <symbol.h>
 
 typedef struct symbol_item symbol_item, *p_symbol_item;
 typedef struct symbol_name symbol_name, *p_symbol_name;
+typedef struct symbol_zone symbol_zone, *p_symbol_zone;
 typedef struct symbol_table symbol_table, *p_symbol_table;
 
 struct symbol_item {
@@ -25,24 +26,19 @@ struct symbol_name {
     hlist_node node;
 };
 
-struct symbol_table {
+struct symbol_zone {
     p_symbol_item p_item;
 
-    p_symbol_table p_prev;
+    p_symbol_zone p_prev;
 };
 
-struct symbol_store {
+struct symbol_table {
     hlist_hash hash;
     hlist_hash string_hash;
 
-    list_head global;
-    list_head def_function;
-    list_head ndef_function;
-    list_head string;
-
     uint16_t level;
     uint16_t next_id;
-    p_symbol_table p_top_table;
+    p_symbol_zone p_top_table;
 };
 
 #endif

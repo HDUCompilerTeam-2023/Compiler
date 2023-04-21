@@ -2,8 +2,11 @@
 #include <stdio.h>
 
 #include <hir/exp.h>
-#include <hir/type.h>
-#include <hir/symbol.h>
+#include <symbol_print.h>
+
+#include <symbol/type.h>
+#include <symbol/sym.h>
+#include <symbol/str.h>
 
 void hir_exp_print(p_hir_exp p_exp) {
     assert(p_exp);
@@ -148,7 +151,7 @@ void hir_exp_print(p_hir_exp p_exp) {
         else printf("%ld", p_exp->intconst);
         break;
     case hir_exp_str:
-        printf("\"%s\"", p_exp->p_str->string);
+        symbol_str_print(p_exp->p_str);
         break;
     }
 }

@@ -8,8 +8,4 @@
 #include <hir_gen/stmt.h>
 #include <hir_gen/exp.h>
 
-#include <hir_gen/symbol_store.h>
-#include <hir_gen/symbol.h>
-#include <hir_gen/type.h>
-
 #endif

@@ -21,8 +21,8 @@ struct syntax_funchead {
     p_symbol_sym p_func;
     p_syntax_param_list p_param_list;
 };
-p_syntax_funchead syntax_func_define(p_symbol_store pss, basic_type type, char *name, p_syntax_param_list p_param_list);
-void syntax_func_param(p_symbol_store pss, p_syntax_param_list p_param_list);
+p_syntax_funchead syntax_func_define(p_hir_program p_program, basic_type type, char *name, p_syntax_param_list p_param_list);
+void syntax_func_param(p_hir_program p_program, p_syntax_param_list p_param_list);
 
 struct syntax_decl {
     char *name;
@@ -57,13 +57,14 @@ struct syntax_param_list {
 p_syntax_param_list syntax_param_list_gen(void);
 p_syntax_param_list syntax_param_list_add(p_syntax_param_list p_list, p_syntax_param_decl p_decl);
 
-p_hir_block syntax_local_vardecl(p_symbol_store pss, p_hir_block p_block, p_syntax_decl_list p_decl_list);
-void syntax_global_vardecl(p_symbol_store pss, p_syntax_decl_list p_decl_list);
+p_hir_block syntax_local_vardecl(p_hir_program p_program, p_hir_block p_block, p_syntax_decl_list p_decl_list);
+void syntax_global_vardecl(p_hir_program p_program, p_syntax_decl_list p_decl_list);
 
 p_hir_exp syntax_const_check(p_hir_exp p_exp);
 
-void syntax_rtlib_decl(p_symbol_store pss, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2, bool is_va);
+void syntax_rtlib_decl(p_hir_program p_program, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2, bool is_va);
 
 #include <hir_gen.h>
+#include <symbol_gen.h>
 
 #endif

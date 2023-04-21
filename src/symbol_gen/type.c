@@ -1,4 +1,4 @@
-#include <hir_gen/type.h>
+#include <symbol_gen/type.h>
 
 p_symbol_type symbol_type_var_gen(basic_type basic) {
     p_symbol_type p_type = malloc(sizeof(*p_type));

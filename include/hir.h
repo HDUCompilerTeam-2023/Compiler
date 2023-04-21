@@ -2,6 +2,7 @@
 #define __HIR__
 
 #include <util.h>
+#include <symbol.h>
 
 typedef int64_t INTCONST_t;
 typedef double FLOATCONST_t;
@@ -16,18 +17,5 @@ typedef struct hir_block hir_block, *p_hir_block;
 typedef struct hir_stmt hir_stmt, *p_hir_stmt;
 typedef struct hir_exp hir_exp, *p_hir_exp;
 typedef enum hir_exp_op hir_exp_op;
-
-typedef struct symbol_init symbol_init, *p_symbol_init;
-typedef struct symbol_sym symbol_sym, *p_symbol_sym;
-typedef struct symbol_str symbol_str, *p_symbol_str;
-typedef struct symbol_store symbol_store, *p_symbol_store;
-
-typedef enum {
-    type_void,
-    type_str,
-    type_int,
-    type_float,
-} basic_type;
-typedef struct symbol_type symbol_type, *p_symbol_type;
 
 #endif

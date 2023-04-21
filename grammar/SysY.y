@@ -12,11 +12,10 @@
 
 #define extra yyget_extra(yyscanner)
 #define p_ast (extra->p_ast)
-#define pss (p_ast->pss)
 
-#define new_sym(name) symbol_add(pss, name)
-#define find_sym(name) symbol_find(pss, name)
-#define find_str(str) symbol_str_find(pss, str)
+#define new_sym(name) hir_symbol_sym_add(p_ast, name)
+#define find_sym(name) hir_symbol_sym_find(p_ast, name)
+#define find_str(str) hir_symbol_str_get(p_ast, str)
 %}
 
 %initial-action
@@ -137,7 +136,7 @@
 begin : PUSHZONE CompUnit POPZONE
       ;
 
-CompUnit : CompUnit Declaration     { syntax_global_vardecl(pss, $2); }
+CompUnit : CompUnit Declaration     { syntax_global_vardecl(p_ast, $2); }
          | CompUnit FuncDeclaration
          | CompUnitInit
          | CompUnit error
@@ -195,14 +194,14 @@ VarInitializerList : VarInitializerList ',' VarInitializer { $$ = syntax_init_li
                    | VarInitializer                        { $$ = syntax_init_list_add(syntax_init_list_gen(), $1); }
                    ;
 
-FuncHead : Type ID '(' Parameters ')' { $$ = syntax_func_define(pss, $1, $2, $4); }
-         | VOID ID '(' Parameters ')' { $$ = syntax_func_define(pss, type_void, $2, $4); }
+FuncHead : Type ID '(' Parameters ')' { $$ = syntax_func_define(p_ast, $1, $2, $4); }
+         | VOID ID '(' Parameters ')' { $$ = syntax_func_define(p_ast, type_void, $2, $4); }
          ;
 
 FuncDeclaration : FuncHead
                   PUSHZONE
                      {
-                            syntax_func_param(pss, $1->p_param_list);
+                            syntax_func_param(p_ast, $1->p_param_list);
                      }
                   Block
                   POPZONE
@@ -302,7 +301,7 @@ FuncRParamList : FuncRParamList ',' Exp { $$ = hir_param_list_add($1, $3); }
 Block : '{' BlockItems '}' { $$ = $2; }
       ;
 
-BlockItems : BlockItems Declaration { $$ = syntax_local_vardecl(pss, $1, $2); }
+BlockItems : BlockItems Declaration { $$ = syntax_local_vardecl(p_ast, $1, $2); }
            | BlockItems Stmt           { $$ = hir_block_add($1, $2); }
            | /* *empty */              { $$ = hir_block_gen(); }
            ;
@@ -323,40 +322,40 @@ Stmt : PUSHZONE Block POPZONE             { $$ = hir_stmt_block_gen($2); }
      | error                              { $$ = hir_stmt_exp_gen(NULL); }
      ;
 
-PUSHZONE : /* *empty */ { symbol_push_zone(pss); }
+PUSHZONE : /* *empty */ { hir_symbol_zone_push(p_ast); }
          ;
 
-POPZONE : /* *empty */ { symbol_pop_zone(pss); }
+POPZONE : /* *empty */ { hir_symbol_zone_pop(p_ast); }
         ;
 
 CompUnitInit : /* *empty */ {
                      $$ = p_ast;
-                     syntax_rtlib_decl(pss, type_int, "getint", NULL, NULL, false);
-                     syntax_rtlib_decl(pss, type_int, "getch", NULL, NULL, false);
-                     syntax_rtlib_decl(pss, type_float, "getfloat", NULL, NULL, false);
+                     syntax_rtlib_decl(p_ast, type_int, "getint", NULL, NULL, false);
+                     syntax_rtlib_decl(p_ast, type_int, "getch", NULL, NULL, false);
+                     syntax_rtlib_decl(p_ast, type_float, "getfloat", NULL, NULL, false);
 
                      p_symbol_type p_type = symbol_type_arrary_gen(0);
                      p_type->p_item = symbol_type_var_gen(type_int);
-                     syntax_rtlib_decl(pss, type_int, "getarray", p_type, NULL, false);
+                     syntax_rtlib_decl(p_ast, type_int, "getarray", p_type, NULL, false);
                      p_type = symbol_type_arrary_gen(0);
                      p_type->p_item = symbol_type_var_gen(type_float);
-                     syntax_rtlib_decl(pss, type_int, "getfarray", p_type, NULL, false);
+                     syntax_rtlib_decl(p_ast, type_int, "getfarray", p_type, NULL, false);
 
-                     syntax_rtlib_decl(pss, type_void, "putint", symbol_type_var_gen(type_int), NULL, false);
-                     syntax_rtlib_decl(pss, type_void, "putch", symbol_type_var_gen(type_int), NULL, false);
-                     syntax_rtlib_decl(pss, type_void, "putfloat", symbol_type_var_gen(type_float), NULL, false);
+                     syntax_rtlib_decl(p_ast, type_void, "putint", symbol_type_var_gen(type_int), NULL, false);
+                     syntax_rtlib_decl(p_ast, type_void, "putch", symbol_type_var_gen(type_int), NULL, false);
+                     syntax_rtlib_decl(p_ast, type_void, "putfloat", symbol_type_var_gen(type_float), NULL, false);
 
                      p_type = symbol_type_arrary_gen(0);
                      p_type->p_item = symbol_type_var_gen(type_int);
-                     syntax_rtlib_decl(pss, type_void, "putarray", symbol_type_var_gen(type_int), p_type, false);
+                     syntax_rtlib_decl(p_ast, type_void, "putarray", symbol_type_var_gen(type_int), p_type, false);
                      p_type = symbol_type_arrary_gen(0);
                      p_type->p_item = symbol_type_var_gen(type_float);
-                     syntax_rtlib_decl(pss, type_void, "putfarray", symbol_type_var_gen(type_int), p_type, false);
+                     syntax_rtlib_decl(p_ast, type_void, "putfarray", symbol_type_var_gen(type_int), p_type, false);
 
-                     syntax_rtlib_decl(pss, type_void, "putf", symbol_type_var_gen(type_str), NULL, true);
+                     syntax_rtlib_decl(p_ast, type_void, "putf", symbol_type_var_gen(type_str), NULL, true);
 
-                     syntax_rtlib_decl(pss, type_void, "starttime", NULL, NULL, false);
-                     syntax_rtlib_decl(pss, type_void, "stoptime", NULL, NULL, false);
+                     syntax_rtlib_decl(p_ast, type_void, "starttime", NULL, NULL, false);
+                     syntax_rtlib_decl(p_ast, type_void, "stoptime", NULL, NULL, false);
               }
              ;
 %%

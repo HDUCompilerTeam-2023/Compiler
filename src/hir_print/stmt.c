@@ -3,6 +3,8 @@
 
 #include <hir/stmt.h>
 
+#include <symbol_print.h>
+
 void hir_stmt_print(p_hir_stmt p_stmt) {
     assert(p_stmt);
     switch (p_stmt->type) {
