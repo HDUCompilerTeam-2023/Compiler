@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include <hir/exp.h>
+#include <hir/type.h>
 #include <hir/symbol.h>
 
 void hir_exp_print(p_hir_exp p_exp) {
@@ -124,11 +125,22 @@ void hir_exp_print(p_hir_exp p_exp) {
         printf(")");
         break;
     case hir_exp_val:
-        symbol_name_print(p_exp->p_sym);
         if (p_exp->p_offset) {
-            printf("[");
-            hir_exp_print(p_exp->p_offset);
-            printf("]");
+            if (p_exp->p_type->kind == type_var) {
+                symbol_name_print(p_exp->p_sym);
+                printf("[");
+                hir_exp_print(p_exp->p_offset);
+                printf("]");
+            }
+            else {
+                printf("+ ");
+                symbol_name_print(p_exp->p_sym);
+                printf(" ");
+                hir_exp_print(p_exp->p_offset);
+            }
+        }
+        else {
+            symbol_name_print(p_exp->p_sym);
         }
         break;
     case hir_exp_num:
