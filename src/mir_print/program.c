@@ -8,13 +8,13 @@
 #include <stdio.h>
 
 #include <symbol/sym.h>
-
+#include <symbol/store.h>
 void mir_program_print(p_mir_program p_program)
 {
     assert(p_program);
     printf("=== mir program start ===\n");
     p_list_head p_node;
-    list_for_each(p_node, p_program->p_globalvar_head){
+    list_for_each(p_node, &p_program->p_store->variable){
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
         printf("global ");
         mir_symbol_type_print(p_sym->p_type);
