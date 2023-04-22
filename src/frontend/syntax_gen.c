@@ -236,9 +236,16 @@ p_hir_block syntax_local_vardecl(p_hir_program p_program, p_hir_block p_block, p
 
         p_syntax_init_mem p_h_init = syntax_init_trans(p_decl);
         if (p_decl_list->is_const) {
-            p_symbol_init p_init = symbol_init_gen(p_h_init->size);
+            p_symbol_init p_init = symbol_init_gen(p_h_init->size, p_decl_list->type);
             for(size_t i = 0; i < p_h_init->size; ++i) {
-                symbol_init_add(p_init, i, syntax_const_check(p_h_init->memory[i])->intconst);
+                symbol_init_val init_val;
+                if (p_init->basic == type_int) {
+                    init_val.i = syntax_const_check(p_h_init->memory[i])->intconst;
+                }
+                else {
+                    init_val.f = syntax_const_check(p_h_init->memory[i])->floatconst;
+                }
+                symbol_init_add(p_init, i, init_val);
             }
             p_symbol_sym p_sym = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, p_init != NULL, p_init);
             hir_symbol_item_add(p_program, p_sym);
@@ -287,15 +294,29 @@ void syntax_global_vardecl(p_hir_program p_program, p_syntax_decl_list p_decl_li
         syntax_decl_type_add(p_decl, symbol_type_var_gen(p_decl_list->type));
 
         p_syntax_init_mem p_h_init = syntax_init_trans(p_decl);
-        p_symbol_init p_init = symbol_init_gen(p_decl->p_type->size);
+        p_symbol_init p_init = symbol_init_gen(p_decl->p_type->size, p_decl_list->type);
         if (p_h_init) {
             for(size_t i = 0; i < p_init->size; ++i) {
-                symbol_init_add(p_init, i, syntax_const_check(p_h_init->memory[i])->intconst);
+                symbol_init_val init_val;
+                if (p_init->basic == type_int) {
+                    init_val.i = syntax_const_check(p_h_init->memory[i])->intconst;
+                }
+                else {
+                    init_val.f = syntax_const_check(p_h_init->memory[i])->floatconst;
+                }
+                symbol_init_add(p_init, i, init_val);
             }
         }
         else {
             for(size_t i = 0; i < p_init->size; ++i) {
-                symbol_init_add(p_init, i, 0);
+                symbol_init_val init_val;
+                if (p_init->basic == type_int) {
+                    init_val.i = 0;
+                }
+                else {
+                    init_val.f = 0;
+                }
+                symbol_init_add(p_init, i, init_val);
             }
         }
         syntax_init_mem_drop(p_h_init);

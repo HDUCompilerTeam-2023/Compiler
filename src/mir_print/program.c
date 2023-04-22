@@ -23,7 +23,10 @@ void mir_program_print(p_mir_program p_program)
             printf("= {");
             for(size_t i = 0; i < p_sym->p_init->size; i ++){
                 if(i > 0) printf(", ");
-                printf("%ld", p_sym->p_init->memory[i]);
+                if (p_sym->p_init->basic == type_int)
+                    printf("%ld", p_sym->p_init->memory[i].i);
+                else
+                    printf("%lf", p_sym->p_init->memory[i].f);
             }
             printf("}");
         }

@@ -20,7 +20,10 @@ void symbol_define_print(p_symbol_sym p_sym) {
     printf(" = {");
     for (size_t i = 0; i < p_sym->p_init->size; ++i) {
         if (i > 0) printf(", ");
-        printf("%ld", p_sym->p_init->memory[i]);
+        if (p_sym->p_init->basic == type_int)
+            printf("%ld", p_sym->p_init->memory[i].i);
+        else
+            printf("%lf", p_sym->p_init->memory[i].f);
     }
     printf("}\n");
 }

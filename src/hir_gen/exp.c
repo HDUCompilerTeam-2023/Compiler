@@ -41,10 +41,10 @@ to_const:
     assert(offset < p_exp->p_sym->p_type->size);
     p_hir_exp p_val;
     if (p_exp->p_type->basic == type_int) {
-        p_val = hir_exp_int_gen(p_exp->p_sym->p_init->memory[offset]);
+        p_val = hir_exp_int_gen(p_exp->p_sym->p_init->memory[offset].i);
     }
     else {
-        p_val = hir_exp_float_gen(p_exp->p_sym->p_init->memory[offset]);
+        p_val = hir_exp_float_gen(p_exp->p_sym->p_init->memory[offset].f);
     }
     hir_exp_drop(p_exp);
     return p_val;
