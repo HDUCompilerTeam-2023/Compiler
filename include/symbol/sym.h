@@ -6,7 +6,7 @@
 
 struct symbol_init {
     size_t size;
-    p_hir_exp *memory;
+    INTCONST_t *memory;
 };
 
 struct symbol_sym {
