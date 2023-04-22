@@ -11,6 +11,7 @@ struct hir2mir_info{
     p_mir_operand p_ret_operand;// 返回值所存储的位置
 
     size_t temp_id;
+    size_t block_id;
 };
 
 p_hir2mir_info hir2mir_info_gen(p_symbol_sym p_func_sym);

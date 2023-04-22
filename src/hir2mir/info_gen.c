@@ -10,6 +10,8 @@ p_hir2mir_info hir2mir_info_gen(p_symbol_sym p_func_sym){
         .p_operand_list = mir_operand_list_gen(),
         .p_basic_block_list = mir_basic_block_list_gen(),
         .p_ret_block = mir_basic_block_gen(),
+        .temp_id = 0,
+        .block_id = 0,
     };
     p_info->p_ret_operand = mir_operand_temp_sym_basic_gen(p_info->temp_id, p_func_sym->p_type->basic);
     mir_operand_list_add(p_info->p_operand_list, p_info->p_ret_operand);

@@ -6,6 +6,7 @@ p_mir_basic_block hir2mir_block_gen(p_hir2mir_info p_info, p_hir_block p_block)
 {
     assert(p_block);
     p_mir_basic_block p_entry = hir2mir_basic_block_gen(p_info);
+    p_entry->block_id = p_info->block_id ++;
     p_info->p_current_basic_block = p_entry;
     p_list_head p_node;
     list_for_each(p_node, &p_block->stmt){
