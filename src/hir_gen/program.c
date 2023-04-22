@@ -22,7 +22,6 @@ void hir_program_drop(p_hir_program p_program) {
         hir_func_drop(p_del);
     }
 
-    symbol_store_drop(p_program->p_store);
     free(p_program);
 }
 
