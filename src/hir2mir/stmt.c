@@ -8,8 +8,6 @@
 p_mir_instr hir2mir_stmt_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start, p_mir_basic_block p_while_end_next, p_hir_stmt p_stmt)
 {
     switch (p_stmt->type) {
-        case hir_stmt_init:
-            return hir2mir_stmt_init_gen(p_info, p_stmt->p_sym);
         case hir_stmt_return:
             return hir2mir_stmt_return_gen(p_info, p_stmt->p_exp);
         case hir_stmt_exp:
@@ -27,27 +25,6 @@ p_mir_instr hir2mir_stmt_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_st
         case hir_stmt_continue:
             return hir2mir_stmt_break_gen(p_info, p_while_start);
     }
-}
-p_mir_instr hir2mir_stmt_init_gen(p_hir2mir_info p_info, p_symbol_sym p_sym)
-{
-    assert(p_sym && !p_sym->is_global && p_sym->p_init);
-    p_mir_operand p_des_sym = hir2mir_operand_declared_sym_gen(p_info, p_sym);
-    p_mir_operand p_src = NULL;
-    p_mir_instr p_new_instr = NULL;
-    if (p_sym->p_type->kind == type_var) {
-        p_src = hir2mir_exp_get_operand(p_info, p_sym->p_init->memory[0]);
-        p_new_instr = mir_unary_instr_gen(mir_val_assign, p_src, p_des_sym);
-        mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
-    }
-    else if (p_sym->p_type->kind == type_arrary){
-        for (size_t i = 0; i < p_sym->p_init->size; i ++) {
-            p_src = hir2mir_exp_get_operand(p_info, p_sym->p_init->memory[i]);
-            p_mir_operand p_offset = hir2mir_operand_int_gen(p_info, i);
-            p_new_instr = mir_array_assign_instr_gen(p_des_sym, p_offset, p_src);
-            mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
-        }
-    }
-    return p_new_instr;
 }
 
 // 将返回值全部放到 一个变量, 并跳转到 ret 块

@@ -7,12 +7,12 @@ p_symbol_init symbol_init_gen(size_t size) {
     p_symbol_init p_init = malloc(sizeof(*p_init));
     *p_init = (symbol_init) {
         .size = size,
-        .memory = malloc(sizeof(**p_init->memory) * size)
+        .memory = malloc(sizeof(*p_init->memory) * size)
     };
-    memset(p_init->memory, 0, sizeof(**p_init->memory) * size);
+    memset(p_init->memory, 0, sizeof(*p_init->memory) * size);
     return p_init;
 }
-p_symbol_init symbol_init_add(p_symbol_init p_init, size_t offset, p_hir_exp p_exp) {
+p_symbol_init symbol_init_add(p_symbol_init p_init, size_t offset, INTCONST_t p_exp) {
     assert(offset < p_init->size);
     p_init->memory[offset] = p_exp;
     return p_init;
@@ -20,11 +20,6 @@ p_symbol_init symbol_init_add(p_symbol_init p_init, size_t offset, p_hir_exp p_e
 void symbol_init_drop(p_symbol_init p_init) {
     if(!p_init)
         return;
-    for(size_t i = 0; i < p_init->size; ++i) {
-        if (p_init->memory[i]) {
-            hir_exp_drop(p_init->memory[i]);
-        }
-    }
     free(p_init->memory);
     free(p_init);
 }
