@@ -31,7 +31,7 @@ p_hir_program hir_program_func_add(p_hir_program p_program, p_hir_func p_func) {
     return p_program;
 }
 
-p_symbol_item hir_symbol_item_add(p_hir_program p_program, p_symbol_sym p_sym) {
+p_symbol_item hir_symbol_item_add(p_hir_program p_program, p_symbol_sym p_sym, bool is_global) {
     p_symbol_item p_item = symbol_table_item_add(p_program->p_table, p_sym);
     if (!p_item) return NULL;
 
@@ -39,7 +39,7 @@ p_symbol_item hir_symbol_item_add(p_hir_program p_program, p_symbol_sym p_sym) {
         symbol_store_add_def_function(p_program->p_store, p_sym);
     }
     else {
-        if (p_sym->is_global) {
+        if (is_global) {
             symbol_store_add_global(p_program->p_store, p_sym);
         }
         else {
