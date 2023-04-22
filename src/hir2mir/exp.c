@@ -208,7 +208,7 @@ p_mir_instr hir2mir_exp_assign_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
 
     p_mir_instr p_new_instr = NULL;
     p_mir_operand p_des = hir2mir_operand_declared_sym_gen(p_info, p_exp->p_src_1->p_sym);
-    if (p_exp->p_src_1->p_type->kind == type_arrary) { // 左值为数组对应指令为 数组赋值指令
+    if (p_exp->p_src_1->p_offset) { // 左值为数组对应指令为 数组赋值指令
         p_mir_operand p_offset = hir2mir_exp_get_operand(p_info, p_exp->p_src_1->p_offset);
         p_mir_operand p_src = hir2mir_exp_get_operand(p_info, p_exp->p_src_2);
         p_new_instr = mir_array_assign_instr_gen(p_des, p_offset, p_src);
