@@ -23,6 +23,8 @@ release_C_SETS = -O2
 release_LDSETS =
 release_LDLIBS =
 
+-include script/build.local
+
 
 # Source
 CSRC_DIR = src
