@@ -109,7 +109,7 @@ p_mir_instr hir2mir_exp_exec_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
             p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, b_type1);
             break;
         case hir_exp_op_mod:
-            mir_instr_kind = mir_div_op;
+            mir_instr_kind = mir_mod_op;
             p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, b_type1);
             break;
         case hir_exp_op_eq:
