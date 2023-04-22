@@ -4,9 +4,17 @@
 #include <symbol.h>
 #include <hir.h>
 
+struct symbol_init_val {
+    union {
+    INTCONST_t i;
+    FLOATCONST_t f;
+    };
+};
+
 struct symbol_init {
+    basic_type basic;
     size_t size;
-    INTCONST_t *memory;
+    p_symbol_init_val memory;
 };
 
 struct symbol_sym {

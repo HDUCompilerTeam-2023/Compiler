@@ -3,18 +3,19 @@
 #include <symbol_gen.h>
 #include <hir_gen.h>
 
-p_symbol_init symbol_init_gen(size_t size) {
+p_symbol_init symbol_init_gen(size_t size, basic_type basic) {
     p_symbol_init p_init = malloc(sizeof(*p_init));
     *p_init = (symbol_init) {
+        .basic = basic,
         .size = size,
         .memory = malloc(sizeof(*p_init->memory) * size)
     };
     memset(p_init->memory, 0, sizeof(*p_init->memory) * size);
     return p_init;
 }
-p_symbol_init symbol_init_add(p_symbol_init p_init, size_t offset, INTCONST_t p_exp) {
+p_symbol_init symbol_init_add(p_symbol_init p_init, size_t offset, symbol_init_val val) {
     assert(offset < p_init->size);
-    p_init->memory[offset] = p_exp;
+    p_init->memory[offset] = val;
     return p_init;
 }
 void symbol_init_drop(p_symbol_init p_init) {
