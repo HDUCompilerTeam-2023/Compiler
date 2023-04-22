@@ -287,11 +287,15 @@ void syntax_global_vardecl(p_hir_program p_program, p_syntax_decl_list p_decl_li
         syntax_decl_type_add(p_decl, symbol_type_var_gen(p_decl_list->type));
 
         p_syntax_init_mem p_h_init = syntax_init_trans(p_decl);
-        p_symbol_init p_init = NULL;
+        p_symbol_init p_init = symbol_init_gen(p_decl->p_type->size);
         if (p_h_init) {
-            p_init = symbol_init_gen(p_h_init->size);
-            for(size_t i = 0; i < p_h_init->size; ++i) {
+            for(size_t i = 0; i < p_init->size; ++i) {
                 symbol_init_add(p_init, i, syntax_const_check(p_h_init->memory[i])->intconst);
+            }
+        }
+        else {
+            for(size_t i = 0; i < p_init->size; ++i) {
+                symbol_init_add(p_init, i, 0);
             }
         }
         syntax_init_mem_drop(p_h_init);
