@@ -1,5 +1,6 @@
 #include <mir/program.h>
 #include <mir_gen.h>
+#include <symbol_gen.h>
 
 p_mir_program mir_program_gen(void)
 {
@@ -7,6 +8,7 @@ p_mir_program mir_program_gen(void)
     *p_program = (mir_program){
         .func = list_head_init(&p_program->func),
         .p_globalvar_head = NULL,
+        .p_store = NULL,
     };
     return p_program;
 }
@@ -31,5 +33,6 @@ void mir_program_drop(p_mir_program p_program)
         list_del(&p_func->node);
         mir_func_drop(p_func);
     }
+    symbol_store_drop(p_program->p_store);
     free(p_program);
 }
