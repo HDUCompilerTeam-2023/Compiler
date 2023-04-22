@@ -18,7 +18,8 @@ struct symbol_sym {
     char *name;
     union {
         struct {
-            list_head local;
+            list_head variable;
+            list_head constant;
         };
         struct {
             p_symbol_init p_init;

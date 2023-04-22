@@ -7,24 +7,24 @@
 
 void symbol_store_print(p_symbol_store p_store) {
     p_list_head p_node;
-    if (!list_head_alone(&p_store->global)) {
+    if (!list_head_alone(&p_store->variable)) {
         printf("global:\n");
     }
-    list_for_each(p_node, &p_store->global) {
+    list_for_each(p_node, &p_store->variable) {
         symbol_init_print(list_entry(p_node, symbol_sym, node));
     }
 
-    if (!list_head_alone(&p_store->def_function)) {
-        if (!list_head_alone(&p_store->global))
+    if (!list_head_alone(&p_store->function)) {
+        if (!list_head_alone(&p_store->variable))
             printf("\n");
         printf("functions:\n");
     }
-    list_for_each(p_node, &p_store->def_function) {
+    list_for_each(p_node, &p_store->function) {
         symbol_init_print(list_entry(p_node, symbol_sym, node));
     }
 
     if (!list_head_alone(&p_store->string)) {
-        if (!list_head_alone(&p_store->def_function))
+        if (!list_head_alone(&p_store->function))
             printf("\n");
         printf("string:\n");
     }
