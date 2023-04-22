@@ -9,6 +9,7 @@ p_symbol_store symbol_store_gen(void) {
         .constant = list_head_init(&p_store->constant),
         .function = list_head_init(&p_store->function),
         .string = list_head_init(&p_store->string),
+        .next_id = 0,
     };
     return p_store;
 }
@@ -41,15 +42,30 @@ bool symbol_store_add_str(p_symbol_store p_store, p_symbol_str p_str) {
 }
 
 bool symbol_store_add_global(p_symbol_store p_store, p_symbol_sym p_sym) {
-    p_list_head p_list = &p_store->variable;
-    if (p_sym->is_const) p_list = &p_store->constant;
+    p_list_head p_list;
+    if (p_sym->is_const) {
+        p_list = &p_store->constant;
+    }
+    else {
+        p_list = &p_store->variable;
+        p_sym->id = p_store->next_id++;
+    }
+    p_sym->is_global = true;
     return list_add_prev(&p_sym->node, p_list);
 }
 bool symbol_store_add_local(p_symbol_store p_store, p_symbol_sym p_sym) {
     assert(!list_head_alone(&p_store->function));
     p_symbol_sym p_func = list_entry(p_store->function.p_prev, symbol_sym, node);
-    p_list_head p_list = &p_func->variable;
-    if (p_sym->is_const) p_list = &p_func->constant;
+
+    p_list_head p_list;
+    if (p_sym->is_const) {
+        p_list = &p_func->constant;
+    }
+    else {
+        p_list = &p_func->variable;
+        p_sym->id = p_func->next_id++;
+    }
+    p_sym->is_global = false;
     return list_add_prev(&p_sym->node, p_list);
 }
 
