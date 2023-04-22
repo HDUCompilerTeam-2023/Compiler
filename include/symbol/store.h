@@ -4,8 +4,9 @@
 #include <symbol.h>
 
 struct symbol_store {
-    list_head global;
-    list_head def_function;
+    list_head variable;
+    list_head constant;
+    list_head function;
     list_head string;
 };
 

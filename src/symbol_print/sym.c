@@ -50,9 +50,10 @@ void symbol_param_print(p_symbol_sym p_sym) {
     if (p_param_type) {
         printf("param:\n");
     }
-    list_for_each(p_node, &p_sym->local) {
-        if (!p_param_type) break;
-        symbol_init_print(list_entry(p_node, symbol_sym, node));
-        p_param_type = p_param_type->p_params;
+    list_for_each(p_node, &p_sym->variable) {
+      if (!p_param_type)
+        break;
+      symbol_init_print(list_entry(p_node, symbol_sym, node));
+      p_param_type = p_param_type->p_params;
     }
 }

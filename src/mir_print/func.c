@@ -16,7 +16,7 @@ void mir_func_print(p_mir_func p_func)
     printf("%s (", p_func->p_func_sym->name);
     p_list_head p_node;
     p_symbol_type p_param_type = p_func->p_func_sym->p_type->p_params;
-    list_for_each(p_node, &p_func->p_func_sym->local) {
+    list_for_each(p_node, &p_func->p_func_sym->variable) {
         if (!p_param_type) break;
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
         mir_symbol_type_print(p_sym->p_type);
@@ -26,7 +26,7 @@ void mir_func_print(p_mir_func p_func)
     }
     printf("){\n");
     p_param_type = p_func->p_func_sym->p_type->p_params;
-    list_for_each(p_node, &p_func->p_func_sym->local) {
+    list_for_each(p_node, &p_func->p_func_sym->variable) {
         if (!p_param_type) break;
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
         printf("param ");
@@ -35,7 +35,7 @@ void mir_func_print(p_mir_func p_func)
         p_param_type = p_param_type->p_params;
     }
 
-    while (p_node != &p_func->p_func_sym->local) {
+    while (p_node != &p_func->p_func_sym->variable) {
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
         printf("local ");
         mir_symbol_type_print(p_sym->p_type);
