@@ -38,7 +38,8 @@ static inline p_symbol_sym symbol_gen(const char *name, p_symbol_type p_type, bo
     };
     strcpy(p_info->name, name);
     if (p_type->kind >= type_func) {
-        p_info->local = list_head_init(&p_info->local);
+        p_info->variable = list_head_init(&p_info->variable);
+        p_info->constant = list_head_init(&p_info->constant);
     }
     else {
         p_info->is_def = is_def,
@@ -64,8 +65,12 @@ void symbol_var_drop(p_symbol_sym p_sym) {
 
 void symbol_func_drop(p_symbol_sym p_sym) {
     list_del(&p_sym->node);
-    while (!list_head_alone(&p_sym->local)) {
-        p_symbol_sym p_del = list_entry(p_sym->local.p_next, symbol_sym, node);
+    while (!list_head_alone(&p_sym->variable)) {
+        p_symbol_sym p_del = list_entry(p_sym->variable.p_next, symbol_sym, node);
+        symbol_var_drop(p_del);
+    }
+    while (!list_head_alone(&p_sym->constant)) {
+        p_symbol_sym p_del = list_entry(p_sym->constant.p_next, symbol_sym, node);
         symbol_var_drop(p_del);
     }
     symbol_type_drop(p_sym->p_type);
