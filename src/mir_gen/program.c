@@ -7,7 +7,6 @@ p_mir_program mir_program_gen(void)
     p_mir_program p_program = malloc(sizeof(*p_program));
     *p_program = (mir_program){
         .func = list_head_init(&p_program->func),
-        .p_globalvar_head = NULL,
         .p_store = NULL,
     };
     return p_program;
@@ -19,11 +18,6 @@ p_mir_program mir_program_func_add(p_mir_program p_program, p_mir_func p_func)
     return p_program;
 }
 
-p_mir_program mir_program_global_set(p_mir_program p_program, p_list_head p_head)
-{
-    p_program->p_globalvar_head = p_head;
-    return p_program;
-}
 
 void mir_program_drop(p_mir_program p_program)
 {
