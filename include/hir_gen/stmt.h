@@ -3,7 +3,6 @@
 
 #include <hir/stmt.h>
 
-p_hir_stmt hir_stmt_init_gen(p_symbol_sym p_sym);
 p_hir_stmt hir_stmt_return_gen(p_hir_exp p_exp);
 p_hir_stmt hir_stmt_exp_gen(p_hir_exp p_exp);
 p_hir_stmt hir_stmt_break_gen(void);
