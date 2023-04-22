@@ -69,29 +69,26 @@ bool mir_basic_block_if_ret(p_mir_basic_block p_basic_block)
 
  // 对basic_block 及所有后继 block 设置id, 返回最后的 id 值
 #include <stdio.h>
-size_t mir_basic_block_set_id(size_t id, p_mir_basic_block p_basic_block)
+size_t mir_basic_block_set_id(size_t b_id, p_mir_basic_block p_basic_block)
 {
-    if (p_basic_block->block_id) return id;
+    if (p_basic_block->block_id) return b_id;
     // return 语句最后设置
-    if (mir_basic_block_if_ret(p_basic_block)) return id;
-    p_basic_block->block_id = ++ id;
+    if (mir_basic_block_if_ret(p_basic_block)) return b_id;
+    p_basic_block->block_id = ++ b_id;
     
-    p_mir_instr p_instr = NULL;
-    p_list_head p_node;
-    list_for_each(p_node, &p_basic_block->instr_list){
-        p_instr = list_entry(p_node, mir_instr, node);
-        id = mir_instr_set_temp_var_id(id, p_instr);
-    }
-    if(p_instr){
-        if (p_instr->irkind == mir_br) 
-            return mir_basic_block_set_id(id, p_instr->mir_br.p_target);
-        else if (p_instr->irkind == mir_condbr) {
-            id = mir_basic_block_set_id(id, p_instr->mir_condbr.p_target_true);
-            return mir_basic_block_set_id(id, p_instr->mir_condbr.p_target_false);
+    p_mir_instr p_last_instr = list_entry(p_basic_block->instr_list.p_prev, mir_instr, node);
+    if(p_last_instr){
+        if (p_last_instr->irkind == mir_br) 
+            return mir_basic_block_set_id(b_id, p_last_instr->mir_br.p_target);
+        else if (p_last_instr->irkind == mir_condbr) {
+            b_id = mir_basic_block_set_id(b_id, p_last_instr->mir_condbr.p_target_true);
+            return mir_basic_block_set_id(b_id, p_last_instr->mir_condbr.p_target_false);
         }
     }
-    return id;
+    return b_id;
 }
+
+
 
 void mir_basic_block_drop(p_mir_basic_block p_basic_block)
 {
