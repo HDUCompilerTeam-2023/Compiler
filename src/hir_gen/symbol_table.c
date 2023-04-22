@@ -128,12 +128,6 @@ p_symbol_item symbol_table_item_add(p_symbol_table p_table, p_symbol_sym p_sym) 
     p_table->p_top_table->p_item = p_item;
     p_name->p_item = p_item;
 
-    if (p_sym->p_type->kind >= type_func) {
-    } else {
-        p_sym->id = p_table->next_id++;
-        p_sym->is_global = !p_table->p_top_table->p_prev;
-    }
-
     return p_item;
 }
 

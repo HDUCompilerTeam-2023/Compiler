@@ -6,12 +6,11 @@
 #include <hir_print.h>
 
 void symbol_define_print(p_symbol_sym p_sym) {
-    if (!p_sym->is_def) {
+    if (p_sym->p_type->kind >= type_func) {
         printf("\n");
         return;
     }
-
-    if (p_sym->p_type->kind >= type_func) {
+    if (!p_sym->is_def) {
         printf("\n");
         return;
     }

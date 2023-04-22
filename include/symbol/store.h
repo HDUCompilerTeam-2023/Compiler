@@ -8,6 +8,8 @@ struct symbol_store {
     list_head constant;
     list_head function;
     list_head string;
+
+    uint64_t next_id;
 };
 
 #endif
