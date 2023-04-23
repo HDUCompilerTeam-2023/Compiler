@@ -69,8 +69,10 @@ p_mir_instr hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
         }
         case hir_exp_call:
             return hir2mir_exp_call_gen(p_info, p_exp);
-        default:
-            assert(0);
+        case hir_exp_num:
+        case hir_exp_val:
+        case hir_exp_str:
+            return NULL;
     }
 }
 
