@@ -5,7 +5,7 @@
 
 struct mir_basic_block{
     list_head instr_list;
-    p_mir_basic_block_list p_prev_block_list;
+    list_head prev_basic_block_list;
     size_t block_id;
     p_mir_basic_block p_next;
 };
@@ -13,9 +13,6 @@ struct mir_basic_block{
 struct mir_basic_block_list_node{
     p_mir_basic_block p_basic_block;
     list_head node;
-};
-struct mir_basic_block_list{
-    list_head basic_block_list;
 };
 
 #endif
