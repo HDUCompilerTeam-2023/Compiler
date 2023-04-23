@@ -30,7 +30,7 @@ p_mir_operand hir2mir_exp_get_operand(p_hir2mir_info p_info, p_hir_exp p_exp)
                 p_mir_operand p_offset = hir2mir_exp_get_operand(p_info, p_exp->p_offset);
                 p_mir_operand p_temp_des = hir2mir_operand_temp_sym_array_gen(p_info, p_exp->p_type);
                 p_mir_instr p_instr = mir_array_instr_gen(p_operand, p_offset, p_temp_des);
-                mir_basic_block_addinstr(p_info->p_current_basic_block, p_instr);
+                hir2mir_info_add_instr(p_info, p_instr);
                 return mir_instr_get_des(p_instr);
             }
             else        
@@ -140,7 +140,7 @@ p_mir_instr hir2mir_exp_exec_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
             assert(0);
     }
     p_new_instr = mir_binary_instr_gen(mir_instr_kind, p_operand1, p_operand2, p_temp_des);
-    mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
+    hir2mir_info_add_instr(p_info, p_new_instr);
     return p_new_instr;
 
 }
@@ -164,7 +164,7 @@ p_mir_instr hir2mir_exp_uexec_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
         default:
             assert(0);
     }
-    mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
+    hir2mir_info_add_instr(p_info, p_new_instr);
     return p_new_instr;
 }
 // exp 正确则跳向 true, 错误跳向 false
@@ -173,28 +173,26 @@ p_mir_instr hir2mir_exp_cond_gen(p_hir2mir_info p_info, p_mir_basic_block p_true
     assert(p_exp );
     p_mir_instr p_new_instr = NULL;
     if (p_exp->op == hir_exp_op_bool_or) {
-        p_mir_basic_block p_new_false_block = hir2mir_basic_block_gen(p_info);
+        p_mir_basic_block p_new_false_block = mir_basic_block_gen();
         // 在当前 block 生成 左边代码
         hir2mir_exp_cond_gen(p_info, p_true_block, p_new_false_block, p_exp->p_src_1);
 
         // 在新block 生成右边代码， 该block 也是左边的 false block
-        p_new_false_block->block_id = p_info->block_id ++;
-        p_info->p_current_basic_block = p_new_false_block;
+        hir2mir_info_add_basic_block(p_info, p_new_false_block);
         p_new_instr = hir2mir_exp_cond_gen(p_info, p_true_block, p_false_block, p_exp->p_src_2);
     }
     else if (p_exp->op == hir_exp_op_bool_and) {
-        p_mir_basic_block p_new_true_block = hir2mir_basic_block_gen(p_info);
+        p_mir_basic_block p_new_true_block = mir_basic_block_gen();
         // 在当前 block 生成 左边代码
         hir2mir_exp_cond_gen(p_info, p_new_true_block, p_false_block, p_exp->p_src_1);
         // 在新block 生成右边代码， 该block 也是左边的 true block
-        p_new_true_block->block_id = p_info->block_id ++;
-        p_info->p_current_basic_block = p_new_true_block;
+        hir2mir_info_add_basic_block(p_info, p_new_true_block);
         p_new_instr = hir2mir_exp_cond_gen(p_info, p_true_block, p_false_block, p_exp->p_src_2);
     }
     else {
         p_mir_operand p_cond =  hir2mir_exp_get_operand(p_info, p_exp);
-        p_new_instr = mir_condbr_instr_gen(p_info->p_current_basic_block, p_cond, p_true_block, p_false_block);
-        mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
+        p_new_instr = mir_condbr_instr_gen(hir2mir_info_get_current_block(p_info), p_cond, p_true_block, p_false_block);
+        hir2mir_info_add_instr(p_info, p_new_instr);
     }
     return p_new_instr;
 }
@@ -216,7 +214,7 @@ p_mir_instr hir2mir_exp_assign_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
         p_mir_operand p_operand = hir2mir_exp_get_operand(p_info, p_exp->p_src_2);
         p_new_instr = mir_unary_instr_gen(mir_val_assign, p_operand, p_des);
     }
-    mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
+    hir2mir_info_add_instr(p_info, p_new_instr);
     return p_new_instr;
 }
 
@@ -231,7 +229,7 @@ p_mir_instr hir2mir_exp_call_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
     p_mir_param_list p_m_param_list = hir2mir_param_list_gen(p_info, p_exp->p_param_list);
 
     p_mir_instr p_new_instr = mir_call_instr_gen(p_func, p_m_param_list, p_des);
-    mir_basic_block_addinstr(p_info->p_current_basic_block, p_new_instr);
+    hir2mir_info_add_instr(p_info, p_new_instr);
     
     return p_new_instr;
 }
