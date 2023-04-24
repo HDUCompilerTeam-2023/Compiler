@@ -5,6 +5,8 @@
 
 struct hir2mir_info{
     p_mir_basic_block p_current_basic_block;
+    p_mir_basic_block p_empty_basic_block;
+    p_mir_func p_func;
 
     p_mir_operand_list p_operand_list;
     p_mir_basic_block p_ret_block;// 返回的块

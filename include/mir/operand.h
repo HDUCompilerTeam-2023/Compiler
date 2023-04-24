@@ -4,24 +4,19 @@
 #include <mir.h>
 
 enum mir_operand_kind{
-    global_var,
-    local_var,
-    func_var,
-    temp_var_basic,
-    temp_var_array,
-    immedicate_val,
+    declared_var,
+    temp_var,
+    immedicate_int_val,
+    immedicate_float_val,
+    immedicate_void_val,
 };
 struct mir_operand{
     mir_operand_kind kind;
     union{
-        size_t id;
-        char* name;
+        p_mir_temp_sym p_temp_sym;
+        p_symbol_sym p_sym;
         int intconst;
         float floatconst;
-    };
-    union {
-        p_symbol_type p_type;
-        basic_type b_type;
     };
 
     list_head node; // operand 只能在 list 中存在
