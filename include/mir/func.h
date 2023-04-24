@@ -3,11 +3,10 @@
 #include <mir.h>
 
 struct mir_func{
-    p_mir_basic_block p_basic_block;
     p_symbol_sym p_func_sym;
 
+    p_mir_basic_block p_basic_block;
     list_head temp_sym_head;
-    list_head node;
 };
 
 #endif
