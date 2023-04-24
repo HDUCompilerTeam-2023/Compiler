@@ -22,15 +22,14 @@ struct symbol_sym {
     p_symbol_type p_type;
 
     char *name;
+    uint64_t id;
     union {
         struct {
             list_head variable;
             list_head constant;
-            uint64_t next_id;
         };
         struct {
             p_symbol_init p_init;
-            uint64_t id;
             bool is_global;
             bool is_const;
             bool is_def;

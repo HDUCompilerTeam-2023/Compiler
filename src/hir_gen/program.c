@@ -35,7 +35,7 @@ p_symbol_item hir_symbol_item_add(p_hir_program p_program, p_symbol_sym p_sym, b
     if (!p_item) return NULL;
 
     if (p_sym->p_type->kind >= type_func) {
-        symbol_store_add_def_function(p_program->p_store, p_sym);
+        symbol_store_add_function(p_program->p_store, p_sym);
     }
     else {
         if (is_global) {

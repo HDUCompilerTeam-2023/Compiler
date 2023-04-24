@@ -63,12 +63,23 @@ bool symbol_store_add_local(p_symbol_store p_store, p_symbol_sym p_sym) {
     }
     else {
         p_list = &p_func->variable;
-        p_sym->id = p_func->next_id++;
+        if (list_head_alone(&p_func->variable)) {
+            p_sym->id = 0;
+        }
+        else {
+            p_sym->id = list_entry(p_func->variable.p_prev, symbol_sym, node)->id + 1;
+        }
     }
     p_sym->is_global = false;
     return list_add_prev(&p_sym->node, p_list);
 }
 
-bool symbol_store_add_def_function(p_symbol_store p_store, p_symbol_sym p_sym) {
+bool symbol_store_add_function(p_symbol_store p_store, p_symbol_sym p_sym) {
+    if (list_head_alone(&p_store->function)) {
+        p_sym->id = 0;
+    }
+    else {
+        p_sym->id = list_entry(p_store->function.p_prev, symbol_sym, node)->id + 1;
+    }
     return list_add_prev(&p_sym->node, &p_store->function);
 }
