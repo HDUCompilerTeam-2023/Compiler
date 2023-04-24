@@ -18,12 +18,6 @@ struct mir_operand{
         int intconst;
         float floatconst;
     };
-
-    list_head node; // operand 只能在 list 中存在
-};
-
-struct mir_operand_list{
-    list_head operand;
 };
 
 

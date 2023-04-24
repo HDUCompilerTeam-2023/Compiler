@@ -35,7 +35,8 @@ p_mir_instr hir2mir_stmt_return_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
         p_ret = hir2mir_exp_get_operand(p_info, p_exp);
     else
         p_ret = hir2mir_operand_void_gen(p_info);
-    p_mir_instr p_ret_assign_instr = mir_unary_instr_gen(mir_val_assign, p_ret, p_info->p_ret_operand);
+    p_mir_operand p_ret_des = mir_operand_copy(p_info->p_ret_operand);
+    p_mir_instr p_ret_assign_instr = mir_unary_instr_gen(mir_val_assign, p_ret, p_ret_des);
     hir2mir_info_add_instr(p_info, p_ret_assign_instr);
     p_mir_instr p_br_ret_instr = mir_br_instr_gen(hir2mir_info_get_current_block(p_info), p_info->p_ret_block);
     hir2mir_info_add_instr(p_info, p_br_ret_instr);

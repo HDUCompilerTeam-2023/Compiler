@@ -5,14 +5,6 @@
 #include <symbol/sym.h>
 #include <symbol/type.h>
 
-p_mir_operand_list mir_operand_list_gen()
-{
-    p_mir_operand_list p_list = malloc(sizeof(*p_list));
-    *p_list = (mir_operand_list){
-        .operand = list_head_init(&p_list->operand),
-    };
-    return p_list;
-}
 
 
 basic_type mir_operand_get_basic_type(p_mir_operand p_operand)
@@ -34,20 +26,12 @@ basic_type mir_operand_get_basic_type(p_mir_operand p_operand)
 }
 
 
-p_mir_operand_list mir_operand_list_add(p_mir_operand_list p_list, p_mir_operand p_operand)
-{
-    assert(p_operand);
-    list_add_prev(&p_operand->node, &p_list->operand);
-    return p_list;
-}
-
 p_mir_operand mir_operand_int_gen(int intconst)
 {
     p_mir_operand p_mir_int = malloc(sizeof(*p_mir_int));
     *p_mir_int = (mir_operand){
         .intconst = intconst,
         .kind = immedicate_int_val,
-        .node = list_head_init(&p_mir_int->node),
     };
     return p_mir_int;
 }
@@ -58,7 +42,6 @@ p_mir_operand mir_operand_float_gen(float floatconst)
     *p_mir_float = (mir_operand){
         .floatconst = floatconst,
         .kind = immedicate_float_val,
-        .node = list_head_init(&p_mir_float->node),
     };
     return p_mir_float;
 }
@@ -68,7 +51,6 @@ p_mir_operand mir_operand_void_gen(void)
     p_mir_operand p_mir_void = malloc(sizeof(*p_mir_void));
     *p_mir_void = (mir_operand){
         .kind = immedicate_void_val,
-        .node = list_head_init(&p_mir_void->node),
     };
     return p_mir_void;
 }
@@ -78,11 +60,16 @@ p_mir_operand mir_operand_declared_sym_gen(p_symbol_sym p_h_sym)
     p_mir_operand p_sym = malloc(sizeof(*p_sym));
     *p_sym = (mir_operand){
         .p_sym = p_h_sym,
-        .node = list_head_init(&p_sym->node),
     };
     return p_sym;
 }
 
+p_mir_operand mir_operand_copy(p_mir_operand p_operand)
+{
+    p_mir_operand p_new_operand = malloc(sizeof(*p_new_operand));
+    *p_new_operand = *p_operand;
+    return p_new_operand;
+}
 
 p_mir_operand mir_operand_temp_sym_gen(p_mir_temp_sym p_temp_sym)
 {
@@ -90,7 +77,6 @@ p_mir_operand mir_operand_temp_sym_gen(p_mir_temp_sym p_temp_sym)
     *p_sym = (mir_operand){
         .kind = temp_var,
         .p_temp_sym = p_temp_sym,
-        .node = list_head_init(&p_sym->node),
     };
     return p_sym;
 }
@@ -100,15 +86,4 @@ void mir_operand_drop(p_mir_operand p_operand)
 {
     assert(p_operand);
     free(p_operand);
-}
-
-void mir_operand_list_drop(p_mir_operand_list p_list)
-{
-    assert(p_list);
-    while (!list_head_alone(&p_list->operand)) {
-        p_mir_operand p_operand = list_entry(p_list->operand.p_next, mir_operand, node);
-        list_del(&p_operand->node);
-        mir_operand_drop(p_operand);
-    }
-    free(p_list);
 }

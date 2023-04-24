@@ -70,14 +70,5 @@ void mir_operand_print(p_mir_operand p_operand)
     }
 }
 
-void mir_operand_list_print(p_mir_operand_list p_list)
-{
-    p_list_head p_node;
-    list_for_each(p_node, &p_list->operand){
-        p_mir_operand p_operand = list_entry(p_node, mir_operand, node);
-        mir_operand_print(p_operand);
-        printf("\n");
-    }
-}
 
 

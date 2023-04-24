@@ -11,7 +11,6 @@ typedef struct mir_param mir_param, *p_mir_param;
 typedef struct mir_param_list mir_param_list, *p_mir_param_list;
 
 typedef struct mir_operand mir_operand, *p_mir_operand;
-typedef struct mir_operand_list mir_operand_list, *p_mir_operand_list;
 
 
 typedef struct mir_temp_sym mir_temp_sym, *p_mir_temp_sym;
