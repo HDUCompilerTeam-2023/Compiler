@@ -12,10 +12,16 @@ p_mir_operand hir2mir_exp_get_operand(p_hir2mir_info p_info, p_hir_exp p_exp)
     p_mir_operand p_operand;
     switch (p_exp->kind) {
         case hir_exp_num:// 若是常量 直接返回该常量对应的操作数
-            return hir2mir_operand_num_gen(p_exp);
+            if (p_exp->basic == type_int) {
+                return mir_operand_int_gen(p_exp->intconst);
+            }
+            if (p_exp->basic == type_float) {
+                return mir_operand_float_gen(p_exp->floatconst);
+            }
+            assert(0);
         case hir_exp_val:
         // 若是变量 直接返回该变量对应的操作数
-            p_operand = hir2mir_operand_declared_sym_gen(p_exp->p_sym);
+            p_operand = mir_operand_declared_sym_gen(p_exp->p_sym);
             if (p_exp->p_offset) // 若是数组元素赋值 需要新增一条语句将数组元素赋值给临时变量
             {
                 p_mir_operand p_offset = hir2mir_exp_get_operand(p_info, p_exp->p_offset);
@@ -195,7 +201,7 @@ p_mir_instr hir2mir_exp_cond_gen(p_hir2mir_info p_info, p_mir_basic_block p_true
     }
     else {
         p_mir_operand p_cond =  hir2mir_exp_get_operand(p_info, p_exp);
-        p_new_instr = mir_condbr_instr_gen(hir2mir_info_get_current_block(p_info), p_cond, p_true_block, p_false_block);
+        p_new_instr = mir_condbr_instr_gen(p_info->p_current_basic_block, p_cond, p_true_block, p_false_block);
         hir2mir_info_add_instr(p_info, p_new_instr);
     }
     return p_new_instr;
@@ -208,7 +214,7 @@ p_mir_instr hir2mir_exp_assign_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
     assert(p_exp->p_src_1->kind == hir_exp_val);
 
     p_mir_instr p_new_instr = NULL;
-    p_mir_operand p_des = hir2mir_operand_declared_sym_gen(p_exp->p_src_1->p_sym);
+    p_mir_operand p_des = mir_operand_declared_sym_gen(p_exp->p_src_1->p_sym);
     if (p_exp->p_src_1->p_offset) { // 左值为数组对应指令为 数组赋值指令
         p_mir_operand p_offset = hir2mir_exp_get_operand(p_info, p_exp->p_src_1->p_offset);
         p_mir_operand p_src = hir2mir_exp_get_operand(p_info, p_exp->p_src_2);
