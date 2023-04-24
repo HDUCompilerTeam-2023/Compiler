@@ -1,5 +1,4 @@
 #include <hir2mir/info_gen.h>
-#include <stdio.h>
 #include <symbol/sym.h>
 #include <symbol/type.h>
 
@@ -8,13 +7,11 @@ p_hir2mir_info hir2mir_info_gen(p_symbol_sym p_func_sym){
     p_hir2mir_info p_info = malloc(sizeof(*p_info));
     *p_info = (hir2mir_info){
         .p_current_basic_block = NULL,
-        .p_operand_list = mir_operand_list_gen(),
         .p_ret_block = mir_basic_block_gen(),
         .temp_id = 0,
     };
     p_mir_temp_sym p_temp_sym =  mir_temp_sym_basic_gen( p_info->temp_id, p_func_sym->p_type->basic);
     p_info->p_ret_operand = mir_operand_temp_sym_gen(p_temp_sym);
-    mir_operand_list_add(p_info->p_operand_list, p_info->p_ret_operand);
 
     p_mir_instr p_ret = mir_ret_instr_gen( p_info->p_ret_operand);
     mir_basic_block_addinstr(p_info->p_ret_block, p_ret);
