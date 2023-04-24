@@ -25,7 +25,7 @@ p_mir_operand mir_instr_ret_get_src(p_mir_instr p_instr)
 {
     return p_instr->mir_ret.p_ret;
 }
-p_mir_operand mir_instr_call_get_func(p_mir_instr p_instr)
+p_mir_func mir_instr_call_get_func(p_mir_instr p_instr)
 {
     return p_instr->mir_call.p_func;
 }
