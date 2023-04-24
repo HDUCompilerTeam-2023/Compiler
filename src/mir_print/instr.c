@@ -1,9 +1,10 @@
-
 #include <mir_print.h>
 #include <mir/instr.h>
 #include <mir/basic_block.h>
+#include <mir/func.h>
 #include <stdio.h>
 
+#include <symbol/sym.h>
 void mir_instr_print(p_mir_instr p_instr)
 {
     assert(p_instr);
@@ -152,7 +153,7 @@ void mir_call_instr_print(p_mir_call_instr p_instr)
 {
     mir_operand_print(p_instr->p_des);
     printf("= ");
-    mir_operand_print(p_instr->p_func);
+    printf("@%s", p_instr->p_func->p_func_sym->name);
     mir_param_list_print(p_instr->p_param_list);
 }
 

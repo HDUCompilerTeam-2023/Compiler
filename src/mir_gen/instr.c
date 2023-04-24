@@ -110,7 +110,7 @@ p_mir_instr mir_condbr_instr_gen(p_mir_basic_block p_current_basic_block, p_mir_
     return p_instr;
 }
 
-p_mir_instr mir_call_instr_gen(p_mir_operand p_func, p_mir_param_list p_param_list, p_mir_operand p_des)
+p_mir_instr mir_call_instr_gen(p_mir_func p_func, p_mir_param_list p_param_list, p_mir_operand p_des)
 {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
 
@@ -268,7 +268,6 @@ void mir_instr_drop(p_mir_instr p_instr)
             mir_operand_drop(p_instr->mir_unary.p_des);
             break;
         case mir_call:
-            mir_operand_drop(p_instr->mir_call.p_func);
             mir_operand_drop(p_instr->mir_call.p_des);
             mir_param_list_drop(p_instr->mir_call.p_param_list);
             break;

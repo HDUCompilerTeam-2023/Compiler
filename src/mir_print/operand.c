@@ -59,7 +59,7 @@ void mir_operand_print(p_mir_operand p_operand)
             break;
         case declared_var:
             mir_symbol_type_print(p_operand->p_sym->p_type);
-            if (p_operand->p_sym->is_global || p_operand->p_sym->p_type->kind == type_func) {
+            if (p_operand->p_sym->is_global) {
                 printf("@%s ", p_operand->p_sym->name);
             }
             else {
