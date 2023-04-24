@@ -5,7 +5,6 @@
 
 struct hir2mir_info{
     p_mir_basic_block p_current_basic_block;
-    p_mir_basic_block p_empty_basic_block;
     p_mir_func p_func;
 
     p_mir_basic_block p_ret_block;// 返回的块
@@ -14,7 +13,7 @@ struct hir2mir_info{
     size_t temp_id;
 };
 
-p_hir2mir_info hir2mir_info_gen(p_symbol_sym p_func_sym);
+p_hir2mir_info hir2mir_info_gen(p_mir_func p_m_func);
 p_hir2mir_info hir2mir_info_set_current_block(p_mir_basic_block p_block);
 
 p_mir_basic_block hir2mir_info_get_current_block(p_hir2mir_info p_info);
