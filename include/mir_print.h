@@ -6,4 +6,6 @@
 #include <mir_print/instr.h>
 #include <mir_print/param.h>
 #include <mir_print/operand.h>
+#include <mir_print/temp_sym.h>
+
 #endif

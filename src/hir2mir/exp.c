@@ -4,16 +4,6 @@
 
 #include <symbol/type.h>
 
-static inline basic_type mir_operand_get_basic_type(p_mir_operand p_operand)
-{
-    if (p_operand->kind == immedicate_val || p_operand->kind == temp_var_basic) 
-        return p_operand->b_type;
-    else
-    {
-        assert(p_operand->p_type->kind != type_arrary);
-        return p_operand->p_type->basic;
-    }
-}
 
 // 根据 p_exp 生成指令并返回最后一条指令的左值
 p_mir_operand hir2mir_exp_get_operand(p_hir2mir_info p_info, p_hir_exp p_exp)
@@ -28,10 +18,20 @@ p_mir_operand hir2mir_exp_get_operand(p_hir2mir_info p_info, p_hir_exp p_exp)
             if (p_exp->p_offset) // 若是数组元素赋值 需要新增一条语句将数组元素赋值给临时变量
             {
                 p_mir_operand p_offset = hir2mir_exp_get_operand(p_info, p_exp->p_offset);
-                p_mir_operand p_temp_des = hir2mir_operand_temp_sym_array_gen(p_info, p_exp->p_type);
-                p_mir_instr p_instr = mir_array_instr_gen(p_operand, p_offset, p_temp_des);
+                p_mir_operand p_temp_des;
+                p_mir_instr p_instr;
+                if (p_exp->p_type->kind == type_var) {
+                    p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, p_exp->p_type->basic);                
+                    p_instr = mir_array_instr_gen(p_operand, p_offset, p_temp_des);
+                }
+                else {
+                    p_symbol_type p_type = p_exp->p_type;
+                    while(p_type->kind != type_var)p_type = p_type->p_item;
+                    p_temp_des = hir2mir_operand_temp_sym_array_gen(p_info, p_type->basic);          
+                    p_instr = mir_binary_instr_gen(mir_add_op, p_operand, p_offset, p_temp_des);
+                }
                 hir2mir_info_add_instr(p_info, p_instr);
-                return mir_instr_get_des(p_instr);
+                return p_temp_des;
             }
             else        
                 return p_operand;
@@ -226,7 +226,8 @@ p_mir_instr hir2mir_exp_call_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
 
     p_mir_operand p_func = hir2mir_operand_declared_sym_gen(p_info, p_exp->p_func->p_sym);
 
-    p_mir_operand p_des = hir2mir_operand_temp_sym_basic_gen(p_info, p_func->p_type->basic);
+    basic_type b_type =  mir_operand_get_basic_type(p_func);
+    p_mir_operand p_des = hir2mir_operand_temp_sym_basic_gen(p_info, b_type);
 
     p_mir_param_list p_m_param_list = hir2mir_param_list_gen(p_info, p_exp->p_param_list);
 

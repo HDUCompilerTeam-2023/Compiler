@@ -4,7 +4,8 @@
 
 #include <stdio.h>
 #include <symbol/type.h>
-
+#include <symbol/sym.h>
+#include <mir/temp_sym.h>
 void mir_basic_type_print(basic_type b_type)
 {
     switch (b_type) {
@@ -30,12 +31,7 @@ void mir_symbol_type_print(p_symbol_type p_mir_type){
         while(p_type->kind == type_arrary)p_type = p_type->p_item;
         printf("[%ld X ", p_mir_type->size);
         mir_basic_type_print(p_type->basic);
-        printf("]");
-        p_type = p_mir_type;
-        while (p_type->kind == type_arrary){ 
-            printf("*");
-            p_type = p_type->p_item;
-        }
+        printf("]*");
     }
     else if (p_mir_type->kind == type_param)
         mir_symbol_type_print(p_mir_type->p_item);
@@ -47,33 +43,30 @@ void mir_symbol_type_print(p_symbol_type p_mir_type){
 void mir_operand_print(p_mir_operand p_operand)
 {
     switch (p_operand->kind) {
-        case immedicate_val:
-            mir_basic_type_print(p_operand->b_type);
-            printf(" ");
-            if (p_operand->b_type == type_int) 
-                printf("%d ", p_operand->intconst);
-            else if (p_operand->b_type == type_float)
-                printf("%f ", p_operand->floatconst);
-            // else ?
+        case immedicate_int_val:
+            printf("i32 ");
+            printf("%d ", p_operand->intconst);
             break;
-        case global_var:
-        case func_var:
-            mir_symbol_type_print(p_operand->p_type);
-            printf("@%s ", p_operand->name);
+        case immedicate_float_val:
+            printf("f32 ");
+            printf("%f ", p_operand->floatconst);
             break;
-        case local_var:
-            mir_symbol_type_print(p_operand->p_type);
-            printf("%%l%ld ", p_operand->id);
+        case immedicate_void_val:
+            printf("void");
             break;
-        case temp_var_array:
-            mir_symbol_type_print(p_operand->p_type);
-            printf("%%t%ld ", p_operand->id);
+        case temp_var:
+            mir_temp_sym_print(p_operand->p_temp_sym);
             break;
-        case temp_var_basic:
-            mir_basic_type_print(p_operand->b_type);
-            printf(" ");
-            printf("%%t%ld ", p_operand->id);
+        case declared_var:
+            mir_symbol_type_print(p_operand->p_sym->p_type);
+            if (p_operand->p_sym->is_global || p_operand->p_sym->p_type->kind == type_func) {
+                printf("@%s ", p_operand->p_sym->name);
+            }
+            else {
+                printf("%%l%ld ", p_operand->p_sym->id);
+            }
             break;
+
     }
 }
 

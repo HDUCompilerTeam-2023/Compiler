@@ -14,6 +14,26 @@ p_mir_operand_list mir_operand_list_gen()
     return p_list;
 }
 
+
+basic_type mir_operand_get_basic_type(p_mir_operand p_operand)
+{
+    switch (p_operand->kind) {
+        case immedicate_int_val:
+            return type_int;
+        case immedicate_float_val:
+            return type_float;
+        case immedicate_void_val:
+            return type_void;
+        case declared_var:
+            assert(p_operand->p_sym->p_type->kind != type_arrary);
+            return p_operand->p_sym->p_type->basic;
+        case temp_var:
+            assert(!p_operand->p_temp_sym->is_pointer);
+            return p_operand->p_temp_sym->b_type;
+    }
+}
+
+
 p_mir_operand_list mir_operand_list_add(p_mir_operand_list p_list, p_mir_operand p_operand)
 {
     assert(p_operand);
@@ -26,8 +46,7 @@ p_mir_operand mir_operand_int_gen(int intconst)
     p_mir_operand p_mir_int = malloc(sizeof(*p_mir_int));
     *p_mir_int = (mir_operand){
         .intconst = intconst,
-        .kind = immedicate_val,
-        .b_type = type_int,
+        .kind = immedicate_int_val,
         .node = list_head_init(&p_mir_int->node),
     };
     return p_mir_int;
@@ -38,8 +57,7 @@ p_mir_operand mir_operand_float_gen(float floatconst)
     p_mir_operand p_mir_float = malloc(sizeof(*p_mir_float));
     *p_mir_float = (mir_operand){
         .floatconst = floatconst,
-        .kind = immedicate_val,
-        .b_type = type_float,
+        .kind = immedicate_float_val,
         .node = list_head_init(&p_mir_float->node),
     };
     return p_mir_float;
@@ -49,8 +67,7 @@ p_mir_operand mir_operand_void_gen(void)
 {
     p_mir_operand p_mir_void = malloc(sizeof(*p_mir_void));
     *p_mir_void = (mir_operand){
-        .kind = immedicate_val,
-        .b_type = type_void,
+        .kind = immedicate_void_val,
         .node = list_head_init(&p_mir_void->node),
     };
     return p_mir_void;
@@ -60,59 +77,24 @@ p_mir_operand mir_operand_declared_sym_gen(p_symbol_sym p_h_sym)
 {
     p_mir_operand p_sym = malloc(sizeof(*p_sym));
     *p_sym = (mir_operand){
-        .p_type = p_h_sym->p_type,
-        .node = list_head_init(&p_sym->node),
-    };
-    if (p_h_sym->is_global) {
-        p_sym->name = p_h_sym->name;
-        p_sym->kind = global_var;
-    }
-    else{
-        if (p_h_sym->p_type->kind == type_func)
-        {
-            p_sym->name = p_h_sym->name;
-            p_sym->kind = func_var;
-        }
-        else {
-            p_sym->id = p_h_sym->id;
-            p_sym->kind = local_var;
-        }
-    }
-    return p_sym;
-}
-// 临时变量只有在 被 array 类型的 hir 节点赋值时才使用 p_type
-p_mir_operand mir_operand_temp_sym_array_gen(size_t temp_id, p_symbol_type p_type)
-{
-    p_mir_operand p_sym = malloc(sizeof(*p_sym));
-    *p_sym = (mir_operand){
-        .kind = temp_var_array,
-        .id = temp_id,
-        .p_type = p_type,
+        .p_sym = p_h_sym,
         .node = list_head_init(&p_sym->node),
     };
     return p_sym;
 }
 
-p_mir_operand mir_operand_temp_sym_basic_gen(size_t temp_id, basic_type b_type)
+
+p_mir_operand mir_operand_temp_sym_gen(p_mir_temp_sym p_temp_sym)
 {
     p_mir_operand p_sym = malloc(sizeof(*p_sym));
     *p_sym = (mir_operand){
-        .kind = temp_var_basic,
-        .id = temp_id,
-        .b_type = b_type,
+        .kind = temp_var,
+        .p_temp_sym = p_temp_sym,
         .node = list_head_init(&p_sym->node),
     };
     return p_sym;
 }
 
-size_t mir_operand_set_temp_var_id(size_t id, p_mir_operand p_operand)
-{
-    if (p_operand->kind == temp_var_array || p_operand->kind == temp_var_basic) {
-        if (!p_operand->id) 
-            p_operand->id = ++ id;
-    }
-    return id;
-}
 
 void mir_operand_drop(p_mir_operand p_operand)
 {

@@ -13,6 +13,9 @@ typedef struct mir_param_list mir_param_list, *p_mir_param_list;
 typedef struct mir_operand mir_operand, *p_mir_operand;
 typedef struct mir_operand_list mir_operand_list, *p_mir_operand_list;
 
+
+typedef struct mir_temp_sym mir_temp_sym, *p_mir_temp_sym;
+
 typedef enum mir_instr_type mir_instr_type;
 typedef enum mir_operand_kind mir_operand_kind;
 

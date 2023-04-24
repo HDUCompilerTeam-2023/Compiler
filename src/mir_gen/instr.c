@@ -156,43 +156,6 @@ p_mir_instr mir_array_assign_instr_gen(p_mir_operand p_array, p_mir_operand p_of
     return p_instr;
 }
 
-size_t mir_instr_set_temp_var_id(size_t id, p_mir_instr p_instr)
-{
-    switch (p_instr->irkind) {
-        case mir_add_op:
-        case mir_sub_op:
-        case mir_mul_op:
-        case mir_div_op:
-        case mir_mod_op:
-        case mir_and_op:
-        case mir_or_op:
-        case mir_eq_op:
-        case mir_neq_op:
-        case mir_l_op:
-        case mir_leq_op:
-        case mir_g_op:
-        case mir_geq_op:
-            return mir_operand_set_temp_var_id(id, p_instr->mir_binary.p_des);
-        case mir_minus_op:
-        case mir_not_op:
-        case mir_int2float_op:
-        case mir_float2int_op:
-        case mir_val_assign:
-            return mir_operand_set_temp_var_id(id, p_instr->mir_unary.p_des);
-        case mir_array:
-            return mir_operand_set_temp_var_id(id, p_instr->mir_array.p_des);
-            break;
-        case mir_array_assign:
-           return mir_operand_set_temp_var_id(id, p_instr->mir_array_assign.p_offset);
-        case mir_call:
-            return mir_operand_set_temp_var_id(id, p_instr->mir_call.p_des);
-        case mir_ret:
-        case mir_br:
-        case mir_condbr:
-            return id;
-            
-    }
-}
 
 p_mir_operand mir_instr_get_src1(p_mir_instr p_instr)
 {

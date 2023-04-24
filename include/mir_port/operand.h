@@ -14,6 +14,5 @@ float mir_operand_get_float(p_mir_operand p_operand);
 
 // 数组临时变量和局部、全局变量都使用 p_symbol_type
 p_symbol_type mir_operand_get_sym_type(p_mir_operand p_operand);
-basic_type mir_operand_get_basic_type(p_mir_operand p_operand);
 
 #endif
