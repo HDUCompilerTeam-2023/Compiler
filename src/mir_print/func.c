@@ -1,6 +1,6 @@
-#include "mir_gen/basic_block.h" // 这边有问题， 各模块之间应该如何包含？
 #include <mir_print.h>
 #include <mir/func.h>
+#include <mir/basic_block.h>
 
 #include <mir/instr.h>// 包含问题？
 #include <stdio.h>
@@ -24,7 +24,10 @@ void mir_func_print(p_mir_func p_func)
         p_param_type = p_param_type->p_params;
         if(p_param_type)printf(", ");
     }
-    printf("){\n");
+    printf(")\n");
+
+    if (!p_func->p_basic_block) return;
+    printf("{\n");
     p_param_type = p_func->p_func_sym->p_type->p_params;
     list_for_each(p_node, &p_func->p_func_sym->variable) {
         if (!p_param_type) break;

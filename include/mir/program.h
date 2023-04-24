@@ -3,7 +3,8 @@
 #define __MIR_PROGRAM__
 #include <mir.h>
 struct mir_program{
-    list_head func;
+    p_mir_func func_table;
+    size_t func_cnt;
 
     p_symbol_store p_store;
 };

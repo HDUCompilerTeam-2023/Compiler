@@ -7,7 +7,7 @@ p_list_head mir_program_get_global_list(p_mir_program p_program)
     return &p_program->p_store->variable;
 }
 
-p_list_head mir_program_get_func_head(p_mir_program p_program)
+p_mir_func mir_program_get_func_table(p_mir_program p_program)
 {
-    return &p_program->func;
+    return p_program->func_table;
 }
