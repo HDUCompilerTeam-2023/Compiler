@@ -76,7 +76,7 @@ p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) 
     if (op == hir_exp_op_mod) assert(exp_basic(p_src_1) == type_int && exp_basic(p_src_1) == type_int);
 
     basic_type type = exp_basic(p_src_1);
-    if (exp_basic(p_src_1) != type) {
+    if (exp_basic(p_src_2) == type_float) {
         type = type_float;
     }
 
