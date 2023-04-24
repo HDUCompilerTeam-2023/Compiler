@@ -9,8 +9,6 @@ struct hir2mir_info{
 
     p_mir_basic_block p_ret_block;// 返回的块
     p_mir_operand p_ret_operand;// 返回值所存储的位置
-
-    size_t temp_id;
 };
 
 p_hir2mir_info hir2mir_info_gen(p_mir_func p_m_func);
