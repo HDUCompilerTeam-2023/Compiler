@@ -1,20 +1,14 @@
 #include <mir_gen/func.h>
 #include <mir_gen.h>
 
-p_mir_func mir_func_gen(p_symbol_sym p_func_sym){
-    p_mir_func p_func = malloc(sizeof(*p_func));
-    *p_func = (mir_func){
-        .p_func_sym = p_func_sym,
-        .p_basic_block = NULL,
-        .node = list_head_init(&p_func->node),
-        .temp_sym_head = list_head_init(&p_func->temp_sym_head),
-    };
-    return p_func;
-}
-
-p_mir_func mir_func_set_block(p_mir_func p_func, p_mir_basic_block p_block)
-{
-    p_func->p_basic_block = p_block;
+p_mir_func mir_func_table_gen(size_t cnt){
+    p_mir_func p_func = malloc(sizeof(*p_func) * cnt);
+    for (size_t i = 0; i < cnt; ++i) {
+        p_func[i] = (mir_func){
+            .p_basic_block = NULL,
+            .temp_sym_head = list_head_init(&(p_func + i)->temp_sym_head),
+        };
+    }
     return p_func;
 }
 
@@ -43,19 +37,20 @@ void mir_func_set_temp_id(p_mir_func p_func)
     }
 }
 
-void mir_func_drop(p_mir_func p_func)
+void mir_func_table_drop(p_mir_func p_func, size_t cnt)
 {
-    assert(p_func);
-    while (p_func->p_basic_block) {
-        p_mir_basic_block p_del = p_func->p_basic_block;
-        p_func->p_basic_block = p_del->p_next;
-        mir_basic_block_drop(p_del);
-    }
-    while(!list_head_alone(&p_func->temp_sym_head))
-    {
-        p_mir_temp_sym p_temp_sym = list_entry(p_func->temp_sym_head.p_next, mir_temp_sym, node);
-        list_del(&p_temp_sym->node);
-        free(p_temp_sym);
+    for (size_t i = 0; i < cnt; ++i) {
+        while ((p_func + i)->p_basic_block) {
+            p_mir_basic_block p_del = (p_func + i)->p_basic_block;
+            (p_func + i)->p_basic_block = p_del->p_next;
+            mir_basic_block_drop(p_del);
+        }
+        while(!list_head_alone(&(p_func + i)->temp_sym_head))
+        {
+            p_mir_temp_sym p_temp_sym = list_entry((p_func + i)->temp_sym_head.p_next, mir_temp_sym, node);
+            list_del(&p_temp_sym->node);
+            free(p_temp_sym);
+        }
     }
     free(p_func);
 }

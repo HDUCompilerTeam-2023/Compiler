@@ -33,8 +33,8 @@ void mir_program_print(p_mir_program p_program)
         printf("\n");
     }
 
-    list_for_each(p_node, &p_program->func){
-        p_mir_func p_func = list_entry(p_node, mir_func, node);
+    for (size_t i = 0; i < p_program->func_cnt; ++i) {
+        p_mir_func p_func = p_program->func_table + i;
         mir_func_print(p_func);
     }
     printf(" === mir program end ===\n");
