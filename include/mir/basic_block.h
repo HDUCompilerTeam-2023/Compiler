@@ -8,7 +8,7 @@ struct mir_basic_block{
     list_head instr_list;
 
     list_head prev_basic_block_list;
-    p_mir_basic_block p_next;
+    list_head node;
 };
 
 struct mir_basic_block_list_node{

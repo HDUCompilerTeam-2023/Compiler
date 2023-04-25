@@ -12,7 +12,8 @@ void hir2mir_func_gen(p_hir_func p_h_func, p_mir_func m_func_table)
     if (!p_h_func->p_block) return;
 
     p_hir2mir_info p_info = hir2mir_info_gen(p_m_func, m_func_table);
-    p_m_func->p_basic_block = hir2mir_block_gen(p_info, p_h_func->p_block);
+    p_mir_basic_block p_entry_block = hir2mir_block_gen(p_info, p_h_func->p_block);
+    mir_func_add_basic_block(p_m_func, p_entry_block);
 
     mir_func_temp_sym_add(p_m_func, p_info->p_ret_operand->p_temp_sym);
     hir2mir_info_add_basic_block(p_info, p_info->p_ret_block);
