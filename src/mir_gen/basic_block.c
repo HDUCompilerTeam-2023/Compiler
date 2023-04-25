@@ -10,7 +10,7 @@ p_mir_basic_block mir_basic_block_gen()
         .instr_list = list_head_init(&p_mir_block->instr_list),
         .prev_basic_block_list = list_head_init(&p_mir_block->prev_basic_block_list),
         .block_id = 0,
-        .p_next = NULL,
+        .node = list_head_init(&p_mir_block->node),
     };
     return p_mir_block;
 }
