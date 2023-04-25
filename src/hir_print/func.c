@@ -17,6 +17,10 @@ void hir_func_decl_print(p_hir_func p_func) {
     if (p_func->p_block) {
         symbol_init_print(p_func->p_sym);
         symbol_param_print(p_func->p_sym);
+        printf("{\n");
+        deep += 4;
         hir_block_print(p_func->p_block);
+        deep -= 4;
+        printf("}\n");
     }
 }
