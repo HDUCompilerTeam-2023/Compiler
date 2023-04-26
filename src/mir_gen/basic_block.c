@@ -17,6 +17,11 @@ p_mir_basic_block mir_basic_block_gen()
 // 插入前驱节点列表
 p_mir_basic_block mir_basic_block_add_prev(p_mir_basic_block p_prev, p_mir_basic_block p_next)
 {
+    p_list_head p_node;
+    list_for_each(p_node, &p_next->prev_basic_block_list){
+        if(list_entry(p_node, mir_basic_block, node) == p_prev) // 若已存在不插入
+            return NULL;
+    }
     p_mir_basic_block_list_node node = malloc(sizeof(*node));
     *node = (mir_basic_block_list_node){
         .p_basic_block = p_prev,

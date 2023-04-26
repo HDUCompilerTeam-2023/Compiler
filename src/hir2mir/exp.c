@@ -51,7 +51,7 @@ p_mir_operand hir2mir_exp_get_operand(p_hir2mir_info p_info, p_hir_exp p_exp)
 
 p_mir_instr hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
 {
-    assert(p_exp);
+    if(!p_exp) return NULL;
     switch (p_exp->kind) {
         case hir_exp_exec:
         switch (p_exp->op) {
