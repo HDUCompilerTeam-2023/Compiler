@@ -16,7 +16,13 @@ void hir2mir_func_gen(p_hir_func p_h_func, p_mir_func m_func_table)
     mir_func_add_basic_block(p_m_func, p_entry_block);
 
     mir_func_temp_sym_add(p_m_func, p_info->p_ret_operand->p_temp_sym);
-    hir2mir_info_add_basic_block(p_info, p_info->p_ret_block);
+    if(list_head_alone(&p_info->p_current_basic_block->instr_list) && list_head_alone(&p_info->p_current_basic_block->prev_basic_block_list))
+    {
+        list_replace(&p_info->p_ret_block->node, &p_info->p_current_basic_block->node);
+        mir_basic_block_drop(p_info->p_current_basic_block);
+    }
+    else
+        hir2mir_info_add_basic_block(p_info, p_info->p_ret_block);
 
     mir_func_set_block_id(p_m_func);
     mir_func_set_temp_id(p_m_func);
