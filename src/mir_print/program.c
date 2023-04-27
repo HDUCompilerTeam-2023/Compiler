@@ -42,6 +42,9 @@ void mir_program_print(p_mir_program p_program)
 
 void mir_program_dom_info_print(p_mir_program p_program)
 {
+    printf("+++ dom_tree start +++\n");
     for(size_t i = 0; i < p_program->func_cnt; i ++)
         mir_func_dom_info_print(p_program->func_table + i);
+    printf("+++ dom_tree end +++\n");
+
 }
