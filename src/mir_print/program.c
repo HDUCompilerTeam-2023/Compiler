@@ -39,3 +39,9 @@ void mir_program_print(p_mir_program p_program)
     }
     printf(" === mir program end ===\n");
 }
+
+void mir_program_dom_info_print(p_mir_program p_program)
+{
+    for(size_t i = 0; i < p_program->func_cnt; i ++)
+        mir_func_dom_info_print(p_program->func_table + i);
+}

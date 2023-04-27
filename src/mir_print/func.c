@@ -52,3 +52,11 @@ void mir_func_print(p_mir_func p_func)
     }
     printf("}\n");
 }
+
+void mir_func_dom_info_print(p_mir_func p_func)
+{
+    printf("function: %s\n", p_func->p_func_sym->name);
+    if(list_head_alone(&p_func->entry_block))return;
+    p_mir_basic_block p_basic_block = list_entry(p_func->entry_block.p_next, mir_basic_block, node);
+    mir_basic_block_dom_info_print(p_basic_block, 0);
+}
