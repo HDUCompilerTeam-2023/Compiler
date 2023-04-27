@@ -13,7 +13,7 @@ struct list_head {
 #define list_head_alone(p_head) ((p_head)->p_next == (p_head))
 
 #define list_entry(p_list_node, type, member) \
-    ((type *) ((size_t)(p_list_node) - (size_t)(&((type *)0)->member)))
+    ((type *) ((size_t) (p_list_node) - (size_t) (&((type *) 0)->member)))
 
 #define list_for_each(p_list_node, p_list_head) \
     for ((p_list_node) = (p_list_head)->p_next; (p_list_node) != (p_list_head); (p_list_node) = (p_list_node)->p_next)

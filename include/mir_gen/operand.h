@@ -12,7 +12,6 @@ p_mir_operand mir_operand_temp_sym_gen(p_mir_temp_sym p_temp_sym);
 
 basic_type mir_operand_get_basic_type(p_mir_operand p_operand);
 
-
 p_mir_operand mir_operand_copy(p_mir_operand p_operand);
 
 // 设置 临时变量 id 返回下一个 id

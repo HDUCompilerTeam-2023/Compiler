@@ -3,7 +3,7 @@
 
 #include "mir.h"
 
-struct mir_basic_block{
+struct mir_basic_block {
     size_t block_id;
     list_head instr_list;
 
@@ -19,12 +19,12 @@ struct mir_basic_block{
     bool if_visited;
 };
 
-struct mir_basic_block_list_node{
+struct mir_basic_block_list_node {
     p_mir_basic_block p_basic_block;
     list_head node;
 };
 
-struct mir_basic_block_params_node{
+struct mir_basic_block_params_node {
     p_mir_operand p_operand; // 传入的参数 （是否需要保存所有可能传入的参数，待确认）
     list_head node;
 };

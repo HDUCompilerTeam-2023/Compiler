@@ -1,8 +1,8 @@
 #include <hir_print.h>
 #include <stdio.h>
 
-#include <hir/program.h>
 #include <hir/func.h>
+#include <hir/program.h>
 
 #include <symbol_print.h>
 

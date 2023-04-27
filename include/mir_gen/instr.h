@@ -1,5 +1,5 @@
 #ifndef __MIR_GEN_INSTR__
-#define  __MIR_GEN_INSTR__
+#define __MIR_GEN_INSTR__
 #include <mir/instr.h>
 
 p_mir_instr mir_binary_instr_gen(mir_instr_type mir_type, p_mir_operand p_src1, p_mir_operand p_src2, p_mir_operand des);

@@ -5,11 +5,14 @@
 
 struct hir_stmt {
     enum {
-        hir_stmt_return, hir_stmt_exp, // p_exp (can null)
+        hir_stmt_return,
+        hir_stmt_exp, // p_exp (can null)
         hir_stmt_block, // p_block
         hir_stmt_if_else, // p_exp p_stmt_1 p_stmt_2
-        hir_stmt_if, hir_stmt_while, // p_exp p_stmt_1
-        hir_stmt_break, hir_stmt_continue, // null
+        hir_stmt_if,
+        hir_stmt_while, // p_exp p_stmt_1
+        hir_stmt_break,
+        hir_stmt_continue, // null
     } type;
 
     union {

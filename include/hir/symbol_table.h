@@ -23,7 +23,7 @@ struct symbol_item {
 };
 
 struct symbol_name {
-    char * name;
+    char *name;
     p_symbol_item p_item;
 
     size_t hash_tag;

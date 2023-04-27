@@ -1,5 +1,5 @@
-#include <util/hlist.h>
 #include <stddef.h>
+#include <util/hlist.h>
 
 static inline void __hlist_add(p_hlist_head p_head, p_hlist_node p_node) {
     p_node->p_next = p_head->p_first;

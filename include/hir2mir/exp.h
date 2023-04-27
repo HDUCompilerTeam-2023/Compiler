@@ -1,5 +1,5 @@
 #ifndef __HIR2MIR_INSTR__
-#define  __HIR2MIR_INSTR__
+#define __HIR2MIR_INSTR__
 
 #include <hir2mir/info_gen.h>
 

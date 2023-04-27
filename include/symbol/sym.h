@@ -1,13 +1,13 @@
 #ifndef __SYMBOL_SYM__
 #define __SYMBOL_SYM__
 
-#include <symbol.h>
 #include <hir.h>
+#include <symbol.h>
 
 struct symbol_init_val {
     union {
-    INTCONST_t i;
-    FLOATCONST_t f;
+        INTCONST_t i;
+        FLOATCONST_t f;
     };
 };
 

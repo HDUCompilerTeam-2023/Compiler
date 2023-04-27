@@ -206,12 +206,14 @@ p_hir_exp hir_exp_uexec_gen(hir_exp_op op, p_hir_exp p_src_1) {
         switch (op) {
         case hir_exp_op_bool_not:
             if (p_src_1->basic == type_int) p_src_1->intconst = !p_src_1->intconst;
-            else if (p_src_1->basic == type_float) p_src_1->intconst = !p_src_1->floatconst;
+            else if (p_src_1->basic == type_float)
+                p_src_1->intconst = !p_src_1->floatconst;
             p_src_1->basic = type_int;
             break;
         case hir_exp_op_minus:
             if (p_src_1->basic == type_int) p_src_1->intconst = -p_src_1->intconst;
-            else if (p_src_1->basic == type_float) p_src_1->floatconst = -p_src_1->floatconst;
+            else if (p_src_1->basic == type_float)
+                p_src_1->floatconst = -p_src_1->floatconst;
             break;
         default:
             assert(1);
@@ -253,7 +255,7 @@ p_hir_exp hir_exp_call_gen(p_symbol_item p_item, p_hir_param_list p_param_list) 
     p_list_head p_node;
     list_for_each(p_node, &p_param_list->param) {
         if (!p_param_type) {
-            assert( p_item->p_info->p_type->kind == type_va_func);
+            assert(p_item->p_info->p_type->kind == type_va_func);
             break;
         }
 
@@ -274,7 +276,7 @@ p_hir_exp hir_exp_call_gen(p_symbol_item p_item, p_hir_param_list p_param_list) 
 p_hir_exp hir_exp_val_gen(p_symbol_sym p_sym) {
     assert(p_sym);
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
-    *p_exp = (hir_exp){
+    *p_exp = (hir_exp) {
         .kind = hir_exp_val,
         .p_sym = p_sym,
         .p_offset = NULL,
@@ -289,7 +291,7 @@ p_hir_exp hir_exp_val_offset(p_hir_exp p_val, p_hir_exp p_offset) {
     if (p_val->p_offset) {
         p_offset = hir_exp_exec_gen(hir_exp_op_add, p_val->p_offset, p_offset);
     }
-    
+
     p_val->p_offset = p_offset;
     p_val->p_type = p_val->p_type->p_item;
     return exp_val_const(p_val);

@@ -5,7 +5,7 @@
 mir_operand_kind mir_operand_get_kind(p_mir_operand p_operand);
 
 // 函数、全局变量使用名字
-char* mir_operand_get_sym_name(p_mir_operand p_operand);
+char *mir_operand_get_sym_name(p_mir_operand p_operand);
 // 局部、临时变量使用 id
 size_t mir_operand_get_sym_id(p_mir_operand p_operand);
 

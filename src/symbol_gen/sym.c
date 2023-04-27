@@ -1,7 +1,7 @@
 #include <symbol_gen/sym.h>
 
-#include <symbol_gen.h>
 #include <hir_gen.h>
+#include <symbol_gen.h>
 
 p_symbol_init symbol_init_gen(size_t size, basic_type basic) {
     p_symbol_init p_init = malloc(sizeof(*p_init));
@@ -19,7 +19,7 @@ p_symbol_init symbol_init_add(p_symbol_init p_init, size_t offset, symbol_init_v
     return p_init;
 }
 void symbol_init_drop(p_symbol_init p_init) {
-    if(!p_init)
+    if (!p_init)
         return;
     free(p_init->memory);
     free(p_init);
