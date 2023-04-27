@@ -43,16 +43,12 @@ void mir_symbol_type_print(p_symbol_type p_mir_type){
 void mir_operand_print(p_mir_operand p_operand)
 {
     switch (p_operand->kind) {
-        case immedicate_int_val:
-            printf("i32 ");
-            printf("%d ", p_operand->intconst);
-            break;
-        case immedicate_float_val:
-            printf("f32 ");
-            printf("%f ", p_operand->floatconst);
-            break;
-        case immedicate_void_val:
-            printf("void");
+        case immedicate_val:
+            mir_basic_type_print(p_operand->b_type);
+            if(p_operand->b_type == type_int)
+                printf(" %d ", p_operand->intconst);
+            else if(p_operand->b_type == type_float)
+                printf(" %f ", p_operand->floatconst);
             break;
         case temp_var:
             mir_temp_sym_print(p_operand->p_temp_sym);

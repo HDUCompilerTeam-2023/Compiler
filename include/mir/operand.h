@@ -6,17 +6,25 @@
 enum mir_operand_kind{
     declared_var,
     temp_var,
-    immedicate_int_val,
-    immedicate_float_val,
-    immedicate_void_val,
+    immedicate_val,
 };
 struct mir_operand{
     mir_operand_kind kind;
     union{
-        p_mir_temp_sym p_temp_sym;
-        p_symbol_sym p_sym;
-        int intconst;
-        float floatconst;
+        struct{
+            union{
+                p_mir_temp_sym p_temp_sym;
+                p_symbol_sym p_sym;
+            };
+            size_t ssa_id;
+        };
+        struct{
+            union{
+                int intconst;
+                float floatconst;
+            };
+            basic_type b_type;
+        };
     };
 };
 
