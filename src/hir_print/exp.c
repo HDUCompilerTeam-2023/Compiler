@@ -4,9 +4,9 @@
 #include <hir/exp.h>
 #include <symbol_print.h>
 
-#include <symbol/type.h>
-#include <symbol/sym.h>
 #include <symbol/str.h>
+#include <symbol/sym.h>
+#include <symbol/type.h>
 
 void hir_exp_print(p_hir_exp p_exp) {
     assert(p_exp);
@@ -145,7 +145,8 @@ void hir_exp_print(p_hir_exp p_exp) {
         break;
     case hir_exp_num:
         if (p_exp->basic == type_float) printf("%lf", p_exp->floatconst);
-        else printf("%ld", p_exp->intconst);
+        else
+            printf("%ld", p_exp->intconst);
         break;
     case hir_exp_str:
         symbol_str_print(p_exp->p_str);

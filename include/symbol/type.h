@@ -5,9 +5,11 @@
 
 struct symbol_type {
     enum {
-        type_arrary, type_var,
-        type_param,  type_func,
-                     type_va_func,
+        type_arrary,
+        type_var,
+        type_param,
+        type_func,
+        type_va_func,
     } kind;
     union {
         p_symbol_type p_item;

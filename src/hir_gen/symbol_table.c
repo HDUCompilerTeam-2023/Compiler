@@ -45,7 +45,7 @@ static inline hlist_hash init_hash() {
 }
 p_symbol_table symbol_table_gen() {
     p_symbol_table p_table = malloc(sizeof(*p_table));
-    *p_table = (typeof(*p_table)){
+    *p_table = (typeof(*p_table)) {
         .p_top_table = NULL,
         .hash = init_hash(),
         .string_hash = init_hash(),
@@ -68,7 +68,7 @@ void symbol_table_drop(p_symbol_table p_table) {
 
 void symbol_table_zone_push(p_symbol_table p_table) {
     p_symbol_zone pst = malloc(sizeof(*pst));
-    *pst = (typeof(*pst)){
+    *pst = (typeof(*pst)) {
         .p_item = NULL,
         .p_prev = p_table->p_top_table,
     };
@@ -85,9 +85,9 @@ void symbol_table_zone_pop(p_symbol_table p_table) {
     while (p_item) {
         p_item->p_name->p_item = p_item->p_prev;
         if (!p_item->p_name->p_item) {
-        hlist_node_del(&p_item->p_name->node);
-        free(p_item->p_name->name);
-        free(p_item->p_name);
+            hlist_node_del(&p_item->p_name->node);
+            free(p_item->p_name->name);
+            free(p_item->p_name);
         }
 
         p_symbol_item del_item = p_item;
@@ -107,18 +107,21 @@ p_symbol_item symbol_table_item_add(p_symbol_table p_table, p_symbol_sym p_sym) 
     p_symbol_name p_name = symbol_find_name(p_head, p_sym->name);
     if (!p_name) {
         p_name = symbol_add_name(p_head, hash_tag, p_sym->name);
-    } else if (p_name->p_item->level == p_table->level) {
+    }
+    else if (p_name->p_item->level == p_table->level) {
         if (p_sym->p_type->kind >= type_func) {
-        symbol_func_drop(p_sym);
-        } else {
-        symbol_var_drop(p_sym);
+            symbol_func_drop(p_sym);
+        }
+        else {
+            symbol_var_drop(p_sym);
         }
         return NULL;
-    } else
+    }
+    else
         assert(p_name->p_item->level < p_table->level);
 
     p_symbol_item p_item = malloc(sizeof(*p_item));
-    *p_item = (symbol_item){
+    *p_item = (symbol_item) {
         .p_name = p_name,
         .p_prev = p_name->p_item,
         .level = p_table->level,

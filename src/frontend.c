@@ -1,11 +1,14 @@
 #include <frontend.h>
 
-#include <frontend/parser.h>
 #include <frontend/lexer.h>
+#include <frontend/parser.h>
 
 p_hir_program frontend_trans(const char *file_name) {
     yyscan_t scanner;
-    extra_info extra = (extra_info) { .fs = NULL, .p_ast = NULL, };
+    extra_info extra = (extra_info) {
+        .fs = NULL,
+        .p_ast = NULL,
+    };
     yylex_init_extra(&extra, &scanner);
     frontend_push_file(file_name, NULL, &extra, scanner);
 

@@ -1,7 +1,7 @@
 #ifndef __MIR_INSTR__
 #define __MIR_INSTR__
 #include <mir.h>
-enum mir_instr_type{
+enum mir_instr_type {
     // binary instr
     mir_add_op,
     mir_sub_op,
@@ -37,47 +37,47 @@ enum mir_instr_type{
     mir_condbr,
 };
 
-struct mir_binary_instr{
+struct mir_binary_instr {
     p_mir_operand p_src1, p_src2, p_des;
 };
 
-struct mir_unary_instr{
+struct mir_unary_instr {
     p_mir_operand p_src, p_des;
 };
 
-struct mir_call_instr{
+struct mir_call_instr {
     p_mir_func p_func;
     p_mir_param_list p_param_list;
     p_mir_operand p_des;
 };
 
-struct mir_array_instr{
+struct mir_array_instr {
     p_mir_operand p_array;
     p_mir_operand p_offset;
     p_mir_operand p_des;
 };
 
-struct mir_array_assign_instr{
+struct mir_array_assign_instr {
     p_mir_operand p_array;
     p_mir_operand p_offset;
     p_mir_operand p_src;
 };
-struct mir_ret_instr{
-    p_mir_operand p_ret;//  NULL 时返回 void
+struct mir_ret_instr {
+    p_mir_operand p_ret; //  NULL 时返回 void
 };
 
-struct mir_br_instr{
+struct mir_br_instr {
     p_mir_basic_block p_target;
 };
 
-struct mir_condbr_instr{
+struct mir_condbr_instr {
     p_mir_basic_block p_target_true, p_target_false;
     p_mir_operand p_cond;
 };
 
-struct mir_instr{
+struct mir_instr {
     mir_instr_type irkind;
-    union{
+    union {
         mir_binary_instr mir_binary;
         mir_unary_instr mir_unary;
         mir_call_instr mir_call;
@@ -90,7 +90,6 @@ struct mir_instr{
 
     list_head node; // 下一条指令
 };
-
 
 // 分配 des 的类型 变量给 des
 // struct mir_alloca_instr{

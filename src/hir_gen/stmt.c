@@ -2,7 +2,6 @@
 
 #include <hir_gen.h>
 
-
 p_hir_stmt hir_stmt_return_gen(p_hir_exp p_exp) {
     p_hir_stmt p_stmt = malloc(sizeof(*p_stmt));
     *p_stmt = (hir_stmt) {

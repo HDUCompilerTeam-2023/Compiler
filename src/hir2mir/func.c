@@ -1,11 +1,10 @@
-#include <hir2mir.h>
 #include <hir/func.h>
+#include <hir2mir.h>
 
 #include <symbol/sym.h>
 
 // 生成函数 mir 将 p_info 传来的信息回馈给 mir_func
-void hir2mir_func_gen(p_hir_func p_h_func, p_mir_func m_func_table)
-{
+void hir2mir_func_gen(p_hir_func p_h_func, p_mir_func m_func_table) {
     p_mir_func p_m_func = m_func_table + p_h_func->p_sym->id;
     p_m_func->p_func_sym = p_h_func->p_sym;
 
@@ -16,8 +15,7 @@ void hir2mir_func_gen(p_hir_func p_h_func, p_mir_func m_func_table)
     mir_func_add_basic_block(p_m_func, p_entry_block);
 
     mir_func_temp_sym_add(p_m_func, p_info->p_ret_operand->p_temp_sym);
-    if(list_head_alone(&p_info->p_current_basic_block->instr_list) && list_head_alone(&p_info->p_current_basic_block->prev_basic_block_list))
-    {
+    if (list_head_alone(&p_info->p_current_basic_block->instr_list) && list_head_alone(&p_info->p_current_basic_block->prev_basic_block_list)) {
         list_replace(&p_info->p_ret_block->node, &p_info->p_current_basic_block->node);
         mir_basic_block_drop(p_info->p_current_basic_block);
     }

@@ -1,8 +1,8 @@
 #ifndef __HIR__
 #define __HIR__
 
-#include <util.h>
 #include <symbol.h>
+#include <util.h>
 
 typedef int64_t INTCONST_t;
 typedef double FLOATCONST_t;
