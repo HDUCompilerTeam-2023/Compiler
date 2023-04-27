@@ -32,6 +32,13 @@ void mir_func_set_block_id(p_mir_func p_func)
     }
 }
 
+void mir_basic_block_init_visited(p_mir_func p_func)
+{
+    p_list_head p_node;
+    list_for_each(p_node, &p_func->entry_block)
+        list_entry(p_node, mir_basic_block, node)->if_visited = false;
+}
+
 void mir_func_set_temp_id(p_mir_func p_func)
 {
     p_list_head p_node;
