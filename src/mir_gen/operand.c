@@ -10,12 +10,8 @@
 basic_type mir_operand_get_basic_type(p_mir_operand p_operand)
 {
     switch (p_operand->kind) {
-        case immedicate_int_val:
-            return type_int;
-        case immedicate_float_val:
-            return type_float;
-        case immedicate_void_val:
-            return type_void;
+        case immedicate_val:
+            return p_operand->b_type;
         case declared_var:
             assert(p_operand->p_sym->p_type->kind != type_arrary);
             return p_operand->p_sym->p_type->basic;
@@ -31,7 +27,8 @@ p_mir_operand mir_operand_int_gen(int intconst)
     p_mir_operand p_mir_int = malloc(sizeof(*p_mir_int));
     *p_mir_int = (mir_operand){
         .intconst = intconst,
-        .kind = immedicate_int_val,
+        .kind = immedicate_val,
+        .b_type = type_int,
     };
     return p_mir_int;
 }
@@ -41,7 +38,8 @@ p_mir_operand mir_operand_float_gen(float floatconst)
     p_mir_operand p_mir_float = malloc(sizeof(*p_mir_float));
     *p_mir_float = (mir_operand){
         .floatconst = floatconst,
-        .kind = immedicate_float_val,
+        .kind = immedicate_val,
+        .b_type = type_float,
     };
     return p_mir_float;
 }
@@ -50,7 +48,8 @@ p_mir_operand mir_operand_void_gen(void)
 {
     p_mir_operand p_mir_void = malloc(sizeof(*p_mir_void));
     *p_mir_void = (mir_operand){
-        .kind = immedicate_void_val,
+        .kind = immedicate_val,
+        .b_type = type_void,
     };
     return p_mir_void;
 }
