@@ -6,7 +6,7 @@
 
 p_hir_program hir_program_gen(void) {
     p_hir_program p_program = malloc(sizeof(*p_program));
-    *p_program = (hir_program){
+    *p_program = (hir_program) {
         .p_table = symbol_table_gen(),
         .p_store = symbol_store_gen(),
         .func = list_init_head(&p_program->func),

@@ -4,7 +4,7 @@
 #include <symbol.h>
 
 struct symbol_str {
-    char * string;
+    char *string;
     size_t length;
 
     hlist_node h_node;

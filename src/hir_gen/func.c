@@ -19,7 +19,7 @@ void hir_func_drop(p_hir_func p_func) {
     assert(p_func);
     list_del(&p_func->node);
 
-    if(p_func->p_block)
+    if (p_func->p_block)
         hir_block_drop(p_func->p_block);
     free(p_func);
 }

@@ -14,7 +14,8 @@ struct file_stack {
 void frontend_push_file(const char *file_name, YYLTYPE *loc, YY_EXTRA_TYPE extra, yyscan_t scanner) {
     FILE *f;
     if (file_name) f = fopen(file_name, "r");
-    else f = stdin;
+    else
+        f = stdin;
     if (!f) {
         yyerror(loc, scanner, "preprocess error, can not open file \"%s\"", file_name);
         return;
@@ -28,7 +29,7 @@ void frontend_push_file(const char *file_name, YYLTYPE *loc, YY_EXTRA_TYPE extra
 
     fs->bs = yy_create_buffer(f, YY_BUF_SIZE, scanner);
     yy_switch_to_buffer(fs->bs, scanner);
-    yyset_lloc(&(YYLTYPE){1, 1, 1, 1}, scanner);
+    yyset_lloc(&(YYLTYPE) { 1, 1, 1, 1 }, scanner);
     fs->f = f;
 
     if (file_name) {
@@ -47,7 +48,7 @@ bool frontend_pop_file(YY_EXTRA_TYPE extra, yyscan_t scanner) {
 
     fclose(extra->fs->f);
     yy_delete_buffer(extra->fs->bs, scanner);
-    
+
     p_file_stack prev_fs = extra->fs->prev;
     if (extra->fs->filename)
         free(extra->fs->filename);

@@ -32,7 +32,7 @@ p_hir_block hir_block_add(p_hir_block p_block, p_hir_stmt p_stmt) {
 
 void hir_block_drop(p_hir_block p_block) {
     assert(p_block);
-    while(!list_head_alone(&p_block->stmt)) {
+    while (!list_head_alone(&p_block->stmt)) {
         p_hir_stmt p_stmt = list_entry(p_block->stmt.p_next, hir_stmt, node);
         list_del(&p_stmt->node);
         hir_stmt_drop(p_stmt);

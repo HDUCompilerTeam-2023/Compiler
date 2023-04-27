@@ -1,5 +1,5 @@
-#include <symbol_print.h>
 #include <stdio.h>
+#include <symbol_print.h>
 
 #include <symbol/store.h>
 #include <symbol/str.h>

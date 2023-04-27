@@ -1,9 +1,9 @@
-#include <symbol_print.h>
 #include <stdio.h>
+#include <symbol_print.h>
 
-#include <symbol/type.h>
-#include <symbol/sym.h>
 #include <hir_print.h>
+#include <symbol/sym.h>
+#include <symbol/type.h>
 
 void symbol_define_print(p_symbol_sym p_sym) {
     if (p_sym->p_type->kind >= type_func) {
@@ -53,9 +53,9 @@ void symbol_param_print(p_symbol_sym p_sym) {
         printf("param:\n");
     }
     list_for_each(p_node, &p_sym->variable) {
-      if (!p_param_type)
-        break;
-      symbol_init_print(list_entry(p_node, symbol_sym, node));
-      p_param_type = p_param_type->p_params;
+        if (!p_param_type)
+            break;
+        symbol_init_print(list_entry(p_node, symbol_sym, node));
+        p_param_type = p_param_type->p_params;
     }
 }

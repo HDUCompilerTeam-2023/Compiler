@@ -1,38 +1,36 @@
-#include <hir2mir.h>
 #include <hir/block.h>
 #include <hir/stmt.h>
+#include <hir2mir.h>
 
 #include <symbol/sym.h>
 #include <symbol/type.h>
 
-p_mir_instr hir2mir_stmt_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start, p_mir_basic_block p_while_end_next, p_hir_stmt p_stmt)
-{
-    if(!p_stmt) return NULL;
+p_mir_instr hir2mir_stmt_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start, p_mir_basic_block p_while_end_next, p_hir_stmt p_stmt) {
+    if (!p_stmt) return NULL;
     switch (p_stmt->type) {
-        case hir_stmt_return:
-            return hir2mir_stmt_return_gen(p_info, p_stmt->p_exp);
-        case hir_stmt_exp:
-            return hir2mir_stmt_exp_gen(p_info, p_stmt->p_exp);
-        case hir_stmt_block:
-            return hir2mir_stmt_block_gen(p_info, p_while_start, p_while_end_next, p_stmt->p_block);
-        case hir_stmt_if:
-            return hir2mir_stmt_if_gen(p_info, p_while_start, p_while_end_next, p_stmt->p_exp, p_stmt->p_stmt_1);
-        case hir_stmt_if_else:
-            return hir2mir_stmt_if_else_gen(p_info, p_while_start, p_while_end_next, p_stmt->p_exp, p_stmt->p_stmt_1, p_stmt->p_stmt_2);
-        case hir_stmt_while:
-            return hir2mir_stmt_while_gen(p_info, p_stmt->p_exp, p_stmt->p_stmt_1);
-        case hir_stmt_break:
-            return hir2mir_stmt_break_gen(p_info, p_while_end_next);
-        case hir_stmt_continue:
-            return hir2mir_stmt_break_gen(p_info, p_while_start);
+    case hir_stmt_return:
+        return hir2mir_stmt_return_gen(p_info, p_stmt->p_exp);
+    case hir_stmt_exp:
+        return hir2mir_stmt_exp_gen(p_info, p_stmt->p_exp);
+    case hir_stmt_block:
+        return hir2mir_stmt_block_gen(p_info, p_while_start, p_while_end_next, p_stmt->p_block);
+    case hir_stmt_if:
+        return hir2mir_stmt_if_gen(p_info, p_while_start, p_while_end_next, p_stmt->p_exp, p_stmt->p_stmt_1);
+    case hir_stmt_if_else:
+        return hir2mir_stmt_if_else_gen(p_info, p_while_start, p_while_end_next, p_stmt->p_exp, p_stmt->p_stmt_1, p_stmt->p_stmt_2);
+    case hir_stmt_while:
+        return hir2mir_stmt_while_gen(p_info, p_stmt->p_exp, p_stmt->p_stmt_1);
+    case hir_stmt_break:
+        return hir2mir_stmt_break_gen(p_info, p_while_end_next);
+    case hir_stmt_continue:
+        return hir2mir_stmt_break_gen(p_info, p_while_start);
     }
 }
 
 // 将返回值全部放到 一个变量, 并跳转到 ret 块
-p_mir_instr hir2mir_stmt_return_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
-{   
+p_mir_instr hir2mir_stmt_return_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     p_mir_operand p_ret = NULL;
-    if (p_exp) 
+    if (p_exp)
         p_ret = hir2mir_exp_get_operand(p_info, p_exp);
     else
         p_ret = mir_operand_void_gen();
@@ -44,33 +42,29 @@ p_mir_instr hir2mir_stmt_return_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
     hir2mir_info_add_basic_block(p_info, p_next);
     return p_br_ret_instr;
 }
-p_mir_instr hir2mir_stmt_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp)
-{
+p_mir_instr hir2mir_stmt_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     return hir2mir_exp_gen(p_info, p_exp);
 }
 // 跳转到循环体外并新建一个基本块作为之后指令写入的基本块
-p_mir_instr hir2mir_stmt_break_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_end_next)
-{
+p_mir_instr hir2mir_stmt_break_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_end_next) {
     p_mir_instr p_br = hir2mir_info_add_br_instr(p_info, p_while_end_next);
     p_mir_basic_block p_next = mir_basic_block_gen();
     hir2mir_info_add_basic_block(p_info, p_next);
     return p_br;
 }
 
-p_mir_instr hir2mir_stmt_continue_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start)
-{
+p_mir_instr hir2mir_stmt_continue_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start) {
     p_mir_instr p_br = hir2mir_info_add_br_instr(p_info, p_while_start);
     p_mir_basic_block p_next = mir_basic_block_gen();
     hir2mir_info_add_basic_block(p_info, p_next);
     return p_br;
 }
 
-p_mir_instr hir2mir_stmt_if_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start, p_mir_basic_block p_while_end_next, p_hir_exp p_exp, p_hir_stmt p_stmt_1)
-{    
+p_mir_instr hir2mir_stmt_if_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start, p_mir_basic_block p_while_end_next, p_hir_exp p_exp, p_hir_stmt p_stmt_1) {
 
     p_mir_basic_block p_true_block = mir_basic_block_gen();
     p_mir_basic_block p_next_block = mir_basic_block_gen();
-    
+
     // 解析条件表达式
     p_mir_instr p_new_instr = hir2mir_exp_cond_gen(p_info, p_true_block, p_next_block, p_exp);
 
@@ -86,9 +80,8 @@ p_mir_instr hir2mir_stmt_if_gen(p_hir2mir_info p_info, p_mir_basic_block p_while
     return p_new_instr;
 }
 
-p_mir_instr hir2mir_stmt_if_else_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start, p_mir_basic_block p_while_end_next, p_hir_exp p_exp, p_hir_stmt p_stmt_1, p_hir_stmt p_stmt_2)
-{
-    
+p_mir_instr hir2mir_stmt_if_else_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_start, p_mir_basic_block p_while_end_next, p_hir_exp p_exp, p_hir_stmt p_stmt_1, p_hir_stmt p_stmt_2) {
+
     p_mir_basic_block p_true_block = mir_basic_block_gen();
     p_mir_basic_block p_false_block = mir_basic_block_gen();
     p_mir_basic_block p_next_block = mir_basic_block_gen();
@@ -115,10 +108,8 @@ p_mir_instr hir2mir_stmt_if_else_gen(p_hir2mir_info p_info, p_mir_basic_block p_
     return p_new_instr;
 }
 
-p_mir_instr hir2mir_stmt_while_gen(p_hir2mir_info p_info, p_hir_exp p_exp, p_hir_stmt p_stmt_1)
-{
+p_mir_instr hir2mir_stmt_while_gen(p_hir2mir_info p_info, p_hir_exp p_exp, p_hir_stmt p_stmt_1) {
     // 转换成  do while
-
 
     p_mir_basic_block p_true_block = mir_basic_block_gen();
     p_mir_basic_block p_next_block = mir_basic_block_gen();
@@ -134,16 +125,15 @@ p_mir_instr hir2mir_stmt_while_gen(p_hir2mir_info p_info, p_hir_exp p_exp, p_hir
 
     // 置当前写的块为下一块
     hir2mir_info_add_basic_block(p_info, p_next_block);
-    
+
     return p_condbr_outwhile;
 }
-p_mir_instr hir2mir_stmt_block_gen(p_hir2mir_info p_info, p_mir_basic_block while_start, p_mir_basic_block while_end_next, p_hir_block p_block)
-{
+p_mir_instr hir2mir_stmt_block_gen(p_hir2mir_info p_info, p_mir_basic_block while_start, p_mir_basic_block while_end_next, p_hir_block p_block) {
     p_list_head p_node;
     p_mir_instr p_last_instr = NULL;
-    list_for_each(p_node, &p_block->stmt){
+    list_for_each(p_node, &p_block->stmt) {
         p_hir_stmt p_stmt = list_entry(p_node, hir_stmt, node);
         p_last_instr = hir2mir_stmt_gen(p_info, while_start, while_end_next, p_stmt);
     }
-    return  p_last_instr;
+    return p_last_instr;
 }

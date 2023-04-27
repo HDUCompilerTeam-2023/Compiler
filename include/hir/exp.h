@@ -9,13 +9,21 @@ enum hir_exp_op {
     hir_exp_op_bool_or,
     hir_exp_op_bool_and,
 
-    hir_exp_op_eq, hir_exp_op_neq,
-    hir_exp_op_l, hir_exp_op_leq, hir_exp_op_g, hir_exp_op_geq,
+    hir_exp_op_eq,
+    hir_exp_op_neq,
+    hir_exp_op_l,
+    hir_exp_op_leq,
+    hir_exp_op_g,
+    hir_exp_op_geq,
 
-    hir_exp_op_add, hir_exp_op_sub,
-    hir_exp_op_mul, hir_exp_op_div, hir_exp_op_mod,
+    hir_exp_op_add,
+    hir_exp_op_sub,
+    hir_exp_op_mul,
+    hir_exp_op_div,
+    hir_exp_op_mod,
 
-    hir_exp_op_bool_not, hir_exp_op_minus,
+    hir_exp_op_bool_not,
+    hir_exp_op_minus,
 };
 struct hir_exp {
     enum {
