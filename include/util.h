@@ -10,4 +10,5 @@
 #include <util/hlist.h>
 #include <util/list.h>
 
+#include <util/bitmap.h>
 #endif
