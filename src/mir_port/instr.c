@@ -1,4 +1,5 @@
 #include <mir/instr.h>
+#include <mir/basic_block.h>
 #include <mir_port/instr.h>
 
 p_mir_operand mir_instr_binary_get_src1(p_mir_instr p_instr) {
@@ -48,16 +49,16 @@ p_mir_operand mir_instr_array_assign_get_src(p_mir_instr p_instr) {
     return p_instr->mir_array_assign.p_src;
 }
 p_mir_basic_block mir_instr_br_get_target(p_mir_instr p_instr) {
-    return p_instr->mir_br.p_target;
+    return p_instr->mir_br.p_target->p_block;
 }
 p_mir_operand mir_instr_condbr_get_cond(p_mir_instr p_instr) {
     return p_instr->mir_condbr.p_cond;
 }
 p_mir_basic_block mir_instr_condbr_get_target_true(p_mir_instr p_instr) {
-    return p_instr->mir_condbr.p_target_true;
+    return p_instr->mir_condbr.p_target_true->p_block;
 }
 p_mir_basic_block mir_instr_condbr_get_target_false(p_mir_instr p_instr) {
-    return p_instr->mir_condbr.p_target_false;
+    return p_instr->mir_condbr.p_target_false->p_block;
 }
 
 mir_instr_type mir_instr_get_kind(p_mir_instr p_instr) {

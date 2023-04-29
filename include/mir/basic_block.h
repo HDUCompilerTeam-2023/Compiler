@@ -11,7 +11,7 @@ struct mir_basic_block {
     list_head node;
 
     // SSA 相关
-    list_head basic_block_parameters; // 基本块参数列表
+    p_mir_param_list basic_block_parameters; // 基本块参数列表
     p_mir_basic_block p_dom_parent; // 支配树上的父亲
     list_head dom_son_list; // 支配树上的儿子
 
@@ -24,8 +24,8 @@ struct mir_basic_block_list_node {
     list_head node;
 };
 
-struct mir_basic_block_params_node {
-    p_mir_operand p_operand; // 传入的参数 （是否需要保存所有可能传入的参数，待确认）
-    list_head node;
+struct mir_basic_block_call{
+    p_mir_basic_block p_block;
+    p_mir_param_list p_block_param;
 };
 #endif

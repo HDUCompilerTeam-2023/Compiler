@@ -16,10 +16,10 @@ size_t mir_basic_block_get_id(p_mir_basic_block p_basic_block) {
 p_mir_basic_block mir_basic_block_get_true(p_mir_basic_block p_basic_block) {
     p_mir_instr p_last_instr = mir_basic_block_get_last_instr(p_basic_block);
     if (p_last_instr->irkind == mir_br) {
-        return p_last_instr->mir_br.p_target;
+        return p_last_instr->mir_br.p_target->p_block;
     }
     else if (p_last_instr->irkind == mir_condbr) {
-        return p_last_instr->mir_condbr.p_target_true;
+        return p_last_instr->mir_condbr.p_target_true->p_block;
     }
     return NULL;
 }
@@ -27,7 +27,7 @@ p_mir_basic_block mir_basic_block_get_true(p_mir_basic_block p_basic_block) {
 p_mir_basic_block mir_basic_block_get_false(p_mir_basic_block p_basic_block) {
     p_mir_instr p_last_instr = mir_basic_block_get_last_instr(p_basic_block);
     if (p_last_instr->irkind == mir_condbr) {
-        return p_last_instr->mir_condbr.p_target_false;
+        return p_last_instr->mir_condbr.p_target_false->p_block;
     }
     return NULL;
 }
