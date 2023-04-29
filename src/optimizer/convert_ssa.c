@@ -1,7 +1,7 @@
 #include <optimizer/convert_ssa.h>
 #include <mir_port/basic_block.h>
 #include <symbol/sym.h>
-
+#include <symbol/type.h>
 void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_mir_basic_block p_basic_block, size_t current_num)
 {
     dfs_seq[current_num] = (convert_ssa){
@@ -57,14 +57,32 @@ size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t block_num, siz
 void convert_ssa_init_var_list(p_ssa_var_info p_var_list, size_t var_num, p_mir_func p_func, p_mir_temp_sym p_ret)
 {
     p_list_head p_node;
+    p_symbol_type p_param_type = p_func->p_func_sym->p_type->p_params;
+    // 函数参数定值已经初始化
     list_for_each(p_node, &p_func->p_func_sym->variable) {
+        if (!p_param_type) break;
+        p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
+        *(p_var_list + p_sym->id) = (ssa_var_info) {
+            .p_operand = mir_operand_declared_sym_gen(p_sym),
+            .count = 1,
+            .stack = list_head_init(&(p_var_list + p_sym->id)->stack),
+        };
+        // p_mir_operand p_operand = mir_operand_declared_sym_gen(p_sym);
+        // p_operand->ssa_id = 0;
+        // var_stack_push((p_var_list + p_sym->id), p_operand);
+        p_param_type = p_param_type->p_params;
+    }
+    // 局部变量
+    while(p_node != &p_func->p_func_sym->variable) {
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
         *(p_var_list + p_sym->id) = (ssa_var_info){
             .p_operand = mir_operand_declared_sym_gen(p_sym),
             .count = 0,
             .stack = list_head_init(&(p_var_list + p_sym->id)->stack),
         };
+        p_node = p_node->p_next;
     }
+    // 返回值
     *(p_var_list + var_num - 1) = (ssa_var_info) {
         .p_operand = mir_operand_temp_sym_gen(p_ret),
         .count = 0,
