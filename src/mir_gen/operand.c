@@ -50,7 +50,9 @@ p_mir_operand mir_operand_void_gen(void) {
 p_mir_operand mir_operand_declared_sym_gen(p_symbol_sym p_h_sym) {
     p_mir_operand p_sym = malloc(sizeof(*p_sym));
     *p_sym = (mir_operand) {
+        .kind = declared_var,
         .p_sym = p_h_sym,
+        .ssa_id = -1,
     };
     return p_sym;
 }
@@ -66,6 +68,7 @@ p_mir_operand mir_operand_temp_sym_gen(p_mir_temp_sym p_temp_sym) {
     *p_sym = (mir_operand) {
         .kind = temp_var,
         .p_temp_sym = p_temp_sym,
+        .ssa_id = -1,
     };
     return p_sym;
 }

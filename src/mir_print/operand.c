@@ -51,15 +51,21 @@ void mir_operand_print(p_mir_operand p_operand) {
         break;
     case temp_var:
         mir_temp_sym_print(p_operand->p_temp_sym);
+        if (p_operand->ssa_id != -1) 
+            printf(" _%ld", p_operand->ssa_id);
+        printf(" ");
         break;
     case declared_var:
         mir_symbol_type_print(p_operand->p_sym->p_type);
         if (p_operand->p_sym->is_global) {
-            printf("@%s ", p_operand->p_sym->name);
+            printf("@%s", p_operand->p_sym->name);
         }
         else {
-            printf("%%l%ld ", p_operand->p_sym->id);
+            printf("%%l%ld", p_operand->p_sym->id);
         }
+        if (p_operand->ssa_id != -1)
+            printf("_%ld", p_operand->ssa_id);
+        printf(" ");
         break;
     }
 }
