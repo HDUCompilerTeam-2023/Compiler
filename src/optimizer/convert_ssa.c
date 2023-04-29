@@ -27,40 +27,37 @@ size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t block_num, p_m
     return current_num;
 }
 
-// 根据 p_wait_block 的直接支配父亲是否是 p_convert_ssa 对应的块， 决定是否加入集合
-static inline bool add_dom_element_if_need(convert_ssa *p_convert, p_mir_basic_block p_wait_block)
-{
-    if (p_wait_block->p_dom_parent != p_convert->p_basic_block){
-        bitmap_add_element(p_convert->dom_frontier, p_wait_block->dfn_id);
-        return true;
-    }
-    return false;
-}
 
 void convert_ssa_compute_dom_frontier(convert_ssa *dfs_seq, size_t block_num)
 {
     for(size_t i = block_num - 1; i < block_num; i --){
         p_convert_ssa p_info = dfs_seq + i;
+
         p_mir_basic_block p_true_block = mir_basic_block_get_true(p_info->p_basic_block);
         p_mir_basic_block p_false_block = mir_basic_block_get_false(p_info->p_basic_block);
-        // 计算 DF_up
-        if(p_true_block)
-            add_dom_element_if_need(p_info, p_true_block);
-        if (p_false_block)
-            add_dom_element_if_need(p_info, p_false_block);
 
-        // 计算 DF_local
-        p_list_head p_node;
-        list_for_each(p_node, &p_info->p_basic_block->dom_son_list) {
-            size_t son_id = list_entry(p_node, mir_basic_block_list_node, node)->p_basic_block->dfn_id;
-            p_convert_ssa p_son_info = dfs_seq + son_id;
-            // 遍历子节点的支配边界，其中不属于 当前块的直接支配节点的节点即为当前块的支配边界
-            for(size_t i = 0; i < block_num; i ++){
-                if(bitmap_if_in(p_son_info->dom_frontier, i))
-                    add_dom_element_if_need(p_info, (dfs_seq + i)->p_basic_block);
+            // 将直接后继做为 DF_up 的候选
+            if (p_true_block)
+                bitmap_add_element(p_info->dom_frontier, p_true_block->dfn_id);
+            if (p_false_block)
+                bitmap_add_element(p_info->dom_frontier, p_false_block->dfn_id);
+            
+            p_list_head p_node;
+            // 记录 直接支配点
+            p_bitmap p_son_list = bitmap_gen(block_num);
+            bitmap_set_empty(p_son_list);
+            // 将支配树上的直接儿子的支配边界作为候选
+            list_for_each(p_node, &p_info->p_basic_block->dom_son_list) {
+                size_t son_id = list_entry(p_node, mir_basic_block_list_node, node)->p_basic_block->dfn_id;
+                p_convert_ssa p_son_info = dfs_seq + son_id;
+                bitmap_add_element(p_son_list, p_son_info->p_basic_block->dfn_id);
+                bitmap_merge_not_new(p_info->dom_frontier, p_son_info->dom_frontier);
             }
+            // 所有候选中不受当前节点直接支配的节点为支配边界
+            bitmap_neg_not_new(p_son_list);
+            bitmap_and_not_new(p_info->dom_frontier, p_son_list);
+            bitmap_drop(p_son_list);
         }
-    }
 }
 
 #include <stdio.h>
