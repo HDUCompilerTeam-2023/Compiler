@@ -80,7 +80,7 @@ p_mir_instr mir_br_instr_gen(p_mir_basic_block p_current_basic_block, p_mir_basi
     *p_instr = (mir_instr) {
         .irkind = mir_br,
         .mir_br = (mir_br_instr) {
-            .p_target = p_target,
+            .p_target = mir_basic_block_call_gen(p_target),
         },
         .node = list_head_init(&p_instr->node),
     };
@@ -95,8 +95,8 @@ p_mir_instr mir_condbr_instr_gen(p_mir_basic_block p_current_basic_block, p_mir_
         .irkind = mir_condbr,
         .mir_condbr = (mir_condbr_instr) {
             .p_cond = p_cond,
-            .p_target_true = p_target_true,
-            .p_target_false = p_target_false,
+            .p_target_true = mir_basic_block_call_gen(p_target_true),
+            .p_target_false = mir_basic_block_call_gen(p_target_false),
         },
         .node = list_head_init(&p_instr->node),
     };
@@ -272,9 +272,12 @@ void mir_instr_drop(p_mir_instr p_instr) {
         mir_operand_drop(p_instr->mir_ret.p_ret);
         break;
     case mir_br:
+        mir_basic_block_call_drop(p_instr->mir_br.p_target);
         break;
     case mir_condbr:
         mir_operand_drop(p_instr->mir_condbr.p_cond);
+        mir_basic_block_call_drop(p_instr->mir_condbr.p_target_true);
+        mir_basic_block_call_drop(p_instr->mir_condbr.p_target_false);
         break;
     }
     free(p_instr);

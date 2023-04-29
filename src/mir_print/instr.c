@@ -132,15 +132,16 @@ void mir_ret_instr_print(p_mir_ret_instr p_instr) {
 
 void mir_br_instr_print(p_mir_br_instr p_instr) {
     printf("br ");
-    printf("b%ld", p_instr->p_target->block_id);
+    mir_basic_block_call_print(p_instr->p_target);
 }
 
 void mir_condbr_instr_print(p_mir_condbr_instr p_instr) {
     printf("br ");
     mir_operand_print(p_instr->p_cond);
     printf(", ");
-    printf("b%ld, ", p_instr->p_target_true->block_id);
-    printf("b%ld", p_instr->p_target_false->block_id);
+    mir_basic_block_call_print(p_instr->p_target_true);
+    printf(", ");
+    mir_basic_block_call_print(p_instr->p_target_false);
 }
 
 void mir_call_instr_print(p_mir_call_instr p_instr) {

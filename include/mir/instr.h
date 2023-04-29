@@ -67,11 +67,11 @@ struct mir_ret_instr {
 };
 
 struct mir_br_instr {
-    p_mir_basic_block p_target;
+    p_mir_basic_block_call p_target;
 };
 
 struct mir_condbr_instr {
-    p_mir_basic_block p_target_true, p_target_false;
+    p_mir_basic_block_call p_target_true, p_target_false;
     p_mir_operand p_cond;
 };
 
