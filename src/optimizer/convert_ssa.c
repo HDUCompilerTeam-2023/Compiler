@@ -34,21 +34,41 @@ size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t block_num, siz
     return current_num;
 }
 
-void convert_ssa_init_var_list(p_mir_operand p_var_list, size_t var_num, p_mir_func p_func, p_mir_temp_sym p_ret)
+// static inline void var_stack_push(p_ssa_var_info p_info, p_mir_operand p_operand) {
+//     p_operand_stack_node p_node = malloc(sizeof(*p_node));
+//     *p_node = (operand_stack_node) {
+//         .p_operand = p_operand,
+//         .node = list_head_init(&p_node->node),
+//     };
+//     list_add_prev(&p_node->node, &p_info->stack);
+// }
+// static inline p_mir_operand var_stack_top(p_ssa_var_info p_info) {
+//     assert(!list_head_alone(&p_info->stack));
+//     p_operand_stack_node p_operand_node = list_entry(p_info->stack.p_prev, operand_stack_node, node);
+//     return p_operand_node->p_operand;
+// }
+// static inline p_mir_operand var_stack_pop(p_ssa_var_info p_info) {
+//     assert(!list_head_alone(&p_info->stack));
+//     p_operand_stack_node p_operand_node = list_entry(p_info->stack.p_prev, operand_stack_node, node);
+//     list_del(&p_operand_node->node);
+//     return p_operand_node->p_operand;
+// }
+
+void convert_ssa_init_var_list(p_ssa_var_info p_var_list, size_t var_num, p_mir_func p_func, p_mir_temp_sym p_ret)
 {
     p_list_head p_node;
     list_for_each(p_node, &p_func->p_func_sym->variable) {
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
-        p_var_list[p_sym->id] = (mir_operand) {
-            .kind = declared_var,
-            .p_sym = p_sym,
-            .ssa_id = -1,
+        *(p_var_list + p_sym->id) = (ssa_var_info){
+            .p_operand = mir_operand_declared_sym_gen(p_sym),
+            .count = 0,
+            .stack = list_head_init(&(p_var_list + p_sym->id)->stack),
         };
     }
-    p_var_list[var_num - 1] = (mir_operand) {
-        .kind = temp_var,
-        .p_temp_sym = p_ret,
-        .ssa_id = -1,
+    *(p_var_list + var_num - 1) = (ssa_var_info) {
+        .p_operand = mir_operand_temp_sym_gen(p_ret),
+        .count = 0,
+        .stack = list_head_init(&(p_var_list + var_num - 1)->stack),
     };
 }
 
@@ -159,7 +179,7 @@ void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_mir_temp_
 }
 
 // 将集合重写为基本块参数
-void convert_ssa_rewrite_phi(p_convert_ssa dfs_seq, size_t block_num, p_mir_operand p_var_list, size_t var_num)
+void convert_ssa_rewrite_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_info p_var_list, size_t var_num)
 {
     for (size_t i = 0; i < block_num; i ++) {
         p_convert_ssa p_info = dfs_seq + i;
@@ -167,19 +187,19 @@ void convert_ssa_rewrite_phi(p_convert_ssa dfs_seq, size_t block_num, p_mir_oper
         {
             if(bitmap_if_in(p_info->p_phi_var, j))
             {
-                mir_basic_block_add_param(p_info->p_basic_block, mir_operand_copy(p_var_list + j));
+                mir_basic_block_add_param(p_info->p_basic_block, mir_operand_copy((p_var_list + j)->p_operand));
                 p_list_head p_node;
                 list_for_each(p_node, &p_info->p_basic_block->prev_basic_block_list){
                     p_mir_basic_block p_prev_block = list_entry(p_node, mir_basic_block_list_node, node)->p_basic_block;
                     p_mir_instr p_last_instr = list_entry(p_prev_block->instr_list.p_prev, mir_instr, node);
-                    if (p_last_instr->irkind == mir_br) 
-                        mir_basic_block_call_add_param(p_last_instr->mir_br.p_target, mir_operand_copy(p_var_list + j));
+                    if (p_last_instr->irkind == mir_br)
+                        mir_basic_block_call_add_param(p_last_instr->mir_br.p_target, mir_operand_copy((p_var_list + j)->p_operand));
                     else if(p_last_instr->irkind == mir_condbr)
                     {
                         if(p_last_instr->mir_condbr.p_target_true->p_block == p_info->p_basic_block)
-                            mir_basic_block_call_add_param(p_last_instr->mir_condbr.p_target_true, mir_operand_copy(p_var_list + j));
+                            mir_basic_block_call_add_param(p_last_instr->mir_condbr.p_target_true, mir_operand_copy((p_var_list + j)->p_operand));
                         if (p_last_instr->mir_condbr.p_target_false->p_block == p_info->p_basic_block)
-                            mir_basic_block_call_add_param(p_last_instr->mir_condbr.p_target_false, mir_operand_copy(p_var_list + j));
+                            mir_basic_block_call_add_param(p_last_instr->mir_condbr.p_target_false, mir_operand_copy((p_var_list + j)->p_operand));
                     }
                 }
             }
@@ -187,9 +207,10 @@ void convert_ssa_rewrite_phi(p_convert_ssa dfs_seq, size_t block_num, p_mir_oper
     }
 }
 
+
+
 #include <stdio.h>
-static inline void print_dom_frontier(convert_ssa *dfs_seq, size_t block_num)
-{
+    static inline void print_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
     printf(" --- dom_frontier start---\n");
     for(size_t i = 0; i < block_num; i ++)
     {
@@ -210,7 +231,7 @@ void convert_ssa_func(p_mir_func p_func){
     size_t var_num = 1;
     if (!list_head_alone(&p_func->p_func_sym->variable))
         var_num += list_entry(p_func->p_func_sym->variable.p_prev, symbol_sym, node)->id + 1;
-    p_mir_operand p_var_list = malloc(sizeof(*p_var_list) * var_num);
+    p_ssa_var_info p_var_list = malloc(sizeof(*p_var_list) * var_num);
     p_mir_temp_sym p_ret = list_entry(p_func->temp_sym_head.p_prev, mir_temp_sym, node);
     convert_ssa_init_var_list(p_var_list, var_num, p_func, p_ret);
     // 初始化 dfs 序
@@ -225,7 +246,7 @@ void convert_ssa_func(p_mir_func p_func){
     convert_ssa_rewrite_phi(dfs_seq, block_num, p_var_list, var_num);
 
     convert_ssa_dfs_seq_drop(dfs_seq, block_num);
-    free(p_var_list);
+    ssa_var_info_drop(p_var_list, var_num);
 }
 
 void convert_ssa_program(p_mir_program p_program){
@@ -240,4 +261,13 @@ void convert_ssa_dfs_seq_drop(convert_ssa *dfs_seq, size_t block_num) {
         bitmap_drop((dfs_seq + i)->p_phi_var);
     }
     free(dfs_seq);
+}
+
+void ssa_var_info_drop(p_ssa_var_info p_info, size_t var_num)
+{
+    for(size_t i = 0; i < var_num; i ++)
+    {
+        mir_operand_drop((p_info + i)->p_operand);
+    }
+    free(p_info);
 }
