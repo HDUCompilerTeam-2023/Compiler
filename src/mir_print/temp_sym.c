@@ -7,10 +7,10 @@ void mir_temp_sym_print(p_mir_temp_sym p_temp_sym) {
     if (p_temp_sym->is_pointer) {
         printf("[ 0 X ");
         mir_basic_type_print(p_temp_sym->b_type);
-        printf("]* ");
+        printf("]*");
     }
     else {
         mir_basic_type_print(p_temp_sym->b_type);
-        printf(" %%t%ld ", p_temp_sym->id);
     }
+    printf(" %%t%ld", p_temp_sym->id);
 }
