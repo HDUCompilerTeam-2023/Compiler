@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
 
         mir_program_dom_info_print(p_mir);
         convert_ssa_program(p_mir);
+        mir_program_print(p_mir);
         mir_program_drop(p_mir);
     }
     return 0;
