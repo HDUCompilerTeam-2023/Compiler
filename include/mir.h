@@ -4,8 +4,8 @@
 typedef struct mir_program mir_program, *p_mir_program;
 typedef struct mir_func mir_func, *p_mir_func;
 typedef struct mir_basic_block mir_basic_block, *p_mir_basic_block;
+typedef struct mir_basic_block_call mir_basic_block_call, * p_mir_basic_block_call;
 
-typedef struct mir_basic_block_params_node mir_basic_block_params_node, *p_mir_basic_block_params_node;
 typedef struct mir_basic_block_list_node mir_basic_block_list_node, *p_mir_basic_block_list_node;
 
 typedef struct mir_param mir_param, *p_mir_param;
