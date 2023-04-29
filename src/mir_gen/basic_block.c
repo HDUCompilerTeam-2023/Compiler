@@ -74,8 +74,9 @@ void mir_basic_block_drop(p_mir_basic_block p_basic_block) {
         free(p_basic_block_list_node);
     }
     while (!list_head_alone(&p_basic_block->basic_block_parameters)) {
-        p_mir_basic_block_params_node p_param = list_entry(p_basic_block->dom_son_list.p_next, mir_basic_block_params_node, node);
+        p_mir_basic_block_params_node p_param = list_entry(p_basic_block->basic_block_parameters.p_next, mir_basic_block_params_node, node);
         list_del(&p_param->node);
+        mir_operand_drop(p_param->p_operand);
         free(p_param);
     }
     free(p_basic_block);
