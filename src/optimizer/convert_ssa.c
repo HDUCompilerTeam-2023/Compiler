@@ -71,6 +71,8 @@ void convert_ssa_compute_dom_frontier(convert_ssa *dfs_seq, size_t block_num)
             // 记录 直接支配点
             p_bitmap p_son_list = bitmap_gen(block_num);
             bitmap_set_empty(p_son_list);
+            // 支配边界不包括自身
+            bitmap_add_element(p_son_list, p_info->p_basic_block->dfn_id);
             // 将支配树上的直接儿子的支配边界作为候选
             list_for_each(p_node, &p_info->p_basic_block->dom_son_list) {
                 size_t son_id = list_entry(p_node, mir_basic_block_list_node, node)->p_basic_block->dfn_id;
