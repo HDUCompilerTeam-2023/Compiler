@@ -52,7 +52,7 @@ void mir_operand_print(p_mir_operand p_operand) {
     case temp_var:
         mir_temp_sym_print(p_operand->p_temp_sym);
         if (p_operand->ssa_id != -1) 
-            printf(" _%ld", p_operand->ssa_id);
+            printf("_%ld", p_operand->ssa_id);
         printf(" ");
         break;
     case declared_var:
