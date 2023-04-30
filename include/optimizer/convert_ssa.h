@@ -14,14 +14,9 @@ struct convert_ssa{
 };
 
 
-struct operand_stack_node{
-    list_head node;
-    p_mir_operand p_operand;
-};
-
 struct ssa_var_info{
     p_mir_operand p_operand;
-    list_head stack;
+    size_t current_count;
     size_t count;
 };
 typedef struct convert_ssa convert_ssa, *p_convert_ssa;
