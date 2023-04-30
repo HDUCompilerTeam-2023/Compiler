@@ -2,6 +2,7 @@
 #include <mir_port/basic_block.h>
 #include <symbol/sym.h>
 #include <symbol/type.h>
+#include <symbol/store.h>
 void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_mir_basic_block p_basic_block, size_t current_num)
 {
     dfs_seq[current_num] = (convert_ssa){
@@ -34,15 +35,35 @@ size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t block_num, siz
     return current_num;
 }
 
-void convert_ssa_init_var_list(p_ssa_var_info p_var_list, size_t var_num, p_mir_func p_func, p_mir_temp_sym p_ret)
+p_ssa_var_list_info convert_ssa_init_var_list(p_mir_func p_func, p_mir_program p_program)
 {
+    p_ssa_var_list_info p_var_list = malloc(sizeof(*p_var_list));
+    *p_var_list = (ssa_var_list_info){
+        .global_num = list_head_alone(&p_program->p_store->variable)? 0 : list_entry(p_program->p_store->variable.p_prev, symbol_sym, node)->id + 1,
+        .local_num = list_head_alone(&p_func->p_func_sym->variable)? 0 : list_entry(p_func->p_func_sym->variable.p_prev, symbol_sym, node)->id + 1,
+        .temp_num = 1,
+        .p_ret_sym = list_entry(p_func->temp_sym_head.p_next, mir_temp_sym, node),
+    };
+
+    size_t whole_num = p_var_list->temp_num + p_var_list->global_num + p_var_list->local_num;
+    p_var_list->p_base = malloc(whole_num * sizeof(*p_var_list->p_base));
     p_list_head p_node;
+    // 全局变量, 已初始化
+    list_for_each(p_node, &p_program->p_store->variable){
+        p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
+        *(p_var_list->p_base + p_sym->id) = (ssa_var_info) {
+            .p_operand = mir_operand_declared_sym_gen(p_sym),
+            .count = 1,
+            .current_count = 0,
+        };
+    }
+
     p_symbol_type p_param_type = p_func->p_func_sym->p_type->p_params;
     // 函数参数定值已经初始化
     list_for_each(p_node, &p_func->p_func_sym->variable) {
         if (!p_param_type) break;
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
-        *(p_var_list + p_sym->id) = (ssa_var_info) {
+        *(p_var_list->p_base + p_sym->id + p_var_list->global_num) = (ssa_var_info) {
             .p_operand = mir_operand_declared_sym_gen(p_sym),
             .count = 1,
             .current_count = 0,
@@ -52,21 +73,35 @@ void convert_ssa_init_var_list(p_ssa_var_info p_var_list, size_t var_num, p_mir_
     // 局部变量
     while(p_node != &p_func->p_func_sym->variable) {
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
-        *(p_var_list + p_sym->id) = (ssa_var_info) {
+        *(p_var_list->p_base + p_sym->id + p_var_list->global_num) = (ssa_var_info){
             .p_operand = mir_operand_declared_sym_gen(p_sym),
-            .count = 0,
+            .count = 1,
             .current_count = 0,
         };
         p_node = p_node->p_next;
     }
     // 返回值
-    *(p_var_list + var_num - 1) = (ssa_var_info) {
-        .p_operand = mir_operand_temp_sym_gen(p_ret),
-        .count = 0,
+    *(p_var_list->p_base + whole_num - 1) = (ssa_var_info) {
+        .p_operand = mir_operand_temp_sym_gen(p_var_list->p_ret_sym),
+        .count = 1,
         .current_count = 0,
     };
+    return p_var_list;
 }
 
+// 将变量转换到对应的标号，若不存在标号返回 -1
+static inline size_t get_var_index(p_mir_operand p_operand, p_ssa_var_list_info p_var_list) {
+    if(!p_operand) return -1;
+    if (p_operand->kind == declared_var)
+        if (p_operand->p_sym->is_global)
+            return p_operand->p_sym->id;
+        else
+            return p_operand->p_sym->id + p_var_list->global_num;
+    else if (p_operand->kind == temp_var && p_operand->p_temp_sym == p_var_list->p_ret_sym)
+        return p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num - 1;
+    else
+        return -1;
+}
 
 void convert_ssa_compute_dom_frontier(convert_ssa *dfs_seq, size_t block_num)
 {
@@ -114,7 +149,7 @@ static inline bool merge_if_change(p_bitmap p_b1, p_bitmap p_b2){
     return false;
 }
 
-void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_mir_temp_sym p_ret, size_t var_num)
+void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_info p_var_list)
 {
     // 入口块对所有变量已经定值
     bitmap_set_full(dfs_seq->p_def_var);
@@ -132,13 +167,9 @@ void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_mir_temp_
             p_mir_instr p_instr = list_entry(p_node, mir_instr, node);
             p_mir_operand p_operand = mir_instr_get_des(p_instr);
             //  将已经声明的变量和ret变量加入到该块定值集合
-            if (p_operand) {
-                if(p_operand->kind == declared_var)
-                    bitmap_add_element(p_info->p_def_var, p_operand->p_sym->id);
-                else if ((p_operand->kind == temp_var && p_operand->p_temp_sym == p_ret)) {
-                    bitmap_add_element(p_info->p_def_var, var_num - 1);
-                }
-            }
+            size_t id = get_var_index(p_operand, p_var_list);
+            if(id != -1)
+                bitmap_add_element(p_info->p_def_var, id);
         }
         // 遍历支配边界将定值集合并入到 边界的 phi 集合
         for(size_t j = 0; j < block_num; j ++){
@@ -218,35 +249,33 @@ void convert_ssa_rewrite_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_
 }
 
 
-void convert_ssa_func(p_mir_func p_func){
+void convert_ssa_func(p_mir_func p_func, p_mir_program p_program){
     if (list_head_alone(&p_func->entry_block)) return;
     size_t block_num = list_entry(p_func->entry_block.p_prev, mir_basic_block, node)->block_id + 1;
     p_convert_ssa dfs_seq = malloc(block_num * sizeof(*dfs_seq));
     // 初始化变量集合
-    size_t var_num = 1;
-    if (!list_head_alone(&p_func->p_func_sym->variable))
-        var_num += list_entry(p_func->p_func_sym->variable.p_prev, symbol_sym, node)->id + 1;
-    p_ssa_var_info p_var_list = malloc(sizeof(*p_var_list) * var_num);
-    p_mir_temp_sym p_ret = list_entry(p_func->temp_sym_head.p_prev, mir_temp_sym, node);
-    convert_ssa_init_var_list(p_var_list, var_num, p_func, p_ret);
+    p_ssa_var_list_info p_var_list = convert_ssa_init_var_list(p_func, p_program);
+    size_t whole_num = p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num;
     // 初始化 dfs 序
     mir_basic_block_init_visited(p_func);
     p_mir_basic_block p_entry = list_entry(p_func->entry_block.p_next, mir_basic_block, node);
-    convert_ssa_init_dfs_sequence(dfs_seq, block_num, var_num, p_entry, 0);
+    convert_ssa_init_dfs_sequence(dfs_seq, block_num, whole_num, p_entry, 0);
     // 计算支配边界
     convert_ssa_compute_dom_frontier(dfs_seq, block_num);
     print_dom_frontier(dfs_seq, block_num);
     // 插入 phi 函数
-    convert_ssa_insert_phi(dfs_seq, block_num, p_ret, var_num);
-    convert_ssa_rewrite_phi(dfs_seq, block_num, p_var_list, var_num);
+    convert_ssa_insert_phi(dfs_seq, block_num, p_var_list);
+    convert_ssa_rewrite_phi(dfs_seq, block_num, p_var_list->p_base, whole_num);
+    // 重命名
+    mir_basic_block_init_visited(p_func);
 
     convert_ssa_dfs_seq_drop(dfs_seq, block_num);
-    ssa_var_info_drop(p_var_list, var_num);
+    ssa_var_list_info_drop(p_var_list);
 }
 
 void convert_ssa_program(p_mir_program p_program){
     for (size_t i = 0; i < p_program->func_cnt; i++)
-        convert_ssa_func(p_program->func_table + i);
+        convert_ssa_func(p_program->func_table + i, p_program);
 }
 
 void convert_ssa_dfs_seq_drop(convert_ssa *dfs_seq, size_t block_num) {
@@ -258,11 +287,12 @@ void convert_ssa_dfs_seq_drop(convert_ssa *dfs_seq, size_t block_num) {
     free(dfs_seq);
 }
 
-void ssa_var_info_drop(p_ssa_var_info p_info, size_t var_num)
+void ssa_var_list_info_drop(p_ssa_var_list_info p_var_list)
 {
-    for(size_t i = 0; i < var_num; i ++)
+    for(size_t i = 0; i < p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num; i ++)
     {
-        mir_operand_drop((p_info + i)->p_operand);
+        mir_operand_drop((p_var_list->p_base + i)->p_operand);
     }
-    free(p_info);
+    free(p_var_list->p_base);
+    free(p_var_list);
 }
