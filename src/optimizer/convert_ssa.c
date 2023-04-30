@@ -209,7 +209,7 @@ void convert_ssa_func(p_mir_func p_func){
     if (!list_head_alone(&p_func->p_func_sym->variable))
         var_num += list_entry(p_func->p_func_sym->variable.p_prev, symbol_sym, node)->id + 1;
     p_mir_operand p_var_list = malloc(sizeof(*p_var_list) * var_num);
-    p_mir_temp_sym p_ret = list_entry(p_func->temp_sym_head.p_prev, mir_temp_sym, node);
+    p_mir_temp_sym p_ret = list_entry(p_func->temp_sym_head.p_next, mir_temp_sym, node);
     convert_ssa_init_var_list(p_var_list, var_num, p_func, p_ret);
     // 初始化 dfs 序
     mir_basic_block_init_visited(p_func);
