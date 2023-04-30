@@ -34,26 +34,6 @@ size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t block_num, siz
     return current_num;
 }
 
-// static inline void var_stack_push(p_ssa_var_info p_info, p_mir_operand p_operand) {
-//     p_operand_stack_node p_node = malloc(sizeof(*p_node));
-//     *p_node = (operand_stack_node) {
-//         .p_operand = p_operand,
-//         .node = list_head_init(&p_node->node),
-//     };
-//     list_add_prev(&p_node->node, &p_info->stack);
-// }
-// static inline p_mir_operand var_stack_top(p_ssa_var_info p_info) {
-//     assert(!list_head_alone(&p_info->stack));
-//     p_operand_stack_node p_operand_node = list_entry(p_info->stack.p_prev, operand_stack_node, node);
-//     return p_operand_node->p_operand;
-// }
-// static inline p_mir_operand var_stack_pop(p_ssa_var_info p_info) {
-//     assert(!list_head_alone(&p_info->stack));
-//     p_operand_stack_node p_operand_node = list_entry(p_info->stack.p_prev, operand_stack_node, node);
-//     list_del(&p_operand_node->node);
-//     return p_operand_node->p_operand;
-// }
-
 void convert_ssa_init_var_list(p_ssa_var_info p_var_list, size_t var_num, p_mir_func p_func, p_mir_temp_sym p_ret)
 {
     p_list_head p_node;
@@ -65,20 +45,17 @@ void convert_ssa_init_var_list(p_ssa_var_info p_var_list, size_t var_num, p_mir_
         *(p_var_list + p_sym->id) = (ssa_var_info) {
             .p_operand = mir_operand_declared_sym_gen(p_sym),
             .count = 1,
-            .stack = list_head_init(&(p_var_list + p_sym->id)->stack),
+            .current_count = 0,
         };
-        // p_mir_operand p_operand = mir_operand_declared_sym_gen(p_sym);
-        // p_operand->ssa_id = 0;
-        // var_stack_push((p_var_list + p_sym->id), p_operand);
         p_param_type = p_param_type->p_params;
     }
     // 局部变量
     while(p_node != &p_func->p_func_sym->variable) {
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
-        *(p_var_list + p_sym->id) = (ssa_var_info){
+        *(p_var_list + p_sym->id) = (ssa_var_info) {
             .p_operand = mir_operand_declared_sym_gen(p_sym),
             .count = 0,
-            .stack = list_head_init(&(p_var_list + p_sym->id)->stack),
+            .current_count = 0,
         };
         p_node = p_node->p_next;
     }
@@ -86,7 +63,7 @@ void convert_ssa_init_var_list(p_ssa_var_info p_var_list, size_t var_num, p_mir_
     *(p_var_list + var_num - 1) = (ssa_var_info) {
         .p_operand = mir_operand_temp_sym_gen(p_ret),
         .count = 0,
-        .stack = list_head_init(&(p_var_list + var_num - 1)->stack),
+        .current_count = 0,
     };
 }
 
