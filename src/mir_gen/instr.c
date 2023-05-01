@@ -170,6 +170,8 @@ p_mir_operand mir_instr_get_src1(p_mir_instr p_instr) {
     case mir_float2int_op:
     case mir_val_assign:
         return p_instr->mir_unary.p_src;
+    case mir_ret:
+        return p_instr->mir_ret.p_ret;
     default:
         return NULL;
     }
