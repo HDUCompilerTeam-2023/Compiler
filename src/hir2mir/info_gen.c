@@ -46,10 +46,13 @@ p_mir_instr hir2mir_info_add_br_instr(p_hir2mir_info p_info, p_mir_basic_block p
                     p_last_instr->mir_condbr.p_target_false->p_block = p_next;
                 if (p_last_instr->mir_condbr.p_target_true->p_block == p_last_instr->mir_condbr.p_target_false->p_block) {
                     mir_operand_drop(p_last_instr->mir_condbr.p_cond);
+                    mir_basic_block_call_drop(p_last_instr->mir_condbr.p_target_false);
+                    p_mir_basic_block_call p_block_call = p_last_instr->mir_condbr.p_target_true;
                     p_last_instr->irkind = mir_br;
-                    p_last_instr->mir_br.p_target->p_block = p_next;
+                    p_last_instr->mir_br.p_target = p_block_call;
                 }
-                mir_basic_block_add_prev(p_basic_block, p_next);
+                else
+                    mir_basic_block_add_prev(p_basic_block, p_next);
             }
         }
         list_del(&p_info->p_current_basic_block->node);
