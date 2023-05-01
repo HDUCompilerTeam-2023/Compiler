@@ -42,7 +42,7 @@ p_bitmap bitmap_neg_new(p_bitmap p_b1)
     return p_new;
 }
 
-p_bitmap bitmap_copy(p_bitmap p_b1)
+p_bitmap bitmap_copy_new(p_bitmap p_b1)
 {
     p_bitmap p_new = bitmap_gen(p_b1->size * UNIT_LENGTH);
     p_new->size = p_b1->size;
@@ -77,6 +77,14 @@ void bitmap_neg_not_new(p_bitmap p_b1)
     for (size_t i = 0; i < p_b1->size; i++)
         p_b1->p_base[i] = ~p_b1->p_base[i];
 }
+
+void bitmap_copy_not_new(p_bitmap p_des, p_bitmap p_src)
+{
+    assert(p_src->size == p_des->size);
+    for (size_t i = 0; i < p_src->size; i++)
+        p_des->p_base[i] = p_src->p_base[i];
+}
+
 bool bitmap_if_in(p_bitmap p_b, size_t id) {
     assert((id / UNIT_LENGTH) < p_b->size);
     return (bool)((p_b->p_base[id / UNIT_LENGTH] >> (id % UNIT_LENGTH)) & (BASIC_T)1);

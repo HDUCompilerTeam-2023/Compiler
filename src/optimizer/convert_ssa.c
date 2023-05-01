@@ -136,24 +136,14 @@ void convert_ssa_compute_dom_frontier(convert_ssa *dfs_seq, size_t block_num)
             bitmap_drop(p_son_list);
         }
 }
-// 合并集合并返回合并前后集合是否发生变化
-static inline bool merge_if_change(p_bitmap p_b1, p_bitmap p_b2){
-    p_bitmap p_old = bitmap_copy(p_b1);
-    bitmap_merge_not_new(p_b1, p_b2);
-    if (bitmap_if_equal(p_old, p_b1))
-    {
-        bitmap_drop(p_old);
-        return true;
-    }
-    bitmap_drop(p_old);
-    return false;
-}
 
 void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_info p_var_list)
 {
     // 入口块对所有变量已经定值
     bitmap_set_full(dfs_seq->p_def_var);
     size_t work_num = block_num + 1;
+    // 记录原来的集合
+    p_bitmap p_old = bitmap_gen(p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num);
     // 工作队列
     size_t* p_work_list = malloc(work_num * sizeof(*p_work_list));
     size_t work_tail = 0;
@@ -175,7 +165,9 @@ void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_l
         for(size_t j = 0; j < block_num; j ++){
             if(bitmap_if_in(p_info->dom_frontier, j))
             {   // 若 phi 集合发生变化且已经遍历过且没有被加入过工作集合需要加入到工作集合之后处理
-                bool if_change = merge_if_change((dfs_seq + j)->p_phi_var, p_info->p_def_var);
+                bitmap_copy_not_new(p_old, (dfs_seq + j)->p_phi_var);
+                bitmap_merge_not_new((dfs_seq + j)->p_phi_var, p_info->p_def_var);
+                bool if_change = bitmap_if_equal(p_old, (dfs_seq + j)->p_phi_var);
                 if (if_change && j <= i && !(dfs_seq + j)->if_in) {
                     p_work_list[work_tail ++] = j;
                     (dfs_seq + j)->if_in = true;
@@ -192,7 +184,9 @@ void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_l
         for (size_t j = 0; j < block_num; j ++) {
             // 当新的 phi 集合发生变化 并且没有被加入到工作集时需要加入工作集合 
             if (bitmap_if_in(p_info->dom_frontier, j)) {
-                bool if_change = merge_if_change((dfs_seq + j)->p_phi_var, p_info->p_def_var);
+                bitmap_copy_not_new(p_old, (dfs_seq + j)->p_phi_var);
+                bitmap_merge_not_new((dfs_seq + j)->p_phi_var, p_info->p_def_var);
+                bool if_change = bitmap_if_equal(p_old, (dfs_seq + j)->p_phi_var);
                 if (if_change && !(dfs_seq + j)->if_in) {
                     p_work_list[work_tail] = j;
                     work_tail = (work_tail + 1) % work_num;
@@ -201,6 +195,7 @@ void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_l
             }
         }
     }
+    bitmap_drop(p_old);
     free(p_work_list);
 }
 

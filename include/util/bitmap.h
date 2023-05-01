@@ -21,7 +21,7 @@ p_bitmap bitmap_cut_new(p_bitmap p_b1, p_bitmap p_b2);
 p_bitmap bitmap_and_new(p_bitmap p_b1, p_bitmap p_b2);
 p_bitmap bitmap_neg_new(p_bitmap p_b1);
 
-p_bitmap bitmap_copy(p_bitmap p_b1);
+p_bitmap bitmap_copy_new(p_bitmap p_b1);
 
 bool bitmap_if_in(p_bitmap p_b, size_t id);
 bool bitmap_if_equal(p_bitmap p_b1,  p_bitmap p_b2);
@@ -30,6 +30,7 @@ void bitmap_merge_not_new(p_bitmap p_b1, p_bitmap p_b2);
 void bitmap_cut_not_new(p_bitmap p_b1, p_bitmap p_b2);
 void bitmap_and_not_new(p_bitmap p_b1, p_bitmap p_b2);
 void bitmap_neg_not_new(p_bitmap p_b1);
+void bitmap_copy_not_new(p_bitmap p_des, p_bitmap p_src);
 
 void bitmap_add_element(p_bitmap p_b, size_t id);
 void bitmap_cut_element(p_bitmap p_b, size_t id);
