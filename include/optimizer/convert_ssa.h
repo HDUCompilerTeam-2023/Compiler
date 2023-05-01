@@ -40,9 +40,8 @@ p_ssa_var_list_info convert_ssa_init_var_list(p_mir_func p_func, p_mir_program p
 void convert_ssa_compute_dom_frontier(convert_ssa *dfs_seq, size_t block_num);
 
 void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_info p_var_list);
-void convert_ssa_rewrite_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_info p_var_list, size_t var_num);
 
-void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_mir_basic_block p_entry);
+void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p_mir_basic_block p_entry);
 
 void convert_ssa_func(p_mir_func p_func, p_mir_program p_program);
 void convert_ssa_program(p_mir_program p_program);

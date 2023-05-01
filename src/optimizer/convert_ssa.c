@@ -199,35 +199,6 @@ void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_l
     free(p_work_list);
 }
 
-// 将集合重写为基本块参数
-void convert_ssa_rewrite_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_info p_var_list, size_t var_num)
-{
-    for (size_t i = 0; i < block_num; i ++) {
-        p_convert_ssa p_info = dfs_seq + i;
-        for(size_t j = 0; j < var_num; j ++)
-        {
-            if(bitmap_if_in(p_info->p_phi_var, j))
-            {
-                mir_basic_block_add_param(p_info->p_basic_block, mir_operand_copy((p_var_list + j)->p_operand));
-                p_list_head p_node;
-                list_for_each(p_node, &p_info->p_basic_block->prev_basic_block_list){
-                    p_mir_basic_block p_prev_block = list_entry(p_node, mir_basic_block_list_node, node)->p_basic_block;
-                    p_mir_instr p_last_instr = list_entry(p_prev_block->instr_list.p_prev, mir_instr, node);
-                    if (p_last_instr->irkind == mir_br)
-                        mir_basic_block_call_add_param(p_last_instr->mir_br.p_target, mir_operand_copy((p_var_list + j)->p_operand));
-                    else if(p_last_instr->irkind == mir_condbr)
-                    {
-                        if(p_last_instr->mir_condbr.p_target_true->p_block == p_info->p_basic_block)
-                            mir_basic_block_call_add_param(p_last_instr->mir_condbr.p_target_true, mir_operand_copy((p_var_list + j)->p_operand));
-                        if (p_last_instr->mir_condbr.p_target_false->p_block == p_info->p_basic_block)
-                            mir_basic_block_call_add_param(p_last_instr->mir_condbr.p_target_false, mir_operand_copy((p_var_list + j)->p_operand));
-                    }
-                }
-            }
-        }
-    }
-}
-
 static inline void set_src_ssa_id(p_mir_operand p_operand, p_ssa_var_list_info p_var_list)
 {
     size_t index = get_var_index(p_operand, p_var_list);
@@ -246,17 +217,37 @@ static inline void set_des_ssa_id(p_mir_operand p_operand, p_ssa_var_list_info p
     }
 }
 
-static inline void set_block_call_ssa_id(p_mir_basic_block_call p_block_call, p_ssa_var_list_info p_var_list) 
+static inline void set_block_call_ssa_id(p_mir_basic_block_call p_block_call, p_convert_ssa dfs_seq, p_ssa_var_list_info p_var_list) 
 {
-    p_list_head p_node;
-    list_for_each(p_node, &p_block_call->p_block_param->param){
-        p_mir_operand p_param = list_entry(p_node, mir_param, node)->p_param;
-        set_src_ssa_id(p_param, p_var_list);
+    size_t var_num = p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num;
+    p_bitmap p_phi_var = (dfs_seq + p_block_call->p_block->dfn_id)->p_phi_var;
+    for(size_t i = 0; i < var_num; i ++){
+        p_ssa_var_info p_var_info = (p_var_list->p_base + i);
+        if(bitmap_if_in(p_phi_var, i))
+        {
+            p_mir_operand p_param = mir_operand_copy(p_var_info->p_operand);
+            set_src_ssa_id(p_param, p_var_list);
+            mir_basic_block_call_add_param(p_block_call, p_param);
+        }
     }
 }
 
+// 为基本块创建 phi 参数列表并命名
+static inline void set_block_param_ssa_id(p_mir_basic_block p_basic_block, p_convert_ssa dfs_seq, p_ssa_var_list_info p_var_list)
+{
+    size_t var_num = p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num;
+    p_bitmap p_phi_var = (dfs_seq + p_basic_block->dfn_id)->p_phi_var;
+    for (size_t i = 0; i < var_num; i++) {
+        p_ssa_var_info p_var_info = (p_var_list->p_base + i);
+        if (bitmap_if_in(p_phi_var, i)) {
+            p_mir_operand p_param = mir_operand_copy(p_var_info->p_operand);
+            set_des_ssa_id(p_param, p_var_list);
+            mir_basic_block_add_param(p_basic_block, p_param);
+        }
+    }
+}
 
-void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_mir_basic_block p_entry) {
+void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p_mir_basic_block p_entry) {
     if (p_entry->if_visited) return;
     p_entry->if_visited = true;
     // 记录入块信息
@@ -264,28 +255,25 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_mir_basic_block p_
     size_t *record_list = malloc(sizeof(*record_list) * whole_num);
     for (size_t i = 0; i < whole_num; i++)
         record_list[i] = (p_var_list->p_base + i)->current_count;
+    
+    set_block_param_ssa_id(p_entry, dfs_seq, p_var_list);
 
     p_list_head p_node;
-    list_for_each(p_node, &p_entry->basic_block_parameters->param){
-        p_mir_operand p_operand = list_entry(p_node, mir_param, node)->p_param;
-        set_des_ssa_id(p_operand, p_var_list);
-    }
-
     list_for_each(p_node, &p_entry->instr_list){
         p_mir_instr p_instr = list_entry(p_node, mir_instr, node);
 
         if (p_instr->irkind == mir_br)
         {
-            set_block_call_ssa_id(p_instr->mir_br.p_target, p_var_list);
-            convert_ssa_rename_var(p_var_list, p_instr->mir_br.p_target->p_block);
+            set_block_call_ssa_id(p_instr->mir_br.p_target, dfs_seq, p_var_list);
+            convert_ssa_rename_var(p_var_list, dfs_seq, p_instr->mir_br.p_target->p_block);
             continue;
         }
         if (p_instr->irkind == mir_condbr)
         {
-            set_block_call_ssa_id(p_instr->mir_condbr.p_target_true, p_var_list);
-            convert_ssa_rename_var(p_var_list, p_instr->mir_condbr.p_target_true->p_block);
-            set_block_call_ssa_id(p_instr->mir_condbr.p_target_false, p_var_list);
-            convert_ssa_rename_var(p_var_list, p_instr->mir_condbr.p_target_false->p_block);
+            set_block_call_ssa_id(p_instr->mir_condbr.p_target_true, dfs_seq, p_var_list);
+            convert_ssa_rename_var(p_var_list, dfs_seq, p_instr->mir_condbr.p_target_true->p_block);
+            set_block_call_ssa_id(p_instr->mir_condbr.p_target_false, dfs_seq, p_var_list);
+            convert_ssa_rename_var(p_var_list, dfs_seq, p_instr->mir_condbr.p_target_false->p_block);
             continue;
         }
         
@@ -333,10 +321,9 @@ void convert_ssa_func(p_mir_func p_func, p_mir_program p_program){
     print_dom_frontier(dfs_seq, block_num);
     // 插入 phi 函数
     convert_ssa_insert_phi(dfs_seq, block_num, p_var_list);
-    convert_ssa_rewrite_phi(dfs_seq, block_num, p_var_list->p_base, whole_num);
     // 重命名
     mir_basic_block_init_visited(p_func);
-    convert_ssa_rename_var(p_var_list, p_entry);
+    convert_ssa_rename_var(p_var_list, dfs_seq, p_entry);
 
     convert_ssa_dfs_seq_drop(dfs_seq, block_num);
     ssa_var_list_info_drop(p_var_list);
