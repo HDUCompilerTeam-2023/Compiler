@@ -20,8 +20,8 @@ struct mir_operand {
         };
         struct {
             union {
-                int intconst;
-                float floatconst;
+                INTCONST_t intconst;
+                FLOATCONST_t floatconst;
             };
             basic_type b_type;
         };
