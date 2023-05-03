@@ -1,5 +1,6 @@
 #include <optimizer/convert_ssa.h>
 #include <mir_port/basic_block.h>
+#include <mir_manager.h>
 #include <symbol/sym.h>
 #include <symbol/type.h>
 #include <symbol/store.h>
@@ -316,6 +317,8 @@ void convert_ssa_func(p_mir_func p_func, p_mir_program p_program){
     mir_basic_block_init_visited(p_func);
     p_mir_basic_block p_entry = list_entry(p_func->entry_block.p_next, mir_basic_block, node);
     convert_ssa_init_dfs_sequence(dfs_seq, block_num, whole_num, p_entry, 0);
+    // 计算支配树
+    mir_cfg_set_func_dom(p_func);
     // 计算支配边界
     convert_ssa_compute_dom_frontier(dfs_seq, block_num);
     print_dom_frontier(dfs_seq, block_num);
