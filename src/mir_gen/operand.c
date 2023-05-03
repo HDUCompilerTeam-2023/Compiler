@@ -18,7 +18,7 @@ basic_type mir_operand_get_basic_type(p_mir_operand p_operand) {
     }
 }
 
-p_mir_operand mir_operand_int_gen(int intconst) {
+p_mir_operand mir_operand_int_gen(INTCONST_t intconst) {
     p_mir_operand p_mir_int = malloc(sizeof(*p_mir_int));
     *p_mir_int = (mir_operand) {
         .intconst = intconst,
@@ -28,7 +28,7 @@ p_mir_operand mir_operand_int_gen(int intconst) {
     return p_mir_int;
 }
 
-p_mir_operand mir_operand_float_gen(float floatconst) {
+p_mir_operand mir_operand_float_gen(FLOATCONST_t floatconst) {
     p_mir_operand p_mir_float = malloc(sizeof(*p_mir_float));
     *p_mir_float = (mir_operand) {
         .floatconst = floatconst,

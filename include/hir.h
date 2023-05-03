@@ -4,11 +4,6 @@
 #include <symbol.h>
 #include <util.h>
 
-typedef int64_t INTCONST_t;
-typedef double FLOATCONST_t;
-typedef char *STRING_t;
-typedef char *ID_t;
-
 typedef struct hir_program hir_program, *p_hir_program;
 typedef struct hir_param hir_param, *p_hir_param;
 typedef struct hir_param_list hir_param_list, *p_hir_param_list;
