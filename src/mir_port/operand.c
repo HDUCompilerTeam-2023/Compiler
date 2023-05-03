@@ -26,9 +26,9 @@ size_t mir_operand_get_sym_id(p_mir_operand p_operand) {
         return p_operand->p_sym->id;
 }
 
-int mir_operand_get_int(p_mir_operand p_operand) {
+INTCONST_t mir_operand_get_int(p_mir_operand p_operand) {
     return p_operand->intconst;
 }
-float mir_operand_get_float(p_mir_operand p_operand) {
+FLOATCONST_t mir_operand_get_float(p_mir_operand p_operand) {
     return p_operand->floatconst;
 }

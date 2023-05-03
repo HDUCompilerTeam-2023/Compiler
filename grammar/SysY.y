@@ -49,10 +49,10 @@
 
        basic_type type;
 
-       ID_t ID;
+       char *ID;
+       char *STRING;
        INTCONST_t INTCONST;
        FLOATCONST_t FLOATCONST;
-       STRING_t STRING;
 }
 %type <p_exp> Cond
 %type <p_exp> LOrExp
