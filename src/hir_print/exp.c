@@ -144,12 +144,12 @@ void hir_exp_print(p_hir_exp p_exp) {
         }
         break;
     case hir_exp_num:
-        if (p_exp->basic == type_float) printf("%lf", p_exp->floatconst);
+        if (p_exp->basic == type_float)
+            printf("%lf", p_exp->floatconst);
+        else if (p_exp->basic == type_str)
+            symbol_str_print(p_exp->p_str);
         else
             printf("%ld", p_exp->intconst);
-        break;
-    case hir_exp_str:
-        symbol_str_print(p_exp->p_str);
         break;
     }
 }

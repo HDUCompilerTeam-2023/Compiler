@@ -21,6 +21,7 @@ struct mir_operand {
             union {
                 INTCONST_t intconst;
                 FLOATCONST_t floatconst;
+                p_symbol_str strconst;
             };
             basic_type b_type;
         };

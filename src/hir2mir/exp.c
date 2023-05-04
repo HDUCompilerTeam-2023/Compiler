@@ -17,6 +17,9 @@ p_mir_operand hir2mir_exp_get_operand(p_hir2mir_info p_info, p_hir_exp p_exp) {
         if (p_exp->basic == type_float) {
             return mir_operand_float_gen(p_exp->floatconst);
         }
+        if (p_exp->basic == type_str) {
+            return mir_operand_str_gen(p_exp->p_str);
+        }
         assert(0);
     case hir_exp_val:
         // 若是变量 直接返回该变量对应的操作数
@@ -78,7 +81,6 @@ p_mir_instr hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
         return hir2mir_exp_call_gen(p_info, p_exp);
     case hir_exp_num:
     case hir_exp_val:
-    case hir_exp_str:
         return NULL;
     }
 }
