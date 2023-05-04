@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <symbol/sym.h>
 #include <symbol/type.h>
+#include <symbol_print.h>
 void mir_basic_type_print(basic_type b_type) {
     switch (b_type) {
     case type_int:
@@ -48,6 +49,8 @@ void mir_operand_print(p_mir_operand p_operand) {
             printf(" %ld ", p_operand->intconst);
         else if (p_operand->b_type == type_float)
             printf(" %f ", p_operand->floatconst);
+        else if (p_operand->b_type == type_str)
+            symbol_str_print(p_operand->strconst);
         break;
     case temp_var:
         mir_temp_sym_print(p_operand->p_temp_sym);

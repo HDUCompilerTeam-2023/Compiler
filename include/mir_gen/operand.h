@@ -4,6 +4,7 @@
 #include <mir/operand.h>
 p_mir_operand mir_operand_int_gen(INTCONST_t intconst);
 p_mir_operand mir_operand_float_gen(FLOATCONST_t floatconst);
+p_mir_operand mir_operand_str_gen(p_symbol_str strconst);
 p_mir_operand mir_operand_void_gen(void);
 
 p_mir_operand mir_operand_declared_sym_gen(p_symbol_sym p_mir_sym);
