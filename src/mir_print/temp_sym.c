@@ -9,7 +9,7 @@ void mir_temp_sym_print(p_mir_temp_sym p_temp_sym)
     {
         printf("[ 0 X ");
         mir_basic_type_print(p_temp_sym->b_type);
-        printf("]* ");    
+        printf("]* %%t%ld ", p_temp_sym->id);    
     }
     else {
         mir_basic_type_print(p_temp_sym->b_type);
