@@ -1,6 +1,6 @@
-#include <stdio.h>
 #include <mir_gen.h>
 #include <mir_opt/simplify_cfg.h>
+#include <stdio.h>
 
 static inline p_mir_basic_block_call mir_target_1(p_mir_basic_block p_bb) {
     p_mir_instr p_last_instr = list_entry(p_bb->instr_list.p_prev, mir_instr, node);

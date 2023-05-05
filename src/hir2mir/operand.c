@@ -1,8 +1,7 @@
 #include <hir/exp.h>
 #include <hir2mir.h>
 
-p_mir_temp_sym hir2mir_temp_sym_pointer_gen(basic_type b_type, p_mir_func p_func)
-{
+p_mir_temp_sym hir2mir_temp_sym_pointer_gen(basic_type b_type, p_mir_func p_func) {
     p_mir_temp_sym p_temp_sym = mir_temp_sym_pointer_gen(b_type);
     mir_func_temp_sym_add(p_func, p_temp_sym);
     return p_temp_sym;

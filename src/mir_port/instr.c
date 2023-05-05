@@ -1,5 +1,5 @@
-#include <mir/instr.h>
 #include <mir/basic_block.h>
+#include <mir/instr.h>
 #include <mir_port/instr.h>
 
 p_mir_operand mir_instr_binary_get_src1(p_mir_instr p_instr) {

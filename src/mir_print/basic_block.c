@@ -1,18 +1,17 @@
 
 #include "mir_gen/basic_block.h" // 头文件包含还需考虑
 #include <mir/basic_block.h>
+#include <mir/instr.h>
 #include <mir/operand.h>
 #include <mir/param.h>
-#include <mir/instr.h>
 #include <mir_print.h>
 
 #include <stdio.h>
 void mir_basic_block_print(p_mir_basic_block p_basic_block) {
     assert(p_basic_block);
 
-
     printf("b%ld", p_basic_block->block_id);
-    if (!list_head_alone(&p_basic_block->basic_block_parameters->param)) 
+    if (!list_head_alone(&p_basic_block->basic_block_parameters->param))
         mir_param_list_print(p_basic_block->basic_block_parameters);
     printf(":");
 
@@ -36,10 +35,9 @@ void mir_basic_block_print(p_mir_basic_block p_basic_block) {
     }
 }
 
-void mir_basic_block_call_print(p_mir_basic_block_call p_block_call)
-{
+void mir_basic_block_call_print(p_mir_basic_block_call p_block_call) {
     printf("b%ld", p_block_call->p_block->block_id);
-    if(!list_head_alone(&p_block_call->p_block_param->param))
+    if (!list_head_alone(&p_block_call->p_block_param->param))
         mir_param_list_print(p_block_call->p_block_param);
 }
 

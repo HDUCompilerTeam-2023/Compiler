@@ -3,9 +3,9 @@
 #include <mir_manager.h>
 
 #include <hir_print.h>
+#include <mir_opt/simplify_cfg.h>
 #include <mir_print.h>
 #include <optimizer.h>
-#include <mir_opt/simplify_cfg.h>
 
 int main(int argc, char *argv[]) {
     if (argc == 1)
