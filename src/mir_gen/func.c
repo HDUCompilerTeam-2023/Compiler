@@ -20,8 +20,7 @@ void mir_func_temp_sym_add(p_mir_func p_func, p_mir_temp_sym p_temp_sym) {
     list_add_prev(&p_temp_sym->node, &p_func->temp_sym_head);
 }
 
-void mir_func_temp_sym_add_at(p_mir_func p_func, p_mir_temp_sym p_new_sym, p_mir_basic_block p_current_block, p_mir_instr p_instr)
-{
+void mir_func_temp_sym_add_at(p_mir_func p_func, p_mir_temp_sym p_new_sym, p_mir_basic_block p_current_block, p_mir_instr p_instr) {
     p_list_head p_instr_node = p_instr->node.p_next;
     while (p_instr_node != &p_current_block->instr_list) {
         p_mir_instr p_instr = list_entry(p_instr_node, mir_instr, node);
@@ -36,19 +35,18 @@ void mir_func_temp_sym_add_at(p_mir_func p_func, p_mir_temp_sym p_new_sym, p_mir
     while (p_block_node != &p_func->entry_block) {
         p_mir_basic_block p_basic_block = list_entry(p_block_node, mir_basic_block, node);
         p_list_head p_node;
-        list_for_each(p_node, &p_basic_block->basic_block_parameters->param){
+        list_for_each(p_node, &p_basic_block->basic_block_parameters->param) {
             p_mir_operand p_operand = list_entry(p_node, mir_param, node)->p_param;
-            if(p_operand->kind == reg){
+            if (p_operand->kind == reg) {
                 list_add_prev(&p_new_sym->node, &p_operand->p_temp_sym->node);
                 return;
             }
         }
         p_instr_node = p_basic_block->instr_list.p_next;
-        while(p_instr_node != &p_basic_block->instr_list)
-        {
+        while (p_instr_node != &p_basic_block->instr_list) {
             p_mir_instr p_instr = list_entry(p_instr_node, mir_instr, node);
             p_mir_operand p_des = mir_instr_get_des(p_instr);
-            if(p_des && p_des->kind == reg){
+            if (p_des && p_des->kind == reg) {
                 list_add_prev(&p_new_sym->node, &p_des->p_temp_sym->node);
                 return;
             }

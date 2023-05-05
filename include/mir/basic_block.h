@@ -24,7 +24,7 @@ struct mir_basic_block_list_node {
     list_head node;
 };
 
-struct mir_basic_block_call{
+struct mir_basic_block_call {
     p_mir_basic_block p_block;
     p_mir_param_list p_block_param;
 };

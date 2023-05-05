@@ -8,8 +8,8 @@ typedef struct ssa_var_info ssa_var_info, *p_ssa_var_info;
 typedef struct ssa_var_list_info ssa_var_list_info, *p_ssa_var_list_info;
 typedef struct sym_stack_node sym_stack_node, *p_sym_stack_node;
 
-struct convert_ssa{
-    p_mir_basic_block p_basic_block; 
+struct convert_ssa {
+    p_mir_basic_block p_basic_block;
     p_bitmap dom_frontier; // 支配边界
 
     p_bitmap p_phi_var; // phi 函数变量集合
@@ -18,19 +18,18 @@ struct convert_ssa{
     bool if_in; // 是否在工作表中
 };
 
-
-struct ssa_var_info{
+struct ssa_var_info {
     p_symbol_sym p_mem_sym;
     p_mir_temp_sym p_current_sym;
     list_head sym_stack; // 保存进入基本块时的信息
 };
 
-struct sym_stack_node{
+struct sym_stack_node {
     list_head node;
-    p_mir_temp_sym p_temp_sym;  
+    p_mir_temp_sym p_temp_sym;
 };
 
-struct ssa_var_list_info{
+struct ssa_var_list_info {
     p_ssa_var_info p_base;
     size_t global_num;
     size_t local_num;
@@ -38,7 +37,6 @@ struct ssa_var_list_info{
     p_mir_temp_sym p_ret_sym;
     p_mir_func p_func;
 };
-
 
 void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_mir_basic_block p_basic_block, size_t current_num);
 size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t var_num, size_t block_num, p_mir_basic_block p_entry, size_t current_num);

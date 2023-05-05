@@ -7,7 +7,6 @@
 #define BASIC_T size_t
 #define UNIT_LENGTH (sizeof(BASIC_T))
 
-
 struct bitmap {
     size_t size;
     BASIC_T *p_base;
@@ -24,7 +23,7 @@ p_bitmap bitmap_neg_new(p_bitmap p_b1);
 p_bitmap bitmap_copy_new(p_bitmap p_b1);
 
 bool bitmap_if_in(p_bitmap p_b, size_t id);
-bool bitmap_if_equal(p_bitmap p_b1,  p_bitmap p_b2);
+bool bitmap_if_equal(p_bitmap p_b1, p_bitmap p_b2);
 
 void bitmap_merge_not_new(p_bitmap p_b1, p_bitmap p_b2);
 void bitmap_cut_not_new(p_bitmap p_b1, p_bitmap p_b2);

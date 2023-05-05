@@ -117,7 +117,7 @@ p_mir_instr hir2mir_stmt_while_gen(p_hir2mir_info p_info, p_hir_exp p_exp, p_hir
 
     // 解析条件表达式， 在当前块已经生成 条件跳转
     p_mir_instr p_condbr_outwhile = hir2mir_exp_cond_gen(p_info, p_true_block, p_next_block, p_exp);
-    
+
     // 条件跳转块
     hir2mir_info_add_basic_block(p_info, p_inner_cond_block);
     hir2mir_exp_cond_gen(p_info, p_true_block, p_next_block, p_exp);
