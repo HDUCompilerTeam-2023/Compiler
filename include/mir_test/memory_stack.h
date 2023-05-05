@@ -1,9 +1,9 @@
 #ifndef __MIR_TEST_MEMORY_STACK__
 #define __MIR_TEST_MEMORY_STACK__
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 #include <mir/program.h>
 
@@ -12,8 +12,7 @@ typedef struct Memory_type memory_type;
 
 const int I32, F32;
 
-struct Memory_type
-{
+struct Memory_type {
     union {
         int i;
         float f;
@@ -22,8 +21,7 @@ struct Memory_type
     int type;
 };
 
-struct Memory_stack
-{
+struct Memory_stack {
     size_t mem_cnt;
 
     size_t *pos;

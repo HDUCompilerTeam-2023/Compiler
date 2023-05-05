@@ -3,6 +3,6 @@
 
 #include <mir_test.h>
 
-memory_type mir_operand_data_get(p_mir_operand p_operand,const memory_stack *global_stack, const memory_stack *stack);
+memory_type mir_operand_data_get(p_mir_operand p_operand, const memory_stack *global_stack, const memory_stack *stack);
 
 #endif
