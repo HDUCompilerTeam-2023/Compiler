@@ -122,7 +122,7 @@ p_syntax_param_list syntax_param_list_add(p_syntax_param_list p_list, p_syntax_p
     return p_list;
 }
 
-p_syntax_funchead syntax_func_define(p_hir_program p_program, basic_type type, char *name, p_syntax_param_list p_param_list) {
+p_hir_func syntax_func_head(p_hir_program p_program, basic_type type, char *name, p_syntax_param_list p_param_list) {
     p_symbol_type p_type = symbol_type_func_gen(false);
     p_type->basic = type;
 
@@ -135,14 +135,11 @@ p_syntax_funchead syntax_func_define(p_hir_program p_program, basic_type type, c
         p_param = p_param->p_params;
     }
 
-    p_syntax_funchead p_func = malloc(sizeof(*p_func));
-
-    p_func->p_func = hir_symbol_item_add(p_program, symbol_func_gen(name, p_type), true);
-    p_func->p_param_list = p_param_list;
+    p_symbol_item p_func_item = hir_symbol_item_add(p_program, symbol_func_gen(name, p_type), true);
+    p_hir_func p_func = hir_func_gen(p_func_item, NULL);
     free(name);
-    return p_func;
-}
-void syntax_func_param(p_hir_program p_program, p_syntax_param_list p_param_list) {
+
+    hir_symbol_zone_push(p_program);
     while (!list_head_alone(&p_param_list->param_decl)) {
         p_syntax_param_decl p_decl = list_entry(p_param_list->param_decl.p_next, syntax_param_decl, node);
         list_del(&p_decl->node);
@@ -153,6 +150,12 @@ void syntax_func_param(p_hir_program p_program, p_syntax_param_list p_param_list
         free(p_decl);
     }
     free(p_param_list);
+    return p_func;
+}
+p_hir_func syntax_func_end(p_hir_program p_program, p_hir_func p_func, p_hir_block p_block) {
+    hir_symbol_zone_pop(p_program);
+    p_func->p_block = p_block;
+    return p_func;
 }
 
 typedef struct syntax_init_mem syntax_init_mem, *p_syntax_init_mem;
