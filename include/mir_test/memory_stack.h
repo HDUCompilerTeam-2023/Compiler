@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <mir/program.h>
-
 typedef struct Memory_stack memory_stack;
 typedef struct Memory_type memory_type;
 

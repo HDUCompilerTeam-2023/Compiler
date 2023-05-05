@@ -1,9 +1,9 @@
 #ifndef __MIR_TEST_INSTR_DEFINE__
 #define __MIR_TEST_INSTR_DEFINE__
 
-#include <mir_test.h>
+#include <mir.h>
 
-#include <mir/basic_block.h>
+#include <mir_test/memory_stack.h>
 
 #include <util/list.h>
 
