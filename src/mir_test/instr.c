@@ -1,10 +1,12 @@
 #include <mir.h>
+#include <mir/basic_block.h>
 #include <mir/func.h>
 #include <mir/instr.h>
 #include <mir/operand.h>
 #include <mir/param.h>
 #include <mir/program.h>
 #include <mir/temp_sym.h>
+
 #include <mir_port.h>
 
 #include <mir_test.h>
