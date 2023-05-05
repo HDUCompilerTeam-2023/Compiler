@@ -43,7 +43,8 @@ p_ssa_var_list_info convert_ssa_init_var_list(p_mir_func p_func, p_mir_program p
         .global_num = list_head_alone(&p_program->p_store->variable)? 0 : list_entry(p_program->p_store->variable.p_prev, symbol_sym, node)->id + 1,
         .local_num = list_head_alone(&p_func->p_func_sym->variable)? 0 : list_entry(p_func->p_func_sym->variable.p_prev, symbol_sym, node)->id + 1,
         .temp_num = 1,
-        .p_ret_sym = list_entry(p_func->temp_sym_head.p_next, mir_temp_sym, node),
+        .p_ret_sym = list_entry(p_func->temp_sym_head.p_prev, mir_temp_sym, node),
+        .p_func = p_func,
     };
 
     size_t whole_num = p_var_list->temp_num + p_var_list->global_num + p_var_list->local_num;
@@ -53,9 +54,9 @@ p_ssa_var_list_info convert_ssa_init_var_list(p_mir_func p_func, p_mir_program p
     list_for_each(p_node, &p_program->p_store->variable){
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
         *(p_var_list->p_base + p_sym->id) = (ssa_var_info) {
-            .p_operand = mir_operand_declared_sym_gen(p_sym),
-            .count = 1,
-            .current_count = 0,
+            .p_mem_sym = p_sym,
+            .p_current_sym = NULL,
+            .sym_stack = list_head_init(&(p_var_list->p_base + p_sym->id)->sym_stack),
         };
     }
 
@@ -65,27 +66,27 @@ p_ssa_var_list_info convert_ssa_init_var_list(p_mir_func p_func, p_mir_program p
         if (!p_param_type) break;
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
         *(p_var_list->p_base + p_sym->id + p_var_list->global_num) = (ssa_var_info) {
-            .p_operand = mir_operand_declared_sym_gen(p_sym),
-            .count = 1,
-            .current_count = 0,
+            .p_mem_sym = p_sym,
+            .p_current_sym = NULL,
+            .sym_stack = list_head_init(&(p_var_list->p_base + p_sym->id)->sym_stack),
         };
         p_param_type = p_param_type->p_params;
     }
     // 局部变量
     while(p_node != &p_func->p_func_sym->variable) {
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
-        *(p_var_list->p_base + p_sym->id + p_var_list->global_num) = (ssa_var_info){
-            .p_operand = mir_operand_declared_sym_gen(p_sym),
-            .count = 1,
-            .current_count = 0,
+        *(p_var_list->p_base + p_sym->id + p_var_list->global_num) = (ssa_var_info) {
+            .p_mem_sym = p_sym,
+            .p_current_sym = NULL,
+            .sym_stack = list_head_init(&(p_var_list->p_base + p_sym->id)->sym_stack),
         };
         p_node = p_node->p_next;
     }
     // 返回值
     *(p_var_list->p_base + whole_num - 1) = (ssa_var_info) {
-        .p_operand = mir_operand_temp_sym_gen(p_var_list->p_ret_sym),
-        .count = 1,
-        .current_count = 0,
+        .p_mem_sym = NULL,
+        .p_current_sym = NULL,
+        .sym_stack = list_head_init(&(p_var_list->p_base + whole_num - 1)->sym_stack),
     };
     return p_var_list;
 }
@@ -93,12 +94,12 @@ p_ssa_var_list_info convert_ssa_init_var_list(p_mir_func p_func, p_mir_program p
 // 将变量转换到对应的标号，若不存在标号返回 -1
 static inline size_t get_var_index(p_mir_operand p_operand, p_ssa_var_list_info p_var_list) {
     if(!p_operand) return -1;
-    if (p_operand->kind == declared_var)
+    if (p_operand->kind == mem)
         if (p_operand->p_sym->is_global)
             return p_operand->p_sym->id;
         else
             return p_operand->p_sym->id + p_var_list->global_num;
-    else if (p_operand->kind == temp_var && p_operand->p_temp_sym == p_var_list->p_ret_sym)
+    else if (p_operand->kind == reg && p_operand->p_temp_sym == p_var_list->p_ret_sym)
         return p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num - 1;
     else
         return -1;
@@ -200,34 +201,68 @@ void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_l
     free(p_work_list);
 }
 
-static inline void set_src_ssa_id(p_mir_operand p_operand, p_ssa_var_list_info p_var_list)
+static inline p_mir_temp_sym new_temp_var(p_ssa_var_list_info p_var_list, size_t index, p_mir_basic_block p_current_block, p_mir_instr p_instr)
 {
-    size_t index = get_var_index(p_operand, p_var_list);
-    if(index != -1){
-        p_ssa_var_info p_info = p_var_list->p_base + index;
-        p_operand->ssa_id = p_info->current_count;
+    p_ssa_var_info p_info = p_var_list->p_base + index;    
+    p_mir_temp_sym p_new_sym ;
+    if(p_info->p_mem_sym)
+        p_new_sym = mir_temp_sym_basic_gen(p_info->p_mem_sym->p_type->basic);
+    else
+        p_new_sym = mir_temp_sym_basic_gen(p_var_list->p_ret_sym->b_type);
+    mir_func_temp_sym_add_at(p_var_list->p_func, p_new_sym, p_current_block, p_instr);
+    p_info->p_current_sym = p_new_sym;
+    return p_new_sym;
+}
+
+static inline p_mir_temp_sym get_top_sym(p_ssa_var_list_info p_var_list, size_t index, p_mir_instr p_instr, p_mir_basic_block p_basic_block)
+{
+    p_ssa_var_info p_info = p_var_list ->p_base + index;
+    if(!p_info->p_current_sym)
+        p_info->p_current_sym = new_temp_var(p_var_list, index, p_basic_block, p_instr);
+    return p_info->p_current_sym;
+}
+
+static inline void set_src_ssa_id(p_mir_instr p_instr, p_ssa_var_list_info p_var_list, p_mir_basic_block p_basic_block)
+{
+    p_mir_operand p_src1 = mir_instr_get_src1(p_instr);
+    p_mir_operand p_src2 = mir_instr_get_src2(p_instr);
+
+    size_t index1 = get_var_index(p_src1, p_var_list);
+    size_t index2 = get_var_index(p_src2, p_var_list);
+    if(index1 != -1){
+        *p_src1 = (mir_operand){
+            .kind = reg,
+            .p_temp_sym = get_top_sym(p_var_list, index1, p_instr, p_basic_block),
+        };
+    }
+
+    if (index2 != -1) {
+        *p_src2 = (mir_operand) {
+            .kind = reg,
+            .p_temp_sym = get_top_sym(p_var_list, index2, p_instr, p_basic_block),
+        };
     }
 }
 
-static inline void set_des_ssa_id(p_mir_operand p_operand, p_ssa_var_list_info p_var_list) {
+static inline void set_des_ssa_id(p_mir_instr p_instr, p_ssa_var_list_info p_var_list, p_mir_basic_block p_basic_block) {
+    p_mir_operand p_operand = mir_instr_get_des(p_instr);
     size_t index = get_var_index(p_operand, p_var_list);
     if (index != -1){
-        p_ssa_var_info p_info = p_var_list->p_base + index;
-        p_operand->ssa_id = p_info->count ++;
-        p_info->current_count = p_operand->ssa_id;
+        *p_operand = (mir_operand){
+            .kind = reg,
+            .p_temp_sym = new_temp_var(p_var_list, index, p_basic_block, p_instr),
+        };
     }
 }
 
-static inline void set_block_call_ssa_id(p_mir_basic_block_call p_block_call, p_convert_ssa dfs_seq, p_ssa_var_list_info p_var_list) 
+static inline void set_block_call_ssa_id(p_mir_basic_block_call p_block_call, p_convert_ssa dfs_seq, p_ssa_var_list_info p_var_list, p_mir_instr p_instr, p_mir_basic_block p_basic_block) 
 {
     size_t var_num = p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num;
     p_bitmap p_phi_var = (dfs_seq + p_block_call->p_block->dfn_id)->p_phi_var;
     for(size_t i = 0; i < var_num; i ++){
-        p_ssa_var_info p_var_info = (p_var_list->p_base + i);
         if(bitmap_if_in(p_phi_var, i))
         {
-            p_mir_operand p_param = mir_operand_copy(p_var_info->p_operand);
-            set_src_ssa_id(p_param, p_var_list);
+            p_mir_operand p_param = mir_operand_temp_sym_gen(get_top_sym(p_var_list, i, p_instr, p_basic_block));
             mir_basic_block_call_add_param(p_block_call, p_param);
         }
     }
@@ -239,24 +274,43 @@ static inline void set_block_param_ssa_id(p_mir_basic_block p_basic_block, p_con
     size_t var_num = p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num;
     p_bitmap p_phi_var = (dfs_seq + p_basic_block->dfn_id)->p_phi_var;
     for (size_t i = 0; i < var_num; i++) {
-        p_ssa_var_info p_var_info = (p_var_list->p_base + i);
         if (bitmap_if_in(p_phi_var, i)) {
-            p_mir_operand p_param = mir_operand_copy(p_var_info->p_operand);
-            set_des_ssa_id(p_param, p_var_list);
+            p_mir_operand p_param = mir_operand_temp_sym_gen(new_temp_var(p_var_list, i, p_basic_block, list_entry(&p_basic_block->instr_list, mir_instr, node)));
             mir_basic_block_add_param(p_basic_block, p_param);
         }
     }
 }
 
+static inline void record_current_sym(p_ssa_var_list_info p_var_list)
+{
+    size_t whole_num = p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num;
+    for (size_t i = 0; i < whole_num; i ++) {
+        p_ssa_var_info p_info = p_var_list->p_base + i;
+        p_sym_stack_node p_node = malloc(sizeof(*p_node));
+        *p_node = (sym_stack_node){
+            .node = list_head_init(&p_node->node),
+            .p_temp_sym = p_info->p_current_sym,
+        };
+        list_add_prev(&p_node->node, &p_info->sym_stack);
+    }
+}
+
+static inline void restore_current_sym(p_ssa_var_list_info p_var_list)
+{
+    size_t whole_num = p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num;
+    for (size_t i = 0; i < whole_num; i++) {
+        p_ssa_var_info p_info = p_var_list->p_base + i;
+        p_sym_stack_node p_node = list_entry(p_info->sym_stack.p_prev, sym_stack_node, node);
+        p_info->p_current_sym = p_node->p_temp_sym;
+        list_del(&p_node->node);
+        free(p_node);
+    }
+}
 void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p_mir_basic_block p_entry) {
     if (p_entry->if_visited) return;
     p_entry->if_visited = true;
     // 记录入块信息
-    size_t whole_num = p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num;
-    size_t *record_list = malloc(sizeof(*record_list) * whole_num);
-    for (size_t i = 0; i < whole_num; i++)
-        record_list[i] = (p_var_list->p_base + i)->current_count;
-    
+    record_current_sym(p_var_list);
     set_block_param_ssa_id(p_entry, dfs_seq, p_var_list);
 
     p_list_head p_node;
@@ -265,32 +319,26 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_se
 
         if (p_instr->irkind == mir_br)
         {
-            set_block_call_ssa_id(p_instr->mir_br.p_target, dfs_seq, p_var_list);
+            set_block_call_ssa_id(p_instr->mir_br.p_target, dfs_seq, p_var_list, p_instr, p_entry);
             convert_ssa_rename_var(p_var_list, dfs_seq, p_instr->mir_br.p_target->p_block);
             continue;
         }
         if (p_instr->irkind == mir_condbr)
         {
-            set_block_call_ssa_id(p_instr->mir_condbr.p_target_true, dfs_seq, p_var_list);
+            set_block_call_ssa_id(p_instr->mir_condbr.p_target_true, dfs_seq, p_var_list, p_instr, p_entry);
             convert_ssa_rename_var(p_var_list, dfs_seq, p_instr->mir_condbr.p_target_true->p_block);
-            set_block_call_ssa_id(p_instr->mir_condbr.p_target_false, dfs_seq, p_var_list);
+            set_block_call_ssa_id(p_instr->mir_condbr.p_target_false, dfs_seq, p_var_list, p_instr, p_entry);
             convert_ssa_rename_var(p_var_list, dfs_seq, p_instr->mir_condbr.p_target_false->p_block);
             continue;
         }
         
-        p_mir_operand p_src1 = mir_instr_get_src1(p_instr);
-        p_mir_operand p_src2 = mir_instr_get_src2(p_instr);
 
-        set_src_ssa_id(p_src1, p_var_list);
-        set_src_ssa_id(p_src2, p_var_list);
+        set_src_ssa_id(p_instr, p_var_list, p_entry);
 
-        p_mir_operand p_des = mir_instr_get_des(p_instr);
-        set_des_ssa_id(p_des, p_var_list);
+        set_des_ssa_id(p_instr, p_var_list, p_entry);
     }
-    // 恢复信息
-    for (size_t i = 0; i < whole_num; i++)
-        (p_var_list->p_base + i)->current_count = record_list[i];
-    free(record_list);
+    // 恢复信息 
+    restore_current_sym(p_var_list);
 }
 #include <stdio.h>
     static inline void print_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
@@ -330,6 +378,8 @@ void convert_ssa_func(p_mir_func p_func, p_mir_program p_program){
 
     convert_ssa_dfs_seq_drop(dfs_seq, block_num);
     ssa_var_list_info_drop(p_var_list);
+
+    mir_func_set_temp_id(p_func);
 }
 
 void convert_ssa_program(p_mir_program p_program){
@@ -348,10 +398,6 @@ void convert_ssa_dfs_seq_drop(convert_ssa *dfs_seq, size_t block_num) {
 
 void ssa_var_list_info_drop(p_ssa_var_list_info p_var_list)
 {
-    for(size_t i = 0; i < p_var_list->global_num + p_var_list->local_num + p_var_list->temp_num; i ++)
-    {
-        mir_operand_drop((p_var_list->p_base + i)->p_operand);
-    }
     free(p_var_list->p_base);
     free(p_var_list);
 }

@@ -7,12 +7,12 @@
 
 basic_type mir_operand_get_basic_type(p_mir_operand p_operand) {
     switch (p_operand->kind) {
-    case immedicate_val:
+    case imme:
         return p_operand->b_type;
-    case declared_var:
+    case mem:
         assert(p_operand->p_sym->p_type->kind != type_arrary);
         return p_operand->p_sym->p_type->basic;
-    case temp_var:
+    case reg:
         assert(!p_operand->p_temp_sym->is_pointer);
         return p_operand->p_temp_sym->b_type;
     }
@@ -22,7 +22,7 @@ p_mir_operand mir_operand_int_gen(int intconst) {
     p_mir_operand p_mir_int = malloc(sizeof(*p_mir_int));
     *p_mir_int = (mir_operand) {
         .intconst = intconst,
-        .kind = immedicate_val,
+        .kind = imme,
         .b_type = type_int,
     };
     return p_mir_int;
@@ -32,7 +32,7 @@ p_mir_operand mir_operand_float_gen(float floatconst) {
     p_mir_operand p_mir_float = malloc(sizeof(*p_mir_float));
     *p_mir_float = (mir_operand) {
         .floatconst = floatconst,
-        .kind = immedicate_val,
+        .kind = imme,
         .b_type = type_float,
     };
     return p_mir_float;
@@ -41,7 +41,7 @@ p_mir_operand mir_operand_float_gen(float floatconst) {
 p_mir_operand mir_operand_void_gen(void) {
     p_mir_operand p_mir_void = malloc(sizeof(*p_mir_void));
     *p_mir_void = (mir_operand) {
-        .kind = immedicate_val,
+        .kind = imme,
         .b_type = type_void,
     };
     return p_mir_void;
@@ -50,9 +50,8 @@ p_mir_operand mir_operand_void_gen(void) {
 p_mir_operand mir_operand_declared_sym_gen(p_symbol_sym p_h_sym) {
     p_mir_operand p_sym = malloc(sizeof(*p_sym));
     *p_sym = (mir_operand) {
-        .kind = declared_var,
+        .kind = mem,
         .p_sym = p_h_sym,
-        .ssa_id = -1,
     };
     return p_sym;
 }
@@ -66,9 +65,8 @@ p_mir_operand mir_operand_copy(p_mir_operand p_operand) {
 p_mir_operand mir_operand_temp_sym_gen(p_mir_temp_sym p_temp_sym) {
     p_mir_operand p_sym = malloc(sizeof(*p_sym));
     *p_sym = (mir_operand) {
-        .kind = temp_var,
+        .kind = reg,
         .p_temp_sym = p_temp_sym,
-        .ssa_id = -1,
     };
     return p_sym;
 }

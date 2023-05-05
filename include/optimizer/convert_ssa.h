@@ -6,6 +6,7 @@ typedef struct convert_ssa convert_ssa, *p_convert_ssa;
 typedef struct operand_stack_node operand_stack_node, *p_operand_stack_node;
 typedef struct ssa_var_info ssa_var_info, *p_ssa_var_info;
 typedef struct ssa_var_list_info ssa_var_list_info, *p_ssa_var_list_info;
+typedef struct sym_stack_node sym_stack_node, *p_sym_stack_node;
 
 struct convert_ssa{
     p_mir_basic_block p_basic_block; 
@@ -19,9 +20,14 @@ struct convert_ssa{
 
 
 struct ssa_var_info{
-    p_mir_operand p_operand;
-    size_t current_count;
-    size_t count;
+    p_symbol_sym p_mem_sym;
+    p_mir_temp_sym p_current_sym;
+    list_head sym_stack; // 保存进入基本块时的信息
+};
+
+struct sym_stack_node{
+    list_head node;
+    p_mir_temp_sym p_temp_sym;  
 };
 
 struct ssa_var_list_info{
@@ -30,6 +36,7 @@ struct ssa_var_list_info{
     size_t local_num;
     size_t temp_num;
     p_mir_temp_sym p_ret_sym;
+    p_mir_func p_func;
 };
 
 
