@@ -19,22 +19,19 @@ struct convert_ssa {
 };
 
 struct ssa_var_info {
-    p_symbol_sym p_mem_sym;
-    p_mir_temp_sym p_current_sym;
+    p_mir_vmem p_vmem;
+    p_mir_vreg p_current_vreg;
     list_head sym_stack; // 保存进入基本块时的信息
 };
 
 struct sym_stack_node {
     list_head node;
-    p_mir_temp_sym p_temp_sym;
+    p_mir_vreg p_vreg;
 };
 
 struct ssa_var_list_info {
     p_ssa_var_info p_base;
-    size_t global_num;
-    size_t local_num;
-    size_t temp_num;
-    p_mir_temp_sym p_ret_sym;
+    size_t vmem_num;
     p_mir_func p_func;
 };
 

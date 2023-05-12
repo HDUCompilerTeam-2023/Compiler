@@ -1,5 +1,5 @@
-#ifndef __MIR_BASIC_BLOCK
-#define __MIR_BASIC_BLOCK
+#ifndef __MIR_BASIC_BLOCK__
+#define __MIR_BASIC_BLOCK__
 
 #include "mir.h"
 
@@ -11,7 +11,7 @@ struct mir_basic_block {
     list_head node;
 
     // SSA 相关
-    p_mir_param_list basic_block_parameters; // 基本块参数列表
+    p_mir_bb_phi_list basic_block_phis; // 基本块参数列表
     p_mir_basic_block p_dom_parent; // 支配树上的父亲
     list_head dom_son_list; // 支配树上的儿子
 
@@ -26,6 +26,6 @@ struct mir_basic_block_list_node {
 
 struct mir_basic_block_call {
     p_mir_basic_block p_block;
-    p_mir_param_list p_block_param;
+    p_mir_bb_param_list p_block_param;
 };
 #endif

@@ -49,7 +49,7 @@ static inline void mir_simplify_cfg_func_remove_no_predesessor_bb(p_mir_func p_f
         p_list_head p_instr_node;
         list_for_each(p_instr_node, &p_bb->instr_list) {
             p_mir_instr p_instr = list_entry(p_instr_node, mir_instr, node);
-            p_mir_operand p_des = NULL;
+            p_mir_vreg p_des = NULL;
             switch (p_instr->irkind) {
             case mir_add_op:
             case mir_sub_op:
@@ -74,24 +74,21 @@ static inline void mir_simplify_cfg_func_remove_no_predesessor_bb(p_mir_func p_f
             case mir_call:
                 p_des = p_instr->mir_call.p_des;
                 break;
-            case mir_array:
-                p_des = p_instr->mir_array.p_des;
-            case mir_array_assign:
+            case mir_load:
+                p_des = p_instr->mir_load.p_des;
+            case mir_store:
+                break;
+            case mir_addr:
+                p_des = p_instr->mir_addr.p_des;
                 break;
             case mir_br:
             case mir_condbr:
             case mir_ret:
                 break;
-            case mir_int2float_op:
-            case mir_float2int_op:
-                assert(0);
-                break;
             }
-            if (p_des && p_des->kind == reg) {
-                p_mir_temp_sym p_ts = p_des->p_temp_sym;
-                printf("del temp %ld\n", p_ts->id);
-                list_del(&p_ts->node);
-                mir_temp_sym_drop(p_ts);
+            if (p_des) {
+                list_del(&p_des->node);
+                mir_vreg_drop(p_des);
             }
         }
 
@@ -242,6 +239,6 @@ void mir_simplify_cfg_pass(p_mir_program p_mir) {
         mir_simplify_cfg_func_pass(p_func);
 
         mir_func_set_block_id(p_func);
-        mir_func_set_temp_id(p_func);
+        mir_func_set_vreg_id(p_func);
     }
 }

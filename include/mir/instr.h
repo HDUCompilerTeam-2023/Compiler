@@ -20,45 +20,47 @@ enum mir_instr_type {
     // unary instr
     mir_minus_op,
     mir_not_op,
-    mir_int2float_op,
-    mir_float2int_op,
     mir_val_assign,
-    // memory instr
-    // mir_alloca,
-    // mir_store,
-    // mir_load,
 
-    // other
-    mir_array_assign,
+    // memory
+    mir_addr,
+    mir_store,
+    mir_load,
+    // func call
     mir_call,
-    mir_array,
     mir_ret,
+    // jump
     mir_br,
     mir_condbr,
 };
 
 struct mir_binary_instr {
-    p_mir_operand p_src1, p_src2, p_des;
+    p_mir_operand p_src1, p_src2;
+    p_mir_vreg p_des;
 };
 
 struct mir_unary_instr {
-    p_mir_operand p_src, p_des;
+    p_mir_operand p_src;
+    p_mir_vreg p_des;
 };
 
 struct mir_call_instr {
     p_mir_func p_func;
     p_mir_param_list p_param_list;
-    p_mir_operand p_des;
+    p_mir_vreg p_des;
 };
 
-struct mir_array_instr {
-    p_mir_operand p_array;
+struct mir_load_instr {
+    p_mir_operand p_addr;
     p_mir_operand p_offset;
-    p_mir_operand p_des;
+    p_mir_vreg p_des;
 };
-
-struct mir_array_assign_instr {
-    p_mir_operand p_array;
+struct mir_addr_instr {
+    p_mir_vmem p_vmem;
+    p_mir_vreg p_des;
+};
+struct mir_store_instr {
+    p_mir_operand p_addr;
     p_mir_operand p_offset;
     p_mir_operand p_src;
 };
@@ -81,8 +83,9 @@ struct mir_instr {
         mir_binary_instr mir_binary;
         mir_unary_instr mir_unary;
         mir_call_instr mir_call;
-        mir_array_instr mir_array;
-        mir_array_assign_instr mir_array_assign;
+        mir_addr_instr mir_addr;
+        mir_load_instr mir_load;
+        mir_store_instr mir_store;
         mir_ret_instr mir_ret;
         mir_br_instr mir_br;
         mir_condbr_instr mir_condbr;
@@ -90,20 +93,5 @@ struct mir_instr {
 
     list_head node; // 下一条指令
 };
-
-// 分配 des 的类型 变量给 des
-// struct mir_alloca_instr{
-//     p_mir_symbol des;
-// };
-
-// struct mir_load_instr{
-//     p_mir_symbol src;
-//     p_mir_symbol des;
-// };
-
-// struct mir_store_instr{
-//     p_mir_symbol src;
-//     p_mir_symbol des;
-// };
 
 #endif

@@ -6,6 +6,7 @@ struct mir_program {
     p_mir_func func_table;
     size_t func_cnt;
 
+    list_head vmem_list;
     p_symbol_store p_store;
 };
 

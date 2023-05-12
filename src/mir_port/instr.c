@@ -8,13 +8,13 @@ p_mir_operand mir_instr_binary_get_src1(p_mir_instr p_instr) {
 p_mir_operand mir_instr_binary_get_src2(p_mir_instr p_instr) {
     return p_instr->mir_binary.p_src2;
 }
-p_mir_operand mir_instr_binary_get_des(p_mir_instr p_instr) {
+p_mir_vreg mir_instr_binary_get_des(p_mir_instr p_instr) {
     return p_instr->mir_binary.p_des;
 }
 p_mir_operand mir_instr_unary_get_src(p_mir_instr p_instr) {
     return p_instr->mir_unary.p_src;
 }
-p_mir_operand mir_instr_unary_get_des(p_mir_instr p_instr) {
+p_mir_vreg mir_instr_unary_get_des(p_mir_instr p_instr) {
     return p_instr->mir_unary.p_des;
 }
 p_mir_operand mir_instr_ret_get_src(p_mir_instr p_instr) {
@@ -23,30 +23,30 @@ p_mir_operand mir_instr_ret_get_src(p_mir_instr p_instr) {
 p_mir_func mir_instr_call_get_func(p_mir_instr p_instr) {
     return p_instr->mir_call.p_func;
 }
-p_mir_operand mir_instr_call_get_des(p_mir_instr p_instr) {
+p_mir_vreg mir_instr_call_get_des(p_mir_instr p_instr) {
     return p_instr->mir_call.p_des;
 }
 p_mir_param_list mir_instr_call_get_param(p_mir_instr p_instr) {
     return p_instr->mir_call.p_param_list;
 }
 p_mir_operand mir_instr_array_get_array(p_mir_instr p_instr) {
-    return p_instr->mir_array.p_array;
+    return p_instr->mir_load.p_addr;
 }
 p_mir_operand mir_instr_array_get_offset(p_mir_instr p_instr) {
-    return p_instr->mir_array.p_offset;
+    return p_instr->mir_load.p_offset;
 }
-p_mir_operand mir_instr_array_get_des(p_mir_instr p_instr) {
-    return p_instr->mir_array.p_des;
+p_mir_vreg mir_instr_array_get_des(p_mir_instr p_instr) {
+    return p_instr->mir_load.p_des;
 }
 
 p_mir_operand mir_instr_array_assign_get_array(p_mir_instr p_instr) {
-    return p_instr->mir_array_assign.p_array;
+    return p_instr->mir_store.p_addr;
 }
 p_mir_operand mir_instr_array_assign_get_offset(p_mir_instr p_instr) {
-    return p_instr->mir_array_assign.p_offset;
+    return p_instr->mir_store.p_offset;
 }
 p_mir_operand mir_instr_array_assign_get_src(p_mir_instr p_instr) {
-    return p_instr->mir_array_assign.p_src;
+    return p_instr->mir_store.p_src;
 }
 p_mir_basic_block mir_instr_br_get_target(p_mir_instr p_instr) {
     return p_instr->mir_br.p_target->p_block;

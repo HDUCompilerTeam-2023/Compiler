@@ -4,7 +4,6 @@
 #include <mir.h>
 
 enum mir_operand_kind {
-    mem,
     reg,
     imme,
 };
@@ -12,10 +11,8 @@ struct mir_operand {
     mir_operand_kind kind;
     union {
         struct {
-            union {
-                p_mir_temp_sym p_temp_sym;
-                p_symbol_sym p_sym;
-            };
+            p_mir_vreg p_vreg;
+            list_head use_node;
         };
         struct {
             union {

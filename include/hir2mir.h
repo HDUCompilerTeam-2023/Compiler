@@ -5,7 +5,6 @@
 #include <hir2mir/block.h>
 #include <hir2mir/exp.h>
 #include <hir2mir/func.h>
-#include <hir2mir/operand.h>
 #include <hir2mir/param.h>
 #include <hir2mir/program.h>
 #include <hir2mir/stmt.h>

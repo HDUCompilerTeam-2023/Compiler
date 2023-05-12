@@ -9,12 +9,9 @@ basic_type mir_operand_get_basic_type(p_mir_operand p_operand) {
     switch (p_operand->kind) {
     case imme:
         return p_operand->b_type;
-    case mem:
-        assert(p_operand->p_sym->p_type->kind != type_arrary);
-        return p_operand->p_sym->p_type->basic;
     case reg:
-        assert(!p_operand->p_temp_sym->is_pointer);
-        return p_operand->p_temp_sym->b_type;
+        assert(p_operand->p_vreg->ref_level == 0);
+        return p_operand->p_vreg->b_type;
     }
 }
 
@@ -56,29 +53,15 @@ p_mir_operand mir_operand_void_gen(void) {
     };
     return p_mir_void;
 }
-// 已定义变量转换为操作数， 全局变量或函数存储名字， 局部变量存储 id
-p_mir_operand mir_operand_declared_sym_gen(p_symbol_sym p_h_sym) {
-    p_mir_operand p_sym = malloc(sizeof(*p_sym));
-    *p_sym = (mir_operand) {
-        .kind = mem,
-        .p_sym = p_h_sym,
-    };
-    return p_sym;
-}
 
-p_mir_operand mir_operand_copy(p_mir_operand p_operand) {
-    p_mir_operand p_new_operand = malloc(sizeof(*p_new_operand));
-    *p_new_operand = *p_operand;
-    return p_new_operand;
-}
-
-p_mir_operand mir_operand_temp_sym_gen(p_mir_temp_sym p_temp_sym) {
-    p_mir_operand p_sym = malloc(sizeof(*p_sym));
-    *p_sym = (mir_operand) {
+p_mir_operand mir_operand_vreg_gen(p_mir_vreg p_vreg) {
+    p_mir_operand p_operand = malloc(sizeof(*p_operand));
+    *p_operand = (mir_operand) {
         .kind = reg,
-        .p_temp_sym = p_temp_sym,
+        .p_vreg = p_vreg,
+        .use_node = list_head_init(&p_operand->use_node),
     };
-    return p_sym;
+    return p_operand;
 }
 
 void mir_operand_drop(p_mir_operand p_operand) {
