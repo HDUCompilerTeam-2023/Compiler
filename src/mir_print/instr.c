@@ -26,8 +26,6 @@ void mir_instr_print(p_mir_instr p_instr) {
         break;
     case mir_minus_op:
     case mir_not_op:
-    case mir_int2float_op:
-    case mir_float2int_op:
     case mir_val_assign:
         mir_unary_instr_print(p_instr->irkind, &p_instr->mir_unary);
         break;
@@ -43,18 +41,21 @@ void mir_instr_print(p_mir_instr p_instr) {
     case mir_call:
         mir_call_instr_print(&p_instr->mir_call);
         break;
-    case mir_array:
-        mir_array_instr_print(&p_instr->mir_array);
+    case mir_addr:
+        mir_addr_instr_print(&p_instr->mir_addr);
         break;
-    case mir_array_assign:
-        mir_array_assign_instr_print(&p_instr->mir_array_assign);
+    case mir_load:
+        mir_load_instr_print(&p_instr->mir_load);
+        break;
+    case mir_store:
+        mir_store_instr_print(&p_instr->mir_store);
     }
     printf("\n");
 }
 
 void mir_binary_instr_print(mir_instr_type instr_type, p_mir_binary_instr p_instr) {
-    mir_operand_print(p_instr->p_des);
-    printf("= ");
+    mir_vreg_print(p_instr->p_des);
+    printf(" = ");
     mir_operand_print(p_instr->p_src1);
     switch (instr_type) {
     case mir_add_op:
@@ -102,20 +103,14 @@ void mir_binary_instr_print(mir_instr_type instr_type, p_mir_binary_instr p_inst
 }
 
 void mir_unary_instr_print(mir_instr_type instr_type, p_mir_unary_instr p_instr) {
-    mir_operand_print(p_instr->p_des);
-    printf("= ");
+    mir_vreg_print(p_instr->p_des);
+    printf(" = ");
     switch (instr_type) {
     case mir_minus_op:
         printf("- ");
         break;
     case mir_not_op:
         printf("! ");
-        break;
-    case mir_int2float_op:
-        printf("(float) ");
-        break;
-    case mir_float2int_op:
-        printf("(int) ");
         break;
     case mir_val_assign:
         break;
@@ -145,26 +140,33 @@ void mir_condbr_instr_print(p_mir_condbr_instr p_instr) {
 }
 
 void mir_call_instr_print(p_mir_call_instr p_instr) {
-    mir_operand_print(p_instr->p_des);
-    printf("= ");
+    mir_vreg_print(p_instr->p_des);
+    printf(" = ");
     printf("@%s", p_instr->p_func->p_func_sym->name);
     mir_param_list_print(p_instr->p_param_list);
 }
 
-void mir_array_instr_print(p_mir_array_instr p_instr) {
-    mir_operand_print(p_instr->p_des);
-    printf("= ");
-    mir_operand_print(p_instr->p_array);
-    printf("[");
-    mir_operand_print(p_instr->p_offset);
-    printf("]");
+void mir_load_instr_print(p_mir_load_instr p_instr) {
+    mir_vreg_print(p_instr->p_des);
+    printf(" = load ");
+    mir_operand_print(p_instr->p_addr);
+    if (p_instr->p_offset) {
+        mir_operand_print(p_instr->p_offset);
+    }
 }
 
-void mir_array_assign_instr_print(p_mir_array_assign_instr p_instr) {
-    mir_operand_print(p_instr->p_array);
-    printf("[ ");
-    mir_operand_print(p_instr->p_offset);
-    printf("] ");
+void mir_addr_instr_print(p_mir_addr_instr p_instr) {
+    mir_vreg_print(p_instr->p_des);
+    printf(" = addr ");
+    mir_vmem_print(p_instr->p_vmem);
+}
+
+void mir_store_instr_print(p_mir_store_instr p_instr) {
+    printf("store ");
+    mir_operand_print(p_instr->p_addr);
+    if (p_instr->p_offset) {
+        mir_operand_print(p_instr->p_offset);
+    }
     printf("= ");
     mir_operand_print(p_instr->p_src);
 }

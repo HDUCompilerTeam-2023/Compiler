@@ -9,7 +9,7 @@ p_mir_basic_block mir_basic_block_gen() {
         .prev_basic_block_list = list_head_init(&p_mir_block->prev_basic_block_list),
         .block_id = 0,
         .node = list_head_init(&p_mir_block->node),
-        .basic_block_parameters = mir_param_list_init(),
+        .basic_block_phis = mir_bb_phi_list_init(),
         .dom_son_list = list_head_init(&p_mir_block->dom_son_list),
         .p_dom_parent = NULL,
         .if_visited = false,
@@ -41,13 +41,13 @@ p_mir_basic_block_call mir_basic_block_call_gen(p_mir_basic_block p_block) {
     p_mir_basic_block_call p_block_call = malloc(sizeof(*p_block_call));
     *p_block_call = (mir_basic_block_call) {
         .p_block = p_block,
-        .p_block_param = mir_param_list_init(),
+        .p_block_param = mir_bb_param_list_init(),
     };
     return p_block_call;
 }
 
 void mir_basic_block_call_add_param(p_mir_basic_block_call p_block_call, p_mir_operand p_operand) {
-    mir_param_list_add(p_block_call->p_block_param, p_operand);
+    mir_bb_param_list_add(p_block_call->p_block_param, p_operand);
 }
 
 void mir_basic_block_add_dom_son(p_mir_basic_block p_basic_block, p_mir_basic_block p_son) {
@@ -60,8 +60,9 @@ void mir_basic_block_add_dom_son(p_mir_basic_block p_basic_block, p_mir_basic_bl
     list_add_prev(&p_new_node->node, &p_basic_block->dom_son_list);
 }
 
-void mir_basic_block_add_param(p_mir_basic_block p_basic_block, p_mir_operand p_operand) {
-    mir_param_list_add(p_basic_block->basic_block_parameters, p_operand);
+void mir_basic_block_add_param(p_mir_basic_block p_basic_block, p_mir_vreg p_vreg) {
+    mir_bb_phi_list_add(p_basic_block->basic_block_phis, p_vreg);
+    mir_vreg_set_bb_def(p_vreg, p_basic_block);
 }
 
 void mir_basic_block_drop(p_mir_basic_block p_basic_block) {
@@ -81,11 +82,11 @@ void mir_basic_block_drop(p_mir_basic_block p_basic_block) {
         list_del(&p_basic_block_list_node->node);
         free(p_basic_block_list_node);
     }
-    mir_param_list_drop(p_basic_block->basic_block_parameters);
+    mir_bb_phi_list_drop(p_basic_block->basic_block_phis);
     free(p_basic_block);
 }
 
 void mir_basic_block_call_drop(p_mir_basic_block_call p_block_call) {
-    mir_param_list_drop(p_block_call->p_block_param);
+    mir_bb_param_list_drop(p_block_call->p_block_param);
     free(p_block_call);
 }

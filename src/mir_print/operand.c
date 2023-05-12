@@ -2,7 +2,7 @@
 #include <mir/operand.h>
 #include <mir_print.h>
 
-#include <mir/temp_sym.h>
+#include <mir/vreg.h>
 #include <stdio.h>
 #include <symbol/sym.h>
 #include <symbol/type.h>
@@ -53,17 +53,7 @@ void mir_operand_print(p_mir_operand p_operand) {
             symbol_str_print(p_operand->strconst);
         break;
     case reg:
-        mir_temp_sym_print(p_operand->p_temp_sym);
-        printf(" ");
-        break;
-    case mem:
-        mir_symbol_type_print(p_operand->p_sym->p_type);
-        if (p_operand->p_sym->is_global) {
-            printf("@%s", p_operand->p_sym->name);
-        }
-        else {
-            printf("%%l%ld", p_operand->p_sym->id);
-        }
+        mir_vreg_print(p_operand->p_vreg);
         printf(" ");
         break;
     }

@@ -6,9 +6,46 @@
 #include <symbol/sym.h>
 #include <symbol/type.h>
 
+static inline p_mir_vreg hir2mir_sym_addr(p_hir2mir_info p_info, p_symbol_sym p_sym) {
+    size_t id = p_sym->id;
+    p_mir_vreg *table;
+    if (p_sym->is_global) {
+        table = p_info->global_addr_table;
+    }
+    else {
+        table = p_info->local_addr_table;
+    }
+    p_mir_vreg p_addr = table[id];
+
+    if (!p_addr) {
+        p_mir_vmem p_vmem = NULL;
+        if (p_sym->is_global) {
+            p_vmem = p_info->p_program_info->global_vmem_table[id];
+            if (!p_vmem) {
+                p_vmem = p_info->p_program_info->global_vmem_table[id] = mir_vmem_sym_gen(p_sym);
+                mir_program_vmem_add(p_info->p_program_info->p_program, p_vmem);
+            }
+        }
+        else {
+            p_vmem = mir_vmem_sym_gen(p_sym);
+            mir_func_vmem_add(p_info->p_func, p_vmem);
+        }
+        p_addr = mir_vreg_gen(p_vmem->b_type, p_vmem->ref_level + 1);
+        hir2mir_info_add_instr(p_info, mir_addr_instr_gen(p_vmem, p_addr));
+        while (p_addr->ref_level > 1) {
+            p_mir_operand p_operand = mir_operand_vreg_gen(p_addr);
+            p_addr = mir_vreg_gen(p_addr->b_type, p_addr->ref_level - 1);
+            hir2mir_info_add_instr(p_info, mir_load_instr_gen(p_operand, NULL, p_addr));
+        }
+
+        table[id] = p_addr;
+    }
+
+    return p_addr;
+}
+
 // 根据 p_exp 生成指令并返回最后一条指令的左值
 p_mir_operand hir2mir_exp_get_operand(p_hir2mir_info p_info, p_hir_exp p_exp) {
-    p_mir_operand p_operand;
     switch (p_exp->kind) {
     case hir_exp_num: // 若是常量 直接返回该常量对应的操作数
         if (p_exp->basic == type_int) {
@@ -21,33 +58,28 @@ p_mir_operand hir2mir_exp_get_operand(p_hir2mir_info p_info, p_hir_exp p_exp) {
             return mir_operand_str_gen(p_exp->p_str);
         }
         assert(0);
-    case hir_exp_val:
+    case hir_exp_val: {
         // 若是变量 直接返回该变量对应的操作数
-        p_operand = mir_operand_declared_sym_gen(p_exp->p_sym);
+        p_mir_vreg p_addr_vreg = hir2mir_sym_addr(p_info, p_exp->p_sym);
+        p_mir_operand p_addr_operand = mir_operand_vreg_gen(p_addr_vreg);
+        p_mir_operand p_offset = NULL;
         if (p_exp->p_offset) // 若是数组元素赋值 需要新增一条语句将数组元素赋值给临时变量
         {
-            p_mir_operand p_offset = hir2mir_exp_get_operand(p_info, p_exp->p_offset);
-            p_mir_operand p_temp_des;
-            p_mir_instr p_instr;
-            if (p_exp->p_type->kind == type_var) {
-                p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, p_exp->p_type->basic);
-                p_instr = mir_array_instr_gen(p_operand, p_offset, p_temp_des);
+            p_offset = hir2mir_exp_get_operand(p_info, p_exp->p_offset);
+            if (p_exp->p_type->kind == type_arrary) {
+                p_mir_vreg p_des = mir_vreg_gen(p_addr_vreg->b_type, p_addr_vreg->ref_level);
+                p_mir_instr p_instr = mir_binary_instr_gen(mir_add_op, p_addr_operand, p_offset, p_des);
+                hir2mir_info_add_instr(p_info, p_instr);
+                return mir_operand_vreg_gen(p_des);
             }
-            else {
-                p_symbol_type p_type = p_exp->p_type;
-                while (p_type->kind != type_var)
-                    p_type = p_type->p_item;
-                p_temp_des = hir2mir_operand_temp_sym_array_gen(p_info, p_type->basic);
-                p_instr = mir_binary_instr_gen(mir_add_op, p_operand, p_offset, p_temp_des);
-            }
-            hir2mir_info_add_instr(p_info, p_instr);
-            return mir_operand_copy(p_temp_des);
         }
-        else
-            return p_operand;
+        p_mir_vreg p_des = mir_vreg_gen(p_addr_vreg->b_type, p_addr_vreg->ref_level - 1);
+        p_mir_instr p_load = mir_load_instr_gen(p_addr_operand, p_offset, p_des);
+        hir2mir_info_add_instr(p_info, p_load);
+        return mir_operand_vreg_gen(p_des);
+    }
     default:
-        p_operand = mir_instr_get_des(hir2mir_exp_gen(p_info, p_exp));
-        return mir_operand_copy(p_operand);
+        return mir_operand_vreg_gen(mir_instr_get_des(hir2mir_exp_gen(p_info, p_exp)));
     }
 }
 
@@ -110,7 +142,7 @@ p_mir_instr hir2mir_exp_exec_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     default:
         assert(0);
     }
-    p_mir_operand p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, b_type);
+    p_mir_vreg p_vreg = mir_vreg_gen(b_type, 0);
 
     mir_instr_type mir_type;
     switch (p_exp->op) {
@@ -150,7 +182,7 @@ p_mir_instr hir2mir_exp_exec_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     default:
         assert(0);
     }
-    p_mir_instr p_new_instr = mir_binary_instr_gen(mir_type, p_operand1, p_operand2, p_temp_des);
+    p_mir_instr p_new_instr = mir_binary_instr_gen(mir_type, p_operand1, p_operand2, p_vreg);
     hir2mir_info_add_instr(p_info, p_new_instr);
     return p_new_instr;
 }
@@ -158,23 +190,23 @@ p_mir_instr hir2mir_exp_exec_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
 p_mir_instr hir2mir_exp_uexec_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     assert(p_exp && p_exp->p_src_1);
     p_mir_operand p_operand = hir2mir_exp_get_operand(p_info, p_exp->p_src_1);
-    p_mir_operand p_temp_des = NULL;
-    p_mir_instr p_new_instr = NULL;
+    p_mir_vreg p_des = NULL;
+    p_mir_instr p_instr = NULL;
     switch (p_exp->op) {
     case hir_exp_op_bool_not:
         // 需要转换为 int 型
-        p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, type_int);
-        p_new_instr = mir_unary_instr_gen(mir_not_op, p_operand, p_temp_des);
+        p_des = mir_vreg_gen(type_int, 0);
+        p_instr = mir_unary_instr_gen(mir_not_op, p_operand, p_des);
         break;
     case hir_exp_op_minus:
-        p_temp_des = hir2mir_operand_temp_sym_basic_gen(p_info, mir_operand_get_basic_type(p_operand));
-        p_new_instr = mir_unary_instr_gen(mir_minus_op, p_operand, p_temp_des);
+        p_des = mir_vreg_gen(mir_operand_get_basic_type(p_operand), 0);
+        p_instr = mir_unary_instr_gen(mir_minus_op, p_operand, p_des);
         break;
     default:
         assert(0);
     }
-    hir2mir_info_add_instr(p_info, p_new_instr);
-    return p_new_instr;
+    hir2mir_info_add_instr(p_info, p_instr);
+    return p_instr;
 }
 // exp 正确则跳向 true, 错误跳向 false
 p_mir_instr hir2mir_exp_cond_gen(p_hir2mir_info p_info, p_mir_basic_block p_true_block, p_mir_basic_block p_false_block, p_hir_exp p_exp) {
@@ -211,16 +243,13 @@ p_mir_instr hir2mir_exp_assign_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     assert(p_exp->p_src_1->kind == hir_exp_val);
 
     p_mir_instr p_new_instr = NULL;
-    p_mir_operand p_des = mir_operand_declared_sym_gen(p_exp->p_src_1->p_sym);
+    p_mir_operand p_src = hir2mir_exp_get_operand(p_info, p_exp->p_src_2);
+    p_mir_operand p_addr = mir_operand_vreg_gen(hir2mir_sym_addr(p_info, p_exp->p_src_1->p_sym));
+    p_mir_operand p_offset = NULL;
     if (p_exp->p_src_1->p_offset) { // 左值为数组对应指令为 数组赋值指令
-        p_mir_operand p_offset = hir2mir_exp_get_operand(p_info, p_exp->p_src_1->p_offset);
-        p_mir_operand p_src = hir2mir_exp_get_operand(p_info, p_exp->p_src_2);
-        p_new_instr = mir_array_assign_instr_gen(p_des, p_offset, p_src);
+        p_offset = hir2mir_exp_get_operand(p_info, p_exp->p_src_1->p_offset);
     }
-    else {
-        p_mir_operand p_operand = hir2mir_exp_get_operand(p_info, p_exp->p_src_2);
-        p_new_instr = mir_unary_instr_gen(mir_val_assign, p_operand, p_des);
-    }
+    p_new_instr = mir_store_instr_gen(p_addr, p_offset, p_src);
     hir2mir_info_add_instr(p_info, p_new_instr);
     return p_new_instr;
 }
@@ -228,10 +257,10 @@ p_mir_instr hir2mir_exp_assign_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
 p_mir_instr hir2mir_exp_call_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     assert(p_exp && p_exp->kind == hir_exp_call);
 
-    p_mir_func p_func = p_info->func_table + p_exp->p_func->p_sym->id;
+    p_mir_func p_func = p_info->p_program_info->func_table + p_exp->p_func->p_sym->id;
 
     basic_type b_type = p_func->p_func_sym->p_type->basic;
-    p_mir_operand p_des = hir2mir_operand_temp_sym_basic_gen(p_info, b_type);
+    p_mir_vreg p_des = mir_vreg_gen(b_type, 0);
 
     p_mir_param_list p_m_param_list = hir2mir_param_list_gen(p_info, p_exp->p_param_list);
 

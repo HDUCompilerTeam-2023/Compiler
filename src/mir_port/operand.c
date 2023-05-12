@@ -1,5 +1,5 @@
 #include <mir/operand.h>
-#include <mir/temp_sym.h>
+#include <mir/vreg.h>
 #include <mir_port/operand.h>
 
 #include <symbol/sym.h>
@@ -8,24 +8,10 @@ mir_operand_kind mir_operand_get_kind(p_mir_operand p_operand) {
     return p_operand->kind;
 }
 
-static inline bool mir_operand_can_get_name(p_mir_operand p_operand) {
-    return (p_operand->kind == mem && (p_operand->p_sym->is_global || p_operand->p_sym->p_type->kind == type_func));
-}
-
-// 函数、全局变量使用名字
-char *mir_operand_get_sym_name(p_mir_operand p_operand) {
-    assert(mir_operand_can_get_name(p_operand));
-    return p_operand->p_sym->name;
-}
 // 局部、临时变量使用 id
 size_t mir_operand_get_sym_id(p_mir_operand p_operand) {
-    assert(!mir_operand_can_get_name(p_operand));
-    if (p_operand->kind == reg)
-        return p_operand->p_temp_sym->id;
-    else
-        return p_operand->p_sym->id;
+    return p_operand->p_vreg->id;
 }
-
 INTCONST_t mir_operand_get_int(p_mir_operand p_operand) {
     return p_operand->intconst;
 }
