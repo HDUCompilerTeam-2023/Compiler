@@ -150,6 +150,7 @@ p_hir_func syntax_func_head(p_hir_program p_program, basic_type type, char *name
         free(p_decl->name);
         free(p_decl);
     }
+    p_func->p_sym->last_param = p_func->p_sym->variable.p_prev;
     free(p_param_list);
     return p_func;
 }
@@ -358,6 +359,7 @@ void syntax_rtlib_decl(p_hir_program p_program, basic_type type, char *name, p_s
             hir_symbol_item_add(p_program, p_sym, false);
         }
     }
+    p_sym->last_param = p_sym->variable.p_prev;
     hir_symbol_zone_pop(p_program);
 }
 

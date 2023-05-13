@@ -25,6 +25,7 @@ struct symbol_sym {
     uint64_t id;
     union {
         struct {
+            p_list_head last_param;
             list_head variable;
             list_head constant;
         };

@@ -48,14 +48,12 @@ void symbol_init_print(p_symbol_sym p_sym) {
 
 void symbol_param_print(p_symbol_sym p_sym) {
     p_list_head p_node;
-    p_symbol_type p_param_type = p_sym->p_type->p_params;
-    if (p_param_type) {
+    if (p_sym->last_param != &p_sym->variable) {
         printf("param:\n");
     }
     list_for_each(p_node, &p_sym->variable) {
-        if (!p_param_type)
+        if (p_node->p_prev == p_sym->last_param)
             break;
         symbol_init_print(list_entry(p_node, symbol_sym, node));
-        p_param_type = p_param_type->p_params;
     }
 }
