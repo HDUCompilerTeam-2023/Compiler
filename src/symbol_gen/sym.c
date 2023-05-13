@@ -34,6 +34,7 @@ static inline p_symbol_sym symbol_gen(const char *name, p_symbol_type p_type, bo
     };
     strcpy(p_info->name, name);
     if (p_type->kind >= type_func) {
+        p_info->last_param = NULL;
         p_info->variable = list_head_init(&p_info->variable);
         p_info->constant = list_head_init(&p_info->constant);
     }
