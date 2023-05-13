@@ -18,6 +18,9 @@ struct hir2mir_info {
     p_mir_basic_block p_ret_block; // 返回的块
     p_mir_vmem p_ret_vmem; // 返回值所存储的位置
 
+    p_mir_vmem *param_vmem_table;
+    size_t param_vmem_cnt;
+
     p_mir_vreg *local_addr_table;
     size_t local_addr_cnt;
 
