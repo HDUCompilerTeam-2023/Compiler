@@ -3,8 +3,11 @@
 
 typedef struct mir_program mir_program, *p_mir_program;
 typedef struct mir_func mir_func, *p_mir_func;
+
+typedef enum mir_basic_block_branch_kind mir_basic_block_branch_kind;
+typedef struct mir_basic_block_branch mir_basic_block_branch, *p_mir_basic_block_branch;
 typedef struct mir_basic_block mir_basic_block, *p_mir_basic_block;
-typedef struct mir_basic_block_call mir_basic_block_call, *p_mir_basic_block_call;
+typedef struct mir_basic_block_branch_target mir_basic_block_branch_target, *p_mir_basic_block_branch_target;
 
 typedef struct mir_bb_param mir_bb_param, *p_mir_bb_param;
 typedef struct mir_bb_param_list mir_bb_param_list, *p_mir_bb_param_list;
@@ -35,6 +38,3 @@ typedef struct mir_call_instr mir_call_instr, *p_mir_call_instr;
 typedef struct mir_ret_instr mir_ret_instr, *p_mir_ret_instr;
 typedef struct mir_br_instr mir_br_instr, *p_mir_br_instr;
 typedef struct mir_condbr_instr mir_condbr_instr, *p_mir_condbr_instr;
-// typedef struct mir_alloca_instr mir_alloca_instr, *p_mir_alloca_instr;
-// typedef struct mir_store_instr mir_store_instr, *p_mir_store_instr;
-// typedef struct mir_load_instr mir_load_instr, *p_mir_load_instr;

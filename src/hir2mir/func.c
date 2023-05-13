@@ -16,14 +16,15 @@ void hir2mir_func_gen(p_hir_func p_h_func, p_hir2mir_program_info p_program_info
     hir2mir_block_gen(p_info, p_h_func->p_block);
 
     list_replace(&p_info->p_ret_block->node, &p_info->p_current_basic_block->node);
-    mir_basic_block_drop(p_info->p_current_basic_block);
+    free(p_info->p_current_basic_block->basic_block_phis);
+    free(p_info->p_current_basic_block);
     p_info->p_current_basic_block = p_info->p_ret_block;
 
     p_mir_vreg p_ret_addr = mir_vreg_gen(p_info->p_ret_vmem->b_type, p_info->p_ret_vmem->ref_level + 1);
     p_mir_vreg p_ret_val = mir_vreg_gen(p_info->p_ret_vmem->b_type, p_info->p_ret_vmem->ref_level);
     hir2mir_info_add_instr(p_info, mir_addr_instr_gen(p_info->p_ret_vmem, p_ret_addr));
     hir2mir_info_add_instr(p_info, mir_load_instr_gen(mir_operand_vreg_gen(p_ret_addr), NULL, p_ret_val));
-    hir2mir_info_add_instr(p_info, mir_ret_instr_gen(mir_operand_vreg_gen(p_ret_val)));
+    mir_basic_block_set_ret(p_info->p_current_basic_block, mir_operand_vreg_gen(p_ret_val));
 
     mir_func_vmem_add(p_m_func, p_info->p_ret_vmem);
 

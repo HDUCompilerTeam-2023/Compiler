@@ -28,10 +28,6 @@ enum mir_instr_type {
     mir_load,
     // func call
     mir_call,
-    mir_ret,
-    // jump
-    mir_br,
-    mir_condbr,
 };
 
 struct mir_binary_instr {
@@ -64,18 +60,6 @@ struct mir_store_instr {
     p_mir_operand p_offset;
     p_mir_operand p_src;
 };
-struct mir_ret_instr {
-    p_mir_operand p_ret; //  NULL 时返回 void
-};
-
-struct mir_br_instr {
-    p_mir_basic_block_call p_target;
-};
-
-struct mir_condbr_instr {
-    p_mir_basic_block_call p_target_true, p_target_false;
-    p_mir_operand p_cond;
-};
 
 struct mir_instr {
     mir_instr_type irkind;
@@ -86,9 +70,6 @@ struct mir_instr {
         mir_addr_instr mir_addr;
         mir_load_instr mir_load;
         mir_store_instr mir_store;
-        mir_ret_instr mir_ret;
-        mir_br_instr mir_br;
-        mir_condbr_instr mir_condbr;
     };
 
     list_head node; // 下一条指令

@@ -24,13 +24,13 @@ size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t block_num, siz
     convert_ssa_gen(dfs_seq, block_num, var_num, p_entry, current_num);
     current_num++;
 
-    p_mir_basic_block p_true_block = mir_basic_block_get_true(p_entry);
-    p_mir_basic_block p_false_block = mir_basic_block_get_false(p_entry);
+    p_mir_basic_block_branch_target p_true_target = p_entry->p_branch->p_target_1;
+    p_mir_basic_block_branch_target p_false_target = p_entry->p_branch->p_target_2;
 
-    if (p_true_block)
-        current_num = convert_ssa_init_dfs_sequence(dfs_seq, block_num, var_num, p_true_block, current_num);
-    if (p_false_block)
-        current_num = convert_ssa_init_dfs_sequence(dfs_seq, block_num, var_num, p_false_block, current_num);
+    if (p_true_target)
+        current_num = convert_ssa_init_dfs_sequence(dfs_seq, block_num, var_num, p_true_target->p_block, current_num);
+    if (p_false_target)
+        current_num = convert_ssa_init_dfs_sequence(dfs_seq, block_num, var_num, p_false_target->p_block, current_num);
     return current_num;
 }
 
@@ -75,14 +75,14 @@ void convert_ssa_compute_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
     for (size_t i = block_num - 1; i < block_num; i--) {
         p_convert_ssa p_info = dfs_seq + i;
 
-        p_mir_basic_block p_true_block = mir_basic_block_get_true(p_info->p_basic_block);
-        p_mir_basic_block p_false_block = mir_basic_block_get_false(p_info->p_basic_block);
+        p_mir_basic_block_branch_target p_true_block = p_info->p_basic_block->p_branch->p_target_1;
+        p_mir_basic_block_branch_target p_false_block = p_info->p_basic_block->p_branch->p_target_2;
 
         // 将直接后继做为 DF_up 的候选
         if (p_true_block)
-            bitmap_add_element(p_info->dom_frontier, p_true_block->dfn_id);
+            bitmap_add_element(p_info->dom_frontier, p_true_block->p_block->dfn_id);
         if (p_false_block)
-            bitmap_add_element(p_info->dom_frontier, p_false_block->dfn_id);
+            bitmap_add_element(p_info->dom_frontier, p_false_block->p_block->dfn_id);
 
         p_list_head p_node;
         // 记录 直接支配点
@@ -170,13 +170,13 @@ static inline p_mir_operand get_top_sym(p_ssa_var_list_info p_var_list, size_t i
     return mir_operand_vreg_gen(p_info->p_current_vreg);
 }
 
-static inline void set_block_call_ssa_id(p_mir_basic_block_call p_block_call, p_convert_ssa dfs_seq, p_ssa_var_list_info p_var_list, p_mir_instr p_instr, p_mir_basic_block p_basic_block) {
+static inline void set_branch_target_ssa_id(p_mir_basic_block_branch_target p_branch_target, p_convert_ssa dfs_seq, p_ssa_var_list_info p_var_list) {
     size_t var_num = p_var_list->vmem_num;
-    p_bitmap p_phi_var = (dfs_seq + p_block_call->p_block->dfn_id)->p_phi_var;
+    p_bitmap p_phi_var = (dfs_seq + p_branch_target->p_block->dfn_id)->p_phi_var;
     for (size_t i = 0; i < var_num; i++) {
         if (bitmap_if_in(p_phi_var, i)) {
             p_mir_operand p_param = get_top_sym(p_var_list, i);
-            mir_basic_block_call_add_param(p_block_call, p_param);
+            mir_basic_block_branch_target_add_param(p_branch_target, p_param);
         }
     }
 }
@@ -229,19 +229,6 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_se
     list_for_each(p_node, &p_entry->instr_list) {
         p_mir_instr p_instr = list_entry(p_node, mir_instr, node);
 
-        if (p_instr->irkind == mir_br) {
-            set_block_call_ssa_id(p_instr->mir_br.p_target, dfs_seq, p_var_list, p_instr, p_entry);
-            convert_ssa_rename_var(p_var_list, dfs_seq, p_instr->mir_br.p_target->p_block);
-            continue;
-        }
-        if (p_instr->irkind == mir_condbr) {
-            set_block_call_ssa_id(p_instr->mir_condbr.p_target_true, dfs_seq, p_var_list, p_instr, p_entry);
-            convert_ssa_rename_var(p_var_list, dfs_seq, p_instr->mir_condbr.p_target_true->p_block);
-            set_block_call_ssa_id(p_instr->mir_condbr.p_target_false, dfs_seq, p_var_list, p_instr, p_entry);
-            convert_ssa_rename_var(p_var_list, dfs_seq, p_instr->mir_condbr.p_target_false->p_block);
-            continue;
-        }
-
         if (p_instr->irkind == mir_load) {
             size_t var_index = get_var_index(p_instr->mir_load.p_addr, p_var_list);
             if (var_index == -1) continue;
@@ -275,6 +262,17 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_se
             p_instr->mir_unary.p_des = p_vreg;
             continue;
         }
+    }
+    p_mir_basic_block_branch p_branch = p_entry->p_branch;
+    if (p_branch->kind == mir_br_branch) {
+        set_branch_target_ssa_id(p_branch->p_target_1, dfs_seq, p_var_list);
+        convert_ssa_rename_var(p_var_list, dfs_seq, p_branch->p_target_1->p_block);
+    }
+    if (p_branch->kind == mir_cond_branch) {
+        set_branch_target_ssa_id(p_branch->p_target_1, dfs_seq, p_var_list);
+        convert_ssa_rename_var(p_var_list, dfs_seq, p_branch->p_target_1->p_block);
+        set_branch_target_ssa_id(p_branch->p_target_2, dfs_seq, p_var_list);
+        convert_ssa_rename_var(p_var_list, dfs_seq, p_branch->p_target_2->p_block);
     }
     // 恢复信息
     restore_current_sym(p_var_list);
