@@ -59,51 +59,6 @@ p_mir_instr mir_unary_instr_gen(mir_instr_type mir_type, p_mir_operand p_src, p_
     return p_instr;
 }
 
-p_mir_instr mir_ret_instr_gen(p_mir_operand p_src) {
-    p_mir_instr p_instr = malloc(sizeof(*p_instr));
-
-    *p_instr = (mir_instr) {
-        .irkind = mir_ret,
-        .mir_ret = (mir_ret_instr) {
-            .p_ret = p_src,
-        },
-        .node = list_head_init(&p_instr->node),
-    };
-
-    return p_instr;
-}
-
-p_mir_instr mir_br_instr_gen(p_mir_basic_block p_current_basic_block, p_mir_basic_block p_target) {
-    p_mir_instr p_instr = malloc(sizeof(*p_instr));
-
-    *p_instr = (mir_instr) {
-        .irkind = mir_br,
-        .mir_br = (mir_br_instr) {
-            .p_target = mir_basic_block_call_gen(p_target),
-        },
-        .node = list_head_init(&p_instr->node),
-    };
-    mir_basic_block_add_prev(p_current_basic_block, p_target);
-    return p_instr;
-}
-
-p_mir_instr mir_condbr_instr_gen(p_mir_basic_block p_current_basic_block, p_mir_operand p_cond, p_mir_basic_block p_target_true, p_mir_basic_block p_target_false) {
-    p_mir_instr p_instr = malloc(sizeof(*p_instr));
-
-    *p_instr = (mir_instr) {
-        .irkind = mir_condbr,
-        .mir_condbr = (mir_condbr_instr) {
-            .p_cond = p_cond,
-            .p_target_true = mir_basic_block_call_gen(p_target_true),
-            .p_target_false = mir_basic_block_call_gen(p_target_false),
-        },
-        .node = list_head_init(&p_instr->node),
-    };
-    mir_basic_block_add_prev(p_current_basic_block, p_target_true);
-    mir_basic_block_add_prev(p_current_basic_block, p_target_false);
-    return p_instr;
-}
-
 p_mir_instr mir_call_instr_gen(p_mir_func p_func, p_mir_param_list p_param_list, p_mir_vreg p_des) {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
 
@@ -183,8 +138,6 @@ p_mir_operand mir_instr_get_src1(p_mir_instr p_instr) {
     case mir_not_op:
     case mir_val_assign:
         return p_instr->mir_unary.p_src;
-    case mir_ret:
-        return p_instr->mir_ret.p_ret;
     default:
         return NULL;
     }
@@ -296,17 +249,6 @@ void mir_instr_drop(p_mir_instr p_instr) {
         mir_operand_drop(p_instr->mir_load.p_addr);
         if (p_instr->mir_load.p_offset)
             mir_operand_drop(p_instr->mir_load.p_offset);
-        break;
-    case mir_ret:
-        mir_operand_drop(p_instr->mir_ret.p_ret);
-        break;
-    case mir_br:
-        mir_basic_block_call_drop(p_instr->mir_br.p_target);
-        break;
-    case mir_condbr:
-        mir_operand_drop(p_instr->mir_condbr.p_cond);
-        mir_basic_block_call_drop(p_instr->mir_condbr.p_target_true);
-        mir_basic_block_call_drop(p_instr->mir_condbr.p_target_false);
         break;
     }
     free(p_instr);

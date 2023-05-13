@@ -29,15 +29,6 @@ void mir_instr_print(p_mir_instr p_instr) {
     case mir_val_assign:
         mir_unary_instr_print(p_instr->irkind, &p_instr->mir_unary);
         break;
-    case mir_ret:
-        mir_ret_instr_print(&p_instr->mir_ret);
-        break;
-    case mir_br:
-        mir_br_instr_print(&p_instr->mir_br);
-        break;
-    case mir_condbr:
-        mir_condbr_instr_print(&p_instr->mir_condbr);
-        break;
     case mir_call:
         mir_call_instr_print(&p_instr->mir_call);
         break;
@@ -118,25 +109,6 @@ void mir_unary_instr_print(mir_instr_type instr_type, p_mir_unary_instr p_instr)
         assert(0);
     }
     mir_operand_print(p_instr->p_src);
-}
-
-void mir_ret_instr_print(p_mir_ret_instr p_instr) {
-    printf("ret ");
-    mir_operand_print(p_instr->p_ret);
-}
-
-void mir_br_instr_print(p_mir_br_instr p_instr) {
-    printf("br ");
-    mir_basic_block_call_print(p_instr->p_target);
-}
-
-void mir_condbr_instr_print(p_mir_condbr_instr p_instr) {
-    printf("br ");
-    mir_operand_print(p_instr->p_cond);
-    printf(", ");
-    mir_basic_block_call_print(p_instr->p_target_true);
-    printf(", ");
-    mir_basic_block_call_print(p_instr->p_target_false);
 }
 
 void mir_call_instr_print(p_mir_call_instr p_instr) {

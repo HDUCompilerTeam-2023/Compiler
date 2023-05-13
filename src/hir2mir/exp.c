@@ -1,4 +1,3 @@
-#include "symbol.h"
 #include <hir/exp.h>
 #include <hir/func.h>
 #include <hir2mir.h>
@@ -210,8 +209,7 @@ p_mir_operand hir2mir_exp_cond_gen(p_hir2mir_info p_info, p_mir_basic_block p_tr
     }
     else {
         p_mir_operand p_cond = hir2mir_exp_gen(p_info, p_exp);
-        p_mir_instr p_new_instr = mir_condbr_instr_gen(p_info->p_current_basic_block, p_cond, p_true_block, p_false_block);
-        hir2mir_info_add_instr(p_info, p_new_instr);
+        mir_basic_block_set_cond(p_info->p_current_basic_block, p_cond, p_true_block, p_false_block);
     }
     return NULL;
 }

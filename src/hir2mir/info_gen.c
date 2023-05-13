@@ -76,13 +76,6 @@ void hir2mir_info_add_basic_block(p_hir2mir_info p_info, p_mir_basic_block p_new
     p_info->p_current_basic_block = p_new;
 }
 
-// 在 prev 块添加 跳转， 若 prev 块为空， 将 prev 的所有前驱的后继块置位 next 否则，为 p_prev 创建跳转， 返回后继的那个空块
-p_mir_instr hir2mir_info_add_br_instr(p_hir2mir_info p_info, p_mir_basic_block p_next) {
-    p_mir_instr p_br_instr = mir_br_instr_gen(p_info->p_current_basic_block, p_next);
-    mir_basic_block_addinstr(p_info->p_current_basic_block, p_br_instr);
-    return p_br_instr;
-}
-
 void hir2mir_info_add_instr(p_hir2mir_info p_info, p_mir_instr p_instr) {
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_instr);
     p_mir_vreg p_des = mir_instr_get_des(p_instr);

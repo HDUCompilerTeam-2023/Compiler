@@ -1,4 +1,3 @@
-
 #include "mir_gen/basic_block.h" // 头文件包含还需考虑
 #include <mir/basic_block.h>
 #include <mir/bb_param.h>
@@ -7,6 +6,34 @@
 #include <mir_print.h>
 
 #include <stdio.h>
+
+static inline void mir_basic_block_branch_print(p_mir_basic_block_branch p_branch) {
+    printf("    ");
+    switch (p_branch->kind) {
+    case mir_br_branch:
+        printf("br ");
+        mir_basic_block_branch_target_print(p_branch->p_target_1);
+        assert(!p_branch->p_exp);
+        assert(!p_branch->p_target_2);
+        break;
+    case mir_cond_branch:
+        printf("br ");
+        mir_operand_print(p_branch->p_exp);
+        printf(", ");
+        mir_basic_block_branch_target_print(p_branch->p_target_1);
+        printf(", ");
+        mir_basic_block_branch_target_print(p_branch->p_target_2);
+        break;
+    case mir_ret_branch:
+        printf("ret ");
+        mir_operand_print(p_branch->p_exp);
+        assert(!p_branch->p_target_1);
+        assert(!p_branch->p_target_2);
+        break;
+    }
+    printf("\n");
+}
+
 void mir_basic_block_print(p_mir_basic_block p_basic_block) {
     assert(p_basic_block);
 
@@ -33,12 +60,13 @@ void mir_basic_block_print(p_mir_basic_block p_basic_block) {
         p_instr = list_entry(p_node, mir_instr, node);
         mir_instr_print(p_instr);
     }
+    mir_basic_block_branch_print(p_basic_block->p_branch);
 }
 
-void mir_basic_block_call_print(p_mir_basic_block_call p_block_call) {
-    printf("b%ld", p_block_call->p_block->block_id);
-    if (!list_head_alone(&p_block_call->p_block_param->bb_param))
-        mir_bb_param_list_print(p_block_call->p_block_param);
+void mir_basic_block_branch_target_print(p_mir_basic_block_branch_target p_branch_target) {
+    printf("b%ld", p_branch_target->p_block->block_id);
+    if (!list_head_alone(&p_branch_target->p_block_param->bb_param))
+        mir_bb_param_list_print(p_branch_target->p_block_param);
 }
 
 void mir_basic_block_dom_info_print(p_mir_basic_block p_basic_block, size_t depth) {

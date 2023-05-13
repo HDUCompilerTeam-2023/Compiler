@@ -19,13 +19,13 @@ size_t init_dfs_sequence(cfg_build_dom_tree_info dfs_seq[], size_t block_num, si
     cfg_build_dom_tree_info_gen(dfs_seq, p_entry, block_num, parent, dfn_id);
     current_num++;
 
-    p_mir_basic_block p_true_block = mir_basic_block_get_true(p_entry);
-    p_mir_basic_block p_false_block = mir_basic_block_get_false(p_entry);
+    p_mir_basic_block_branch_target p_true_block = p_entry->p_branch->p_target_1;
+    p_mir_basic_block_branch_target p_false_block = p_entry->p_branch->p_target_2;
 
     if (p_true_block)
-        current_num = init_dfs_sequence(dfs_seq, block_num, current_num, dfn_id, p_true_block);
+        current_num = init_dfs_sequence(dfs_seq, block_num, current_num, dfn_id, p_true_block->p_block);
     if (p_false_block)
-        current_num = init_dfs_sequence(dfs_seq, block_num, current_num, dfn_id, p_false_block);
+        current_num = init_dfs_sequence(dfs_seq, block_num, current_num, dfn_id, p_false_block->p_block);
     return current_num;
 }
 

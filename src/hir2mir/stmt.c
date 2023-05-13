@@ -48,7 +48,7 @@ void hir2mir_stmt_return_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     p_mir_operand p_ret_addr_operand = mir_operand_vreg_gen(p_ret_addr);
     hir2mir_info_add_instr(p_info, mir_store_instr_gen(p_ret_addr_operand, NULL, p_ret));
 
-    hir2mir_info_add_br_instr(p_info, p_info->p_ret_block);
+    mir_basic_block_set_br(p_info->p_current_basic_block, p_info->p_ret_block);
     p_mir_basic_block p_next = mir_basic_block_gen();
     hir2mir_info_add_basic_block(p_info, p_next);
     return;
@@ -60,14 +60,14 @@ void hir2mir_stmt_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
 }
 // 跳转到循环体外并新建一个基本块作为之后指令写入的基本块
 void hir2mir_stmt_break_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_end_next) {
-    hir2mir_info_add_br_instr(p_info, p_while_end_next);
+    mir_basic_block_set_br(p_info->p_current_basic_block, p_while_end_next);
     p_mir_basic_block p_next = mir_basic_block_gen();
     hir2mir_info_add_basic_block(p_info, p_next);
     return;
 }
 
 void hir2mir_stmt_continue_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_cond) {
-    hir2mir_info_add_br_instr(p_info, p_while_cond);
+    mir_basic_block_set_br(p_info->p_current_basic_block, p_while_cond);
     p_mir_basic_block p_next = mir_basic_block_gen();
     hir2mir_info_add_basic_block(p_info, p_next);
     return;
@@ -86,7 +86,7 @@ void hir2mir_stmt_if_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_cond, 
     hir2mir_stmt_gen(p_info, p_while_cond, p_while_end_next, p_stmt_1);
 
     // true block 的末尾添加跳转
-    hir2mir_info_add_br_instr(p_info, p_next_block);
+    mir_basic_block_set_br(p_info->p_current_basic_block, p_next_block);
 
     // 重新置当前写 block 为 p_next_block
     hir2mir_info_add_basic_block(p_info, p_next_block);
@@ -107,14 +107,14 @@ void hir2mir_stmt_if_else_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_c
     hir2mir_stmt_gen(p_info, p_while_cond, p_while_end_next, p_stmt_1);
 
     // 在 true_block 末尾添加跳转
-    hir2mir_info_add_br_instr(p_info, p_next_block);
+    mir_basic_block_set_br(p_info->p_current_basic_block, p_next_block);
 
     // 生成 false 情况下的语句
     hir2mir_info_add_basic_block(p_info, p_false_block);
     hir2mir_stmt_gen(p_info, p_while_cond, p_while_end_next, p_stmt_2);
 
     // false 的末尾block 添加跳转
-    hir2mir_info_add_br_instr(p_info, p_next_block);
+    mir_basic_block_set_br(p_info->p_current_basic_block, p_next_block);
 
     // 重新置当前写 block 为 p_next_block
     hir2mir_info_add_basic_block(p_info, p_next_block);
@@ -137,7 +137,7 @@ void hir2mir_stmt_while_gen(p_hir2mir_info p_info, p_hir_exp p_exp, p_hir_stmt p
     // 解析 while 循环体
     hir2mir_info_add_basic_block(p_info, p_true_block);
     hir2mir_stmt_gen(p_info, p_inner_cond_block, p_next_block, p_stmt_1);
-    hir2mir_info_add_br_instr(p_info, p_inner_cond_block);
+    mir_basic_block_set_br(p_info->p_current_basic_block, p_inner_cond_block);
 
     // 置当前写的块为下一块
     hir2mir_info_add_basic_block(p_info, p_next_block);

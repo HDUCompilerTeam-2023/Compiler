@@ -1,4 +1,3 @@
-
 #include <mir_gen.h>
 #include <mir_gen/basic_block.h>
 
@@ -7,6 +6,7 @@ p_mir_basic_block mir_basic_block_gen() {
     *p_mir_block = (mir_basic_block) {
         .instr_list = list_head_init(&p_mir_block->instr_list),
         .prev_basic_block_list = list_head_init(&p_mir_block->prev_basic_block_list),
+        .p_branch = NULL,
         .block_id = 0,
         .node = list_head_init(&p_mir_block->node),
         .basic_block_phis = mir_bb_phi_list_init(),
@@ -37,17 +37,52 @@ p_mir_basic_block mir_basic_block_addinstr(p_mir_basic_block p_basic_block, p_mi
     return p_basic_block;
 }
 
-p_mir_basic_block_call mir_basic_block_call_gen(p_mir_basic_block p_block) {
-    p_mir_basic_block_call p_block_call = malloc(sizeof(*p_block_call));
-    *p_block_call = (mir_basic_block_call) {
+static inline p_mir_basic_block_branch mir_basic_block_branch_gen(mir_basic_block_branch_kind kind, p_mir_operand p_exp, p_mir_basic_block_branch_target p_target_1, p_mir_basic_block_branch_target p_target_2) {
+    p_mir_basic_block_branch p_branch = malloc(sizeof(*p_branch));
+    *p_branch = (mir_basic_block_branch) {
+        .kind = kind,
+        .p_exp = p_exp,
+        .p_target_1 = p_target_1,
+        .p_target_2 = p_target_2,
+    };
+    return p_branch;
+}
+static inline void mir_basic_block_branch_drop(p_mir_basic_block_branch p_branch) {
+    assert(p_branch);
+    if (p_branch->kind != mir_br_branch)
+        mir_operand_drop(p_branch->p_exp);
+    if (p_branch->kind != mir_ret_branch)
+        mir_basic_block_branch_target_drop(p_branch->p_target_1);
+    if (p_branch->kind == mir_cond_branch)
+        mir_basic_block_branch_target_drop(p_branch->p_target_2);
+    free(p_branch);
+}
+
+void mir_basic_block_set_br(p_mir_basic_block p_bb, p_mir_basic_block p_next) {
+    assert(!p_bb->p_branch);
+    p_bb->p_branch = mir_basic_block_branch_gen(mir_br_branch, NULL, mir_basic_block_branch_target_gen(p_next), NULL);
+    mir_basic_block_add_prev(p_bb, p_next);
+}
+void mir_basic_block_set_cond(p_mir_basic_block p_bb, p_mir_operand p_exp, p_mir_basic_block p_true, p_mir_basic_block p_false) {
+    p_bb->p_branch = mir_basic_block_branch_gen(mir_cond_branch, p_exp, mir_basic_block_branch_target_gen(p_true), mir_basic_block_branch_target_gen(p_false));
+    mir_basic_block_add_prev(p_bb, p_true);
+    mir_basic_block_add_prev(p_bb, p_false);
+}
+void mir_basic_block_set_ret(p_mir_basic_block p_bb, p_mir_operand p_exp) {
+    p_bb->p_branch = mir_basic_block_branch_gen(mir_ret_branch, p_exp, NULL, NULL);
+}
+
+p_mir_basic_block_branch_target mir_basic_block_branch_target_gen(p_mir_basic_block p_block) {
+    p_mir_basic_block_branch_target p_branch_target = malloc(sizeof(*p_branch_target));
+    *p_branch_target = (mir_basic_block_branch_target) {
         .p_block = p_block,
         .p_block_param = mir_bb_param_list_init(),
     };
-    return p_block_call;
+    return p_branch_target;
 }
 
-void mir_basic_block_call_add_param(p_mir_basic_block_call p_block_call, p_mir_operand p_operand) {
-    mir_bb_param_list_add(p_block_call->p_block_param, p_operand);
+void mir_basic_block_branch_target_add_param(p_mir_basic_block_branch_target p_branch_target, p_mir_operand p_operand) {
+    mir_bb_param_list_add(p_branch_target->p_block_param, p_operand);
 }
 
 void mir_basic_block_add_dom_son(p_mir_basic_block p_basic_block, p_mir_basic_block p_son) {
@@ -82,11 +117,12 @@ void mir_basic_block_drop(p_mir_basic_block p_basic_block) {
         list_del(&p_basic_block_list_node->node);
         free(p_basic_block_list_node);
     }
+    mir_basic_block_branch_drop(p_basic_block->p_branch);
     mir_bb_phi_list_drop(p_basic_block->basic_block_phis);
     free(p_basic_block);
 }
 
-void mir_basic_block_call_drop(p_mir_basic_block_call p_block_call) {
-    mir_bb_param_list_drop(p_block_call->p_block_param);
-    free(p_block_call);
+void mir_basic_block_branch_target_drop(p_mir_basic_block_branch_target p_branch_target) {
+    mir_bb_param_list_drop(p_branch_target->p_block_param);
+    free(p_branch_target);
 }
