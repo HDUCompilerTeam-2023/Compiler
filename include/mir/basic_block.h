@@ -4,6 +4,7 @@
 #include <mir.h>
 
 enum mir_basic_block_branch_kind {
+    mir_abort_branch,
     mir_ret_branch,
     mir_br_branch,
     mir_cond_branch,

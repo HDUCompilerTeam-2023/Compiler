@@ -10,6 +10,9 @@
 static inline void mir_basic_block_branch_print(p_mir_basic_block_branch p_branch) {
     printf("    ");
     switch (p_branch->kind) {
+    case mir_abort_branch:
+        printf("abort");
+        break;
     case mir_br_branch:
         printf("br ");
         mir_basic_block_branch_target_print(p_branch->p_target_1);

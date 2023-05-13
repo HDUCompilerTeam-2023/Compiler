@@ -1,12 +1,33 @@
 #include <mir_gen.h>
 #include <mir_gen/basic_block.h>
 
+static inline p_mir_basic_block_branch mir_basic_block_branch_gen() {
+    p_mir_basic_block_branch p_branch = malloc(sizeof(*p_branch));
+    *p_branch = (mir_basic_block_branch) {
+        .kind = mir_abort_branch,
+        .p_exp = NULL,
+        .p_target_1 = NULL,
+        .p_target_2 = NULL,
+    };
+    return p_branch;
+}
+static inline void mir_basic_block_branch_drop(p_mir_basic_block_branch p_branch) {
+    assert(p_branch);
+    if (p_branch->kind == mir_cond_branch || p_branch->kind == mir_ret_branch)
+        mir_operand_drop(p_branch->p_exp);
+    if (p_branch->kind == mir_br_branch || p_branch->kind == mir_cond_branch)
+        mir_basic_block_branch_target_drop(p_branch->p_target_1);
+    if (p_branch->kind == mir_cond_branch)
+        mir_basic_block_branch_target_drop(p_branch->p_target_2);
+    free(p_branch);
+}
+
 p_mir_basic_block mir_basic_block_gen() {
     p_mir_basic_block p_mir_block = malloc(sizeof(*p_mir_block));
     *p_mir_block = (mir_basic_block) {
         .instr_list = list_head_init(&p_mir_block->instr_list),
         .prev_basic_block_list = list_head_init(&p_mir_block->prev_basic_block_list),
-        .p_branch = NULL,
+        .p_branch = mir_basic_block_branch_gen(),
         .block_id = 0,
         .node = list_head_init(&p_mir_block->node),
         .basic_block_phis = mir_bb_phi_list_init(),
@@ -37,39 +58,22 @@ p_mir_basic_block mir_basic_block_addinstr(p_mir_basic_block p_basic_block, p_mi
     return p_basic_block;
 }
 
-static inline p_mir_basic_block_branch mir_basic_block_branch_gen(mir_basic_block_branch_kind kind, p_mir_operand p_exp, p_mir_basic_block_branch_target p_target_1, p_mir_basic_block_branch_target p_target_2) {
-    p_mir_basic_block_branch p_branch = malloc(sizeof(*p_branch));
-    *p_branch = (mir_basic_block_branch) {
-        .kind = kind,
-        .p_exp = p_exp,
-        .p_target_1 = p_target_1,
-        .p_target_2 = p_target_2,
-    };
-    return p_branch;
-}
-static inline void mir_basic_block_branch_drop(p_mir_basic_block_branch p_branch) {
-    assert(p_branch);
-    if (p_branch->kind != mir_br_branch)
-        mir_operand_drop(p_branch->p_exp);
-    if (p_branch->kind != mir_ret_branch)
-        mir_basic_block_branch_target_drop(p_branch->p_target_1);
-    if (p_branch->kind == mir_cond_branch)
-        mir_basic_block_branch_target_drop(p_branch->p_target_2);
-    free(p_branch);
-}
-
 void mir_basic_block_set_br(p_mir_basic_block p_bb, p_mir_basic_block p_next) {
-    assert(!p_bb->p_branch);
-    p_bb->p_branch = mir_basic_block_branch_gen(mir_br_branch, NULL, mir_basic_block_branch_target_gen(p_next), NULL);
+    p_bb->p_branch->kind = mir_br_branch;
+    p_bb->p_branch->p_target_1 = mir_basic_block_branch_target_gen(p_next);
     mir_basic_block_add_prev(p_bb, p_next);
 }
 void mir_basic_block_set_cond(p_mir_basic_block p_bb, p_mir_operand p_exp, p_mir_basic_block p_true, p_mir_basic_block p_false) {
-    p_bb->p_branch = mir_basic_block_branch_gen(mir_cond_branch, p_exp, mir_basic_block_branch_target_gen(p_true), mir_basic_block_branch_target_gen(p_false));
+    p_bb->p_branch->kind = mir_cond_branch;
+    p_bb->p_branch->p_exp = p_exp;
+    p_bb->p_branch->p_target_1 = mir_basic_block_branch_target_gen(p_true);
+    p_bb->p_branch->p_target_2 = mir_basic_block_branch_target_gen(p_false);
     mir_basic_block_add_prev(p_bb, p_true);
     mir_basic_block_add_prev(p_bb, p_false);
 }
 void mir_basic_block_set_ret(p_mir_basic_block p_bb, p_mir_operand p_exp) {
-    p_bb->p_branch = mir_basic_block_branch_gen(mir_ret_branch, p_exp, NULL, NULL);
+    p_bb->p_branch->kind = mir_ret_branch;
+    p_bb->p_branch->p_exp = p_exp;
 }
 
 p_mir_basic_block_branch_target mir_basic_block_branch_target_gen(p_mir_basic_block p_block) {
