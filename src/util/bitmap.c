@@ -86,7 +86,7 @@ bool bitmap_if_in(p_bitmap p_b, size_t id) {
 bool bitmap_if_equal(p_bitmap p_b1, p_bitmap p_b2) {
     assert(p_b1->size == p_b2->size);
     for (size_t i = 0; i < p_b1->size; i++)
-        if ((bool) ((p_b1->p_base + i) != (p_b2->p_base + i)))
+        if ((bool) (*(p_b1->p_base + i) != *(p_b2->p_base + i)))
             return false;
     return true;
 }

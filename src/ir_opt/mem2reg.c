@@ -104,8 +104,6 @@ void mem2reg_compute_dom_frontier(p_convert_ssa dfs_seq, size_t block_num) {
         // 记录 直接支配点
         p_bitmap p_son_list = bitmap_gen(block_num);
         bitmap_set_empty(p_son_list);
-        // 支配边界不包括自身
-        bitmap_add_element(p_son_list, p_info->p_basic_block->dfn_id);
         // 将支配树上的直接儿子的支配边界作为候选
         list_for_each(p_node, &p_info->p_basic_block->dom_son_list) {
             size_t son_id = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block->dfn_id;
@@ -121,8 +119,6 @@ void mem2reg_compute_dom_frontier(p_convert_ssa dfs_seq, size_t block_num) {
 }
 
 void mem2reg_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_info p_var_list) {
-    // 入口块对所有变量已经定值
-    bitmap_set_full(dfs_seq->p_def_var);
     size_t work_num = block_num + 1;
     // 记录原来的集合
     p_bitmap p_old = bitmap_gen(p_var_list->vmem_num);
@@ -148,7 +144,7 @@ void mem2reg_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_
             if (bitmap_if_in(p_info->dom_frontier, j)) { // 若 phi 集合发生变化且已经遍历过且没有被加入过工作集合需要加入到工作集合之后处理
                 bitmap_copy_not_new(p_old, (dfs_seq + j)->p_phi_var);
                 bitmap_merge_not_new((dfs_seq + j)->p_phi_var, p_info->p_def_var);
-                bool if_change = bitmap_if_equal(p_old, (dfs_seq + j)->p_phi_var);
+                bool if_change = !bitmap_if_equal(p_old, (dfs_seq + j)->p_phi_var);
                 if (if_change && j <= i && !(dfs_seq + j)->if_in) {
                     p_work_list[work_tail++] = j;
                     (dfs_seq + j)->if_in = true;
@@ -167,7 +163,7 @@ void mem2reg_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_
             if (bitmap_if_in(p_info->dom_frontier, j)) {
                 bitmap_copy_not_new(p_old, (dfs_seq + j)->p_phi_var);
                 bitmap_merge_not_new((dfs_seq + j)->p_phi_var, p_info->p_def_var);
-                bool if_change = bitmap_if_equal(p_old, (dfs_seq + j)->p_phi_var);
+                bool if_change = !bitmap_if_equal(p_old, (dfs_seq + j)->p_phi_var);
                 if (if_change && !(dfs_seq + j)->if_in) {
                     p_work_list[work_tail] = j;
                     work_tail = (work_tail + 1) % work_num;
