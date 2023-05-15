@@ -136,7 +136,9 @@ static inline void ir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_fun
     }
 }
 
-static inline void ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_func) {
+static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_func) {
+    bool if_del = false;
+
     // TODO solve ssa bb param
     p_list_head p_node;
     p_list_head p_next;
@@ -164,20 +166,24 @@ static inline void ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
             p_ir_basic_block_branch_target p_prev_target_2 = p_prev_bb->p_branch->p_target_2;
 
             assert(p_prev_target_1);
-            if (p_prev_target_2 && p_prev_target_2->p_block == p_bb) {
-                p_ir_basic_block_branch_target p_tmp = p_prev_target_2;
-                p_prev_target_2 = p_prev_target_1;
-                p_prev_target_1 = p_tmp;
-            }
+            if (p_prev_target_2) {
+                if_del = true;
 
-            if (p_prev_target_2 && p_prev_target_2->p_block == p_target->p_block) {
-                p_prev_bb->p_branch->kind = ir_br_branch;
-                p_prev_bb->p_branch->p_target_1 = p_prev_target_2;
-                ir_operand_drop(p_prev_bb->p_branch->p_exp);
-                p_prev_bb->p_branch->p_exp = NULL;
-                ir_basic_block_branch_target_drop(p_prev_target_1);
-                p_prev_bb->p_branch->p_target_2 = NULL;
-                continue;
+                if (p_prev_target_2->p_block == p_bb) {
+                    p_ir_basic_block_branch_target p_tmp = p_prev_target_2;
+                    p_prev_target_2 = p_prev_target_1;
+                    p_prev_target_1 = p_tmp;
+                }
+
+                if (p_prev_target_2->p_block == p_target->p_block) {
+                    p_prev_bb->p_branch->kind = ir_br_branch;
+                    p_prev_bb->p_branch->p_target_1 = p_prev_target_2;
+                    ir_operand_drop(p_prev_bb->p_branch->p_exp);
+                    p_prev_bb->p_branch->p_exp = NULL;
+                    ir_basic_block_branch_target_drop(p_prev_target_1);
+                    p_prev_bb->p_branch->p_target_2 = NULL;
+                    continue;
+                }
             }
             ir_basic_block_add_prev(p_prev_bb, p_target->p_block);
             p_prev_target_1->p_block = p_target->p_block;
@@ -185,25 +191,29 @@ static inline void ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
 
         symbol_func_bb_del(p_func, p_bb);
     }
+    return if_del;
 }
 
-static inline void ir_simplify_cfg_func_pass(p_symbol_func p_func) {
-    if (list_head_alone(&p_func->block)) return;
+static inline bool ir_simplify_cfg_func_pass(p_symbol_func p_func) {
+    if (list_head_alone(&p_func->block)) return false;
 
+    bool if_del;
     ir_simplify_cfg_func_remove_no_predesessor_bb(p_func);
     // TODO ir_simplify_func_eliminate_single_predecessor_phi(p_func);
     ir_simplify_cfg_func_merge_single_predecessor_bb(p_func);
-    ir_simplify_cfg_func_eliminate_single_br_bb(p_func);
-    return;
+    if_del = ir_simplify_cfg_func_eliminate_single_br_bb(p_func);
+    return if_del;
 }
 
-void ir_simplify_cfg_pass(p_program p_program) {
+bool ir_simplify_cfg_pass(p_program p_program) {
+    bool if_del = false;
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
-        ir_simplify_cfg_func_pass(p_func);
+        if_del |= ir_simplify_cfg_func_pass(p_func);
 
         symbol_func_set_block_id(p_func);
         symbol_func_set_vreg_id(p_func);
     }
+    return if_del;
 }

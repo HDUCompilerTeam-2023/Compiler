@@ -38,21 +38,26 @@ void symbol_func_bb_del(p_symbol_func p_func, p_ir_basic_block p_basic_block) {
 
 void symbol_func_param_reg_add(p_symbol_func p_func, p_ir_vreg p_vreg) {
     list_add_prev(&p_vreg->node, &p_func->param_reg_list);
+    ++p_func->param_reg_cnt;
 }
 void symbol_func_param_reg_del(p_symbol_func p_func, p_ir_vreg p_vreg) {
     list_del(&p_vreg->node);
     ir_vreg_drop(p_vreg);
+    --p_func->param_reg_cnt;
 }
 
 void symbol_func_vreg_add(p_symbol_func p_func, p_ir_vreg p_vreg) {
     list_add_prev(&p_vreg->node, &p_func->vreg_list);
+    ++p_func->vreg_cnt;
 }
 void symbol_func_vreg_del(p_symbol_func p_func, p_ir_vreg p_vreg) {
     list_del(&p_vreg->node);
     ir_vreg_drop(p_vreg);
+    --p_func->vreg_cnt;
 }
 
 void symbol_func_vreg_add_at(p_symbol_func p_func, p_ir_vreg p_new_sym, p_ir_basic_block p_current_block, p_ir_instr p_instr) {
+    ++p_func->vreg_cnt;
     p_list_head p_instr_node = p_instr->node.p_next;
     while (p_instr_node != &p_current_block->instr_list) {
         p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);

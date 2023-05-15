@@ -102,6 +102,10 @@ p_ir_operand ir_instr_get_src1(p_ir_instr p_instr) {
         return p_instr->ir_binary.p_src1;
     case ir_unary:
         return p_instr->ir_unary.p_src;
+    case ir_load:
+        return p_instr->ir_load.p_addr;
+    case ir_gep:
+        return p_instr->ir_gep.p_addr;
     default:
         return NULL;
     }
@@ -110,6 +114,10 @@ p_ir_operand ir_instr_get_src2(p_ir_instr p_instr) {
     switch (p_instr->irkind) {
     case ir_binary:
         return p_instr->ir_binary.p_src2;
+    case ir_load:
+        return p_instr->ir_load.p_offset;
+    case ir_gep:
+        return p_instr->ir_gep.p_offset;
     default:
         return NULL;
     }
