@@ -78,7 +78,7 @@ void ir_basic_block_branch_target_print(p_ir_basic_block_branch_target p_branch_
 void ir_basic_block_dom_info_print(p_ir_basic_block p_basic_block, size_t depth) {
     for (size_t i = 0; i < depth; i++)
         printf("-");
-    printf("b%ld (dfn_id: %ld)\n", p_basic_block->block_id, p_basic_block->dfn_id);
+    printf("b%ld \n", p_basic_block->block_id);
     p_list_head p_node;
     list_for_each(p_node, &p_basic_block->dom_son_list) {
         p_ir_basic_block p_son = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;

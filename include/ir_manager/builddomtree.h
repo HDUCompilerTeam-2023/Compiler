@@ -5,6 +5,7 @@
 #include <program/use.h>
 
 typedef struct cfg_build_dom_tree_info cfg_build_dom_tree_info, *p_cfg_build_dom_tree_info;
+typedef struct cfg_build_dom_tree_info_list cfg_build_dom_tree_info_list, *p_cfg_build_dom_tree_info_list;
 
 struct cfg_build_dom_tree_info {
     p_ir_basic_block p_basic_block; // 基本块
@@ -21,9 +22,14 @@ struct cfg_build_dom_tree_info {
     size_t min_semi_id;
 };
 
-size_t init_dfs_sequence(cfg_build_dom_tree_info dfs_seq[], size_t block_num, size_t current_num, size_t parent, p_ir_basic_block p_entry);
-void cfg_build_dom_tree_info_drop(p_cfg_build_dom_tree_info p_dom_info);
-void cfg_build_dom_tree_info_gen(cfg_build_dom_tree_info dom_info[], p_ir_basic_block p_basic_block, size_t block_num, size_t parent, size_t current_num);
+struct cfg_build_dom_tree_info_list{
+    p_cfg_build_dom_tree_info p_base;
+    size_t block_num;
+    size_t *block2dfn_id;
+};
+size_t init_dfs_sequence(p_cfg_build_dom_tree_info_list p_info_list, size_t current_num, size_t parent, p_ir_basic_block p_entry);
+void cfg_build_dom_tree_info_list_drop(p_cfg_build_dom_tree_info_list p_info_list);
+void cfg_build_dom_tree_info_gen(p_cfg_build_dom_tree_info_list p_dom_info, p_ir_basic_block p_basic_block, size_t parent, size_t current_num);
 void ir_cfg_set_program_dom(p_program p_program);
 void ir_cfg_set_func_dom(p_symbol_func p_func);
 

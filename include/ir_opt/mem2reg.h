@@ -8,6 +8,7 @@ typedef struct operand_stack_node operand_stack_node, *p_operand_stack_node;
 typedef struct ssa_var_info ssa_var_info, *p_ssa_var_info;
 typedef struct ssa_var_list_info ssa_var_list_info, *p_ssa_var_list_info;
 typedef struct sym_stack_node sym_stack_node, *p_sym_stack_node;
+typedef struct convert_ssa_list convert_ssa_list, *p_convert_ssa_list;
 
 struct convert_ssa {
     p_ir_basic_block p_basic_block;
@@ -16,6 +17,7 @@ struct convert_ssa {
     p_bitmap p_phi_var; // phi 函数变量集合
     p_bitmap p_def_var; // 定值集合
 
+    p_convert_ssa p_prev;
     bool if_in; // 是否在工作表中
 };
 
@@ -30,26 +32,32 @@ struct sym_stack_node {
     p_ir_vreg p_vreg;
 };
 
+struct convert_ssa_list {
+    p_convert_ssa p_base;
+    size_t block_num;
+    p_convert_ssa p_top;
+};
+
 struct ssa_var_list_info {
     p_ssa_var_info p_base;
     size_t vmem_num;
     p_symbol_func p_func;
 };
 
-void mem2reg_info_gen(p_convert_ssa dfs_seq, size_t block_num, size_t var_num, p_ir_basic_block p_basic_block, size_t current_num);
-size_t mem2reg_init_dfs_sequence(p_convert_ssa dfs_seq, size_t var_num, size_t block_num, p_ir_basic_block p_entry, size_t current_num);
+void mem2reg_info_gen(p_convert_ssa_list p_convert_list, size_t var_num, p_ir_basic_block p_basic_block);
+void mem2reg_init_dfs_sequence(p_convert_ssa_list p_convert_list, size_t var_num, p_ir_basic_block p_entry);
 p_ssa_var_list_info mem2reg_init_var_list(p_symbol_func p_func);
 
-void mem2reg_compute_dom_frontier(p_convert_ssa dfs_seq, size_t block_num);
+void mem2reg_compute_dom_frontier(p_convert_ssa_list p_convert_list);
 
-void mem2reg_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_info p_var_list);
+void mem2reg_insert_phi(p_convert_ssa_list p_convert_list, p_ssa_var_list_info p_var_list);
 
-void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p_ir_basic_block p_entry);
+void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa_list p_convert_list, p_ir_basic_block p_entry);
 
 void mem2reg_func_pass(p_symbol_func p_func);
 void mem2reg_program_pass(p_program p_program);
 
-void convert_ssa_dfs_seq_drop(p_convert_ssa dfs_seq, size_t block_num);
+void convert_ssa_dfs_seq_drop(p_convert_ssa_list p_convert_list);
 void ssa_var_list_info_drop(p_ssa_var_list_info p_info);
 
 #endif
