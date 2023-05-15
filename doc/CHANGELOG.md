@@ -1,5 +1,25 @@
 # Change log
 
+## 0.26.2
+
+- 改进 mir 与 ssa
+  - 添加指令 addr、load、store，将对sym的操作分解成内存操作， 采用 vmem 去模拟内存的值
+  - 重命名 temp sym 为 vreg，保证其为静态单赋值
+  - ssa 阶段将 vmem 的值改写为 vreg 中的值，且不对数组与全局变量进行改写
+
+## 0.26.1
+
+- 实现 ssa
+  - 计算支配边界插入基本块参数
+  - 将 operand 中 sym 的使用替换为 temp sym
+
+## 0.26.0
+
+- 实现 mir
+  - 用 temp sym 实现临时变量的计算
+  - 因为文法简单，采用一次线性的方式实现cfg的生成
+  - operand 包含了 temp sym、sym 和 常量
+
 ## 0.25.0
 
 - 对各个功能模块做了划分
