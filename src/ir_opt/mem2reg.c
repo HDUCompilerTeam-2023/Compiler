@@ -5,34 +5,33 @@
 #include <symbol/var.h>
 #include <symbol_gen/func.h>
 #include <symbol_gen/type.h>
-void mem2reg_info_gen(p_convert_ssa dfs_seq, size_t block_num, size_t var_num, p_ir_basic_block p_basic_block, size_t current_num) {
-    dfs_seq[current_num] = (convert_ssa) {
-        .dom_frontier = bitmap_gen(block_num),
+void mem2reg_info_gen(p_convert_ssa_list p_convert_list, size_t var_num, p_ir_basic_block p_basic_block) {
+    p_convert_list->p_base[p_basic_block->block_id] = (convert_ssa) {
+        .dom_frontier = bitmap_gen(p_convert_list->block_num),
         .p_def_var = bitmap_gen(var_num),
         .p_phi_var = bitmap_gen(var_num),
         .p_basic_block = p_basic_block,
+        .p_prev = p_convert_list->p_top,
         .if_in = false,
     };
-    p_basic_block->dfn_id = current_num;
-    bitmap_set_empty(dfs_seq[current_num].dom_frontier);
-    bitmap_set_empty(dfs_seq[current_num].p_def_var);
-    bitmap_set_empty(dfs_seq[current_num].p_phi_var);
+    p_convert_list->p_top = p_convert_list->p_base + p_basic_block->block_id;
+    bitmap_set_empty((p_convert_list->p_base + p_basic_block->block_id)->dom_frontier);
+    bitmap_set_empty((p_convert_list->p_base + p_basic_block->block_id)->p_def_var);
+    bitmap_set_empty((p_convert_list->p_base + p_basic_block->block_id)->p_phi_var);
 }
 
-size_t mem2reg_init_dfs_sequence(p_convert_ssa dfs_seq, size_t block_num, size_t var_num, p_ir_basic_block p_entry, size_t current_num) {
-    if (p_entry->if_visited) return current_num;
+void mem2reg_init_dfs_sequence(p_convert_ssa_list p_convert_list, size_t var_num, p_ir_basic_block p_entry) {
+    if (p_entry->if_visited) return;
     p_entry->if_visited = true;
-    mem2reg_info_gen(dfs_seq, block_num, var_num, p_entry, current_num);
-    current_num++;
+    mem2reg_info_gen(p_convert_list, var_num, p_entry);
 
     p_ir_basic_block_branch_target p_true_target = p_entry->p_branch->p_target_1;
     p_ir_basic_block_branch_target p_false_target = p_entry->p_branch->p_target_2;
 
     if (p_true_target)
-        current_num = mem2reg_init_dfs_sequence(dfs_seq, block_num, var_num, p_true_target->p_block, current_num);
+        mem2reg_init_dfs_sequence(p_convert_list, var_num, p_true_target->p_block);
     if (p_false_target)
-        current_num = mem2reg_init_dfs_sequence(dfs_seq, block_num, var_num, p_false_target->p_block, current_num);
-    return current_num;
+        mem2reg_init_dfs_sequence(p_convert_list, var_num, p_false_target->p_block);
 }
 
 p_ssa_var_list_info mem2reg_init_var_list(p_symbol_func p_func) {
@@ -87,28 +86,28 @@ static inline size_t get_var_index(p_ir_operand p_operand, p_ssa_var_list_info p
     return p_vmem->id;
 }
 
-void mem2reg_compute_dom_frontier(p_convert_ssa dfs_seq, size_t block_num) {
-    for (size_t i = block_num - 1; i < block_num; i--) {
-        p_convert_ssa p_info = dfs_seq + i;
+void mem2reg_compute_dom_frontier(p_convert_ssa_list p_convert_list) {
+    p_convert_ssa p_info;
+    for (p_info = p_convert_list->p_top; p_info; p_info = p_info->p_prev) {
 
         p_ir_basic_block_branch_target p_true_block = p_info->p_basic_block->p_branch->p_target_1;
         p_ir_basic_block_branch_target p_false_block = p_info->p_basic_block->p_branch->p_target_2;
 
         // 将直接后继做为 DF_up 的候选
         if (p_true_block)
-            bitmap_add_element(p_info->dom_frontier, p_true_block->p_block->dfn_id);
+            bitmap_add_element(p_info->dom_frontier, p_true_block->p_block->block_id);
         if (p_false_block)
-            bitmap_add_element(p_info->dom_frontier, p_false_block->p_block->dfn_id);
+            bitmap_add_element(p_info->dom_frontier, p_false_block->p_block->block_id);
 
         p_list_head p_node;
         // 记录 直接支配点
-        p_bitmap p_son_list = bitmap_gen(block_num);
+        p_bitmap p_son_list = bitmap_gen(p_convert_list->block_num);
         bitmap_set_empty(p_son_list);
         // 将支配树上的直接儿子的支配边界作为候选
         list_for_each(p_node, &p_info->p_basic_block->dom_son_list) {
-            size_t son_id = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block->dfn_id;
-            p_convert_ssa p_son_info = dfs_seq + son_id;
-            bitmap_add_element(p_son_list, p_son_info->p_basic_block->dfn_id);
+            size_t son_id = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block->block_id;
+            p_convert_ssa p_son_info = p_convert_list->p_base + son_id;
+            bitmap_add_element(p_son_list, p_son_info->p_basic_block->block_id);
             bitmap_merge_not_new(p_info->dom_frontier, p_son_info->dom_frontier);
         }
         // 所有候选中不受当前节点直接支配的节点为支配边界
@@ -118,16 +117,16 @@ void mem2reg_compute_dom_frontier(p_convert_ssa dfs_seq, size_t block_num) {
     }
 }
 
-void mem2reg_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_info p_var_list) {
-    size_t work_num = block_num + 1;
+void mem2reg_insert_phi(p_convert_ssa_list p_convert_list, p_ssa_var_list_info p_var_list) {
+    size_t work_num = p_convert_list->block_num + 1;
     // 记录原来的集合
     p_bitmap p_old = bitmap_gen(p_var_list->vmem_num);
     // 工作队列
     size_t *p_work_list = malloc(work_num * sizeof(*p_work_list));
     size_t work_tail = 0;
     // 第一遍得到块的指令定值集合，同时得到部分 phi 集合
-    for (size_t i = 0; i < block_num; i++) {
-        p_convert_ssa p_info = dfs_seq + i;
+    for (size_t i = 0; i < p_convert_list->block_num; i++) {
+        p_convert_ssa p_info = p_convert_list->p_base + i;
         // 将 phi 集合加入到定值集合
         bitmap_merge_not_new(p_info->p_def_var, p_info->p_phi_var);
         p_list_head p_node;
@@ -140,14 +139,14 @@ void mem2reg_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_
                 bitmap_add_element(p_info->p_def_var, id);
         }
         // 遍历支配边界将定值集合并入到 边界的 phi 集合
-        for (size_t j = 0; j < block_num; j++) {
+        for (size_t j = 0; j < p_convert_list->block_num; j++) {
             if (bitmap_if_in(p_info->dom_frontier, j)) { // 若 phi 集合发生变化且已经遍历过且没有被加入过工作集合需要加入到工作集合之后处理
-                bitmap_copy_not_new(p_old, (dfs_seq + j)->p_phi_var);
-                bitmap_merge_not_new((dfs_seq + j)->p_phi_var, p_info->p_def_var);
-                bool if_change = !bitmap_if_equal(p_old, (dfs_seq + j)->p_phi_var);
-                if (if_change && j <= i && !(dfs_seq + j)->if_in) {
+                bitmap_copy_not_new(p_old, (p_convert_list->p_base + j)->p_phi_var);
+                bitmap_merge_not_new((p_convert_list->p_base + j)->p_phi_var, p_info->p_def_var);
+                bool if_change = !bitmap_if_equal(p_old, (p_convert_list->p_base + j)->p_phi_var);
+                if (if_change && j <= i && !(p_convert_list->p_base + j)->if_in) {
                     p_work_list[work_tail++] = j;
-                    (dfs_seq + j)->if_in = true;
+                    (p_convert_list->p_base + j)->if_in = true;
                 }
             }
         }
@@ -155,19 +154,19 @@ void mem2reg_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_
 
     // 处理之前 phi 集合未完全处理完的块
     for (size_t work_head = 0; work_head != work_tail % work_num; work_head = (work_head + 1) % work_num) {
-        p_convert_ssa p_info = dfs_seq + p_work_list[work_head];
+        p_convert_ssa p_info = p_convert_list->p_base + p_work_list[work_head];
         p_info->if_in = false;
         bitmap_merge_not_new(p_info->p_def_var, p_info->p_phi_var);
-        for (size_t j = 0; j < block_num; j++) {
+        for (size_t j = 0; j < p_convert_list->block_num; j++) {
             // 当新的 phi 集合发生变化 并且没有被加入到工作集时需要加入工作集合
             if (bitmap_if_in(p_info->dom_frontier, j)) {
-                bitmap_copy_not_new(p_old, (dfs_seq + j)->p_phi_var);
-                bitmap_merge_not_new((dfs_seq + j)->p_phi_var, p_info->p_def_var);
-                bool if_change = !bitmap_if_equal(p_old, (dfs_seq + j)->p_phi_var);
-                if (if_change && !(dfs_seq + j)->if_in) {
+                bitmap_copy_not_new(p_old, (p_convert_list->p_base + j)->p_phi_var);
+                bitmap_merge_not_new((p_convert_list->p_base + j)->p_phi_var, p_info->p_def_var);
+                bool if_change = !bitmap_if_equal(p_old, (p_convert_list->p_base + j)->p_phi_var);
+                if (if_change && !(p_convert_list->p_base + j)->if_in) {
                     p_work_list[work_tail] = j;
                     work_tail = (work_tail + 1) % work_num;
-                    (dfs_seq + j)->if_in = true;
+                    (p_convert_list->p_base + j)->if_in = true;
                 }
             }
         }
@@ -182,9 +181,9 @@ static inline p_ir_operand get_top_operand(p_ssa_var_list_info p_var_list, size_
     return ir_operand_vreg_gen(p_info->p_current_vreg);
 }
 
-static inline void set_branch_target_ssa_id(p_ir_basic_block_branch_target p_branch_target, p_convert_ssa dfs_seq, p_ssa_var_list_info p_var_list) {
+static inline void set_branch_target_ssa_id(p_ir_basic_block_branch_target p_branch_target, p_convert_ssa_list p_convert_list, p_ssa_var_list_info p_var_list) {
     size_t var_num = p_var_list->vmem_num;
-    p_bitmap p_phi_var = (dfs_seq + p_branch_target->p_block->dfn_id)->p_phi_var;
+    p_bitmap p_phi_var = (p_convert_list->p_base + p_branch_target->p_block->block_id)->p_phi_var;
     for (size_t i = 0; i < var_num; i++) {
         if (bitmap_if_in(p_phi_var, i)) {
             p_ir_operand p_param = get_top_operand(p_var_list, i);
@@ -194,9 +193,9 @@ static inline void set_branch_target_ssa_id(p_ir_basic_block_branch_target p_bra
 }
 
 // 为基本块创建 phi 参数列表并命名
-static inline void set_block_param_ssa_id(p_ir_basic_block p_basic_block, p_convert_ssa dfs_seq, p_ssa_var_list_info p_var_list) {
+static inline void set_block_param_ssa_id(p_ir_basic_block p_basic_block, p_convert_ssa_list p_convert_list, p_ssa_var_list_info p_var_list) {
     size_t var_num = p_var_list->vmem_num;
-    p_bitmap p_phi_var = (dfs_seq + p_basic_block->dfn_id)->p_phi_var;
+    p_bitmap p_phi_var = (p_convert_list->p_base + p_basic_block->block_id)->p_phi_var;
     for (size_t i = 0; i < var_num; i++) {
         if (bitmap_if_in(p_phi_var, i)) {
             p_ir_vreg p_vreg = ir_vreg_gen(symbol_type_copy((p_var_list->p_base + i)->p_vmem->p_type));
@@ -230,12 +229,12 @@ static inline void restore_current_sym(p_ssa_var_list_info p_var_list) {
         free(p_node);
     }
 }
-void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p_ir_basic_block p_entry) {
+void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa_list p_convert_list, p_ir_basic_block p_entry) {
     if (p_entry->if_visited) return;
     p_entry->if_visited = true;
     // 记录入块信息
     record_current_sym(p_var_list);
-    set_block_param_ssa_id(p_entry, dfs_seq, p_var_list);
+    set_block_param_ssa_id(p_entry, p_convert_list, p_var_list);
 
     p_list_head p_node;
     list_for_each(p_node, &p_entry->instr_list) {
@@ -279,24 +278,24 @@ void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p
     }
     p_ir_basic_block_branch p_branch = p_entry->p_branch;
     if (p_branch->kind == ir_br_branch) {
-        set_branch_target_ssa_id(p_branch->p_target_1, dfs_seq, p_var_list);
-        mem2reg_rename_var(p_var_list, dfs_seq, p_branch->p_target_1->p_block);
+        set_branch_target_ssa_id(p_branch->p_target_1, p_convert_list, p_var_list);
+        mem2reg_rename_var(p_var_list, p_convert_list, p_branch->p_target_1->p_block);
     }
     if (p_branch->kind == ir_cond_branch) {
-        set_branch_target_ssa_id(p_branch->p_target_1, dfs_seq, p_var_list);
-        mem2reg_rename_var(p_var_list, dfs_seq, p_branch->p_target_1->p_block);
-        set_branch_target_ssa_id(p_branch->p_target_2, dfs_seq, p_var_list);
-        mem2reg_rename_var(p_var_list, dfs_seq, p_branch->p_target_2->p_block);
+        set_branch_target_ssa_id(p_branch->p_target_1, p_convert_list, p_var_list);
+        mem2reg_rename_var(p_var_list, p_convert_list, p_branch->p_target_1->p_block);
+        set_branch_target_ssa_id(p_branch->p_target_2, p_convert_list, p_var_list);
+        mem2reg_rename_var(p_var_list, p_convert_list, p_branch->p_target_2->p_block);
     }
     // 恢复信息
     restore_current_sym(p_var_list);
 }
 #include <stdio.h>
-static inline void print_dom_frontier(p_convert_ssa dfs_seq, size_t block_num) {
-    printf("--- dom_frontier start---\n");
-    for (size_t i = 0; i < block_num; i++) {
-        p_convert_ssa p_info = dfs_seq + i;
-        printf("b%ld (dfn_id: %ld): ", p_info->p_basic_block->block_id, p_info->p_basic_block->dfn_id);
+static inline void print_dom_frontier(p_convert_ssa_list p_convert_list) {
+    printf(" --- dom_frontier start---\n");
+    for (size_t i = 0; i < p_convert_list->block_num; i++) {
+        p_convert_ssa p_info = p_convert_list->p_base + i;
+        printf("b%ld ", p_info->p_basic_block->block_id);
         bitmap_print(p_info->dom_frontier);
         printf("\n");
     }
@@ -305,26 +304,29 @@ static inline void print_dom_frontier(p_convert_ssa dfs_seq, size_t block_num) {
 
 void mem2reg_func_pass(p_symbol_func p_func) {
     if (list_head_alone(&p_func->block)) return;
-    size_t block_num = p_func->block_cnt;
-    p_convert_ssa dfs_seq = malloc(block_num * sizeof(*dfs_seq));
+    size_t block_num = list_entry(p_func->block.p_prev, ir_basic_block, node)->block_id + 1;
+    p_convert_ssa_list p_convert_list = malloc(sizeof(*p_convert_list));
+    p_convert_list->block_num = block_num;
+    p_convert_list->p_base = malloc(block_num * sizeof(*p_convert_list->p_base));
+    p_convert_list->p_top = NULL;
     // 初始化变量集合
     p_ssa_var_list_info p_var_list = mem2reg_init_var_list(p_func);
     // 初始化 dfs 序
     symbol_func_basic_block_init_visited(p_func);
     p_ir_basic_block p_entry = list_entry(p_func->block.p_next, ir_basic_block, node);
-    mem2reg_init_dfs_sequence(dfs_seq, block_num, p_var_list->vmem_num, p_entry, 0);
+    mem2reg_init_dfs_sequence(p_convert_list, p_var_list->vmem_num, p_entry);
     // 计算支配树
     ir_cfg_set_func_dom(p_func);
     // 计算支配边界
-    mem2reg_compute_dom_frontier(dfs_seq, block_num);
-    print_dom_frontier(dfs_seq, block_num);
+    mem2reg_compute_dom_frontier(p_convert_list);
+    print_dom_frontier(p_convert_list);
     // 插入 phi 函数
-    mem2reg_insert_phi(dfs_seq, block_num, p_var_list);
+    mem2reg_insert_phi(p_convert_list, p_var_list);
     // // 重命名
     symbol_func_basic_block_init_visited(p_func);
-    mem2reg_rename_var(p_var_list, dfs_seq, p_entry);
+    mem2reg_rename_var(p_var_list, p_convert_list, p_entry);
 
-    convert_ssa_dfs_seq_drop(dfs_seq, block_num);
+    convert_ssa_dfs_seq_drop(p_convert_list);
     ssa_var_list_info_drop(p_var_list);
 
     symbol_func_set_vreg_id(p_func);
@@ -338,13 +340,14 @@ void mem2reg_program_pass(p_program p_program) {
     }
 }
 
-void convert_ssa_dfs_seq_drop(p_convert_ssa dfs_seq, size_t block_num) {
-    for (size_t i = 0; i < block_num; i++) {
-        bitmap_drop((dfs_seq + i)->dom_frontier);
-        bitmap_drop((dfs_seq + i)->p_def_var);
-        bitmap_drop((dfs_seq + i)->p_phi_var);
+void convert_ssa_dfs_seq_drop(p_convert_ssa_list p_convert_list) {
+    for (size_t i = 0; i < p_convert_list->block_num; i++) {
+        bitmap_drop((p_convert_list->p_base + i)->dom_frontier);
+        bitmap_drop((p_convert_list->p_base + i)->p_def_var);
+        bitmap_drop((p_convert_list->p_base + i)->p_phi_var);
     }
-    free(dfs_seq);
+    free(p_convert_list->p_base);
+    free(p_convert_list);
 }
 
 void ssa_var_list_info_drop(p_ssa_var_list_info p_var_list) {
