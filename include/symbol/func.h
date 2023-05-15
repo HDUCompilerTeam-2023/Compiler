@@ -17,7 +17,9 @@ struct symbol_func {
     list_head constant;
     list_head variable;
 
+    size_t param_reg_cnt;
     list_head param_reg_list;
+    size_t vreg_cnt;
     list_head vreg_list;
 
     size_t block_cnt;

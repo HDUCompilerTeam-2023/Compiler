@@ -5,6 +5,7 @@
 
 #include <ir_opt/simplify_cfg.h>
 #include <ir_opt/mem2reg.h>
+#include <ir_opt/deadcode_elimate.h>
 
 int main(int argc, char *argv[]) {
     if (argc == 1)
@@ -22,6 +23,10 @@ int main(int argc, char *argv[]) {
         // into ssa
         mem2reg_program_pass(p_program);
         program_ir_dom_info_print(p_program);
+        program_ir_print(p_program);
+
+        // deadcode elimate
+        ir_deadcode_elimate_pass(p_program, true);
         program_ir_print(p_program);
 
         // drop ir

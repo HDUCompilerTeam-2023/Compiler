@@ -3,6 +3,6 @@
 
 #include <program/use.h>
 
-void ir_simplify_cfg_pass(p_program p_program);
+bool ir_simplify_cfg_pass(p_program p_program);
 
 #endif
