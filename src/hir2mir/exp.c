@@ -25,9 +25,6 @@ static inline p_mir_vreg hir2mir_sym_addr(p_hir2mir_info p_info, p_symbol_sym p_
                 mir_program_vmem_add(p_info->p_program_info->p_program, p_vmem);
             }
         }
-        else if (id < p_info->param_vmem_cnt) {
-            p_vmem = p_info->param_vmem_table[id];
-        }
         else {
             p_vmem = mir_vmem_sym_gen(p_sym);
             mir_func_vmem_add(p_info->p_func, p_vmem);

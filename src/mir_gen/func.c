@@ -7,6 +7,8 @@ p_mir_func mir_func_table_gen(size_t cnt) {
         p_func[i] = (mir_func) {
             .entry_block = list_head_init(&(p_func + i)->entry_block),
             .p_func_sym = NULL,
+            .param_vreg = NULL,
+            .param_vreg_cnt = 0,
             .vreg_list = list_head_init(&(p_func + i)->vreg_list),
             .vmem_list = list_head_init(&(p_func + i)->vmem_list),
         };
@@ -80,6 +82,9 @@ void mir_basic_block_init_visited(p_mir_func p_func) {
 void mir_func_set_vreg_id(p_mir_func p_func) {
     p_list_head p_node;
     size_t id = 0;
+    for (size_t i = 0; i < p_func->param_vreg_cnt; ++i) {
+        p_func->param_vreg[i]->id = id++;
+    }
     list_for_each(p_node, &p_func->vreg_list) {
         p_mir_vreg p_vreg = list_entry(p_node, mir_vreg, node);
         p_vreg->id = id++;
@@ -96,6 +101,10 @@ void mir_func_set_vmem_id(p_mir_func p_func) {
 
 void mir_func_table_drop(p_mir_func p_func, size_t cnt) {
     for (size_t i = 0; i < cnt; ++i) {
+        for (size_t j = 0; j < (p_func + i)->param_vreg_cnt; ++j) {
+            mir_vreg_drop((p_func + i)->param_vreg[j]);
+        }
+        free((p_func + i)->param_vreg);
         while (!list_head_alone(&(p_func + i)->entry_block)) {
             p_mir_basic_block p_del = list_entry((p_func + i)->entry_block.p_next, mir_basic_block, node);
             list_del(&p_del->node);
