@@ -21,6 +21,7 @@ p_mir_operand mir_operand_str_gen(p_symbol_str strconst) {
         .strconst = strconst,
         .kind = imme,
         .b_type = type_str,
+        .ref_level = 0,
     };
     return p_mir_int;
 }
@@ -31,6 +32,7 @@ p_mir_operand mir_operand_int_gen(INTCONST_t intconst) {
         .intconst = intconst,
         .kind = imme,
         .b_type = type_int,
+        .ref_level = 0,
     };
     return p_mir_int;
 }
@@ -41,6 +43,7 @@ p_mir_operand mir_operand_float_gen(FLOATCONST_t floatconst) {
         .floatconst = floatconst,
         .kind = imme,
         .b_type = type_float,
+        .ref_level = 0,
     };
     return p_mir_float;
 }
@@ -50,6 +53,7 @@ p_mir_operand mir_operand_void_gen(void) {
     *p_mir_void = (mir_operand) {
         .kind = imme,
         .b_type = type_void,
+        .ref_level = 0,
     };
     return p_mir_void;
 }
@@ -60,6 +64,8 @@ p_mir_operand mir_operand_vreg_gen(p_mir_vreg p_vreg) {
         .kind = reg,
         .p_vreg = p_vreg,
         .use_node = list_head_init(&p_operand->use_node),
+        .b_type = p_vreg->b_type,
+        .ref_level = p_vreg->ref_level,
     };
     return p_operand;
 }

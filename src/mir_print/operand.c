@@ -45,6 +45,9 @@ void mir_operand_print(p_mir_operand p_operand) {
     switch (p_operand->kind) {
     case imme:
         mir_basic_type_print(p_operand->b_type);
+        for (size_t i = 0; i < p_operand->ref_level; ++i) {
+            printf("*");
+        }
         if (p_operand->b_type == type_int)
             printf(" %ld ", p_operand->intconst);
         else if (p_operand->b_type == type_float)
