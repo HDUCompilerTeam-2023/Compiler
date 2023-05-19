@@ -20,9 +20,10 @@ struct mir_operand {
                 FLOATCONST_t floatconst;
                 p_symbol_str strconst;
             };
-            basic_type b_type;
         };
     };
+    basic_type b_type;
+    size_t ref_level;
 };
 
 #endif
