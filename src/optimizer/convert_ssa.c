@@ -66,7 +66,6 @@ static inline size_t get_var_index(p_mir_operand p_operand, p_ssa_var_list_info 
     if (p_vreg->p_instr_def->irkind != mir_addr) return -1;
 
     p_mir_vmem p_vmem = p_operand->p_vreg->p_instr_def->mir_addr.p_vmem;
-    if (p_vmem->is_global) return -1;
     if (p_vmem->is_array) return -1;
     return p_vmem->id;
 }
