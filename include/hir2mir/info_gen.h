@@ -21,9 +21,6 @@ struct hir2mir_info {
     p_mir_vreg *local_addr_table;
     size_t local_addr_cnt;
 
-    p_mir_vreg *global_addr_table;
-    size_t global_addr_cnt;
-
     p_hir2mir_program_info p_program_info;
 };
 

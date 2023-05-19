@@ -16,7 +16,6 @@ p_mir_vmem mir_vmem_temp_gen(basic_type b_type, size_t ref_level) {
         .is_array = false,
         .size = 1,
         .id = 0,
-        .is_global = false,
         .node = list_head_init(&p_vmem->node),
     };
 
@@ -46,7 +45,6 @@ p_mir_vmem mir_vmem_sym_gen(p_symbol_sym p_sym) {
         .is_array = is_array,
         .size = is_array ? p_sym->p_type->size : 1,
         .id = 0,
-        .is_global = p_sym->is_global,
         .node = list_head_init(&p_vmem->node),
     };
 

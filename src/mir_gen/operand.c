@@ -58,6 +58,17 @@ p_mir_operand mir_operand_void_gen(void) {
     return p_mir_void;
 }
 
+p_mir_operand mir_operand_addr_gen(p_mir_vmem p_global_vmem) {
+    p_mir_operand p_operand = malloc(sizeof(*p_operand));
+    *p_operand = (mir_operand) {
+        .kind = imme,
+        .p_global_vmem = p_global_vmem,
+        .b_type = p_global_vmem->b_type,
+        .ref_level = p_global_vmem->ref_level + 1,
+    };
+    return p_operand;
+}
+
 p_mir_operand mir_operand_vreg_gen(p_mir_vreg p_vreg) {
     p_mir_operand p_operand = malloc(sizeof(*p_operand));
     *p_operand = (mir_operand) {

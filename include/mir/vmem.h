@@ -20,7 +20,6 @@ struct mir_vmem {
 
     size_t id;
 
-    bool is_global;
     list_head node;
 };
 

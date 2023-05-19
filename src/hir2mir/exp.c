@@ -7,32 +7,24 @@
 
 static inline p_mir_operand hir2mir_sym_addr(p_hir2mir_info p_info, p_symbol_sym p_sym) {
     size_t id = p_sym->id;
-    p_mir_vreg *table;
     if (p_sym->is_global) {
-        table = p_info->global_addr_table;
+        p_mir_vmem p_vmem = p_info->p_program_info->global_vmem_table[id];
+        if (!p_vmem) {
+            p_vmem = p_info->p_program_info->global_vmem_table[id] = mir_vmem_sym_gen(p_sym);
+            mir_program_vmem_add(p_info->p_program_info->p_program, p_vmem);
+        }
+        return mir_operand_addr_gen(p_vmem);
     }
-    else {
-        table = p_info->local_addr_table;
-    }
-    p_mir_vreg p_addr = table[id];
+
+    p_mir_vreg p_addr = p_info->local_addr_table[id];
 
     if (!p_addr) {
-        p_mir_vmem p_vmem = NULL;
-        if (p_sym->is_global) {
-            p_vmem = p_info->p_program_info->global_vmem_table[id];
-            if (!p_vmem) {
-                p_vmem = p_info->p_program_info->global_vmem_table[id] = mir_vmem_sym_gen(p_sym);
-                mir_program_vmem_add(p_info->p_program_info->p_program, p_vmem);
-            }
-        }
-        else {
-            p_vmem = mir_vmem_sym_gen(p_sym);
-            mir_func_vmem_add(p_info->p_func, p_vmem);
-        }
+        p_mir_vmem p_vmem = mir_vmem_sym_gen(p_sym);
+        mir_func_vmem_add(p_info->p_func, p_vmem);
         p_addr = mir_vreg_gen(p_vmem->b_type, p_vmem->ref_level + 1);
         hir2mir_info_add_instr(p_info, mir_addr_instr_gen(p_vmem, p_addr));
 
-        table[id] = p_addr;
+        p_info->local_addr_table[id] = p_addr;
     }
 
     return mir_operand_vreg_gen(p_addr);

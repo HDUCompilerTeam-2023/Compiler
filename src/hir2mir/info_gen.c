@@ -35,15 +35,6 @@ p_hir2mir_info hir2mir_info_gen(p_mir_func p_m_func, p_hir2mir_program_info p_pr
             local_addr_table[i] = NULL;
         }
     }
-    size_t global_addr_cnt = 0;
-    p_mir_vreg *global_addr_table = NULL;
-    if (p_program_info->global_vmem_table) {
-        global_addr_cnt = p_program_info->global_vmem_cnt;
-        global_addr_table = malloc(sizeof(p_mir_vreg) * global_addr_cnt);
-        for (size_t i = 0; i < global_addr_cnt; ++i) {
-            global_addr_table[i] = NULL;
-        }
-    }
 
     p_hir2mir_info p_info = malloc(sizeof(*p_info));
     *p_info = (hir2mir_info) {
@@ -53,8 +44,6 @@ p_hir2mir_info hir2mir_info_gen(p_mir_func p_m_func, p_hir2mir_program_info p_pr
         .p_ret_block = mir_basic_block_gen(),
         .local_addr_table = local_addr_table,
         .local_addr_cnt = local_addr_cnt,
-        .global_addr_table = global_addr_table,
-        .global_addr_cnt = global_addr_cnt,
         .p_program_info = p_program_info,
     };
 
@@ -71,7 +60,6 @@ void hir2mir_program_info_drop(p_hir2mir_program_info p_program_info) {
 
 void hir2mir_info_drop(p_hir2mir_info p_info) {
     free(p_info->local_addr_table);
-    free(p_info->global_addr_table);
     free(p_info);
 }
 

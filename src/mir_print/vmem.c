@@ -18,7 +18,7 @@ void mir_vmem_print(p_mir_vmem p_vmem) {
         }
     }
 
-    if (p_vmem->is_global) {
+    if (p_vmem->p_sym && p_vmem->p_sym->is_global) {
         printf(" @");
     }
     else {

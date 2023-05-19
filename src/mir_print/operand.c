@@ -45,10 +45,15 @@ void mir_operand_print(p_mir_operand p_operand) {
     switch (p_operand->kind) {
     case imme:
         mir_basic_type_print(p_operand->b_type);
-        for (size_t i = 0; i < p_operand->ref_level; ++i) {
-            printf("*");
+        if (p_operand->ref_level > 0) {
+            for (size_t i = 0; i < p_operand->ref_level; ++i) {
+                printf("*");
+            }
+            printf(" (addr ");
+            mir_vmem_print(p_operand->p_global_vmem);
+            printf(") ");
         }
-        if (p_operand->b_type == type_int)
+        else if (p_operand->b_type == type_int)
             printf(" %ld ", p_operand->intconst);
         else if (p_operand->b_type == type_float)
             printf(" %f ", p_operand->floatconst);
