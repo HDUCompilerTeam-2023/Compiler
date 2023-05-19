@@ -75,6 +75,10 @@ p_hir2mir_info hir2mir_info_gen(p_mir_func p_m_func, p_hir2mir_program_info p_pr
         .global_addr_cnt = global_addr_cnt,
         .p_program_info = p_program_info,
     };
+
+    p_mir_basic_block p_entry = mir_basic_block_gen();
+    hir2mir_info_add_basic_block(p_info, p_entry);
+
     return p_info;
 }
 
