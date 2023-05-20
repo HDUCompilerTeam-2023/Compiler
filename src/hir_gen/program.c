@@ -38,7 +38,10 @@ p_symbol_item hir_symbol_item_add(p_hir_program p_program, p_symbol_sym p_sym, b
         symbol_store_add_function(p_program->p_store, p_sym);
     }
     else {
-        if (is_global) {
+        if (p_sym->is_const) {
+            list_add_prev(&p_sym->node, &p_program->p_table->constant);
+        }
+        else if (is_global) {
             symbol_store_add_global(p_program->p_store, p_sym);
         }
         else {

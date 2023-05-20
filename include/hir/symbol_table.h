@@ -43,6 +43,8 @@ struct symbol_table {
     uint16_t level;
     uint16_t next_id;
     p_symbol_zone p_top_table;
+
+    list_head constant;
 };
 
 #endif
