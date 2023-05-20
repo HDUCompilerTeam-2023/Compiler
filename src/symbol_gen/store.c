@@ -6,7 +6,6 @@ p_symbol_store symbol_store_gen(void) {
     p_symbol_store p_store = malloc(sizeof(*p_store));
     *p_store = (symbol_store) {
         .variable = list_head_init(&p_store->variable),
-        .constant = list_head_init(&p_store->constant),
         .function = list_head_init(&p_store->function),
         .string = list_head_init(&p_store->string),
         .next_id = 0,
@@ -24,11 +23,6 @@ void symbol_store_drop(p_symbol_store p_store) {
         symbol_var_drop(p_del);
     }
 
-    while (!list_head_alone(&p_store->constant)) {
-        p_symbol_sym p_del = list_entry(p_store->constant.p_next, symbol_sym, node);
-        symbol_var_drop(p_del);
-    }
-
     while (!list_head_alone(&p_store->string)) {
         p_symbol_str p_del = list_entry(p_store->string.p_next, symbol_str, node);
         symbol_str_drop(p_del);
@@ -42,36 +36,22 @@ bool symbol_store_add_str(p_symbol_store p_store, p_symbol_str p_str) {
 }
 
 bool symbol_store_add_global(p_symbol_store p_store, p_symbol_sym p_sym) {
-    p_list_head p_list;
-    if (p_sym->is_const) {
-        p_list = &p_store->constant;
-    }
-    else {
-        p_list = &p_store->variable;
-        p_sym->id = p_store->next_id++;
-    }
+    p_sym->id = p_store->next_id++;
     p_sym->is_global = true;
-    return list_add_prev(&p_sym->node, p_list);
+    return list_add_prev(&p_sym->node, &p_store->variable);
 }
 bool symbol_store_add_local(p_symbol_store p_store, p_symbol_sym p_sym) {
     assert(!list_head_alone(&p_store->function));
     p_symbol_sym p_func = list_entry(p_store->function.p_prev, symbol_sym, node);
 
-    p_list_head p_list;
-    if (p_sym->is_const) {
-        p_list = &p_func->constant;
+    if (list_head_alone(&p_func->variable)) {
+        p_sym->id = 0;
     }
     else {
-        p_list = &p_func->variable;
-        if (list_head_alone(&p_func->variable)) {
-            p_sym->id = 0;
-        }
-        else {
-            p_sym->id = list_entry(p_func->variable.p_prev, symbol_sym, node)->id + 1;
-        }
+        p_sym->id = list_entry(p_func->variable.p_prev, symbol_sym, node)->id + 1;
     }
     p_sym->is_global = false;
-    return list_add_prev(&p_sym->node, p_list);
+    return list_add_prev(&p_sym->node, &p_func->variable);
 }
 
 bool symbol_store_add_function(p_symbol_store p_store, p_symbol_sym p_sym) {

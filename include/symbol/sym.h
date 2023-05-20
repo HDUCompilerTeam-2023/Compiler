@@ -27,7 +27,6 @@ struct symbol_sym {
         struct {
             p_list_head last_param;
             list_head variable;
-            list_head constant;
         };
         struct {
             p_symbol_init p_init;
