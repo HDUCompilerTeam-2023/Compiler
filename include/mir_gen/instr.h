@@ -7,7 +7,7 @@ p_mir_instr mir_unary_instr_gen(mir_instr_type mir_type, p_mir_operand p_src, p_
 
 p_mir_instr mir_call_instr_gen(p_mir_func p_func, p_mir_param_list p_param_list, p_mir_vreg p_des);
 
-p_mir_instr mir_addr_instr_gen(p_mir_vmem p_vmem, p_mir_vreg p_des);
+p_mir_instr mir_alloca_instr_gen(p_mir_vmem p_vmem, p_mir_vreg p_des);
 p_mir_instr mir_load_instr_gen(p_mir_operand p_addr, p_mir_operand p_offset, p_mir_vreg p_des);
 p_mir_instr mir_store_instr_gen(p_mir_operand p_addr, p_mir_operand p_offset, p_mir_operand p_src);
 

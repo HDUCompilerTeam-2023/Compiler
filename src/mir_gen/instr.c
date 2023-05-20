@@ -75,11 +75,11 @@ p_mir_instr mir_call_instr_gen(p_mir_func p_func, p_mir_param_list p_param_list,
     return p_instr;
 }
 
-p_mir_instr mir_addr_instr_gen(p_mir_vmem p_vmem, p_mir_vreg p_des) {
+p_mir_instr mir_alloca_instr_gen(p_mir_vmem p_vmem, p_mir_vreg p_des) {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
     *p_instr = (mir_instr) {
-        .irkind = mir_addr,
-        .mir_addr = (mir_addr_instr) {
+        .irkind = mir_alloca,
+        .mir_alloca = (mir_alloca_instr) {
             .p_vmem = p_vmem,
             .p_des = p_des,
         },
@@ -184,8 +184,8 @@ p_mir_vreg mir_instr_get_des(p_mir_instr p_instr) {
         return p_instr->mir_unary.p_des;
     case mir_call:
         return p_instr->mir_call.p_des;
-    case mir_addr:
-        return p_instr->mir_addr.p_des;
+    case mir_alloca:
+        return p_instr->mir_alloca.p_des;
     case mir_load:
         return p_instr->mir_load.p_des;
     default:
@@ -243,7 +243,7 @@ void mir_instr_drop(p_mir_instr p_instr) {
             mir_operand_drop(p_instr->mir_store.p_offset);
         mir_operand_drop(p_instr->mir_store.p_src);
         break;
-    case mir_addr:
+    case mir_alloca:
         break;
     case mir_load:
         mir_operand_drop(p_instr->mir_load.p_addr);

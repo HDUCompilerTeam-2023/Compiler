@@ -22,7 +22,7 @@ static inline void hir2mir_func_param_gen(p_hir2mir_info p_info, p_mir_func p_fu
         p_mir_vreg p_addr = mir_vreg_gen(p_vmem->b_type, p_vmem->ref_level + 1);
         mir_func_vreg_add(p_func, p_addr);
         p_info->local_addr_table[i] = p_addr;
-        hir2mir_info_add_instr(p_info, mir_addr_instr_gen(p_vmem, p_addr));
+        hir2mir_info_add_instr(p_info, mir_alloca_instr_gen(p_vmem, p_addr));
 
         p_mir_vreg p_param = p_func->param_vreg[i] = mir_vreg_gen(p_addr->b_type, p_addr->ref_level - 1);
         hir2mir_info_add_instr(p_info, mir_store_instr_gen(mir_operand_vreg_gen(p_addr), NULL, mir_operand_vreg_gen(p_param)));
@@ -34,7 +34,7 @@ static inline void hir2mir_func_retval_gen(p_hir2mir_info p_info, p_mir_func p_f
     mir_func_vmem_add(p_func, p_ret_vmem);
 
     p_mir_vreg p_ret_addr = mir_vreg_gen(p_ret_vmem->b_type, p_ret_vmem->ref_level + 1);
-    hir2mir_info_add_instr(p_info, mir_addr_instr_gen(p_ret_vmem, p_ret_addr));
+    hir2mir_info_add_instr(p_info, mir_alloca_instr_gen(p_ret_vmem, p_ret_addr));
     p_info->p_ret_addr = p_ret_addr;
 }
 
