@@ -63,9 +63,9 @@ static inline size_t get_var_index(p_mir_operand p_operand, p_ssa_var_list_info 
 
     p_mir_vreg p_vreg = p_operand->p_vreg;
     assert(!p_vreg->is_bb_param);
-    if (p_vreg->p_instr_def->irkind != mir_addr) return -1;
+    if (p_vreg->p_instr_def->irkind != mir_alloca) return -1;
 
-    p_mir_vmem p_vmem = p_operand->p_vreg->p_instr_def->mir_addr.p_vmem;
+    p_mir_vmem p_vmem = p_operand->p_vreg->p_instr_def->mir_alloca.p_vmem;
     if (p_vmem->is_array) return -1;
     return p_vmem->id;
 }
