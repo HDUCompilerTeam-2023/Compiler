@@ -49,7 +49,7 @@ p_hir2mir_info hir2mir_info_gen(p_mir_func p_m_func, p_hir2mir_program_info p_pr
     *p_info = (hir2mir_info) {
         .p_current_basic_block = NULL,
         .p_func = p_m_func,
-        .p_ret_vmem = mir_vmem_temp_gen(p_m_func->p_func_sym->p_type->basic, 0),
+        .p_ret_addr = NULL,
         .p_ret_block = mir_basic_block_gen(),
         .local_addr_table = local_addr_table,
         .local_addr_cnt = local_addr_cnt,
