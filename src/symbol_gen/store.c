@@ -8,7 +8,8 @@ p_symbol_store symbol_store_gen(void) {
         .variable = list_head_init(&p_store->variable),
         .function = list_head_init(&p_store->function),
         .string = list_head_init(&p_store->string),
-        .next_id = 0,
+        .variable_cnt = 0,
+        .function_cnt = 0,
     };
     return p_store;
 }
@@ -36,7 +37,7 @@ bool symbol_store_add_str(p_symbol_store p_store, p_symbol_str p_str) {
 }
 
 bool symbol_store_add_global(p_symbol_store p_store, p_symbol_sym p_sym) {
-    p_sym->id = p_store->next_id++;
+    p_sym->id = p_store->variable_cnt++;
     p_sym->is_global = true;
     return list_add_prev(&p_sym->node, &p_store->variable);
 }
@@ -44,22 +45,12 @@ bool symbol_store_add_local(p_symbol_store p_store, p_symbol_sym p_sym) {
     assert(!list_head_alone(&p_store->function));
     p_symbol_sym p_func = list_entry(p_store->function.p_prev, symbol_sym, node);
 
-    if (list_head_alone(&p_func->variable)) {
-        p_sym->id = 0;
-    }
-    else {
-        p_sym->id = list_entry(p_func->variable.p_prev, symbol_sym, node)->id + 1;
-    }
+    p_sym->id = p_func->variable_cnt++;
     p_sym->is_global = false;
     return list_add_prev(&p_sym->node, &p_func->variable);
 }
 
 bool symbol_store_add_function(p_symbol_store p_store, p_symbol_sym p_sym) {
-    if (list_head_alone(&p_store->function)) {
-        p_sym->id = 0;
-    }
-    else {
-        p_sym->id = list_entry(p_store->function.p_prev, symbol_sym, node)->id + 1;
-    }
+    p_sym->id = p_store->function_cnt++;
     return list_add_prev(&p_sym->node, &p_store->function);
 }

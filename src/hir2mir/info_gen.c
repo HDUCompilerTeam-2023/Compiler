@@ -4,10 +4,9 @@
 #include <symbol/type.h>
 
 p_hir2mir_program_info hir2mir_program_info_gen(p_mir_program p_m_program) {
-    size_t global_vmem_cnt = 0;
+    size_t global_vmem_cnt = p_m_program->p_store->variable_cnt;
     p_mir_vmem *global_vmem_table = NULL;
-    if (!list_head_alone(&p_m_program->p_store->variable)) {
-        global_vmem_cnt = list_entry(p_m_program->p_store->variable.p_prev, symbol_sym, node)->id + 1;
+    if (global_vmem_cnt) {
         global_vmem_table = malloc(sizeof(p_mir_vmem) * global_vmem_cnt);
         for (size_t i = 0; i < global_vmem_cnt; ++i) {
             global_vmem_table[i] = NULL;
@@ -26,10 +25,9 @@ p_hir2mir_program_info hir2mir_program_info_gen(p_mir_program p_m_program) {
 
 // 根据函数信息 生成接下来需要收集的信息的返回值类型
 p_hir2mir_info hir2mir_info_gen(p_mir_func p_m_func, p_hir2mir_program_info p_program_info) {
-    size_t local_addr_cnt = 0;
+    size_t local_addr_cnt = p_m_func->p_func_sym->variable_cnt;
     p_mir_vreg *local_addr_table = NULL;
-    if (!list_head_alone(&p_m_func->p_func_sym->variable)) {
-        local_addr_cnt = list_entry(p_m_func->p_func_sym->variable.p_prev, symbol_sym, node)->id + 1;
+    if (local_addr_cnt) {
         local_addr_table = malloc(sizeof(p_mir_vreg) * local_addr_cnt);
         for (size_t i = 0; i < local_addr_cnt; ++i) {
             local_addr_table[i] = NULL;
