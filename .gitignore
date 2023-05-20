@@ -1,7 +1,7 @@
 # Files
 *
 *.*
-
+!.gitattributes
 !.gitignore
 !*.md
 
@@ -16,7 +16,9 @@
 !*.cc
 
 !*.sy
-
+!*.in
+!*.out
+!*.a
 
 # Directory
 !*/
