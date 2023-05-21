@@ -66,6 +66,7 @@ counter:
 clean:
 	@echo '- CLEAN $(CLEAN)'
 	@rm -rf $(CLEAN)
+	find $(TEST_DIR) -name "*.s" -o -name "*.exe" -o -name "*.output" | xargs rm -rf
 PHONY += clean
 
 help:
