@@ -20,6 +20,8 @@
 !*.out
 !*.a
 
+!*.sh
+
 # Directory
 !*/
 
