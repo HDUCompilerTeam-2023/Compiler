@@ -4,7 +4,6 @@
 #include <symbol.h>
 #include <util.h>
 
-typedef struct hir_program hir_program, *p_hir_program;
 typedef struct hir_param hir_param, *p_hir_param;
 typedef struct hir_param_list hir_param_list, *p_hir_param_list;
 typedef struct hir_func hir_func, *p_hir_func;

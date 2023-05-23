@@ -2,7 +2,7 @@
 
 #include <frontend/log.h>
 
-#include <symbol/sym.h>
+#include <frontend/symbol_table.h>
 
 p_syntax_init syntax_init_list_gen(void) {
     p_syntax_init p_init = malloc(sizeof(*p_init));
@@ -123,7 +123,7 @@ p_syntax_param_list syntax_param_list_add(p_syntax_param_list p_list, p_syntax_p
     return p_list;
 }
 
-p_hir_func syntax_func_head(p_hir_program p_program, basic_type type, char *name, p_syntax_param_list p_param_list) {
+p_hir_func syntax_func_head(p_symbol_table p_table, basic_type type, char *name, p_syntax_param_list p_param_list) {
     p_symbol_type p_type = symbol_type_func_gen(false);
     p_type->basic = type;
 
@@ -136,17 +136,18 @@ p_hir_func syntax_func_head(p_hir_program p_program, basic_type type, char *name
         p_param = p_param->p_params;
     }
 
-    p_symbol_item p_func_item = hir_symbol_item_add(p_program, symbol_func_gen(name, p_type), true);
-    p_hir_func p_func = hir_func_gen(p_func_item, NULL);
+    p_symbol_sym p_sym = symbol_func_gen(name, p_type);
+    symbol_table_sym_add(p_table, p_sym);
+    p_hir_func p_func = hir_func_gen(p_sym, NULL);
     free(name);
 
-    hir_symbol_zone_push(p_program);
+    symbol_table_zone_push(p_table);
     while (!list_head_alone(&p_param_list->param_decl)) {
         p_syntax_param_decl p_decl = list_entry(p_param_list->param_decl.p_next, syntax_param_decl, node);
         list_del(&p_decl->node);
 
         p_symbol_sym p_sym = symbol_var_gen(p_decl->name, p_decl->p_type, false, false, NULL);
-        hir_symbol_item_add(p_program, p_sym, false);
+        symbol_table_sym_add(p_table, p_sym); // false
         free(p_decl->name);
         free(p_decl);
     }
@@ -154,8 +155,8 @@ p_hir_func syntax_func_head(p_hir_program p_program, basic_type type, char *name
     free(p_param_list);
     return p_func;
 }
-p_hir_func syntax_func_end(p_hir_program p_program, p_hir_func p_func, p_hir_block p_block) {
-    hir_symbol_zone_pop(p_program);
+p_hir_func syntax_func_end(p_symbol_table p_table, p_hir_func p_func, p_hir_block p_block) {
+    symbol_table_zone_pop(p_table);
     p_func->p_block = p_block;
     return p_func;
 }
@@ -233,7 +234,7 @@ static inline p_syntax_init_mem syntax_init_trans(p_syntax_decl p_decl) {
     free(p_decl->p_init);
     return p_init;
 }
-p_hir_block syntax_local_vardecl(p_hir_program p_program, p_hir_block p_block, p_syntax_decl_list p_decl_list) {
+p_hir_block syntax_local_vardecl(p_symbol_table p_table, p_hir_block p_block, p_syntax_decl_list p_decl_list) {
     while (!list_head_alone(&p_decl_list->decl)) {
         p_syntax_decl p_decl = list_entry(p_decl_list->decl.p_next, syntax_decl, node);
         list_del(&p_decl->node);
@@ -254,11 +255,11 @@ p_hir_block syntax_local_vardecl(p_hir_program p_program, p_hir_block p_block, p
                 symbol_init_add(p_init, i, init_val);
             }
             p_symbol_sym p_sym = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, p_init != NULL, p_init);
-            hir_symbol_item_add(p_program, p_sym, false);
+            symbol_table_sym_add(p_table, p_sym); // false
         }
         else {
             p_symbol_sym p_sym = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, false, NULL);
-            hir_symbol_item_add(p_program, p_sym, false);
+            symbol_table_sym_add(p_table, p_sym); // false
             if (p_h_init) {
                 p_symbol_type p_var_type = p_sym->p_type;
                 while (p_var_type->kind == type_arrary) {
@@ -292,7 +293,7 @@ p_hir_block syntax_local_vardecl(p_hir_program p_program, p_hir_block p_block, p
     free(p_decl_list);
     return p_block;
 }
-void syntax_global_vardecl(p_hir_program p_program, p_syntax_decl_list p_decl_list) {
+void syntax_global_vardecl(p_symbol_table p_table, p_syntax_decl_list p_decl_list) {
     while (!list_head_alone(&p_decl_list->decl)) {
         p_syntax_decl p_decl = list_entry(p_decl_list->decl.p_next, syntax_decl, node);
         list_del(&p_decl->node);
@@ -327,7 +328,7 @@ void syntax_global_vardecl(p_hir_program p_program, p_syntax_decl_list p_decl_li
         }
         syntax_init_mem_drop(p_h_init);
         p_symbol_sym p_sym = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, p_init != NULL, p_init);
-        hir_symbol_item_add(p_program, p_sym, true);
+        symbol_table_sym_add(p_table, p_sym); // true
 
         free(p_decl->name);
         free(p_decl);
@@ -335,7 +336,7 @@ void syntax_global_vardecl(p_hir_program p_program, p_syntax_decl_list p_decl_li
     free(p_decl_list);
 }
 
-void syntax_rtlib_decl(p_hir_program p_program, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2, bool is_va) {
+void syntax_rtlib_decl(p_symbol_table p_table, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2, bool is_va) {
     p_symbol_type p_type = symbol_type_func_gen(is_va);
     p_type->basic = type;
 
@@ -347,20 +348,20 @@ void syntax_rtlib_decl(p_hir_program p_program, basic_type type, char *name, p_s
     }
 
     p_symbol_sym p_sym = symbol_func_gen(name, p_type);
-    p_symbol_item p_item = hir_symbol_item_add(p_program, p_sym, true);
-    list_add_prev(&hir_func_gen(p_item, NULL)->node, &p_program->func);
+    symbol_table_sym_add(p_table, p_sym); //true
+    hir_func_gen(p_sym, NULL);
 
-    hir_symbol_zone_push(p_program);
+    symbol_table_zone_push(p_table);
     if (p_type->p_params) {
         p_symbol_sym p_sym = symbol_var_gen("arg1", p_type->p_params->p_item, false, false, NULL);
-        hir_symbol_item_add(p_program, p_sym, false);
+        symbol_table_sym_add(p_table, p_sym); // false
         if (p_type->p_params->p_params) {
             p_sym = symbol_var_gen("arg2", p_type->p_params->p_params->p_item, false, false, NULL);
-            hir_symbol_item_add(p_program, p_sym, false);
+            symbol_table_sym_add(p_table, p_sym); // false
         }
     }
     p_sym->last_param = p_sym->variable.p_prev;
-    hir_symbol_zone_pop(p_program);
+    symbol_table_zone_pop(p_table);
 }
 
 p_hir_exp syntax_const_check(p_hir_exp p_exp) {

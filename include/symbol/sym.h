@@ -2,6 +2,7 @@
 #define __SYMBOL_SYM__
 
 #include <hir.h>
+#include <mir.h>
 #include <symbol.h>
 
 struct symbol_init_val {
@@ -28,6 +29,9 @@ struct symbol_sym {
             p_list_head last_param;
             list_head variable;
             size_t variable_cnt;
+
+            p_hir_func p_h_func;
+            p_mir_func p_m_func;
         };
         struct {
             p_symbol_init p_init;

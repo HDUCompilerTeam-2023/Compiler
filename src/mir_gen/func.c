@@ -1,18 +1,16 @@
 #include <mir_gen.h>
 #include <mir_gen/func.h>
 
-p_mir_func mir_func_table_gen(size_t cnt) {
-    p_mir_func p_func = malloc(sizeof(*p_func) * cnt);
-    for (size_t i = 0; i < cnt; ++i) {
-        p_func[i] = (mir_func) {
-            .entry_block = list_head_init(&(p_func + i)->entry_block),
-            .p_func_sym = NULL,
-            .param_vreg = NULL,
-            .param_vreg_cnt = 0,
-            .vreg_list = list_head_init(&(p_func + i)->vreg_list),
-            .vmem_list = list_head_init(&(p_func + i)->vmem_list),
-        };
-    }
+p_mir_func mir_func_gen() {
+    p_mir_func p_func = malloc(sizeof(*p_func));
+    *p_func = (mir_func) {
+        .entry_block = list_head_init(&p_func->entry_block),
+        .p_func_sym = NULL,
+        .param_vreg = NULL,
+        .param_vreg_cnt = 0,
+        .vreg_list = list_head_init(&p_func->vreg_list),
+        .vmem_list = list_head_init(&p_func->vmem_list),
+    };
     return p_func;
 }
 
@@ -99,27 +97,25 @@ void mir_func_set_vmem_id(p_mir_func p_func) {
     }
 }
 
-void mir_func_table_drop(p_mir_func p_func, size_t cnt) {
-    for (size_t i = 0; i < cnt; ++i) {
-        for (size_t j = 0; j < (p_func + i)->param_vreg_cnt; ++j) {
-            mir_vreg_drop((p_func + i)->param_vreg[j]);
-        }
-        free((p_func + i)->param_vreg);
-        while (!list_head_alone(&(p_func + i)->entry_block)) {
-            p_mir_basic_block p_del = list_entry((p_func + i)->entry_block.p_next, mir_basic_block, node);
-            list_del(&p_del->node);
-            mir_basic_block_drop(p_del);
-        }
-        while (!list_head_alone(&(p_func + i)->vreg_list)) {
-            p_mir_vreg p_vreg = list_entry((p_func + i)->vreg_list.p_next, mir_vreg, node);
-            list_del(&p_vreg->node);
-            free(p_vreg);
-        }
-        while (!list_head_alone(&(p_func + i)->vmem_list)) {
-            p_mir_vmem p_vmem = list_entry((p_func + i)->vmem_list.p_next, mir_vmem, node);
-            list_del(&p_vmem->node);
-            free(p_vmem);
-        }
+void mir_func_drop(p_mir_func p_func) {
+    for (size_t j = 0; j < p_func->param_vreg_cnt; ++j) {
+        mir_vreg_drop(p_func->param_vreg[j]);
+    }
+    free(p_func->param_vreg);
+    while (!list_head_alone(&p_func->entry_block)) {
+        p_mir_basic_block p_del = list_entry(p_func->entry_block.p_next, mir_basic_block, node);
+        list_del(&p_del->node);
+        mir_basic_block_drop(p_del);
+    }
+    while (!list_head_alone(&p_func->vreg_list)) {
+        p_mir_vreg p_vreg = list_entry(p_func->vreg_list.p_next, mir_vreg, node);
+        list_del(&p_vreg->node);
+        free(p_vreg);
+    }
+    while (!list_head_alone(&p_func->vmem_list)) {
+        p_mir_vmem p_vmem = list_entry(p_func->vmem_list.p_next, mir_vmem, node);
+        list_del(&p_vmem->node);
+        free(p_vmem);
     }
     free(p_func);
 }

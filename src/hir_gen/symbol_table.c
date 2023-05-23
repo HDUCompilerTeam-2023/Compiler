@@ -1,4 +1,4 @@
-#include <hir_gen/symbol_table.h>
+#include <frontend/symbol_table.h>
 
 #include <hir_gen.h>
 
@@ -52,6 +52,7 @@ p_symbol_table symbol_table_gen() {
         .level = 0,
         .next_id = 0,
         .constant = list_head_init(&p_table->constant),
+        .p_store = symbol_store_gen(),
     };
     return p_table;
 }
@@ -105,7 +106,7 @@ void symbol_table_zone_pop(p_symbol_table p_table) {
     free(del_table);
 }
 
-p_symbol_item symbol_table_item_add(p_symbol_table p_table, p_symbol_sym p_sym) {
+p_symbol_item symbol_table_sym_add(p_symbol_table p_table, p_symbol_sym p_sym) {
     assert(p_table->level > 0);
 
     size_t hash_tag = symbol_str_tag(p_sym->name);
@@ -127,6 +128,8 @@ p_symbol_item symbol_table_item_add(p_symbol_table p_table, p_symbol_sym p_sym) 
     else
         assert(p_name->p_item->level < p_table->level);
 
+    bool is_global = p_table->p_top_table->p_prev == NULL;
+
     p_symbol_item p_item = malloc(sizeof(*p_item));
     *p_item = (symbol_item) {
         .p_name = p_name,
@@ -138,10 +141,24 @@ p_symbol_item symbol_table_item_add(p_symbol_table p_table, p_symbol_sym p_sym) 
     p_table->p_top_table->p_item = p_item;
     p_name->p_item = p_item;
 
+    if (p_sym->p_type->kind >= type_func) {
+        symbol_store_add_function(p_table->p_store, p_sym);
+    }
+    else {
+        if (p_sym->is_const) {
+            list_add_prev(&p_sym->node, &p_table->constant);
+        }
+        else if (is_global) {
+            symbol_store_add_global(p_table->p_store, p_sym);
+        }
+        else {
+            symbol_store_add_local(p_table->p_store, p_sym);
+        }
+    }
     return p_item;
 }
 
-p_symbol_item symbol_table_item_find(p_symbol_table p_table, const char *name) {
+p_symbol_sym symbol_table_sym_find(p_symbol_table p_table, const char *name) {
     assert(p_table->level > 0);
 
     size_t hash_tag = symbol_str_tag(name);
@@ -151,7 +168,7 @@ p_symbol_item symbol_table_item_find(p_symbol_table p_table, const char *name) {
     if (!p_name)
         return NULL;
 
-    return p_name->p_item;
+    return p_name->p_item->p_info;
 }
 
 p_symbol_str symbol_table_str_get(p_symbol_table p_table, const char *string) {
@@ -166,6 +183,6 @@ p_symbol_str symbol_table_str_get(p_symbol_table p_table, const char *string) {
 
     p_symbol_str p_str = symbol_str_gen(string);
     hlist_node_add(p_head, &p_str->h_node);
-
+    symbol_store_add_str(p_table->p_store, p_str);
     return p_str;
 }

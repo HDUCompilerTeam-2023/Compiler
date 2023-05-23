@@ -4,6 +4,8 @@
 #include <hir/func.h>
 #include <symbol_print.h>
 
+int deep;
+
 void hir_func_call_print(p_hir_func p_func, p_hir_param_list p_param_list) {
     assert(p_func);
     symbol_name_print(p_func->p_sym);

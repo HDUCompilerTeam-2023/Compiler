@@ -3,8 +3,8 @@
 #include <symbol/sym.h>
 #include <symbol/type.h>
 
-p_hir2mir_program_info hir2mir_program_info_gen(p_mir_program p_m_program) {
-    size_t global_vmem_cnt = p_m_program->p_store->variable_cnt;
+p_hir2mir_program_info hir2mir_program_info_gen(p_program p_store) {
+    size_t global_vmem_cnt = p_store->variable_cnt;
     p_mir_vmem *global_vmem_table = NULL;
     if (global_vmem_cnt) {
         global_vmem_table = malloc(sizeof(p_mir_vmem) * global_vmem_cnt);
@@ -14,8 +14,7 @@ p_hir2mir_program_info hir2mir_program_info_gen(p_mir_program p_m_program) {
     }
     p_hir2mir_program_info p_program_info = malloc(sizeof(*p_program_info));
     *p_program_info = (hir2mir_program_info) {
-        .p_program = p_m_program,
-        .func_table = p_m_program->func_table,
+        .p_store = p_store,
         .global_vmem_cnt = global_vmem_cnt,
         .global_vmem_table = global_vmem_table,
     };

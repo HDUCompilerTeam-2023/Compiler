@@ -2,8 +2,7 @@
 #include <hir/func.h>
 #include <hir2mir.h>
 
-#include <symbol/sym.h>
-#include <symbol/type.h>
+#include <symbol_gen.h>
 
 static inline p_mir_operand hir2mir_sym_addr(p_hir2mir_info p_info, p_symbol_sym p_sym) {
     size_t id = p_sym->id;
@@ -11,7 +10,7 @@ static inline p_mir_operand hir2mir_sym_addr(p_hir2mir_info p_info, p_symbol_sym
         p_mir_vmem p_vmem = p_info->p_program_info->global_vmem_table[id];
         if (!p_vmem) {
             p_vmem = p_info->p_program_info->global_vmem_table[id] = mir_vmem_sym_gen(p_sym);
-            mir_program_vmem_add(p_info->p_program_info->p_program, p_vmem);
+            symbol_store_mir_vmem_add(p_info->p_program_info->p_store, p_vmem);
         }
         return mir_operand_addr_gen(p_vmem);
     }
@@ -163,7 +162,7 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
         return hir2mir_exp_exec_gen(p_info, p_exp);
     }
     case hir_exp_call: {
-        p_mir_func p_func = p_info->p_program_info->func_table + p_exp->p_func->p_sym->id;
+        p_mir_func p_func = p_exp->p_func->p_sym->p_m_func;
 
         p_symbol_type p_type = p_func->p_func_sym->p_type;
         assert(p_type->kind >= type_func);

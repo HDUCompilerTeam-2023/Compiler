@@ -7,7 +7,6 @@
 #include <mir_gen/instr.h>
 #include <mir_gen/operand.h>
 #include <mir_gen/param.h>
-#include <mir_gen/program.h>
 #include <mir_gen/vmem.h>
 #include <mir_gen/vreg.h>
 

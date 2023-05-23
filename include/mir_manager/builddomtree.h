@@ -23,7 +23,7 @@ struct cfg_build_dom_tree_info {
 size_t init_dfs_sequence(cfg_build_dom_tree_info dfs_seq[], size_t block_num, size_t current_num, size_t parent, p_mir_basic_block p_entry);
 void cfg_build_dom_tree_info_drop(p_cfg_build_dom_tree_info p_dom_info);
 void cfg_build_dom_tree_info_gen(cfg_build_dom_tree_info dom_info[], p_mir_basic_block p_basic_block, size_t block_num, size_t parent, size_t current_num);
-void mir_cfg_set_program_dom(p_mir_program p_program);
+void mir_cfg_set_program_dom(p_program p_store);
 void mir_cfg_set_func_dom(p_mir_func p_func);
 
 #endif
