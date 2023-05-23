@@ -5,7 +5,6 @@
 #include <hir_print/exp.h>
 #include <hir_print/func.h>
 #include <hir_print/param.h>
-#include <hir_print/program.h>
 #include <hir_print/stmt.h>
 
 extern int deep;

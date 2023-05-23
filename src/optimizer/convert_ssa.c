@@ -33,7 +33,7 @@ size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t block_num, siz
     return current_num;
 }
 
-p_ssa_var_list_info convert_ssa_init_var_list(p_mir_func p_func, p_mir_program p_program) {
+p_ssa_var_list_info convert_ssa_init_var_list(p_mir_func p_func) {
     p_ssa_var_list_info p_var_list = malloc(sizeof(*p_var_list));
     *p_var_list = (ssa_var_list_info) {
         .vmem_num = list_head_alone(&p_func->vmem_list) ? 0 : list_entry(p_func->vmem_list.p_prev, mir_vmem, node)->id + 1,
@@ -287,12 +287,12 @@ static inline void print_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
     printf(" --- dom_frontier end---\n");
 }
 
-void convert_ssa_func(p_mir_func p_func, p_mir_program p_program) {
+void convert_ssa_func(p_mir_func p_func) {
     if (list_head_alone(&p_func->entry_block)) return;
     size_t block_num = list_entry(p_func->entry_block.p_prev, mir_basic_block, node)->block_id + 1;
     p_convert_ssa dfs_seq = malloc(block_num * sizeof(*dfs_seq));
     // 初始化变量集合
-    p_ssa_var_list_info p_var_list = convert_ssa_init_var_list(p_func, p_program);
+    p_ssa_var_list_info p_var_list = convert_ssa_init_var_list(p_func);
     // 初始化 dfs 序
     mir_basic_block_init_visited(p_func);
     p_mir_basic_block p_entry = list_entry(p_func->entry_block.p_next, mir_basic_block, node);
@@ -314,9 +314,12 @@ void convert_ssa_func(p_mir_func p_func, p_mir_program p_program) {
     mir_func_set_vreg_id(p_func);
 }
 
-void convert_ssa_program(p_mir_program p_program) {
-    for (size_t i = 0; i < p_program->func_cnt; i++)
-        convert_ssa_func(p_program->func_table + i, p_program);
+void convert_ssa_program(p_program p_store) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_store->function) {
+        p_mir_func p_func = list_entry(p_node, symbol_sym, node)->p_m_func;
+        convert_ssa_func(p_func);
+    }
 }
 
 void convert_ssa_dfs_seq_drop(convert_ssa *dfs_seq, size_t block_num) {

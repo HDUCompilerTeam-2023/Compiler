@@ -1,7 +1,6 @@
 #include <symbol.h>
 #include <util.h>
 
-typedef struct mir_program mir_program, *p_mir_program;
 typedef struct mir_func mir_func, *p_mir_func;
 
 typedef enum mir_basic_block_branch_kind mir_basic_block_branch_kind;

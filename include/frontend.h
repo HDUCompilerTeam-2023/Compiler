@@ -3,6 +3,6 @@
 
 #include <hir.h>
 
-p_hir_program frontend_trans(const char *file);
+p_program frontend_trans(const char *file);
 
 #endif

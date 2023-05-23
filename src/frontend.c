@@ -3,18 +3,21 @@
 #include <frontend/lexer.h>
 #include <frontend/parser.h>
 
-p_hir_program frontend_trans(const char *file_name) {
+#include <frontend/symbol_table.h>
+
+p_program frontend_trans(const char *file_name) {
     yyscan_t scanner;
     extra_info extra = (extra_info) {
         .fs = NULL,
-        .p_ast = NULL,
+        .p_table = NULL,
     };
     yylex_init_extra(&extra, &scanner);
     frontend_push_file(file_name, NULL, &extra, scanner);
 
     yyparse(scanner);
-    p_hir_program p_ast = yyget_extra(scanner)->p_ast;
+    p_program p_store = yyget_extra(scanner)->p_table->p_store;
+    symbol_table_drop(yyget_extra(scanner)->p_table);
 
     yylex_destroy(scanner);
-    return p_ast;
+    return p_store;
 }

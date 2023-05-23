@@ -1,4 +1,6 @@
 #include <mir_gen.h>
+#include <symbol/store.h>
+#include <symbol/sym.h>
 #include <mir_opt/simplify_cfg.h>
 #include <stdio.h>
 
@@ -211,9 +213,10 @@ static inline void mir_simplify_cfg_func_pass(p_mir_func p_func) {
     return;
 }
 
-void mir_simplify_cfg_pass(p_mir_program p_mir) {
-    for (size_t i = 0; i < p_mir->func_cnt; i++) {
-        p_mir_func p_func = p_mir->func_table + i;
+void mir_simplify_cfg_pass(p_program p_store) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_store->function) {
+        p_mir_func p_func = list_entry(p_node, symbol_sym, node)->p_m_func;
         mir_simplify_cfg_func_pass(p_func);
 
         mir_func_set_block_id(p_func);

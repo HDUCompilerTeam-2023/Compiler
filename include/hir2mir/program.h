@@ -1,6 +1,5 @@
 #ifndef __HIR2MIR_PROGRAM__
 #define __HIR2MIR_PROGRAM__
-#include <hir.h>
-#include <hir2mir/info_gen.h>
-p_mir_program hir2mir_program_gen(p_hir_program p_program);
+#include <hir2mir/info.h>
+void hir2mir_program_gen(p_program p_store);
 #endif
