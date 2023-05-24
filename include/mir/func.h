@@ -8,9 +8,12 @@ struct mir_func {
     p_mir_vreg *param_vreg;
     size_t param_vreg_cnt;
 
-    list_head entry_block;
+    list_head block;
+    size_t block_cnt;
     list_head vreg_list;
+    size_t vreg_cnt;
     list_head vmem_list;
+    size_t vmem_cnt;
 };
 
 #endif

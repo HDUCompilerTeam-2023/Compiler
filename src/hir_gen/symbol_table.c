@@ -66,7 +66,6 @@ void symbol_table_drop(p_symbol_table p_table) {
 
     p_list_head p_node, p_next;
     list_for_each_safe(p_node, p_next, &p_table->constant) {
-        list_del(p_node);
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
         symbol_var_drop(p_sym);
     }

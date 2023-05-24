@@ -212,6 +212,7 @@ p_mir_operand mir_instr_get_store_addr(p_mir_instr p_instr) {
 // 操作数已经被存在单独的列表中
 void mir_instr_drop(p_mir_instr p_instr) {
     assert(p_instr);
+    list_del(&p_instr->node);
     switch (p_instr->irkind) {
     case mir_add_op:
     case mir_sub_op:

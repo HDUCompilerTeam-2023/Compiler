@@ -1,5 +1,6 @@
 #include <program/use.h>
 #include <program/def.h>
+#include <program/gen.h>
 
 #include <symbol_gen.h>
 #include <hir_gen.h>
@@ -31,8 +32,7 @@ void program_mir_drop(p_program p_program) {
     p_list_head p_node, p_netx;
     list_for_each_safe(p_node, p_netx, &p_program->v_memory) {
         p_mir_vmem p_vmem = list_entry(p_node, mir_vmem, node);
-        list_del(&p_vmem->node);
-        mir_vmem_drop(p_vmem);
+        program_mir_vmem_del(p_program, p_vmem);
     }
     list_for_each(p_node, &p_program->function) {
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
@@ -88,6 +88,11 @@ bool program_add_function(p_program p_program, p_symbol_sym p_sym) {
 void program_mir_vmem_add(p_program p_program, p_mir_vmem p_vmem) {
     list_add_prev(&p_vmem->node, &p_program->v_memory);
     ++p_program->v_memory_cnt;
+}
+void program_mir_vmem_del(p_program p_program, p_mir_vmem p_vmem) {
+    list_del(&p_vmem->node);
+    mir_vmem_drop(p_vmem);
+    --p_program->v_memory_cnt;
 }
 void program_mir_set_vmem_id(p_program p_program) {
     p_list_head p_node;

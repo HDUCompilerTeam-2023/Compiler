@@ -94,6 +94,7 @@ p_hir_stmt hir_stmt_block_gen(p_hir_block p_block) {
 }
 void hir_stmt_drop(p_hir_stmt p_stmt) {
     assert(p_stmt);
+    list_del(&p_stmt->node);
     switch (p_stmt->type) {
     case hir_stmt_block:
         hir_block_drop(p_stmt->p_block);

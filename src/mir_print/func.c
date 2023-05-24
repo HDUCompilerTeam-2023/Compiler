@@ -23,7 +23,7 @@ void mir_func_print(p_mir_func p_func) {
     }
     printf(")\n");
 
-    if (list_head_alone(&p_func->entry_block)) return;
+    if (list_head_alone(&p_func->block)) return;
     printf("{\n");
     bool is_param = true;
     list_for_each(p_node, &p_func->p_func_sym->variable) {
@@ -37,7 +37,7 @@ void mir_func_print(p_mir_func p_func) {
         printf("%%l%ld\n", p_sym->id);
     }
 
-    list_for_each(p_node, &p_func->entry_block) {
+    list_for_each(p_node, &p_func->block) {
         p_mir_basic_block p_basic_block = list_entry(p_node, mir_basic_block, node);
         mir_basic_block_print(p_basic_block);
     }
@@ -46,7 +46,7 @@ void mir_func_print(p_mir_func p_func) {
 
 void mir_func_dom_info_print(p_mir_func p_func) {
     printf("function: %s\n", p_func->p_func_sym->name);
-    if (list_head_alone(&p_func->entry_block)) return;
-    p_mir_basic_block p_basic_block = list_entry(p_func->entry_block.p_next, mir_basic_block, node);
+    if (list_head_alone(&p_func->block)) return;
+    p_mir_basic_block p_basic_block = list_entry(p_func->block.p_next, mir_basic_block, node);
     mir_basic_block_dom_info_print(p_basic_block, 0);
 }

@@ -61,7 +61,7 @@ void hir2mir_info_drop(p_hir2mir_info p_info) {
 }
 
 void hir2mir_info_add_basic_block(p_hir2mir_info p_info, p_mir_basic_block p_new) {
-    mir_func_add_basic_block(p_info->p_func, p_new);
+    mir_func_bb_add(p_info->p_func, p_new);
     p_info->p_current_basic_block = p_new;
 }
 

@@ -36,7 +36,7 @@ size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t block_num, siz
 p_ssa_var_list_info convert_ssa_init_var_list(p_mir_func p_func) {
     p_ssa_var_list_info p_var_list = malloc(sizeof(*p_var_list));
     *p_var_list = (ssa_var_list_info) {
-        .vmem_num = list_head_alone(&p_func->vmem_list) ? 0 : list_entry(p_func->vmem_list.p_prev, mir_vmem, node)->id + 1,
+        .vmem_num = p_func->vmem_cnt,
         .p_func = p_func,
     };
 
@@ -288,14 +288,14 @@ static inline void print_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
 }
 
 void convert_ssa_func(p_mir_func p_func) {
-    if (list_head_alone(&p_func->entry_block)) return;
-    size_t block_num = list_entry(p_func->entry_block.p_prev, mir_basic_block, node)->block_id + 1;
+    if (list_head_alone(&p_func->block)) return;
+    size_t block_num = p_func->block_cnt;
     p_convert_ssa dfs_seq = malloc(block_num * sizeof(*dfs_seq));
     // 初始化变量集合
     p_ssa_var_list_info p_var_list = convert_ssa_init_var_list(p_func);
     // 初始化 dfs 序
     mir_basic_block_init_visited(p_func);
-    p_mir_basic_block p_entry = list_entry(p_func->entry_block.p_next, mir_basic_block, node);
+    p_mir_basic_block p_entry = list_entry(p_func->block.p_next, mir_basic_block, node);
     convert_ssa_init_dfs_sequence(dfs_seq, block_num, p_var_list->vmem_num, p_entry, 0);
     // 计算支配树
     mir_cfg_set_func_dom(p_func);
