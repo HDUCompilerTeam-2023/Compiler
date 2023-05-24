@@ -3,6 +3,7 @@
 #include <hir2mir.h>
 
 #include <symbol_gen.h>
+#include <program/gen.h>
 
 static inline p_mir_operand hir2mir_sym_addr(p_hir2mir_info p_info, p_symbol_sym p_sym) {
     size_t id = p_sym->id;
@@ -10,7 +11,7 @@ static inline p_mir_operand hir2mir_sym_addr(p_hir2mir_info p_info, p_symbol_sym
         p_mir_vmem p_vmem = p_info->p_program_info->global_vmem_table[id];
         if (!p_vmem) {
             p_vmem = p_info->p_program_info->global_vmem_table[id] = mir_vmem_sym_gen(p_sym);
-            symbol_store_mir_vmem_add(p_info->p_program_info->p_store, p_vmem);
+            program_mir_vmem_add(p_info->p_program_info->p_program, p_vmem);
         }
         return mir_operand_addr_gen(p_vmem);
     }
@@ -162,15 +163,13 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
         return hir2mir_exp_exec_gen(p_info, p_exp);
     }
     case hir_exp_call: {
-        p_mir_func p_func = p_exp->p_func->p_sym->p_m_func;
-
-        p_symbol_type p_type = p_func->p_func_sym->p_type;
+        p_symbol_type p_type = p_exp->p_func->p_type;
         assert(p_type->kind >= type_func);
         p_mir_vreg p_des = mir_vreg_gen(p_type->basic, 0);
 
         p_mir_param_list p_m_param_list = hir2mir_param_list_gen(p_info, p_exp->p_param_list);
 
-        p_mir_instr p_new_instr = mir_call_instr_gen(p_func, p_m_param_list, p_des);
+        p_mir_instr p_new_instr = mir_call_instr_gen(p_exp->p_func, p_m_param_list, p_des);
         hir2mir_info_add_instr(p_info, p_new_instr);
 
         return mir_operand_vreg_gen(p_des);

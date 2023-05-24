@@ -41,7 +41,7 @@ struct mir_unary_instr {
 };
 
 struct mir_call_instr {
-    p_mir_func p_func;
+    p_symbol_sym p_func;
     p_mir_param_list p_param_list;
     p_mir_vreg p_des;
 };

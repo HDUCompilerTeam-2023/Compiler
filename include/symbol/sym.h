@@ -27,6 +27,7 @@ struct symbol_sym {
     union {
         struct {
             p_list_head last_param;
+            size_t param_cnt;
             list_head variable;
             size_t variable_cnt;
 

@@ -1,8 +1,8 @@
 #include <frontend.h>
 #include <hir2mir.h>
 
-#include <symbol_print.h>
-#include <symbol_gen/store.h>
+#include <program/print.h>
+#include <program/gen.h>
 
 #include <mir_opt/simplify_cfg.h>
 #include <optimizer.h>
@@ -12,26 +12,26 @@ int main(int argc, char *argv[]) {
         argv[argc++] = NULL;
     for (int i = 1; i < argc; ++i) {
         // gen hir
-        p_program p_store = frontend_trans(argv[i]);
-        symbol_store_hir_print(p_store);
-        symbol_store_print(p_store);
+        p_program p_program = frontend_trans(argv[i]);
+        program_variable_print(p_program);
+        program_hir_print(p_program);
 
         // gen mir
-        hir2mir_program_gen(p_store);
-        symbol_store_mir_print(p_store);
+        hir2mir_program_gen(p_program);
+        program_mir_print(p_program);
 
         // simplify cfg
-        mir_simplify_cfg_pass(p_store);
-        symbol_store_mir_print(p_store);
+        mir_simplify_cfg_pass(p_program);
+        program_mir_print(p_program);
 
         // into ssa
-        convert_ssa_program(p_store);
-        symbol_store_mir_dom_info_print(p_store);
-        symbol_store_mir_print(p_store);
+        convert_ssa_program(p_program);
+        program_mir_dom_info_print(p_program);
+        program_mir_print(p_program);
 
         // drop mir
-        symbol_store_mir_drop(p_store);
-        symbol_store_drop(p_store);
+        program_mir_drop(p_program);
+        program_drop(p_program);
     }
     return 0;
 }

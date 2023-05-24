@@ -1,7 +1,7 @@
-#ifndef __SYMBOL_STORE__
-#define __SYMBOL_STORE__
+#ifndef __PROGRAM_DEF__
+#define __PROGRAM_DEF__
 
-#include <symbol.h>
+#include <util.h>
 
 struct program {
     list_head variable;

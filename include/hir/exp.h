@@ -43,7 +43,7 @@ struct hir_exp {
             p_symbol_type p_type;
         }; // call val
         struct {
-            p_hir_func p_func;
+            p_symbol_sym p_func;
             p_hir_param_list p_param_list;
         };
         union {

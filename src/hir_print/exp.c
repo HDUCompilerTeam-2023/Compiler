@@ -122,7 +122,7 @@ void hir_exp_print(p_hir_exp p_exp) {
         }
         break;
     case hir_exp_call:
-        hir_func_call_print(p_exp->p_func, p_exp->p_param_list);
+        hir_func_call_print(p_exp->p_func->p_h_func, p_exp->p_param_list);
         break;
     case hir_exp_val:
         if (p_exp->p_offset) {

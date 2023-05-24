@@ -3,6 +3,7 @@
 #include <hir_gen.h>
 
 #include <symbol_gen.h>
+#include <program/gen.h>
 
 #define hash_P (65537)
 #define hash_MOD (109)
@@ -52,7 +53,7 @@ p_symbol_table symbol_table_gen() {
         .level = 0,
         .next_id = 0,
         .constant = list_head_init(&p_table->constant),
-        .p_store = symbol_store_gen(),
+        .p_program = program_gen(),
     };
     return p_table;
 }
@@ -142,17 +143,17 @@ p_symbol_item symbol_table_sym_add(p_symbol_table p_table, p_symbol_sym p_sym) {
     p_name->p_item = p_item;
 
     if (p_sym->p_type->kind >= type_func) {
-        symbol_store_add_function(p_table->p_store, p_sym);
+        program_add_function(p_table->p_program, p_sym);
     }
     else {
         if (p_sym->is_const) {
             list_add_prev(&p_sym->node, &p_table->constant);
         }
         else if (is_global) {
-            symbol_store_add_global(p_table->p_store, p_sym);
+            program_add_global(p_table->p_program, p_sym);
         }
         else {
-            symbol_store_add_local(p_table->p_store, p_sym);
+            program_add_local(p_table->p_program, p_sym);
         }
     }
     return p_item;
@@ -183,6 +184,6 @@ p_symbol_str symbol_table_str_get(p_symbol_table p_table, const char *string) {
 
     p_symbol_str p_str = symbol_str_gen(string);
     hlist_node_add(p_head, &p_str->h_node);
-    symbol_store_add_str(p_table->p_store, p_str);
+    program_add_str(p_table->p_program, p_str);
     return p_str;
 }

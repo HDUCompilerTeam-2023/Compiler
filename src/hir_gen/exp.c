@@ -6,8 +6,8 @@
 
 static inline basic_type exp_basic(p_hir_exp p_exp) {
     if (p_exp->kind == hir_exp_call) {
-        assert(p_exp->p_func->p_sym->p_type->kind >= type_func);
-        return p_exp->p_func->p_sym->p_type->basic;
+        assert(p_exp->p_func->p_type->kind >= type_func);
+        return p_exp->p_func->p_type->basic;
     }
     if (p_exp->kind == hir_exp_val) {
         assert(p_exp->p_type->kind == type_var);
@@ -244,7 +244,7 @@ p_hir_exp hir_exp_call_gen(p_symbol_sym p_sym, p_hir_param_list p_param_list) {
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
         .kind = hir_exp_call,
-        .p_func = p_sym->p_h_func,
+        .p_func = p_sym,
         .p_param_list = p_param_list,
     };
 
