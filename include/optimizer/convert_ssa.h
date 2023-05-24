@@ -2,6 +2,7 @@
 #define __OPTIMIZER__CONVERT_SSA__
 
 #include <mir_gen.h>
+#include <program/use.h>
 typedef struct convert_ssa convert_ssa, *p_convert_ssa;
 typedef struct operand_stack_node operand_stack_node, *p_operand_stack_node;
 typedef struct ssa_var_info ssa_var_info, *p_ssa_var_info;
@@ -46,7 +47,7 @@ void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_l
 void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p_mir_basic_block p_entry);
 
 void convert_ssa_func(p_mir_func p_func);
-void convert_ssa_program(p_program p_store);
+void convert_ssa_program(p_program p_program);
 
 void convert_ssa_dfs_seq_drop(convert_ssa *dfs_seq, size_t block_num);
 void ssa_var_list_info_drop(p_ssa_var_list_info p_info);

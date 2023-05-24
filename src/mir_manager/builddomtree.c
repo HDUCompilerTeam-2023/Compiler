@@ -1,6 +1,7 @@
 #include <mir_manager/builddomtree.h>
 
-#include <symbol/store.h>
+#include <program/def.h>
+#include <mir_gen.h>
 #include <symbol/sym.h>
 
 void cfg_build_dom_tree_info_gen(cfg_build_dom_tree_info dom_info[], p_mir_basic_block p_basic_block, size_t block_num, size_t parent, size_t current_num) {
@@ -103,9 +104,9 @@ void mir_cfg_set_func_dom(p_mir_func p_func) {
     free(dfs_seq);
 }
 
-void mir_cfg_set_program_dom(p_program p_store) {
+void mir_cfg_set_program_dom(p_program p_program) {
     p_list_head p_node;
-    list_for_each(p_node, &p_store->function) {
+    list_for_each(p_node, &p_program->function) {
         p_mir_func p_func = list_entry(p_node, symbol_sym, node)->p_m_func;
         mir_cfg_set_func_dom(p_func);
     }

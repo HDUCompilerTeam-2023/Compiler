@@ -3,8 +3,10 @@
 
 #include <hir2mir/info.h>
 
+#include <program/use.h>
+
 struct hir2mir_program_info {
-    p_program p_store;
+    p_program p_program;
 
     p_mir_vmem *global_vmem_table;
     size_t global_vmem_cnt;
@@ -23,7 +25,7 @@ struct hir2mir_info {
     p_hir2mir_program_info p_program_info;
 };
 
-p_hir2mir_program_info hir2mir_program_info_gen(p_program p_store);
+p_hir2mir_program_info hir2mir_program_info_gen(p_program p_program);
 p_hir2mir_info hir2mir_info_gen(p_mir_func p_m_func, p_hir2mir_program_info p_program_info);
 
 void hir2mir_info_add_instr(p_hir2mir_info p_info, p_mir_instr p_instr);

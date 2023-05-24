@@ -15,9 +15,9 @@ p_program frontend_trans(const char *file_name) {
     frontend_push_file(file_name, NULL, &extra, scanner);
 
     yyparse(scanner);
-    p_program p_store = yyget_extra(scanner)->p_table->p_store;
+    p_program p_program = yyget_extra(scanner)->p_table->p_program;
     symbol_table_drop(yyget_extra(scanner)->p_table);
 
     yylex_destroy(scanner);
-    return p_store;
+    return p_program;
 }

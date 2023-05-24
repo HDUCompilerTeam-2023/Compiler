@@ -4,6 +4,8 @@
 #include <hir.h>
 #include <symbol.h>
 
+#include <program/use.h>
+
 typedef struct symbol_item symbol_item, *p_symbol_item;
 typedef struct symbol_name symbol_name, *p_symbol_name;
 typedef struct symbol_zone symbol_zone, *p_symbol_zone;
@@ -46,7 +48,7 @@ struct symbol_table {
 
     list_head constant;
 
-    p_program p_store;
+    p_program p_program;
 };
 
 p_symbol_table symbol_table_gen();

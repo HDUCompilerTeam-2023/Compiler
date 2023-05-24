@@ -152,6 +152,7 @@ p_hir_func syntax_func_head(p_symbol_table p_table, basic_type type, char *name,
         free(p_decl);
     }
     p_func->p_sym->last_param = p_func->p_sym->variable.p_prev;
+    p_func->p_sym->param_cnt = p_func->p_sym->variable_cnt;
     free(p_param_list);
     return p_func;
 }

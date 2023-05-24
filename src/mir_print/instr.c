@@ -114,7 +114,7 @@ void mir_unary_instr_print(mir_instr_type instr_type, p_mir_unary_instr p_instr)
 void mir_call_instr_print(p_mir_call_instr p_instr) {
     mir_vreg_print(p_instr->p_des);
     printf(" = ");
-    printf("@%s", p_instr->p_func->p_func_sym->name);
+    printf("@%s", p_instr->p_func->name);
     mir_param_list_print(p_instr->p_param_list);
 }
 

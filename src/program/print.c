@@ -3,52 +3,44 @@
 #include <hir_print.h>
 #include <mir_print.h>
 
-#include <symbol/store.h>
+#include <program/use.h>
+#include <program/def.h>
 #include <symbol/str.h>
 #include <symbol/sym.h>
 
-void symbol_store_print(p_program p_store) {
+void program_variable_print(p_program p_program) {
     p_list_head p_node;
-    if (!list_head_alone(&p_store->variable)) {
+    if (!list_head_alone(&p_program->variable)) {
         printf("global:\n");
     }
-    list_for_each(p_node, &p_store->variable) {
+    list_for_each(p_node, &p_program->variable) {
         symbol_init_print(list_entry(p_node, symbol_sym, node));
     }
 
-    if (!list_head_alone(&p_store->function)) {
-        if (!list_head_alone(&p_store->variable))
-            printf("\n");
-        printf("functions:\n");
-    }
-    list_for_each(p_node, &p_store->function) {
-        symbol_init_print(list_entry(p_node, symbol_sym, node));
-    }
-
-    if (!list_head_alone(&p_store->string)) {
-        if (!list_head_alone(&p_store->function))
+    if (!list_head_alone(&p_program->string)) {
+        if (!list_head_alone(&p_program->variable))
             printf("\n");
         printf("string:\n");
     }
-    list_for_each(p_node, &p_store->string) {
+    list_for_each(p_node, &p_program->string) {
         printf("%s\n", list_entry(p_node, symbol_str, node)->string);
     }
 }
 
-void symbol_store_hir_print(p_program p_store) {
+void program_hir_print(p_program p_program) {
     p_list_head p_node;
-    list_for_each(p_node, &p_store->function) {
+    list_for_each(p_node, &p_program->function) {
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
         if (p_sym->p_h_func)
             hir_func_decl_print(p_sym->p_h_func);
     }
 }
 
-void symbol_store_mir_print(p_program p_store) {
-    assert(p_store);
+void program_mir_print(p_program p_program) {
+    assert(p_program);
     printf("=== mir program start ===\n");
     p_list_head p_node;
-    list_for_each(p_node, &p_store->variable) {
+    list_for_each(p_node, &p_program->variable) {
         p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
         printf("global ");
         mir_symbol_type_print(p_sym->p_type);
@@ -67,16 +59,16 @@ void symbol_store_mir_print(p_program p_store) {
         printf("\n");
     }
 
-    list_for_each(p_node, &p_store->function) {
+    list_for_each(p_node, &p_program->function) {
         p_mir_func p_func = list_entry(p_node, symbol_sym, node)->p_m_func;
         mir_func_print(p_func);
     }
     printf(" === mir program end ===\n");
 }
-void symbol_store_mir_dom_info_print(p_program p_store) {
+void program_mir_dom_info_print(p_program p_program) {
     printf("+++ dom_tree start +++\n");
     p_list_head p_node;
-    list_for_each(p_node, &p_store->function) {
+    list_for_each(p_node, &p_program->function) {
         p_mir_func p_func = list_entry(p_node, symbol_sym, node)->p_m_func;
         mir_func_dom_info_print(p_func);
     }

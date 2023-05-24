@@ -59,13 +59,13 @@ p_mir_instr mir_unary_instr_gen(mir_instr_type mir_type, p_mir_operand p_src, p_
     return p_instr;
 }
 
-p_mir_instr mir_call_instr_gen(p_mir_func p_func, p_mir_param_list p_param_list, p_mir_vreg p_des) {
+p_mir_instr mir_call_instr_gen(p_symbol_sym p_sym, p_mir_param_list p_param_list, p_mir_vreg p_des) {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
 
     *p_instr = (mir_instr) {
         .irkind = mir_call,
         .mir_call = (mir_call_instr) {
-            .p_func = p_func,
+            .p_func = p_sym,
             .p_des = p_des,
             .p_param_list = p_param_list,
         },

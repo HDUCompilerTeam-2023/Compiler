@@ -1,6 +1,6 @@
 #include <mir_manager.h>
 #include <optimizer/convert_ssa.h>
-#include <symbol/store.h>
+#include <program/def.h>
 #include <symbol/sym.h>
 #include <symbol/type.h>
 void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_mir_basic_block p_basic_block, size_t current_num) {
@@ -314,9 +314,9 @@ void convert_ssa_func(p_mir_func p_func) {
     mir_func_set_vreg_id(p_func);
 }
 
-void convert_ssa_program(p_program p_store) {
+void convert_ssa_program(p_program p_program) {
     p_list_head p_node;
-    list_for_each(p_node, &p_store->function) {
+    list_for_each(p_node, &p_program->function) {
         p_mir_func p_func = list_entry(p_node, symbol_sym, node)->p_m_func;
         convert_ssa_func(p_func);
     }
