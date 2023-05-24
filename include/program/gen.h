@@ -16,6 +16,7 @@ bool program_add_local(p_program p_program, p_symbol_sym p_sym);
 bool program_add_function(p_program p_program, p_symbol_sym p_sym);
 
 void program_mir_vmem_add(p_program p_program, p_mir_vmem p_vmem);
+void program_mir_vmem_del(p_program p_program, p_mir_vmem p_vmem);
 void program_mir_set_vmem_id(p_program p_program);
 
 #endif

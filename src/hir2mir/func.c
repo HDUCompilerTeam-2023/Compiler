@@ -3,6 +3,7 @@
 
 #include <symbol/sym.h>
 #include <symbol/type.h>
+#include <stdio.h>
 
 static inline void hir2mir_func_param_gen(p_hir2mir_info p_info, p_mir_func p_func) {
     if (p_func->p_func_sym->last_param == &p_func->p_func_sym->variable) return;
@@ -20,7 +21,6 @@ static inline void hir2mir_func_param_gen(p_hir2mir_info p_info, p_mir_func p_fu
         mir_func_vmem_add(p_func, p_vmem);
 
         p_mir_vreg p_addr = mir_vreg_gen(p_vmem->b_type, p_vmem->ref_level + 1);
-        mir_func_vreg_add(p_func, p_addr);
         p_info->local_addr_table[i] = p_addr;
         hir2mir_info_add_instr(p_info, mir_alloca_instr_gen(p_vmem, p_addr));
 

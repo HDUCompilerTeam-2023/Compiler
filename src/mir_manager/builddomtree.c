@@ -46,12 +46,12 @@ static inline size_t ancestor_with_lowest_semi(cfg_build_dom_tree_info dfs_seq[]
 
 // 必须保证图连通， 否则会出错
 void mir_cfg_set_func_dom(p_mir_func p_func) {
-    if (list_head_alone(&p_func->entry_block)) return;
-    size_t block_num = list_entry(p_func->entry_block.p_prev, mir_basic_block, node)->block_id + 1;
+    if (list_head_alone(&p_func->block)) return;
+    size_t block_num = p_func->block_cnt;
     p_cfg_build_dom_tree_info dfs_seq = malloc(block_num * sizeof(*dfs_seq));
     // 初始化 dfs 序
     mir_basic_block_init_visited(p_func);
-    p_mir_basic_block p_entry = list_entry(p_func->entry_block.p_next, mir_basic_block, node);
+    p_mir_basic_block p_entry = list_entry(p_func->block.p_next, mir_basic_block, node);
     init_dfs_sequence(dfs_seq, block_num, 0, 0, p_entry);
 
     for (size_t i = block_num - 1; i >= 1; i--) {
