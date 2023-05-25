@@ -34,7 +34,6 @@ void program_hir_print(p_program p_program) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         if (!p_func->p_h_block) continue;
         symbol_func_init_print(p_func);
-        symbol_func_param_print(p_func);
         printf("{\n");
         deep += 4;
         hir_block_print(p_func->p_h_block);
