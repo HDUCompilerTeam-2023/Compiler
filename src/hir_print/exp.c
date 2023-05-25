@@ -4,9 +4,10 @@
 #include <hir/exp.h>
 #include <symbol_print.h>
 
+#include <symbol/func.h>
 #include <symbol/str.h>
-#include <symbol/sym.h>
 #include <symbol/type.h>
+#include <symbol/var.h>
 
 void hir_exp_print(p_hir_exp p_exp) {
     assert(p_exp);
@@ -122,25 +123,29 @@ void hir_exp_print(p_hir_exp p_exp) {
         }
         break;
     case hir_exp_call:
-        hir_func_call_print(p_exp->p_func->p_h_func, p_exp->p_param_list);
+        assert(p_exp->p_func);
+        symbol_func_name_print(p_exp->p_func);
+        printf("(");
+        hir_param_list_print(p_exp->p_param_list);
+        printf(")");
         break;
     case hir_exp_val:
         if (p_exp->p_offset) {
             if (p_exp->p_type->kind == type_var) {
-                symbol_name_print(p_exp->p_sym);
+                symbol_name_print(p_exp->p_var);
                 printf("[");
                 hir_exp_print(p_exp->p_offset);
                 printf("]");
             }
             else {
                 printf("+ ");
-                symbol_name_print(p_exp->p_sym);
+                symbol_name_print(p_exp->p_var);
                 printf(" ");
                 hir_exp_print(p_exp->p_offset);
             }
         }
         else {
-            symbol_name_print(p_exp->p_sym);
+            symbol_name_print(p_exp->p_var);
         }
         break;
     case hir_exp_num:

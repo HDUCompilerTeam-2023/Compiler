@@ -1,7 +1,7 @@
 #include <mir_manager.h>
 #include <optimizer/convert_ssa.h>
 #include <program/def.h>
-#include <symbol/sym.h>
+#include <symbol/func.h>
 #include <symbol/type.h>
 void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_mir_basic_block p_basic_block, size_t current_num) {
     dfs_seq[current_num] = (convert_ssa) {
@@ -162,7 +162,7 @@ void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_l
     free(p_work_list);
 }
 
-static inline p_mir_operand get_top_sym(p_ssa_var_list_info p_var_list, size_t index) {
+static inline p_mir_operand get_top_operand(p_ssa_var_list_info p_var_list, size_t index) {
     p_ssa_var_info p_info = p_var_list->p_base + index;
     if (!p_info->p_current_vreg) return NULL;
     return mir_operand_vreg_gen(p_info->p_current_vreg);
@@ -173,7 +173,7 @@ static inline void set_branch_target_ssa_id(p_mir_basic_block_branch_target p_br
     p_bitmap p_phi_var = (dfs_seq + p_branch_target->p_block->dfn_id)->p_phi_var;
     for (size_t i = 0; i < var_num; i++) {
         if (bitmap_if_in(p_phi_var, i)) {
-            p_mir_operand p_param = get_top_sym(p_var_list, i);
+            p_mir_operand p_param = get_top_operand(p_var_list, i);
             mir_basic_block_branch_target_add_param(p_branch_target, p_param);
         }
     }
@@ -232,8 +232,8 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_se
             if (var_index == -1) continue;
             assert(!p_instr->mir_store.p_offset);
 
-            p_mir_operand p_top_sym = get_top_sym(p_var_list, var_index);
-            if (!p_top_sym) {
+            p_mir_operand p_top_operand = get_top_operand(p_var_list, var_index);
+            if (!p_top_operand) {
                 p_var_list->p_base[var_index].p_current_vreg = p_instr->mir_load.p_des;
                 continue;
             }
@@ -241,7 +241,7 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_se
             mir_operand_drop(p_instr->mir_load.p_addr);
             p_instr->irkind = mir_val_assign;
             p_instr->mir_unary.p_des = p_instr->mir_load.p_des;
-            p_instr->mir_unary.p_src = p_top_sym;
+            p_instr->mir_unary.p_src = p_top_operand;
             continue;
         }
         if (p_instr->irkind == mir_store) {
@@ -317,7 +317,7 @@ void convert_ssa_func(p_mir_func p_func) {
 void convert_ssa_program(p_program p_program) {
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
-        p_mir_func p_func = list_entry(p_node, symbol_sym, node)->p_m_func;
+        p_mir_func p_func = list_entry(p_node, symbol_func, node)->p_m_func;
         convert_ssa_func(p_func);
     }
 }

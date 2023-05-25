@@ -11,7 +11,7 @@
  *
  */
 struct mir_vmem {
-    p_symbol_sym p_sym;
+    p_symbol_var p_var;
     basic_type b_type;
 
     size_t ref_level;

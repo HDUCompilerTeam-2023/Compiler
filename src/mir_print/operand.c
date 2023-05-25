@@ -4,7 +4,7 @@
 
 #include <mir/vreg.h>
 #include <stdio.h>
-#include <symbol/sym.h>
+#include <symbol/var.h>
 #include <symbol/type.h>
 #include <symbol_print.h>
 void mir_basic_type_print(basic_type b_type) {

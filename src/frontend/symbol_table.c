@@ -2,8 +2,8 @@
 
 #include <hir_gen.h>
 
-#include <symbol_gen.h>
 #include <program/gen.h>
+#include <symbol_gen.h>
 
 #define hash_P (65537)
 #define hash_MOD (109)
@@ -66,8 +66,8 @@ void symbol_table_drop(p_symbol_table p_table) {
 
     p_list_head p_node, p_next;
     list_for_each_safe(p_node, p_next, &p_table->constant) {
-        p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
-        symbol_var_drop(p_sym);
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        symbol_var_drop(p_var);
     }
     free(p_table->string_hash);
     free(p_table->hash);
@@ -106,27 +106,25 @@ void symbol_table_zone_pop(p_symbol_table p_table) {
     free(del_table);
 }
 
-p_symbol_item symbol_table_sym_add(p_symbol_table p_table, p_symbol_sym p_sym) {
-    assert(p_table->level > 0);
-
-    size_t hash_tag = symbol_str_tag(p_sym->name);
+static inline p_symbol_name symbol_table_get_name(p_symbol_table p_table, const char *name) {
+    size_t hash_tag = symbol_str_tag(name);
     p_hlist_head p_head = p_table->hash + (hash_tag % hash_MOD);
 
-    p_symbol_name p_name = symbol_find_name(p_head, p_sym->name);
+    p_symbol_name p_name = symbol_find_name(p_head, name);
     if (!p_name) {
-        p_name = symbol_add_name(p_head, hash_tag, p_sym->name);
+        p_name = symbol_add_name(p_head, hash_tag, name);
     }
-    else if (p_name->p_item->level == p_table->level) {
-        if (p_sym->p_type->kind >= type_func) {
-            symbol_func_drop(p_sym);
-        }
-        else {
-            symbol_var_drop(p_sym);
-        }
-        return NULL;
-    }
-    else
+    else {
         assert(p_name->p_item->level < p_table->level);
+    }
+
+    return p_name;
+}
+
+p_symbol_item symbol_table_var_add(p_symbol_table p_table, p_symbol_var p_var) {
+    assert(p_table->level > 0);
+
+    p_symbol_name p_name = symbol_table_get_name(p_table, p_var->name);
 
     bool is_global = p_table->p_top_table->p_prev == NULL;
 
@@ -136,29 +134,47 @@ p_symbol_item symbol_table_sym_add(p_symbol_table p_table, p_symbol_sym p_sym) {
         .p_prev = p_name->p_item,
         .level = p_table->level,
         .p_next = p_table->p_top_table->p_item,
-        .p_info = p_sym,
+        .is_func = false,
+        .p_var = p_var,
     };
     p_table->p_top_table->p_item = p_item;
     p_name->p_item = p_item;
 
-    if (p_sym->p_type->kind >= type_func) {
-        program_add_function(p_table->p_program, p_sym);
+    if (p_var->is_const) {
+        list_add_prev(&p_var->node, &p_table->constant);
+    }
+    else if (is_global) {
+        program_add_global(p_table->p_program, p_var);
     }
     else {
-        if (p_sym->is_const) {
-            list_add_prev(&p_sym->node, &p_table->constant);
-        }
-        else if (is_global) {
-            program_add_global(p_table->p_program, p_sym);
-        }
-        else {
-            program_add_local(p_table->p_program, p_sym);
-        }
+        program_add_local(p_table->p_program, p_var);
     }
     return p_item;
 }
 
-p_symbol_sym symbol_table_sym_find(p_symbol_table p_table, const char *name) {
+p_symbol_item symbol_table_func_add(p_symbol_table p_table, p_symbol_func p_func) {
+    assert(p_table->level > 0);
+
+    assert(p_table->level == 1);
+    p_symbol_name p_name = symbol_table_get_name(p_table, p_func->name);
+
+    p_symbol_item p_item = malloc(sizeof(*p_item));
+    *p_item = (symbol_item) {
+        .p_name = p_name,
+        .p_prev = p_name->p_item,
+        .level = p_table->level,
+        .p_next = p_table->p_top_table->p_item,
+        .is_func = true,
+        .p_func = p_func,
+    };
+    p_table->p_top_table->p_item = p_item;
+    p_name->p_item = p_item;
+
+    program_add_function(p_table->p_program, p_func);
+    return p_item;
+}
+
+p_symbol_var symbol_table_var_find(p_symbol_table p_table, const char *name) {
     assert(p_table->level > 0);
 
     size_t hash_tag = symbol_str_tag(name);
@@ -168,7 +184,21 @@ p_symbol_sym symbol_table_sym_find(p_symbol_table p_table, const char *name) {
     if (!p_name)
         return NULL;
 
-    return p_name->p_item->p_info;
+    assert(!p_name->p_item->is_func);
+    return p_name->p_item->p_var;
+}
+p_symbol_func symbol_table_func_find(p_symbol_table p_table, const char *name) {
+    assert(p_table->level > 0);
+
+    size_t hash_tag = symbol_str_tag(name);
+    p_hlist_head p_head = p_table->hash + (hash_tag % hash_MOD);
+
+    p_symbol_name p_name = symbol_find_name(p_head, name);
+    if (!p_name)
+        return NULL;
+
+    assert(p_name->p_item->is_func);
+    return p_name->p_item->p_func;
 }
 
 p_symbol_str symbol_table_str_get(p_symbol_table p_table, const char *string) {

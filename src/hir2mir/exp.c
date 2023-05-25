@@ -1,16 +1,15 @@
 #include <hir/exp.h>
-#include <hir/func.h>
 #include <hir2mir.h>
 
 #include <symbol_gen.h>
 #include <program/gen.h>
 
-static inline p_mir_operand hir2mir_sym_addr(p_hir2mir_info p_info, p_symbol_sym p_sym) {
-    size_t id = p_sym->id;
-    if (p_sym->is_global) {
+static inline p_mir_operand hir2mir_sym_addr(p_hir2mir_info p_info, p_symbol_var p_var) {
+    size_t id = p_var->id;
+    if (p_var->is_global) {
         p_mir_vmem p_vmem = p_info->p_program_info->global_vmem_table[id];
         if (!p_vmem) {
-            p_vmem = p_info->p_program_info->global_vmem_table[id] = mir_vmem_sym_gen(p_sym);
+            p_vmem = p_info->p_program_info->global_vmem_table[id] = mir_vmem_sym_gen(p_var);
             program_mir_vmem_add(p_info->p_program_info->p_program, p_vmem);
         }
         return mir_operand_addr_gen(p_vmem);
@@ -19,7 +18,7 @@ static inline p_mir_operand hir2mir_sym_addr(p_hir2mir_info p_info, p_symbol_sym
     p_mir_vreg p_addr = p_info->local_addr_table[id];
 
     if (!p_addr) {
-        p_mir_vmem p_vmem = mir_vmem_sym_gen(p_sym);
+        p_mir_vmem p_vmem = mir_vmem_sym_gen(p_var);
         mir_func_vmem_add(p_info->p_func, p_vmem);
         p_addr = mir_vreg_gen(p_vmem->b_type, p_vmem->ref_level + 1);
         hir2mir_info_add_instr(p_info, mir_alloca_instr_gen(p_vmem, p_addr));
@@ -127,13 +126,13 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
         assert(0);
     case hir_exp_val: {
         // 若是变量 直接返回该变量对应的操作数
-        p_mir_operand p_addr_operand = hir2mir_sym_addr(p_info, p_exp->p_sym);
-        if (!(p_exp->p_sym->p_type->kind == type_arrary && p_exp->p_sym->p_type->size > 0)) {
+        p_mir_operand p_addr_operand = hir2mir_sym_addr(p_info, p_exp->p_var);
+        if (!(p_exp->p_var->p_type->kind == type_arrary && p_exp->p_var->p_type->size > 0)) {
             p_mir_vreg p_val = mir_vreg_gen(p_addr_operand->b_type, p_addr_operand->ref_level - 1);
             p_mir_operand p_val_operand = mir_operand_vreg_gen(p_val);
             p_mir_instr p_load_val = mir_load_instr_gen(p_addr_operand, NULL, p_val);
             hir2mir_info_add_instr(p_info, p_load_val);
-            if (p_exp->p_sym->p_type->kind != type_arrary) return p_val_operand;
+            if (p_exp->p_var->p_type->kind != type_arrary) return p_val_operand;
             p_addr_operand = p_val_operand;
         }
         p_mir_operand p_offset = hir2mir_exp_gen(p_info, p_exp->p_offset);
@@ -154,7 +153,7 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
             assert(p_exp->p_src_1 && p_exp->p_src_2);
             assert(p_exp->p_src_1->kind == hir_exp_val);
             p_mir_operand p_src = hir2mir_exp_gen(p_info, p_exp->p_src_2);
-            p_mir_operand p_addr = hir2mir_sym_addr(p_info, p_exp->p_src_1->p_sym);
+            p_mir_operand p_addr = hir2mir_sym_addr(p_info, p_exp->p_src_1->p_var);
             p_mir_operand p_off = hir2mir_exp_gen(p_info, p_exp->p_src_1->p_offset);
             p_mir_instr p_instr = mir_store_instr_gen(p_addr, p_off, p_src);
             hir2mir_info_add_instr(p_info, p_instr);
@@ -163,9 +162,7 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
         return hir2mir_exp_exec_gen(p_info, p_exp);
     }
     case hir_exp_call: {
-        p_symbol_type p_type = p_exp->p_func->p_type;
-        assert(p_type->kind >= type_func);
-        p_mir_vreg p_des = mir_vreg_gen(p_type->basic, 0);
+        p_mir_vreg p_des = mir_vreg_gen(p_exp->p_func->ret_type, 0);
 
         p_mir_param_list p_m_param_list = hir2mir_param_list_gen(p_info, p_exp->p_param_list);
 

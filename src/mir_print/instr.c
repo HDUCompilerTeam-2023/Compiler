@@ -4,7 +4,8 @@
 #include <mir_print.h>
 #include <stdio.h>
 
-#include <symbol/sym.h>
+#include <symbol/var.h>
+#include <symbol/func.h>
 void mir_instr_print(p_mir_instr p_instr) {
     assert(p_instr);
     printf("    ");

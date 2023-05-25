@@ -4,6 +4,8 @@
 #include <hir/block.h>
 #include <hir/stmt.h>
 
+int deep;
+
 void hir_block_print(p_hir_block p_block) {
     assert(p_block);
     p_list_head p_node;

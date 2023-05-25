@@ -1,8 +1,5 @@
-#include <frontend.h>
-
 #include <frontend/lexer.h>
 #include <frontend/parser.h>
-
 #include <frontend/symbol_table.h>
 
 p_program frontend_trans(const char *file_name) {

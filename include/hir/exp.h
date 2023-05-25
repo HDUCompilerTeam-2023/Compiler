@@ -38,12 +38,12 @@ struct hir_exp {
             hir_exp_op op;
         }; // exec
         struct {
-            p_symbol_sym p_sym;
+            p_symbol_var p_var;
             p_hir_exp p_offset;
             p_symbol_type p_type;
         }; // call val
         struct {
-            p_symbol_sym p_func;
+            p_symbol_func p_func;
             p_hir_param_list p_param_list;
         };
         union {
