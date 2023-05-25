@@ -23,9 +23,6 @@ void symbol_func_init_print(p_symbol_func p_func) {
         printf("param: ...");
     }
     printf(")\n");
-}
-
-void symbol_func_param_print(p_symbol_func p_func) {
     p_list_head p_node;
     if (p_func->last_param != &p_func->variable) {
         printf("param:\n");
