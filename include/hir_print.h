@@ -3,7 +3,6 @@
 
 #include <hir_print/block.h>
 #include <hir_print/exp.h>
-#include <hir_print/func.h>
 #include <hir_print/param.h>
 #include <hir_print/stmt.h>
 

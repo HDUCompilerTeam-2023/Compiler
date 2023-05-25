@@ -123,22 +123,24 @@ p_syntax_param_list syntax_param_list_add(p_syntax_param_list p_list, p_syntax_p
     return p_list;
 }
 
-p_hir_func syntax_func_head(p_symbol_table p_table, basic_type type, char *name, p_syntax_param_list p_param_list) {
-    p_symbol_type p_type = symbol_type_func_gen(false);
-    p_type->basic = type;
-
-    p_symbol_type p_param = p_type;
+p_symbol_func syntax_func_head(p_symbol_table p_table, basic_type type, char *name, p_syntax_param_list p_param_list) {
+    p_symbol_type p_param_head = NULL;
+    p_symbol_type p_param = NULL;
     p_list_head p_node;
     list_for_each(p_node, &p_param_list->param_decl) {
         p_syntax_param_decl p_decl = list_entry(p_node, syntax_param_decl, node);
         p_symbol_type p_param_type = symbol_type_param_gen(p_decl->p_type);
+        if (!p_param_head) {
+            p_param_head = p_param_type;
+            p_param = p_param_head;
+            continue;
+        }
         p_param->p_params = p_param_type;
         p_param = p_param->p_params;
     }
 
-    p_symbol_sym p_sym = symbol_func_gen(name, p_type);
-    symbol_table_sym_add(p_table, p_sym);
-    p_hir_func p_func = hir_func_gen(p_sym, NULL);
+    p_symbol_func p_func = symbol_func_gen(name, type, p_param_head);
+    symbol_table_func_add(p_table, p_func);
     free(name);
 
     symbol_table_zone_push(p_table);
@@ -146,19 +148,19 @@ p_hir_func syntax_func_head(p_symbol_table p_table, basic_type type, char *name,
         p_syntax_param_decl p_decl = list_entry(p_param_list->param_decl.p_next, syntax_param_decl, node);
         list_del(&p_decl->node);
 
-        p_symbol_sym p_sym = symbol_var_gen(p_decl->name, p_decl->p_type, false, false, NULL);
-        symbol_table_sym_add(p_table, p_sym); // false
+        p_symbol_var p_var = symbol_var_gen(p_decl->name, p_decl->p_type, false, false, NULL);
+        symbol_table_var_add(p_table, p_var); // false
         free(p_decl->name);
         free(p_decl);
     }
-    p_func->p_sym->last_param = p_func->p_sym->variable.p_prev;
-    p_func->p_sym->param_cnt = p_func->p_sym->variable_cnt;
+    p_func->last_param = p_func->variable.p_prev;
+    p_func->param_cnt = p_func->variable_cnt;
     free(p_param_list);
     return p_func;
 }
-p_hir_func syntax_func_end(p_symbol_table p_table, p_hir_func p_func, p_hir_block p_block) {
+p_symbol_func syntax_func_end(p_symbol_table p_table, p_symbol_func p_func, p_hir_block p_block) {
     symbol_table_zone_pop(p_table);
-    p_func->p_block = p_block;
+    p_func->p_h_block = p_block;
     return p_func;
 }
 
@@ -255,19 +257,19 @@ p_hir_block syntax_local_vardecl(p_symbol_table p_table, p_hir_block p_block, p_
                 }
                 symbol_init_add(p_init, i, init_val);
             }
-            p_symbol_sym p_sym = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, p_init != NULL, p_init);
-            symbol_table_sym_add(p_table, p_sym); // false
+            p_symbol_var p_var = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, p_init != NULL, p_init);
+            symbol_table_var_add(p_table, p_var); // false
         }
         else {
-            p_symbol_sym p_sym = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, false, NULL);
-            symbol_table_sym_add(p_table, p_sym); // false
+            p_symbol_var p_var = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, false, NULL);
+            symbol_table_var_add(p_table, p_var); // false
             if (p_h_init) {
-                p_symbol_type p_var_type = p_sym->p_type;
+                p_symbol_type p_var_type = p_var->p_type;
                 while (p_var_type->kind == type_arrary) {
                     p_var_type = p_var_type->p_item;
                 }
-                if (p_sym->p_type->kind == type_var) {
-                    p_hir_exp p_lval = hir_exp_val_gen(p_sym);
+                if (p_var->p_type->kind == type_var) {
+                    p_hir_exp p_lval = hir_exp_val_gen(p_var);
                     p_hir_exp p_rval = p_h_init->memory[0];
                     p_h_init->memory[0] = NULL;
                     p_hir_exp p_assign = hir_exp_assign_gen(p_lval, p_rval);
@@ -275,7 +277,7 @@ p_hir_block syntax_local_vardecl(p_symbol_table p_table, p_hir_block p_block, p_
                 }
                 else {
                     for (size_t i = 0; i < p_h_init->size; ++i) {
-                        p_hir_exp p_lval = hir_exp_val_gen(p_sym);
+                        p_hir_exp p_lval = hir_exp_val_gen(p_var);
                         p_lval->p_type = p_var_type;
                         p_lval->p_offset = hir_exp_int_gen(i);
                         p_hir_exp p_rval = p_h_init->memory[i];
@@ -328,8 +330,8 @@ void syntax_global_vardecl(p_symbol_table p_table, p_syntax_decl_list p_decl_lis
             }
         }
         syntax_init_mem_drop(p_h_init);
-        p_symbol_sym p_sym = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, p_init != NULL, p_init);
-        symbol_table_sym_add(p_table, p_sym); // true
+        p_symbol_var p_var = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, p_init != NULL, p_init);
+        symbol_table_var_add(p_table, p_var); // true
 
         free(p_decl->name);
         free(p_decl);
@@ -338,30 +340,28 @@ void syntax_global_vardecl(p_symbol_table p_table, p_syntax_decl_list p_decl_lis
 }
 
 void syntax_rtlib_decl(p_symbol_table p_table, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2, bool is_va) {
-    p_symbol_type p_type = symbol_type_func_gen(is_va);
-    p_type->basic = type;
+    p_symbol_type p_type = NULL;
 
     if (p_param1) {
-        p_type->p_params = symbol_type_param_gen(p_param1);
+        p_type = symbol_type_param_gen(p_param1);
         if (p_param2) {
-            p_type->p_params->p_params = symbol_type_param_gen(p_param2);
+            p_type->p_params = symbol_type_param_gen(p_param2);
         }
     }
 
-    p_symbol_sym p_sym = symbol_func_gen(name, p_type);
-    symbol_table_sym_add(p_table, p_sym); //true
-    hir_func_gen(p_sym, NULL);
+    p_symbol_func p_func = symbol_func_gen(name, type, p_type);
+    symbol_table_func_add(p_table, p_func); //true
 
     symbol_table_zone_push(p_table);
-    if (p_type->p_params) {
-        p_symbol_sym p_sym = symbol_var_gen("arg1", p_type->p_params->p_item, false, false, NULL);
-        symbol_table_sym_add(p_table, p_sym); // false
-        if (p_type->p_params->p_params) {
-            p_sym = symbol_var_gen("arg2", p_type->p_params->p_params->p_item, false, false, NULL);
-            symbol_table_sym_add(p_table, p_sym); // false
+    if (p_type) {
+        p_symbol_var p_var = symbol_var_gen("arg1", p_type->p_item, false, false, NULL);
+        symbol_table_var_add(p_table, p_var); // false
+        if (p_type->p_params) {
+            p_var = symbol_var_gen("arg2", p_type->p_params->p_item, false, false, NULL);
+            symbol_table_var_add(p_table, p_var); // false
         }
     }
-    p_sym->last_param = p_sym->variable.p_prev;
+    p_func->last_param = p_func->variable.p_prev;
     symbol_table_zone_pop(p_table);
 }
 

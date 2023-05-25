@@ -1,6 +1,6 @@
 #include <hir2mir.h>
 #include <program/def.h>
-#include <symbol/sym.h>
+#include <symbol/func.h>
 #include <symbol/type.h>
 
 p_hir2mir_program_info hir2mir_program_info_gen(p_program p_program) {

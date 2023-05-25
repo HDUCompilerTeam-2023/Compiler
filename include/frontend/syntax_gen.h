@@ -18,8 +18,8 @@ p_syntax_init syntax_init_list_gen(void);
 p_syntax_init syntax_init_exp_gen(p_hir_exp p_exp);
 p_syntax_init syntax_init_list_add(p_syntax_init p_list, p_syntax_init p_init);
 
-p_hir_func syntax_func_head(p_symbol_table p_table, basic_type type, char *name, p_syntax_param_list p_param_list);
-p_hir_func syntax_func_end(p_symbol_table p_table, p_hir_func p_func, p_hir_block p_block);
+p_symbol_func syntax_func_head(p_symbol_table p_table, basic_type type, char *name, p_syntax_param_list p_param_list);
+p_symbol_func syntax_func_end(p_symbol_table p_table, p_symbol_func p_func, p_hir_block p_block);
 
 struct syntax_decl {
     char *name;

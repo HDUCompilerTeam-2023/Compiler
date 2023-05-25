@@ -12,8 +12,8 @@
 
 #define extra yyget_extra(yyscanner)
 
-#define new_sym(name) symbol_table_sym_add(extra->p_table, name)
-#define find_sym(name) symbol_table_sym_find(extra->p_table, name)
+#define find_var(name) symbol_table_var_find(extra->p_table, name)
+#define find_func(name) symbol_table_func_find(extra->p_table, name)
 #define find_str(str) symbol_table_str_get(extra->p_table, str)
 %}
 
@@ -33,7 +33,7 @@
        p_hir_stmt p_stmt;
        p_hir_exp p_exp;
 
-       p_hir_func p_func;
+       p_symbol_func p_func;
 
        p_hir_param_list p_param_list;
 
@@ -265,10 +265,10 @@ PrimaryExp : '(' Exp ')' { $$ = $2; }
            | Str         { $$ = $1; }
            ;
 
-Call : ID '(' FuncRParams ')' { $$ = hir_exp_call_gen(find_sym($1), $3); free($1); }
+Call : ID '(' FuncRParams ')' { $$ = hir_exp_call_gen(find_func($1), $3); free($1); }
      ;
 
-Val : ID                 { $$ = hir_exp_val_gen(find_sym($1)); free($1); }
+Val : ID                 { $$ = hir_exp_val_gen(find_var($1)); free($1); }
     | Val '[' Exp ']'    { $$ = hir_exp_val_offset($1, $3); }
     ;
 

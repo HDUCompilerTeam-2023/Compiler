@@ -2,7 +2,7 @@
 #include <hir/stmt.h>
 #include <hir2mir.h>
 
-#include <symbol/sym.h>
+#include <symbol/var.h>
 #include <symbol/type.h>
 
 void hir2mir_stmt_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_cond, p_mir_basic_block p_while_end_next, p_hir_stmt p_stmt) {

@@ -3,7 +3,7 @@
 #include <mir.h>
 
 struct mir_func {
-    p_symbol_sym p_func_sym;
+    p_symbol_func p_func_sym;
 
     p_mir_vreg *param_vreg;
     size_t param_vreg_cnt;

@@ -5,20 +5,21 @@
 #include <mir/instr.h> // 包含问题？
 #include <stdio.h>
 
-#include <symbol/sym.h>
+#include <symbol/var.h>
+#include <symbol/func.h>
 #include <symbol/type.h>
 
 void mir_func_print(p_mir_func p_func) {
     assert(p_func);
     printf("define ");
-    mir_symbol_type_print(p_func->p_func_sym->p_type);
-    printf("%s (", p_func->p_func_sym->name);
+    mir_basic_type_print(p_func->p_func_sym->ret_type);
+    printf(" %s (", p_func->p_func_sym->name);
     p_list_head p_node;
     list_for_each(p_node, &p_func->p_func_sym->variable) {
         if (p_node->p_prev == p_func->p_func_sym->last_param) break;
-        p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
-        mir_symbol_type_print(p_sym->p_type);
-        printf("%%l%ld", p_sym->id);
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        mir_symbol_type_print(p_var->p_type);
+        printf("%%l%ld", p_var->id);
         if (p_node != p_func->p_func_sym->last_param) printf(", ");
     }
     printf(")\n");
@@ -28,13 +29,13 @@ void mir_func_print(p_mir_func p_func) {
     bool is_param = true;
     list_for_each(p_node, &p_func->p_func_sym->variable) {
         if (p_node->p_prev == p_func->p_func_sym->last_param) is_param = false;
-        p_symbol_sym p_sym = list_entry(p_node, symbol_sym, node);
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         if (is_param)
             printf("param ");
         else
             printf("local ");
-        mir_symbol_type_print(p_sym->p_type);
-        printf("%%l%ld\n", p_sym->id);
+        mir_symbol_type_print(p_var->p_type);
+        printf("%%l%ld\n", p_var->id);
     }
 
     list_for_each(p_node, &p_func->block) {

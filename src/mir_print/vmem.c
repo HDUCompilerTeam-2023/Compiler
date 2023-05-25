@@ -2,7 +2,7 @@
 #include <mir_print.h>
 
 #include <stdio.h>
-#include <symbol/sym.h>
+#include <symbol/var.h>
 
 void mir_vmem_print(p_mir_vmem p_vmem) {
     assert(p_vmem);
@@ -18,14 +18,14 @@ void mir_vmem_print(p_mir_vmem p_vmem) {
         }
     }
 
-    if (p_vmem->p_sym && p_vmem->p_sym->is_global) {
+    if (p_vmem->p_var && p_vmem->p_var->is_global) {
         printf(" @");
     }
     else {
         printf(" $");
     }
     printf("%ld", p_vmem->id);
-    if (p_vmem->p_sym) {
-        printf("_%s", p_vmem->p_sym->name);
+    if (p_vmem->p_var) {
+        printf("_%s", p_vmem->p_var->name);
     }
 }
