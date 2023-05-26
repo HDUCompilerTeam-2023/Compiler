@@ -5,6 +5,9 @@
 
 p_symbol_func symbol_func_gen(const char *name, basic_type b_type, p_symbol_type p_params);
 
+void symbol_func_add_variable(p_symbol_func p_func, p_symbol_var p_var);
+void symbol_func_add_param(p_symbol_func p_func, p_symbol_var p_var);
+
 void symbol_func_drop(p_symbol_func p_func);
 
 #endif

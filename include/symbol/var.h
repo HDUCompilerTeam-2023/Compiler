@@ -28,7 +28,6 @@ struct symbol_var {
     p_symbol_init p_init;
     bool is_global;
     bool is_const;
-    bool is_def;
 
     list_head node;
 };

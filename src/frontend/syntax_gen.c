@@ -141,6 +141,7 @@ p_symbol_func syntax_func_head(p_symbol_table p_table, basic_type type, char *na
 
     p_symbol_func p_func = symbol_func_gen(name, type, p_param_head);
     symbol_table_func_add(p_table, p_func);
+    p_table->p_func = p_func;
     free(name);
 
     symbol_table_zone_push(p_table);
@@ -150,16 +151,16 @@ p_symbol_func syntax_func_head(p_symbol_table p_table, basic_type type, char *na
 
         p_symbol_var p_var = symbol_var_gen(p_decl->name, p_decl->p_type, false, false, NULL);
         symbol_table_var_add(p_table, p_var); // false
+        symbol_func_add_param(p_table->p_func, p_var);
         free(p_decl->name);
         free(p_decl);
     }
-    p_func->last_param = p_func->variable.p_prev;
-    p_func->param_cnt = p_func->variable_cnt;
     free(p_param_list);
     return p_func;
 }
 p_symbol_func syntax_func_end(p_symbol_table p_table, p_symbol_func p_func, p_hir_block p_block) {
     symbol_table_zone_pop(p_table);
+    p_table->p_func = NULL;
     p_func->p_h_block = p_block;
     return p_func;
 }
@@ -259,10 +260,12 @@ p_hir_block syntax_local_vardecl(p_symbol_table p_table, p_hir_block p_block, p_
             }
             p_symbol_var p_var = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, p_init != NULL, p_init);
             symbol_table_var_add(p_table, p_var); // false
+            symbol_table_constant_add(p_table, p_var);
         }
         else {
             p_symbol_var p_var = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, false, NULL);
             symbol_table_var_add(p_table, p_var); // false
+            symbol_func_add_variable(p_table->p_func, p_var);
             if (p_h_init) {
                 p_symbol_type p_var_type = p_var->p_type;
                 while (p_var_type->kind == type_arrary) {
@@ -330,8 +333,14 @@ void syntax_global_vardecl(p_symbol_table p_table, p_syntax_decl_list p_decl_lis
             }
         }
         syntax_init_mem_drop(p_h_init);
-        p_symbol_var p_var = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, p_init != NULL, p_init);
+        p_symbol_var p_var = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, true, p_init);
         symbol_table_var_add(p_table, p_var); // true
+        if (p_decl_list->is_const) {
+            symbol_table_constant_add(p_table, p_var);
+        }
+        else {
+            program_add_global(p_table->p_program, p_var);
+        }
 
         free(p_decl->name);
         free(p_decl);
@@ -351,18 +360,21 @@ void syntax_rtlib_decl(p_symbol_table p_table, basic_type type, char *name, p_sy
 
     p_symbol_func p_func = symbol_func_gen(name, type, p_type);
     symbol_table_func_add(p_table, p_func); //true
+    p_table->p_func = p_func;
 
     symbol_table_zone_push(p_table);
     if (p_type) {
         p_symbol_var p_var = symbol_var_gen("arg1", p_type->p_item, false, false, NULL);
         symbol_table_var_add(p_table, p_var); // false
+        symbol_func_add_param(p_table->p_func, p_var);
         if (p_type->p_params) {
             p_var = symbol_var_gen("arg2", p_type->p_params->p_item, false, false, NULL);
             symbol_table_var_add(p_table, p_var); // false
+            symbol_func_add_param(p_table->p_func, p_var);
         }
     }
-    p_func->last_param = p_func->variable.p_prev;
     symbol_table_zone_pop(p_table);
+    p_table->p_func = NULL;
 }
 
 p_hir_exp syntax_const_check(p_hir_exp p_exp) {

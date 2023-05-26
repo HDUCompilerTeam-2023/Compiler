@@ -54,6 +54,7 @@ p_symbol_table symbol_table_gen() {
         .next_id = 0,
         .constant = list_head_init(&p_table->constant),
         .p_program = program_gen(),
+        .p_func = NULL,
     };
     return p_table;
 }
@@ -126,8 +127,6 @@ p_symbol_item symbol_table_var_add(p_symbol_table p_table, p_symbol_var p_var) {
 
     p_symbol_name p_name = symbol_table_get_name(p_table, p_var->name);
 
-    bool is_global = p_table->p_top_table->p_prev == NULL;
-
     p_symbol_item p_item = malloc(sizeof(*p_item));
     *p_item = (symbol_item) {
         .p_name = p_name,
@@ -140,15 +139,6 @@ p_symbol_item symbol_table_var_add(p_symbol_table p_table, p_symbol_var p_var) {
     p_table->p_top_table->p_item = p_item;
     p_name->p_item = p_item;
 
-    if (p_var->is_const) {
-        list_add_prev(&p_var->node, &p_table->constant);
-    }
-    else if (is_global) {
-        program_add_global(p_table->p_program, p_var);
-    }
-    else {
-        program_add_local(p_table->p_program, p_var);
-    }
     return p_item;
 }
 
@@ -172,6 +162,10 @@ p_symbol_item symbol_table_func_add(p_symbol_table p_table, p_symbol_func p_func
 
     program_add_function(p_table->p_program, p_func);
     return p_item;
+}
+
+void symbol_table_constant_add(p_symbol_table p_table, p_symbol_var p_var) {
+    list_add_prev(&p_var->node, &p_table->constant);
 }
 
 p_symbol_var symbol_table_var_find(p_symbol_table p_table, const char *name) {

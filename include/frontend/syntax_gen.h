@@ -63,5 +63,6 @@ void syntax_rtlib_decl(p_symbol_table p_table, basic_type type, char *name, p_sy
 
 #include <hir_gen.h>
 #include <symbol_gen.h>
+#include <program/gen.h>
 
 #endif
