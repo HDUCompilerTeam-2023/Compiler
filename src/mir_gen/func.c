@@ -7,8 +7,8 @@ p_mir_func mir_func_gen() {
         .block = list_head_init(&p_func->block),
         .block_cnt = 0,
         .p_func_sym = NULL,
-        .param_vreg = NULL,
-        .param_vreg_cnt = 0,
+        .param_list = list_head_init(&p_func->param_list),
+        .param_cnt = 0,
         .vreg_list = list_head_init(&p_func->vreg_list),
         .vreg_cnt = 0,
         .vmem_list = list_head_init(&p_func->vmem_list),
@@ -25,6 +25,16 @@ void mir_func_bb_del(p_mir_func p_func, p_mir_basic_block p_basic_block) {
     list_del(&p_basic_block->node);
     mir_basic_block_drop(p_basic_block);
     --p_func->block_cnt;
+}
+
+void mir_func_param_add(p_mir_func p_func, p_mir_vreg p_vreg) {
+    list_add_prev(&p_vreg->node, &p_func->param_list);
+    ++p_func->param_cnt;
+}
+void mir_func_param_del(p_mir_func p_func, p_mir_vreg p_vreg) {
+    list_del(&p_vreg->node);
+    mir_vreg_drop(p_vreg);
+    --p_func->param_cnt;
 }
 
 void mir_func_vreg_add(p_mir_func p_func, p_mir_vreg p_vreg) {
@@ -102,8 +112,9 @@ void mir_basic_block_init_visited(p_mir_func p_func) {
 void mir_func_set_vreg_id(p_mir_func p_func) {
     p_list_head p_node;
     size_t id = 0;
-    for (size_t i = 0; i < p_func->param_vreg_cnt; ++i) {
-        p_func->param_vreg[i]->id = id++;
+    list_for_each(p_node, &p_func->param_list) {
+        p_mir_vreg p_vreg = list_entry(p_node, mir_vreg, node);
+        p_vreg->id = id++;
     }
     list_for_each(p_node, &p_func->vreg_list) {
         p_mir_vreg p_vreg = list_entry(p_node, mir_vreg, node);
@@ -120,13 +131,13 @@ void mir_func_set_vmem_id(p_mir_func p_func) {
 }
 
 void mir_func_drop(p_mir_func p_func) {
-    for (size_t j = 0; j < p_func->param_vreg_cnt; ++j) {
-        mir_vreg_drop(p_func->param_vreg[j]);
-    }
-    free(p_func->param_vreg);
     while (!list_head_alone(&p_func->block)) {
         p_mir_basic_block p_del = list_entry(p_func->block.p_next, mir_basic_block, node);
         mir_func_bb_del(p_func, p_del);
+    }
+    while (!list_head_alone(&p_func->param_list)) {
+        p_mir_vreg p_vreg = list_entry(p_func->param_list.p_next, mir_vreg, node);
+        mir_func_param_del(p_func, p_vreg);
     }
     while (!list_head_alone(&p_func->vreg_list)) {
         p_mir_vreg p_vreg = list_entry(p_func->vreg_list.p_next, mir_vreg, node);

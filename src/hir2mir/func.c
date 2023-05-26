@@ -8,8 +8,6 @@
 static inline void hir2mir_func_param_gen(p_hir2mir_info p_info, p_mir_func p_func) {
     if (p_func->p_func_sym->last_param == &p_func->p_func_sym->variable) return;
 
-    p_func->param_vreg_cnt = p_func->p_func_sym->param_cnt;
-    p_func->param_vreg = malloc(sizeof(p_mir_vreg) * p_func->param_vreg_cnt);
     p_list_head p_node;
     size_t i = 0;
     list_for_each(p_node, &p_func->p_func_sym->variable) {
@@ -24,7 +22,8 @@ static inline void hir2mir_func_param_gen(p_hir2mir_info p_info, p_mir_func p_fu
         p_info->local_addr_table[i] = p_addr;
         hir2mir_info_add_instr(p_info, mir_alloca_instr_gen(p_vmem, p_addr));
 
-        p_mir_vreg p_param = p_func->param_vreg[i] = mir_vreg_gen(p_addr->b_type, p_addr->ref_level - 1);
+        p_mir_vreg p_param = mir_vreg_gen(p_addr->b_type, p_addr->ref_level - 1);
+        mir_func_param_add(p_func, p_param);
         hir2mir_info_add_instr(p_info, mir_store_instr_gen(mir_operand_vreg_gen(p_addr), NULL, mir_operand_vreg_gen(p_param)));
         ++i;
     }
