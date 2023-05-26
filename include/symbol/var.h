@@ -29,6 +29,8 @@ struct symbol_var {
     bool is_global;
     bool is_const;
 
+    p_mir_vmem p_vmem;
+
     list_head node;
 };
 

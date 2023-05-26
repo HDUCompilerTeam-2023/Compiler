@@ -33,9 +33,6 @@ void mir_instr_print(p_mir_instr p_instr) {
     case mir_call:
         mir_call_instr_print(&p_instr->mir_call);
         break;
-    case mir_alloca:
-        mir_alloca_instr_print(&p_instr->mir_alloca);
-        break;
     case mir_load:
         mir_load_instr_print(&p_instr->mir_load);
         break;
@@ -126,12 +123,6 @@ void mir_load_instr_print(p_mir_load_instr p_instr) {
     if (p_instr->p_offset) {
         mir_operand_print(p_instr->p_offset);
     }
-}
-
-void mir_alloca_instr_print(p_mir_alloca_instr p_instr) {
-    mir_vreg_print(p_instr->p_des);
-    printf(" = alloca ");
-    mir_vmem_print(p_instr->p_vmem);
 }
 
 void mir_store_instr_print(p_mir_store_instr p_instr) {
