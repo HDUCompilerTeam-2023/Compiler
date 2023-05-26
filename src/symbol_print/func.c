@@ -1,3 +1,4 @@
+#include "symbol.h"
 #include <stdio.h>
 #include <symbol_print.h>
 
@@ -16,14 +17,21 @@ void symbol_func_init_print(p_symbol_func p_func) {
     assert(p_func->ret_type != type_str);
 
     symbol_basic_type_print(p_func->ret_type);
+    p_list_head p_node;
     printf(" (");
-    if (p_func->p_params) symbol_type_print(p_func->p_params);
+    list_for_each(p_node, &p_func->param) {
+        p_symbol_var p_param = list_entry(p_node, symbol_var, node);
+        printf("param: ");
+        symbol_type_print(p_param->p_type);
+        if (p_node->p_next != &p_func->param) {
+            printf(", ");
+        }
+    }
     if (p_func->is_va) {
-        if (p_func->p_params) printf(", ");
+        if (!list_head_alone(&p_func->param)) printf(", ");
         printf("param: ...");
     }
     printf(")\n");
-    p_list_head p_node;
     if (!list_head_alone(&p_func->param)) {
         printf("param:\n");
     }

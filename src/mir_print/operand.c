@@ -34,8 +34,6 @@ void mir_symbol_type_print(p_symbol_type p_mir_type) {
         mir_basic_type_print(p_type->basic);
         printf("]*");
     }
-    else if (p_mir_type->kind == type_param)
-        mir_symbol_type_print(p_mir_type->p_item);
     else
         mir_basic_type_print(p_mir_type->basic);
     printf(" ");

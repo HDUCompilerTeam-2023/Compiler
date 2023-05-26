@@ -246,25 +246,26 @@ p_hir_exp hir_exp_call_gen(p_symbol_func p_func, p_hir_param_list p_param_list) 
         .p_param_list = p_param_list,
     };
 
-    p_symbol_type p_param_type = p_func->p_params;
+    p_list_head p_node_Fparam = p_func->param.p_next;
     p_list_head p_node;
     list_for_each(p_node, &p_param_list->param) {
-        if (!p_param_type) {
+        if (p_node_Fparam == &p_func->param) {
             assert(p_func->is_va);
             break;
         }
+        p_symbol_type p_param_type = list_entry(p_node_Fparam, symbol_var, node)->p_type;
 
         p_hir_exp p_param = list_entry(p_node, hir_param, node)->p_exp;
-        if (p_param_type->p_item->kind == type_arrary) {
+        if (p_param_type->kind == type_arrary) {
             assert(p_param->kind == hir_exp_val);
-            assert(param_arr_check(p_param_type->p_item, p_param->p_type));
+            assert(param_arr_check(p_param_type, p_param->p_type));
         }
         else {
-            assert(hir_exp_get_basic(p_param) == p_param_type->p_item->basic);
+            assert(hir_exp_get_basic(p_param) == p_param_type->basic);
         }
-        p_param_type = p_param_type->p_params;
+        p_node_Fparam = p_node_Fparam->p_next;
     }
-    assert(!p_param_type);
+    assert(p_node_Fparam == &p_func->param);
     return p_exp;
 }
 

@@ -19,15 +19,6 @@ void symbol_type_print(p_symbol_type p_type) {
         assert(p_type->basic != type_void);
         symbol_basic_type_print(p_type->basic);
     }
-    else if (p_type->kind == type_param) {
-        printf("param: ");
-
-        symbol_type_print(p_type->p_item);
-        if (p_type->p_params) {
-            printf(", ");
-            symbol_type_print(p_type->p_params);
-        }
-    }
     else if (p_type->kind == type_arrary) {
         printf("arr[%ld] -> ", p_type->size);
         symbol_type_print(p_type->p_item);
