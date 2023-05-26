@@ -24,12 +24,10 @@ void symbol_func_init_print(p_symbol_func p_func) {
     }
     printf(")\n");
     p_list_head p_node;
-    if (p_func->last_param != &p_func->variable) {
+    if (!list_head_alone(&p_func->param)) {
         printf("param:\n");
     }
-    list_for_each(p_node, &p_func->variable) {
-        if (p_node->p_prev == p_func->last_param)
-            break;
+    list_for_each(p_node, &p_func->param) {
         symbol_init_print(list_entry(p_node, symbol_var, node));
     }
 }

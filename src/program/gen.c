@@ -68,16 +68,7 @@ bool program_add_str(p_program p_program, p_symbol_str p_str) {
 
 bool program_add_global(p_program p_program, p_symbol_var p_var) {
     p_var->id = p_program->variable_cnt++;
-    p_var->is_global = true;
     return list_add_prev(&p_var->node, &p_program->variable);
-}
-bool program_add_local(p_program p_program, p_symbol_var p_var) {
-    assert(!list_head_alone(&p_program->function));
-    p_symbol_func p_func = list_entry(p_program->function.p_prev, symbol_func, node);
-
-    p_var->id = p_func->variable_cnt++;
-    p_var->is_global = false;
-    return list_add_prev(&p_var->node, &p_func->variable);
 }
 
 bool program_add_function(p_program p_program, p_symbol_func p_func) {

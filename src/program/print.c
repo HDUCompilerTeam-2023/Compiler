@@ -51,7 +51,7 @@ void program_mir_print(p_program p_program) {
         printf("global ");
         mir_symbol_type_print(p_var->p_type);
         printf("%s ", p_var->name);
-        if (p_var->is_def) {
+        if (p_var->p_init) {
             printf("= {");
             for (size_t i = 0; i < p_var->p_init->size; i++) {
                 if (i > 0) printf(", ");

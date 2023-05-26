@@ -8,7 +8,7 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, p_symbol_type
         .ret_type = b_type,
         .p_params = p_params,
         .id = 0,
-        .last_param = NULL,
+        .param = list_head_init(&p_func->param),
         .param_cnt = 0,
         .variable = list_head_init(&p_func->variable),
         .variable_cnt = 0,
@@ -19,8 +19,21 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, p_symbol_type
     return p_func;
 }
 
+void symbol_func_add_variable(p_symbol_func p_func, p_symbol_var p_var) {
+    p_var->id = p_func->param_cnt + p_func->variable_cnt++;
+    list_add_prev(&p_var->node, &p_func->variable);
+}
+void symbol_func_add_param(p_symbol_func p_func, p_symbol_var p_var) {
+    p_var->id = p_func->param_cnt++;
+    list_add_prev(&p_var->node, &p_func->param);
+}
+
 void symbol_func_drop(p_symbol_func p_func) {
     list_del(&p_func->node);
+    while (!list_head_alone(&p_func->param)) {
+        p_symbol_var p_del = list_entry(p_func->param.p_next, symbol_var, node);
+        symbol_var_drop(p_del);
+    }
     while (!list_head_alone(&p_func->variable)) {
         p_symbol_var p_del = list_entry(p_func->variable.p_next, symbol_var, node);
         symbol_var_drop(p_del);

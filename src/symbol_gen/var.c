@@ -25,17 +25,16 @@ void symbol_init_drop(p_symbol_init p_init) {
     free(p_init);
 }
 
-p_symbol_var symbol_var_gen(const char *name, p_symbol_type p_type, bool is_const, bool is_def, p_symbol_init p_data) {
+p_symbol_var symbol_var_gen(const char *name, p_symbol_type p_type, bool is_const, bool is_global, p_symbol_init p_data) {
     p_symbol_var p_var = malloc(sizeof(*p_var));
     *p_var = (symbol_var) {
         .node = list_head_init(&p_var->node),
         .name = malloc(sizeof(char) * (strlen(name) + 1)),
         .p_type = p_type,
         .id = 0,
-        .is_def = is_def,
         .is_const = is_const,
         .p_init = p_data,
-        .is_global = false,
+        .is_global = is_global,
     };
     strcpy(p_var->name, name);
     return p_var;

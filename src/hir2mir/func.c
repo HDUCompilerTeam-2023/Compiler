@@ -6,14 +6,9 @@
 #include <stdio.h>
 
 static inline void hir2mir_func_param_gen(p_hir2mir_info p_info, p_mir_func p_func) {
-    if (p_func->p_func_sym->last_param == &p_func->p_func_sym->variable) return;
-
     p_list_head p_node;
     size_t i = 0;
-    list_for_each(p_node, &p_func->p_func_sym->variable) {
-        if (p_node->p_prev == p_func->p_func_sym->last_param) {
-            break;
-        }
+    list_for_each(p_node, &p_func->p_func_sym->param) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         p_mir_vmem p_vmem = mir_vmem_sym_gen(p_var);
         mir_func_vmem_add(p_func, p_vmem);

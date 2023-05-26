@@ -14,7 +14,7 @@ struct symbol_func {
     char *name;
     uint64_t id;
 
-    p_list_head last_param;
+    list_head param;
     size_t param_cnt;
     list_head variable;
     size_t variable_cnt;

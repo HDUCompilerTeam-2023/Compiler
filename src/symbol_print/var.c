@@ -17,12 +17,11 @@ void symbol_init_print(p_symbol_var p_var) {
     symbol_name_print(p_var);
     printf(" -> ");
     symbol_type_print(p_var->p_type);
-    if (!p_var->is_def) {
+    if (!p_var->p_init) {
         printf("\n");
         return;
     }
 
-    assert(p_var->p_init);
     printf(" = {");
     for (size_t i = 0; i < p_var->p_init->size; ++i) {
         if (i > 0) printf(", ");

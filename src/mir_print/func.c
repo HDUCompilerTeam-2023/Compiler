@@ -15,25 +15,25 @@ void mir_func_print(p_mir_func p_func) {
     mir_basic_type_print(p_func->p_func_sym->ret_type);
     printf(" %s (", p_func->p_func_sym->name);
     p_list_head p_node;
-    list_for_each(p_node, &p_func->p_func_sym->variable) {
-        if (p_node->p_prev == p_func->p_func_sym->last_param) break;
+    list_for_each(p_node, &p_func->p_func_sym->param) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         mir_symbol_type_print(p_var->p_type);
         printf("%%l%ld", p_var->id);
-        if (p_node != p_func->p_func_sym->last_param) printf(", ");
+        if (p_node != p_func->p_func_sym->param.p_prev) printf(", ");
     }
     printf(")\n");
 
     if (list_head_alone(&p_func->block)) return;
     printf("{\n");
-    bool is_param = true;
-    list_for_each(p_node, &p_func->p_func_sym->variable) {
-        if (p_node->p_prev == p_func->p_func_sym->last_param) is_param = false;
+    list_for_each(p_node, &p_func->p_func_sym->param) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        if (is_param)
-            printf("param ");
-        else
-            printf("local ");
+        printf("param ");
+        mir_symbol_type_print(p_var->p_type);
+        printf("%%l%ld\n", p_var->id);
+    }
+    list_for_each(p_node, &p_func->p_func_sym->variable) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        printf("local ");
         mir_symbol_type_print(p_var->p_type);
         printf("%%l%ld\n", p_var->id);
     }
