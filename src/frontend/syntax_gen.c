@@ -124,7 +124,7 @@ p_syntax_param_list syntax_param_list_add(p_syntax_param_list p_list, p_syntax_p
 }
 
 p_symbol_func syntax_func_head(p_symbol_table p_table, basic_type type, char *name, p_syntax_param_list p_param_list) {
-    p_symbol_func p_func = symbol_func_gen(name, type);
+    p_symbol_func p_func = symbol_func_gen(name, type, false);
     symbol_table_func_add(p_table, p_func);
     p_table->p_func = p_func;
     free(name);
@@ -334,7 +334,7 @@ void syntax_global_vardecl(p_symbol_table p_table, p_syntax_decl_list p_decl_lis
 }
 
 void syntax_rtlib_decl(p_symbol_table p_table, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2, bool is_va) {
-    p_symbol_func p_func = symbol_func_gen(name, type);
+    p_symbol_func p_func = symbol_func_gen(name, type, is_va);
     symbol_table_func_add(p_table, p_func); //true
     p_table->p_func = p_func;
 

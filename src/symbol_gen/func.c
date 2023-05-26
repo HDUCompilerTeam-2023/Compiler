@@ -1,12 +1,13 @@
 #include <symbol_gen.h>
 
-p_symbol_func symbol_func_gen(const char *name, basic_type b_type) {
+p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va) {
     p_symbol_func p_func = malloc(sizeof(*p_func));
     *p_func = (symbol_func) {
         .node = list_head_init(&p_func->node),
         .name = malloc(sizeof(char) * (strlen(name) + 1)),
         .ret_type = b_type,
         .id = 0,
+        .is_va = is_va,
         .param = list_head_init(&p_func->param),
         .param_cnt = 0,
         .variable = list_head_init(&p_func->variable),
