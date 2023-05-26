@@ -5,8 +5,8 @@
 struct mir_func {
     p_symbol_func p_func_sym;
 
-    p_mir_vreg *param_vreg;
-    size_t param_vreg_cnt;
+    list_head param_list;
+    size_t param_cnt;
 
     list_head block;
     size_t block_cnt;
