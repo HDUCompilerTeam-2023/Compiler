@@ -35,6 +35,7 @@ p_symbol_var symbol_var_gen(const char *name, p_symbol_type p_type, bool is_cons
         .is_const = is_const,
         .p_init = p_data,
         .is_global = is_global,
+        .p_vmem = NULL,
     };
     strcpy(p_var->name, name);
     return p_var;

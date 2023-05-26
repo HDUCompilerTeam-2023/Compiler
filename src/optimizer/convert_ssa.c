@@ -1,6 +1,7 @@
 #include <mir_manager.h>
 #include <optimizer/convert_ssa.h>
 #include <program/def.h>
+#include <symbol/var.h>
 #include <symbol/func.h>
 #include <symbol/type.h>
 void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_mir_basic_block p_basic_block, size_t current_num) {
@@ -58,14 +59,13 @@ p_ssa_var_list_info convert_ssa_init_var_list(p_mir_func p_func) {
 // 将变量转换到对应的标号，若不存在标号返回 -1
 static inline size_t get_var_index(p_mir_operand p_operand, p_ssa_var_list_info p_var_list) {
     if (!p_operand) return -1;
-    if (p_operand->kind == imme) return -1;
+    if (p_operand->kind == reg) return -1;
+    if (p_operand->ref_level == 0) return -1;
 
-    p_mir_vreg p_vreg = p_operand->p_vreg;
-    assert(!p_vreg->is_bb_param);
-    if (p_vreg->p_instr_def->irkind != mir_alloca) return -1;
+    p_mir_vmem p_vmem = p_operand->p_global_vmem;
 
-    p_mir_vmem p_vmem = p_operand->p_vreg->p_instr_def->mir_alloca.p_vmem;
     if (p_vmem->is_array) return -1;
+    if (p_vmem->p_var && p_vmem->p_var->is_global) return -1;
     return p_vmem->id;
 }
 

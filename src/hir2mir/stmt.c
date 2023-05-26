@@ -42,7 +42,7 @@ void hir2mir_stmt_return_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
         p_ret = hir2mir_exp_gen(p_info, p_exp);
     else
         p_ret = mir_operand_void_gen();
-    p_mir_operand p_ret_addr_operand = mir_operand_vreg_gen(p_info->p_ret_addr);
+    p_mir_operand p_ret_addr_operand = mir_operand_addr_gen(p_info->p_ret_vmem);
     hir2mir_info_add_instr(p_info, mir_store_instr_gen(p_ret_addr_operand, NULL, p_ret));
 
     mir_basic_block_set_br(p_info->p_current_basic_block, p_info->p_ret_block);
