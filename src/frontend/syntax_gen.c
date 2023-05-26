@@ -124,22 +124,7 @@ p_syntax_param_list syntax_param_list_add(p_syntax_param_list p_list, p_syntax_p
 }
 
 p_symbol_func syntax_func_head(p_symbol_table p_table, basic_type type, char *name, p_syntax_param_list p_param_list) {
-    p_symbol_type p_param_head = NULL;
-    p_symbol_type p_param = NULL;
-    p_list_head p_node;
-    list_for_each(p_node, &p_param_list->param_decl) {
-        p_syntax_param_decl p_decl = list_entry(p_node, syntax_param_decl, node);
-        p_symbol_type p_param_type = symbol_type_param_gen(p_decl->p_type);
-        if (!p_param_head) {
-            p_param_head = p_param_type;
-            p_param = p_param_head;
-            continue;
-        }
-        p_param->p_params = p_param_type;
-        p_param = p_param->p_params;
-    }
-
-    p_symbol_func p_func = symbol_func_gen(name, type, p_param_head);
+    p_symbol_func p_func = symbol_func_gen(name, type);
     symbol_table_func_add(p_table, p_func);
     p_table->p_func = p_func;
     free(name);
@@ -349,26 +334,17 @@ void syntax_global_vardecl(p_symbol_table p_table, p_syntax_decl_list p_decl_lis
 }
 
 void syntax_rtlib_decl(p_symbol_table p_table, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2, bool is_va) {
-    p_symbol_type p_type = NULL;
-
-    if (p_param1) {
-        p_type = symbol_type_param_gen(p_param1);
-        if (p_param2) {
-            p_type->p_params = symbol_type_param_gen(p_param2);
-        }
-    }
-
-    p_symbol_func p_func = symbol_func_gen(name, type, p_type);
+    p_symbol_func p_func = symbol_func_gen(name, type);
     symbol_table_func_add(p_table, p_func); //true
     p_table->p_func = p_func;
 
     symbol_table_zone_push(p_table);
-    if (p_type) {
-        p_symbol_var p_var = symbol_var_gen("arg1", p_type->p_item, false, false, NULL);
+    if (p_param1) {
+        p_symbol_var p_var = symbol_var_gen("arg1", p_param1, false, false, NULL);
         symbol_table_var_add(p_table, p_var); // false
         symbol_func_add_param(p_table->p_func, p_var);
-        if (p_type->p_params) {
-            p_var = symbol_var_gen("arg2", p_type->p_params->p_item, false, false, NULL);
+        if (p_param2) {
+            p_var = symbol_var_gen("arg2", p_param2, false, false, NULL);
             symbol_table_var_add(p_table, p_var); // false
             symbol_func_add_param(p_table->p_func, p_var);
         }

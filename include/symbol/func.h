@@ -9,7 +9,6 @@ struct symbol_func {
     // type info
     bool is_va;
     basic_type ret_type;
-    p_symbol_type p_params;
 
     char *name;
     uint64_t id;
