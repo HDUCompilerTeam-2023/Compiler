@@ -2,7 +2,7 @@ int n;
 int fib(int p){
 	int a;
 	int b;
-	int c;
+	int c = 10;
 	a = 0;
 	b = 1;
 	if ( p == 0 ){
