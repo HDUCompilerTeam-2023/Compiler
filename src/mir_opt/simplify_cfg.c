@@ -32,24 +32,10 @@ static inline void mir_simplify_cfg_func_remove_no_predesessor_bb(p_mir_func p_f
             p_mir_instr p_instr = list_entry(p_instr_node, mir_instr, node);
             p_mir_vreg p_des = NULL;
             switch (p_instr->irkind) {
-            case mir_add_op:
-            case mir_sub_op:
-            case mir_mul_op:
-            case mir_div_op:
-            case mir_mod_op:
-            case mir_and_op:
-            case mir_or_op:
-            case mir_g_op:
-            case mir_geq_op:
-            case mir_l_op:
-            case mir_leq_op:
-            case mir_eq_op:
-            case mir_neq_op:
+            case mir_binary:
                 p_des = p_instr->mir_binary.p_des;
                 break;
-            case mir_minus_op:
-            case mir_not_op:
-            case mir_val_assign:
+            case mir_unary:
                 p_des = p_instr->mir_unary.p_des;
                 break;
             case mir_call:

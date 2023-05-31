@@ -1,7 +1,7 @@
 #ifndef __MIR_INSTR__
 #define __MIR_INSTR__
 #include <mir.h>
-enum mir_instr_type {
+enum mir_binary_op {
     // binary instr
     mir_add_op,
     mir_sub_op,
@@ -16,11 +16,21 @@ enum mir_instr_type {
     mir_leq_op,
     mir_g_op,
     mir_geq_op,
+};
 
+enum mir_unary_op {
     // unary instr
     mir_minus_op,
     mir_not_op,
     mir_val_assign,
+};
+
+enum mir_instr_type {
+    // binary instr
+    mir_binary,
+
+    // unary instr
+    mir_unary,
 
     // memory
     mir_store,
@@ -30,11 +40,13 @@ enum mir_instr_type {
 };
 
 struct mir_binary_instr {
+    mir_binary_op op;
     p_mir_operand p_src1, p_src2;
     p_mir_vreg p_des;
 };
 
 struct mir_unary_instr {
+    mir_unary_op op;
     p_mir_operand p_src;
     p_mir_vreg p_des;
 };

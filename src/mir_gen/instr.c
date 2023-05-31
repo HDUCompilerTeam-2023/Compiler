@@ -1,60 +1,35 @@
 #include <mir_gen.h>
 #include <mir_gen/instr.h>
 
-p_mir_instr mir_binary_instr_gen(mir_instr_type mir_type, p_mir_operand p_src1, p_mir_operand p_src2, p_mir_vreg p_des) {
+p_mir_instr mir_binary_instr_gen(mir_binary_op op, p_mir_operand p_src1, p_mir_operand p_src2, p_mir_vreg p_des) {
     p_mir_instr p_instr = NULL;
-    switch (mir_type) {
-    case mir_add_op:
-    case mir_sub_op:
-    case mir_mul_op:
-    case mir_div_op:
-    case mir_mod_op:
-    case mir_and_op:
-    case mir_or_op:
-    case mir_eq_op:
-    case mir_neq_op:
-    case mir_l_op:
-    case mir_leq_op:
-    case mir_g_op:
-    case mir_geq_op:
-        p_instr = malloc(sizeof(*p_instr));
-        *p_instr = (mir_instr) {
-            .irkind = mir_type,
-            .mir_binary = (mir_binary_instr) {
-                .p_src1 = p_src1,
-                .p_src2 = p_src2,
-                .p_des = p_des,
-            },
-            .node = list_head_init(&p_instr->node),
-        };
-        break;
-    default:
-        assert(0);
-    }
+    p_instr = malloc(sizeof(*p_instr));
+    *p_instr = (mir_instr) {
+        .irkind = mir_binary,
+        .mir_binary = (mir_binary_instr) {
+            .op = op,
+            .p_src1 = p_src1,
+            .p_src2 = p_src2,
+            .p_des = p_des,
+        },
+        .node = list_head_init(&p_instr->node),
+    };
     mir_vreg_set_instr_def(p_des, p_instr);
     return p_instr;
 }
 
-p_mir_instr mir_unary_instr_gen(mir_instr_type mir_type, p_mir_operand p_src, p_mir_vreg p_des) {
+p_mir_instr mir_unary_instr_gen(mir_unary_op op, p_mir_operand p_src, p_mir_vreg p_des) {
     p_mir_instr p_instr = NULL;
-    switch (mir_type) {
-    case mir_minus_op:
-    case mir_not_op:
-    case mir_val_assign:
-
-        p_instr = malloc(sizeof(*p_instr));
-        *p_instr = (mir_instr) {
-            .irkind = mir_type,
-            .mir_unary = (mir_unary_instr) {
-                .p_src = p_src,
-                .p_des = p_des,
-            },
-            .node = list_head_init(&p_instr->node),
-        };
-        break;
-    default:
-        assert(0);
-    }
+    p_instr = malloc(sizeof(*p_instr));
+    *p_instr = (mir_instr) {
+        .irkind = mir_unary,
+        .mir_unary = (mir_unary_instr) {
+            .op = op,
+            .p_src = p_src,
+            .p_des = p_des,
+        },
+        .node = list_head_init(&p_instr->node),
+    };
     mir_vreg_set_instr_def(p_des, p_instr);
     return p_instr;
 }
@@ -106,23 +81,9 @@ p_mir_instr mir_store_instr_gen(p_mir_operand p_addr, p_mir_operand p_offset, p_
 
 p_mir_operand mir_instr_get_src1(p_mir_instr p_instr) {
     switch (p_instr->irkind) {
-    case mir_add_op:
-    case mir_sub_op:
-    case mir_mul_op:
-    case mir_div_op:
-    case mir_mod_op:
-    case mir_and_op:
-    case mir_or_op:
-    case mir_eq_op:
-    case mir_neq_op:
-    case mir_l_op:
-    case mir_leq_op:
-    case mir_g_op:
-    case mir_geq_op:
+    case mir_binary:
         return p_instr->mir_binary.p_src1;
-    case mir_minus_op:
-    case mir_not_op:
-    case mir_val_assign:
+    case mir_unary:
         return p_instr->mir_unary.p_src;
     default:
         return NULL;
@@ -130,19 +91,7 @@ p_mir_operand mir_instr_get_src1(p_mir_instr p_instr) {
 }
 p_mir_operand mir_instr_get_src2(p_mir_instr p_instr) {
     switch (p_instr->irkind) {
-    case mir_add_op:
-    case mir_sub_op:
-    case mir_mul_op:
-    case mir_div_op:
-    case mir_mod_op:
-    case mir_and_op:
-    case mir_or_op:
-    case mir_eq_op:
-    case mir_neq_op:
-    case mir_l_op:
-    case mir_leq_op:
-    case mir_g_op:
-    case mir_geq_op:
+    case mir_binary:
         return p_instr->mir_binary.p_src2;
     default:
         return NULL;
@@ -150,23 +99,9 @@ p_mir_operand mir_instr_get_src2(p_mir_instr p_instr) {
 }
 p_mir_vreg mir_instr_get_des(p_mir_instr p_instr) {
     switch (p_instr->irkind) {
-    case mir_add_op:
-    case mir_sub_op:
-    case mir_mul_op:
-    case mir_div_op:
-    case mir_mod_op:
-    case mir_and_op:
-    case mir_or_op:
-    case mir_eq_op:
-    case mir_neq_op:
-    case mir_l_op:
-    case mir_leq_op:
-    case mir_g_op:
-    case mir_geq_op:
+    case mir_binary:
         return p_instr->mir_binary.p_des;
-    case mir_minus_op:
-    case mir_not_op:
-    case mir_val_assign:
+    case mir_unary:
         return p_instr->mir_unary.p_des;
     case mir_call:
         return p_instr->mir_call.p_des;
@@ -198,25 +133,11 @@ void mir_instr_drop(p_mir_instr p_instr) {
     assert(p_instr);
     list_del(&p_instr->node);
     switch (p_instr->irkind) {
-    case mir_add_op:
-    case mir_sub_op:
-    case mir_mul_op:
-    case mir_div_op:
-    case mir_mod_op:
-    case mir_and_op:
-    case mir_or_op:
-    case mir_eq_op:
-    case mir_neq_op:
-    case mir_l_op:
-    case mir_leq_op:
-    case mir_g_op:
-    case mir_geq_op:
+    case mir_binary:
         mir_operand_drop(p_instr->mir_binary.p_src1);
         mir_operand_drop(p_instr->mir_binary.p_src2);
         break;
-    case mir_minus_op:
-    case mir_not_op:
-    case mir_val_assign:
+    case mir_unary:
         mir_operand_drop(p_instr->mir_unary.p_src);
         break;
     case mir_call:

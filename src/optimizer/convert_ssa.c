@@ -239,7 +239,8 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_se
             }
 
             mir_operand_drop(p_instr->mir_load.p_addr);
-            p_instr->irkind = mir_val_assign;
+            p_instr->irkind = mir_unary;
+            p_instr->mir_unary.op = mir_val_assign;
             p_instr->mir_unary.p_des = p_instr->mir_load.p_des;
             p_instr->mir_unary.p_src = p_top_operand;
             continue;
@@ -255,7 +256,8 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_se
             p_var_list->p_base[var_index].p_current_vreg = p_vreg;
 
             mir_operand_drop(p_instr->mir_store.p_addr);
-            p_instr->irkind = mir_val_assign;
+            p_instr->irkind = mir_unary;
+            p_instr->mir_unary.op = mir_val_assign;
             p_instr->mir_unary.p_src = p_instr->mir_store.p_src;
             p_instr->mir_unary.p_des = p_vreg;
             continue;
