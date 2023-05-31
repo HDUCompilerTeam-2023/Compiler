@@ -24,6 +24,8 @@ typedef struct mir_vreg mir_vreg, *p_mir_vreg;
 typedef struct mir_vmem mir_vmem, *p_mir_vmem;
 
 typedef enum mir_instr_type mir_instr_type;
+typedef enum mir_binary_op mir_binary_op;
+typedef enum mir_unary_op mir_unary_op;
 typedef enum mir_operand_kind mir_operand_kind;
 
 typedef struct mir_instr mir_instr, *p_mir_instr;

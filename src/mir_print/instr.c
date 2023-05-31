@@ -10,25 +10,11 @@ void mir_instr_print(p_mir_instr p_instr) {
     assert(p_instr);
     printf("    ");
     switch (p_instr->irkind) {
-    case mir_add_op:
-    case mir_sub_op:
-    case mir_mul_op:
-    case mir_div_op:
-    case mir_mod_op:
-    case mir_and_op:
-    case mir_or_op:
-    case mir_eq_op:
-    case mir_neq_op:
-    case mir_l_op:
-    case mir_leq_op:
-    case mir_g_op:
-    case mir_geq_op:
-        mir_binary_instr_print(p_instr->irkind, &p_instr->mir_binary);
+    case mir_binary:
+        mir_binary_instr_print(&p_instr->mir_binary);
         break;
-    case mir_minus_op:
-    case mir_not_op:
-    case mir_val_assign:
-        mir_unary_instr_print(p_instr->irkind, &p_instr->mir_unary);
+    case mir_unary:
+        mir_unary_instr_print(&p_instr->mir_unary);
         break;
     case mir_call:
         mir_call_instr_print(&p_instr->mir_call);
@@ -42,11 +28,11 @@ void mir_instr_print(p_mir_instr p_instr) {
     printf("\n");
 }
 
-void mir_binary_instr_print(mir_instr_type instr_type, p_mir_binary_instr p_instr) {
+void mir_binary_instr_print(p_mir_binary_instr p_instr) {
     mir_vreg_print(p_instr->p_des);
     printf(" = ");
     mir_operand_print(p_instr->p_src1);
-    switch (instr_type) {
+    switch (p_instr->op) {
     case mir_add_op:
         printf("+ ");
         break;
@@ -92,10 +78,10 @@ void mir_binary_instr_print(mir_instr_type instr_type, p_mir_binary_instr p_inst
     mir_operand_print(p_instr->p_src2);
 }
 
-void mir_unary_instr_print(mir_instr_type instr_type, p_mir_unary_instr p_instr) {
+void mir_unary_instr_print(p_mir_unary_instr p_instr) {
     mir_vreg_print(p_instr->p_des);
     printf(" = ");
-    switch (instr_type) {
+    switch (p_instr->op) {
     case mir_minus_op:
         printf("- ");
         break;
