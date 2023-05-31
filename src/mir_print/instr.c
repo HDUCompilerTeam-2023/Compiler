@@ -52,6 +52,7 @@ void mir_binary_instr_print(mir_instr_type instr_type, p_mir_binary_instr p_inst
         break;
     case mir_sub_op:
         printf("- ");
+        break;
     case mir_mul_op:
         printf("* ");
         break;
