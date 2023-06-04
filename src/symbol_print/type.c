@@ -7,11 +7,11 @@ void symbol_basic_type_print(basic_type b_type) {
     if (b_type == type_void)
         printf("void");
     else if (b_type == type_int)
-        printf("int");
+        printf("i32");
     else if (b_type == type_float)
-        printf("float");
+        printf("f32");
     else if (b_type == type_str)
-        printf("string");
+        printf("str");
 }
 void symbol_type_print(p_symbol_type p_type) {
     assert(p_type);
