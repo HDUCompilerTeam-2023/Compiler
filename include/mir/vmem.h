@@ -12,11 +12,8 @@
  */
 struct mir_vmem {
     p_symbol_var p_var;
-    basic_type b_type;
 
-    size_t ref_level;
-    bool is_array;
-    size_t size;
+    p_symbol_type p_type;
 
     size_t id;
 

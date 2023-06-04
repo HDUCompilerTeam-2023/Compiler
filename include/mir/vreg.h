@@ -3,8 +3,7 @@
 
 #include <mir.h>
 struct mir_vreg {
-    basic_type b_type;
-    size_t ref_level;
+    p_symbol_type p_type;
     size_t id;
 
     union {

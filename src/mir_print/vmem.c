@@ -2,20 +2,21 @@
 #include <mir_print.h>
 
 #include <stdio.h>
+#include <symbol/type.h>
 #include <symbol/var.h>
 
 void mir_vmem_print(p_mir_vmem p_vmem) {
     assert(p_vmem);
-    if (p_vmem->is_array) {
-        printf("[%ld X ", p_vmem->size);
-        mir_basic_type_print(p_vmem->b_type);
+    if (!list_head_alone(&p_vmem->p_type->array)) {
+        printf("[%ld X ", p_vmem->p_type->size);
+        mir_basic_type_print(p_vmem->p_type->basic);
         printf("]");
     }
     else {
-        mir_basic_type_print(p_vmem->b_type);
-        for (size_t i = 0; i < p_vmem->ref_level; ++i) {
-            printf("*");
-        }
+        mir_basic_type_print(p_vmem->p_type->basic);
+    }
+    for (size_t i = 0; i < p_vmem->p_type->ref_level; ++i) {
+        printf("*");
     }
 
     if (p_vmem->p_var && p_vmem->p_var->is_global) {
