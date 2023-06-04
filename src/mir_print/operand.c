@@ -39,20 +39,20 @@ void mir_symbol_type_print(p_symbol_type p_mir_type) {
 void mir_operand_print(p_mir_operand p_operand) {
     switch (p_operand->kind) {
     case imme:
-        mir_basic_type_print(p_operand->b_type);
-        if (p_operand->ref_level > 0) {
-            for (size_t i = 0; i < p_operand->ref_level; ++i) {
+        mir_basic_type_print(p_operand->p_type->basic);
+        if (p_operand->p_type->ref_level > 0) {
+            for (size_t i = 0; i < p_operand->p_type->ref_level; ++i) {
                 printf("*");
             }
             printf(" (addr ");
             mir_vmem_print(p_operand->p_global_vmem);
             printf(") ");
         }
-        else if (p_operand->b_type == type_int)
+        else if (p_operand->p_type->basic == type_int)
             printf(" %ld ", p_operand->intconst);
-        else if (p_operand->b_type == type_float)
+        else if (p_operand->p_type->basic == type_float)
             printf(" %f ", p_operand->floatconst);
-        else if (p_operand->b_type == type_str)
+        else if (p_operand->p_type->basic == type_str)
             symbol_str_print(p_operand->strconst);
         break;
     case reg:

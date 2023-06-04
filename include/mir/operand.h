@@ -23,8 +23,7 @@ struct mir_operand {
             };
         };
     };
-    basic_type b_type;
-    size_t ref_level;
+    p_symbol_type p_type;
 };
 
 #endif

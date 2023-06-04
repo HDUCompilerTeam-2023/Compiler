@@ -4,6 +4,7 @@
 #include <symbol/var.h>
 #include <symbol/func.h>
 #include <symbol/type.h>
+#include <symbol_gen/type.h>
 void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_mir_basic_block p_basic_block, size_t current_num) {
     dfs_seq[current_num] = (convert_ssa) {
         .dom_frontier = bitmap_gen(block_num),
@@ -60,11 +61,11 @@ p_ssa_var_list_info convert_ssa_init_var_list(p_mir_func p_func) {
 static inline size_t get_var_index(p_mir_operand p_operand, p_ssa_var_list_info p_var_list) {
     if (!p_operand) return -1;
     if (p_operand->kind == reg) return -1;
-    if (p_operand->ref_level == 0) return -1;
+    if (p_operand->p_type->ref_level == 0) return -1;
 
     p_mir_vmem p_vmem = p_operand->p_global_vmem;
 
-    if (p_vmem->is_array) return -1;
+    if (!list_head_alone(&p_vmem->p_type->array) && p_vmem->p_type->ref_level == 0) return -1;
     if (p_vmem->p_var && p_vmem->p_var->is_global) return -1;
     return p_vmem->id;
 }
@@ -185,7 +186,7 @@ static inline void set_block_param_ssa_id(p_mir_basic_block p_basic_block, p_con
     p_bitmap p_phi_var = (dfs_seq + p_basic_block->dfn_id)->p_phi_var;
     for (size_t i = 0; i < var_num; i++) {
         if (bitmap_if_in(p_phi_var, i)) {
-            p_mir_vreg p_vreg = mir_vreg_gen((p_var_list->p_base + i)->p_vmem->b_type, (p_var_list->p_base + i)->p_vmem->ref_level);
+            p_mir_vreg p_vreg = mir_vreg_gen(symbol_type_copy((p_var_list->p_base + i)->p_vmem->p_type));
             mir_func_vreg_add_at(p_var_list->p_func, p_vreg, p_basic_block, list_entry(&p_basic_block->instr_list, mir_instr, node));
             (p_var_list->p_base + i)->p_current_vreg = p_vreg;
             mir_basic_block_add_param(p_basic_block, p_vreg);
@@ -250,7 +251,7 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_se
             if (var_index == -1) continue;
             assert(!p_instr->mir_store.p_offset);
 
-            p_mir_vreg p_vreg = mir_vreg_gen(p_var_list->p_base[var_index].p_vmem->b_type, p_var_list->p_base[var_index].p_vmem->ref_level);
+            p_mir_vreg p_vreg = mir_vreg_gen(symbol_type_copy(p_var_list->p_base[var_index].p_vmem->p_type));
             mir_vreg_set_instr_def(p_vreg, p_instr);
             mir_func_vreg_add_at(p_var_list->p_func, p_vreg, p_entry, p_instr);
             p_var_list->p_base[var_index].p_current_vreg = p_vreg;
