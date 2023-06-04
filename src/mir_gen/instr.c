@@ -46,7 +46,8 @@ p_mir_instr mir_call_instr_gen(p_symbol_func p_func, p_mir_param_list p_param_li
         },
         .node = list_head_init(&p_instr->node),
     };
-    mir_vreg_set_instr_def(p_des, p_instr);
+    if (p_des)
+        mir_vreg_set_instr_def(p_des, p_instr);
     return p_instr;
 }
 
