@@ -28,8 +28,11 @@ static inline void mir_basic_block_branch_print(p_mir_basic_block_branch p_branc
         mir_basic_block_branch_target_print(p_branch->p_target_2);
         break;
     case mir_ret_branch:
-        printf("ret ");
-        mir_operand_print(p_branch->p_exp);
+        printf("ret");
+        if (p_branch->p_exp) {
+            printf(" ");
+            mir_operand_print(p_branch->p_exp);
+        }
         assert(!p_branch->p_target_1);
         assert(!p_branch->p_target_2);
         break;

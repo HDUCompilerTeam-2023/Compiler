@@ -159,10 +159,14 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
         return hir2mir_exp_exec_gen(p_info, p_exp);
     }
     case hir_exp_call: {
-        p_mir_vreg p_des = mir_vreg_gen(symbol_type_var_gen(p_exp->p_func->ret_type));
-
         p_mir_param_list p_m_param_list = hir2mir_param_list_gen(p_info, p_exp->p_param_list);
+        if (p_exp->p_func->ret_type == type_void) {
+            p_mir_instr p_new_instr = mir_call_instr_gen(p_exp->p_func, p_m_param_list, NULL);
+            hir2mir_info_add_instr(p_info, p_new_instr);
 
+            return NULL;
+        }
+        p_mir_vreg p_des = mir_vreg_gen(symbol_type_var_gen(p_exp->p_func->ret_type));
         p_mir_instr p_new_instr = mir_call_instr_gen(p_exp->p_func, p_m_param_list, p_des);
         hir2mir_info_add_instr(p_info, p_new_instr);
 

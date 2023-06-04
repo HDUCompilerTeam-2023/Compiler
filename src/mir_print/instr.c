@@ -97,8 +97,10 @@ void mir_unary_instr_print(p_mir_unary_instr p_instr) {
 }
 
 void mir_call_instr_print(p_mir_call_instr p_instr) {
-    mir_vreg_print(p_instr->p_des);
-    printf(" = ");
+    if (p_instr->p_des) {
+        mir_vreg_print(p_instr->p_des);
+        printf(" = ");
+    }
     printf("@%s", p_instr->p_func->name);
     mir_param_list_print(p_instr->p_param_list);
 }

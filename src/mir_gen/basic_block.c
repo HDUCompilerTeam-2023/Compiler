@@ -13,12 +13,15 @@ static inline p_mir_basic_block_branch mir_basic_block_branch_gen() {
 }
 static inline void mir_basic_block_branch_drop(p_mir_basic_block_branch p_branch) {
     assert(p_branch);
-    if (p_branch->kind == mir_cond_branch || p_branch->kind == mir_ret_branch)
+    if (p_branch->kind == mir_ret_branch && p_branch->p_exp)
         mir_operand_drop(p_branch->p_exp);
-    if (p_branch->kind == mir_br_branch || p_branch->kind == mir_cond_branch)
+    if (p_branch->kind == mir_br_branch)
         mir_basic_block_branch_target_drop(p_branch->p_target_1);
-    if (p_branch->kind == mir_cond_branch)
+    if (p_branch->kind == mir_cond_branch) {
+        mir_operand_drop(p_branch->p_exp);
+        mir_basic_block_branch_target_drop(p_branch->p_target_1);
         mir_basic_block_branch_target_drop(p_branch->p_target_2);
+    }
     free(p_branch);
 }
 

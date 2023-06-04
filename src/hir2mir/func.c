@@ -20,6 +20,7 @@ static inline void hir2mir_func_param_gen(p_hir2mir_info p_info, p_mir_func p_fu
     }
 }
 static inline void hir2mir_func_retval_gen(p_hir2mir_info p_info, p_mir_func p_func) {
+    if (p_func->p_func_sym->ret_type == type_void) return;
     p_mir_vmem p_ret_vmem = mir_vmem_temp_gen(symbol_type_var_gen(p_func->p_func_sym->ret_type));
     mir_func_vmem_add(p_func, p_ret_vmem);
     p_info->p_ret_vmem = p_ret_vmem;
@@ -41,9 +42,14 @@ void hir2mir_func_gen(p_symbol_func p_func, p_program p_program) {
 
     hir2mir_info_add_basic_block(p_info, p_info->p_ret_block);
 
-    p_mir_vreg p_ret_val = mir_vreg_gen(symbol_type_copy(p_info->p_ret_vmem->p_type));
-    hir2mir_info_add_instr(p_info, mir_load_instr_gen(mir_operand_addr_gen(p_info->p_ret_vmem), NULL, p_ret_val));
-    mir_basic_block_set_ret(p_info->p_current_basic_block, mir_operand_vreg_gen(p_ret_val));
+    if (p_info->p_ret_vmem) {
+        p_mir_vreg p_ret_val = mir_vreg_gen(symbol_type_copy(p_info->p_ret_vmem->p_type));
+        hir2mir_info_add_instr(p_info, mir_load_instr_gen(mir_operand_addr_gen(p_info->p_ret_vmem), NULL, p_ret_val));
+        mir_basic_block_set_ret(p_info->p_current_basic_block, mir_operand_vreg_gen(p_ret_val));
+    }
+    else {
+        mir_basic_block_set_ret(p_info->p_current_basic_block, NULL);
+    }
 
     mir_func_set_block_id(p_m_func);
     mir_func_set_vreg_id(p_m_func);
