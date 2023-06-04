@@ -7,6 +7,9 @@ void symbol_type_push_array(p_symbol_type p_type, p_symbol_type_array p_array);
 p_symbol_type_array symbol_type_top_array(p_symbol_type p_type);
 p_symbol_type_array symbol_type_pop_array(p_symbol_type p_type);
 
+void symbol_type_push_ptr(p_symbol_type p_type);
+void symbol_type_pop_ptr(p_symbol_type p_type);
+
 p_symbol_type symbol_type_copy(p_symbol_type p_type);
 p_symbol_type_array symbol_type_array_copy(p_symbol_type_array p_array);
 

@@ -26,8 +26,8 @@ void mir_basic_type_print(basic_type b_type) {
 
 void mir_symbol_type_print(p_symbol_type p_mir_type) {
     assert(p_mir_type);
-    if (!list_head_alone(&p_mir_type->array)) {
-        printf("[%ld X ", symbol_type_get_size(p_mir_type));
+    if (!list_head_alone(&p_mir_type->array) || p_mir_type->ref_level > 0) {
+        printf("[%ld X ", p_mir_type->ref_level > 0 ? 0 : symbol_type_get_size(p_mir_type));
         mir_basic_type_print(p_mir_type->basic);
         printf("]*");
     }

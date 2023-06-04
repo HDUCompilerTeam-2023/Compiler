@@ -117,16 +117,16 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     case hir_exp_val: {
         // 若是变量 直接返回该变量对应的操作数
         p_mir_operand p_addr_operand = hir2mir_sym_addr(p_info, p_exp->p_var);
-        if (list_head_alone(&p_exp->p_var->p_type->array) || symbol_type_get_size(p_exp->p_var->p_type) == 0) {
+        if ((list_head_alone(&p_exp->p_var->p_type->array) && p_exp->p_var->p_type->ref_level == 0)|| p_exp->p_var->p_type->ref_level > 0) {
             p_mir_vreg p_val = mir_vreg_gen(p_addr_operand->b_type, p_addr_operand->ref_level - 1);
             p_mir_operand p_val_operand = mir_operand_vreg_gen(p_val);
             p_mir_instr p_load_val = mir_load_instr_gen(p_addr_operand, NULL, p_val);
             hir2mir_info_add_instr(p_info, p_load_val);
-            if (list_head_alone(&p_exp->p_var->p_type->array)) return p_val_operand;
+            if ((list_head_alone(&p_exp->p_var->p_type->array) && p_exp->p_var->p_type->ref_level == 0)) return p_val_operand;
             p_addr_operand = p_val_operand;
         }
         p_mir_operand p_offset = hir2mir_exp_gen(p_info, p_exp->p_offset);
-        if (!list_head_alone(&p_exp->p_type->array)) {
+        if (!list_head_alone(&p_exp->p_type->array) || p_exp->p_type->ref_level > 0) {
             if (!p_offset) return p_addr_operand;
             p_mir_vreg p_des = mir_vreg_gen(p_addr_operand->b_type, p_addr_operand->ref_level);
             p_mir_instr p_instr = mir_binary_instr_gen(mir_add_op, p_addr_operand, p_offset, p_des);
