@@ -145,6 +145,13 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
             p_mir_operand p_src = hir2mir_exp_gen(p_info, p_exp->p_src_2);
             p_mir_operand p_addr = hir2mir_sym_addr(p_info, p_exp->p_src_1->p_var);
             p_mir_operand p_off = hir2mir_exp_gen(p_info, p_exp->p_src_1->p_offset);
+            if (p_off && p_exp->p_src_1->p_var->p_type->ref_level > 0) {
+                p_mir_vreg p_val = mir_vreg_gen(p_addr->b_type, p_addr->ref_level - 1);
+                p_mir_operand p_val_operand = mir_operand_vreg_gen(p_val);
+                p_mir_instr p_load_val = mir_load_instr_gen(p_addr, NULL, p_val);
+                hir2mir_info_add_instr(p_info, p_load_val);
+                p_addr = p_val_operand;
+            }
             p_mir_instr p_instr = mir_store_instr_gen(p_addr, p_off, p_src);
             hir2mir_info_add_instr(p_info, p_instr);
             return NULL;
