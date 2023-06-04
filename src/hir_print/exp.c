@@ -131,7 +131,7 @@ void hir_exp_print(p_hir_exp p_exp) {
         break;
     case hir_exp_val:
         if (p_exp->p_offset) {
-            if (p_exp->p_type->kind == type_var) {
+            if (list_head_alone(&p_exp->p_type->array)) {
                 symbol_name_print(p_exp->p_var);
                 printf("[");
                 hir_exp_print(p_exp->p_offset);

@@ -31,28 +31,23 @@ p_syntax_init syntax_init_exp_gen(p_hir_exp p_exp) {
     return p_init;
 }
 
-void syntax_decl_type_add(p_syntax_decl p_decl, p_symbol_type p_tail) {
-    if (p_decl->p_tail) {
-        p_decl->p_tail->p_item = p_tail;
-        if (p_tail->kind == type_arrary) {
-            assert(p_decl->p_type->kind == type_arrary);
-            p_symbol_type p_node = p_decl->p_type;
-            while (p_node != p_tail) {
-                p_node->size *= p_tail->size;
-                p_node = p_node->p_item;
-            }
-        }
-    }
-    else
-        p_decl->p_type = p_tail;
-    p_decl->p_tail = p_tail;
+void syntax_decl_type_add(p_syntax_decl p_decl, p_syntax_type_array p_tail) {
+    p_tail->p_prev = p_decl->p_array;
+    p_decl->p_array = p_tail;
+}
+p_syntax_type_array syntax_type_array_gen(uint64_t size) {
+    p_syntax_type_array p_array = malloc(sizeof(*p_array));
+    *p_array = (syntax_type_array) {
+        .size = size,
+        .p_prev = NULL,
+    };
+    return p_array;
 }
 p_syntax_decl syntax_decl_gen(char *name) {
     p_syntax_decl p_decl = malloc(sizeof(*p_decl));
     *p_decl = (syntax_decl) {
         .name = name,
-        .p_type = NULL,
-        .p_tail = NULL,
+        .p_array = NULL,
         .p_init = NULL,
         .node = list_head_init(&p_decl->node),
     };
@@ -66,7 +61,7 @@ p_syntax_decl syntax_decl_arr(p_syntax_decl p_decl, p_hir_exp p_exp) {
         size = p_exp->intconst;
         free(p_exp);
     }
-    p_symbol_type p_arrary = symbol_type_arrary_gen(size);
+    p_syntax_type_array p_arrary = syntax_type_array_gen(size);
     syntax_decl_type_add(p_decl, p_arrary);
 
     return p_decl;
@@ -74,6 +69,18 @@ p_syntax_decl syntax_decl_arr(p_syntax_decl p_decl, p_hir_exp p_exp) {
 p_syntax_decl syntax_decl_init(p_syntax_decl p_decl, p_syntax_init p_init) {
     p_decl->p_init = p_init;
     return p_decl;
+}
+
+p_symbol_type syntax_type_trans(p_syntax_type_array p_array, basic_type b_type) {
+    p_symbol_type p_type = symbol_type_var_gen(b_type);
+    while (p_array) {
+        p_syntax_type_array p_del = p_array;
+        p_array = p_array->p_prev;
+        p_symbol_type_array p_add = symbol_type_array_gen(p_del->size);
+        symbol_type_push_array(p_type, p_add);
+        free(p_del);
+    }
+    return p_type;
 }
 
 p_syntax_decl_list syntax_decl_list_gen(void) {
@@ -97,12 +104,12 @@ p_syntax_decl_list syntax_decl_list_set(p_syntax_decl_list p_decl_list, bool is_
 }
 
 p_syntax_param_decl syntax_param_decl_gen(basic_type type, p_syntax_decl p_decl) {
-    syntax_decl_type_add(p_decl, symbol_type_var_gen(type));
+    p_symbol_type p_type = syntax_type_trans(p_decl->p_array, type);
 
     p_syntax_param_decl p_param_decl = malloc(sizeof(*p_param_decl));
     *p_param_decl = (syntax_param_decl) {
         .name = p_decl->name,
-        .p_type = p_decl->p_type,
+        .p_type = p_type,
         .node = list_head_init(&p_param_decl->node),
     };
     free(p_decl);
@@ -188,49 +195,51 @@ static inline void syntax_init_list_trans(p_symbol_type p_type, basic_type basic
         list_del(&p_init->node);
 
         if (p_init->is_exp) {
-            assert(offset < p_type->size);
+            assert(offset < symbol_type_get_size(p_type));
             assert(basic == hir_exp_get_basic(p_init->p_exp));
             memory[offset++] = p_init->p_exp;
         }
         else {
-            assert(p_type->kind == type_arrary);
-            assert(offset % p_type->p_item->size == 0);
-            syntax_init_list_trans(p_type->p_item, basic, p_init, memory + offset);
-            offset += p_type->p_item->size;
+            assert(!list_head_alone(&p_type->array));
+            p_symbol_type_array p_pop = symbol_type_pop_array(p_type);
+            assert(offset % symbol_type_get_size(p_type) == 0);
+            syntax_init_list_trans(p_type, basic, p_init, memory + offset);
+            offset += symbol_type_get_size(p_type);
+            symbol_type_push_array(p_type, p_pop);
         }
         free(p_init);
     }
-    for (; offset < p_type->size; ++offset) {
+    for (; offset < symbol_type_get_size(p_type); ++offset) {
         if (basic == type_int) memory[offset] = hir_exp_int_gen(0);
         else
             memory[offset] = hir_exp_float_gen(0);
     }
 }
-static inline p_syntax_init_mem syntax_init_trans(p_syntax_decl p_decl) {
-    if (!p_decl->p_init)
+static inline p_syntax_init_mem syntax_init_trans(p_syntax_init p_init, p_symbol_type p_type) {
+    if (!p_init)
         return NULL;
 
-    p_syntax_init_mem p_init = syntax_init_mem_gen(p_decl->p_type->size);
-    if (p_decl->p_init->is_exp) {
-        assert(p_decl->p_type->kind == type_var);
-        assert(p_decl->p_type->basic == hir_exp_get_basic(p_decl->p_init->p_exp));
-        p_init->memory[0] = p_decl->p_init->p_exp;
+    p_syntax_init_mem p_init_mem = syntax_init_mem_gen(symbol_type_get_size(p_type));
+    if (p_init->is_exp) {
+        assert(list_head_alone(&p_type->array));
+        assert(p_type->basic == hir_exp_get_basic(p_init->p_exp));
+        p_init_mem->memory[0] = p_init->p_exp;
     }
     else {
-        assert(p_decl->p_type->kind == type_arrary);
-        syntax_init_list_trans(p_decl->p_type, p_decl->p_tail->basic, p_decl->p_init, p_init->memory);
+        assert(!list_head_alone(&p_type->array));
+        syntax_init_list_trans(p_type, p_type->basic, p_init, p_init_mem->memory);
     }
-    free(p_decl->p_init);
-    return p_init;
+    free(p_init);
+    return p_init_mem;
 }
 p_hir_block syntax_local_vardecl(p_symbol_table p_table, p_hir_block p_block, p_syntax_decl_list p_decl_list) {
     while (!list_head_alone(&p_decl_list->decl)) {
         p_syntax_decl p_decl = list_entry(p_decl_list->decl.p_next, syntax_decl, node);
         list_del(&p_decl->node);
 
-        syntax_decl_type_add(p_decl, symbol_type_var_gen(p_decl_list->type));
+        p_symbol_type p_type = syntax_type_trans(p_decl->p_array, p_decl_list->type);
 
-        p_syntax_init_mem p_h_init = syntax_init_trans(p_decl);
+        p_syntax_init_mem p_h_init = syntax_init_trans(p_decl->p_init, p_type);
         if (p_decl_list->is_const) {
             p_symbol_init p_init = symbol_init_gen(p_h_init->size, p_decl_list->type);
             for (size_t i = 0; i < p_h_init->size; ++i) {
@@ -243,20 +252,16 @@ p_hir_block syntax_local_vardecl(p_symbol_table p_table, p_hir_block p_block, p_
                 }
                 symbol_init_add(p_init, i, init_val);
             }
-            p_symbol_var p_var = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, p_init != NULL, p_init);
+            p_symbol_var p_var = symbol_var_gen(p_decl->name, p_type, p_decl_list->is_const, p_init != NULL, p_init);
             symbol_table_var_add(p_table, p_var); // false
             symbol_table_constant_add(p_table, p_var);
         }
         else {
-            p_symbol_var p_var = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, false, NULL);
+            p_symbol_var p_var = symbol_var_gen(p_decl->name, p_type, p_decl_list->is_const, false, NULL);
             symbol_table_var_add(p_table, p_var); // false
             symbol_func_add_variable(p_table->p_func, p_var);
             if (p_h_init) {
-                p_symbol_type p_var_type = p_var->p_type;
-                while (p_var_type->kind == type_arrary) {
-                    p_var_type = p_var_type->p_item;
-                }
-                if (p_var->p_type->kind == type_var) {
+                if (list_head_alone(&p_var->p_type->array)) {
                     p_hir_exp p_lval = hir_exp_val_gen(p_var);
                     p_hir_exp p_rval = p_h_init->memory[0];
                     p_h_init->memory[0] = NULL;
@@ -266,7 +271,8 @@ p_hir_block syntax_local_vardecl(p_symbol_table p_table, p_hir_block p_block, p_
                 else {
                     for (size_t i = 0; i < p_h_init->size; ++i) {
                         p_hir_exp p_lval = hir_exp_val_gen(p_var);
-                        p_lval->p_type = p_var_type;
+                        symbol_type_drop(p_lval->p_type);
+                        p_lval->p_type = symbol_type_var_gen(p_var->p_type->basic);
                         p_lval->p_offset = hir_exp_int_gen(i);
                         p_hir_exp p_rval = p_h_init->memory[i];
                         p_h_init->memory[i] = NULL;
@@ -289,10 +295,10 @@ void syntax_global_vardecl(p_symbol_table p_table, p_syntax_decl_list p_decl_lis
         p_syntax_decl p_decl = list_entry(p_decl_list->decl.p_next, syntax_decl, node);
         list_del(&p_decl->node);
 
-        syntax_decl_type_add(p_decl, symbol_type_var_gen(p_decl_list->type));
+        p_symbol_type p_type = syntax_type_trans(p_decl->p_array, p_decl_list->type);
 
-        p_syntax_init_mem p_h_init = syntax_init_trans(p_decl);
-        p_symbol_init p_init = symbol_init_gen(p_decl->p_type->size, p_decl_list->type);
+        p_syntax_init_mem p_h_init = syntax_init_trans(p_decl->p_init, p_type);
+        p_symbol_init p_init = symbol_init_gen(symbol_type_get_size(p_type), p_type->basic);
         if (p_h_init) {
             for (size_t i = 0; i < p_init->size; ++i) {
                 symbol_init_val init_val;
@@ -318,7 +324,7 @@ void syntax_global_vardecl(p_symbol_table p_table, p_syntax_decl_list p_decl_lis
             }
         }
         syntax_init_mem_drop(p_h_init);
-        p_symbol_var p_var = symbol_var_gen(p_decl->name, p_decl->p_type, p_decl_list->is_const, true, p_init);
+        p_symbol_var p_var = symbol_var_gen(p_decl->name, p_type, p_decl_list->is_const, true, p_init);
         symbol_table_var_add(p_table, p_var); // true
         if (p_decl_list->is_const) {
             symbol_table_constant_add(p_table, p_var);
@@ -335,7 +341,7 @@ void syntax_global_vardecl(p_symbol_table p_table, p_syntax_decl_list p_decl_lis
 
 void syntax_rtlib_decl(p_symbol_table p_table, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2, bool is_va) {
     p_symbol_func p_func = symbol_func_gen(name, type, is_va);
-    symbol_table_func_add(p_table, p_func); //true
+    symbol_table_func_add(p_table, p_func); // true
     p_table->p_func = p_func;
 
     symbol_table_zone_push(p_table);
