@@ -319,22 +319,22 @@ CompUnitInit : /* *empty */ {
                      syntax_rtlib_decl(extra->p_table, type_int, "getch", NULL, NULL, false);
                      syntax_rtlib_decl(extra->p_table, type_float, "getfloat", NULL, NULL, false);
 
-                     p_symbol_type p_type = symbol_type_arrary_gen(0);
-                     p_type->p_item = symbol_type_var_gen(type_int);
+                     p_symbol_type p_type = symbol_type_var_gen(type_int);
+                     symbol_type_push_array(p_type, symbol_type_array_gen(0));
                      syntax_rtlib_decl(extra->p_table, type_int, "getarray", p_type, NULL, false);
-                     p_type = symbol_type_arrary_gen(0);
-                     p_type->p_item = symbol_type_var_gen(type_float);
+                     p_type = symbol_type_var_gen(type_float);
+                     symbol_type_push_array(p_type, symbol_type_array_gen(0));
                      syntax_rtlib_decl(extra->p_table, type_int, "getfarray", p_type, NULL, false);
 
                      syntax_rtlib_decl(extra->p_table, type_void, "putint", symbol_type_var_gen(type_int), NULL, false);
                      syntax_rtlib_decl(extra->p_table, type_void, "putch", symbol_type_var_gen(type_int), NULL, false);
                      syntax_rtlib_decl(extra->p_table, type_void, "putfloat", symbol_type_var_gen(type_float), NULL, false);
 
-                     p_type = symbol_type_arrary_gen(0);
-                     p_type->p_item = symbol_type_var_gen(type_int);
+                     p_type = symbol_type_var_gen(type_int);
+                     symbol_type_push_array(p_type, symbol_type_array_gen(0));
                      syntax_rtlib_decl(extra->p_table, type_void, "putarray", symbol_type_var_gen(type_int), p_type, false);
-                     p_type = symbol_type_arrary_gen(0);
-                     p_type->p_item = symbol_type_var_gen(type_float);
+                     p_type = symbol_type_var_gen(type_float);
+                     symbol_type_push_array(p_type, symbol_type_array_gen(0));
                      syntax_rtlib_decl(extra->p_table, type_void, "putfarray", symbol_type_var_gen(type_int), p_type, false);
 
                      syntax_rtlib_decl(extra->p_table, type_void, "putf", symbol_type_var_gen(type_str), NULL, true);

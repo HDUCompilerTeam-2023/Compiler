@@ -9,7 +9,7 @@ static inline basic_type exp_basic(p_hir_exp p_exp) {
         return p_exp->p_func->ret_type;
     }
     if (p_exp->kind == hir_exp_val) {
-        assert(p_exp->p_type->kind == type_var);
+        assert(list_head_alone(&p_exp->p_type->array));
         return p_exp->p_type->basic;
     }
     return p_exp->basic;
@@ -18,7 +18,7 @@ static inline basic_type exp_basic(p_hir_exp p_exp) {
 static inline p_hir_exp exp_val_const(p_hir_exp p_exp) {
     if (!p_exp->p_var->is_const)
         return p_exp;
-    if (p_exp->p_type->kind == type_arrary)
+    if (!list_head_alone(&p_exp->p_type->array))
         return p_exp;
 
     size_t offset = 0;
@@ -34,7 +34,7 @@ static inline p_hir_exp exp_val_const(p_hir_exp p_exp) {
     offset = p_exp->p_offset->intconst;
 
 to_const:
-    assert(offset < p_exp->p_var->p_type->size);
+    assert(offset < symbol_type_get_size(p_exp->p_var->p_type));
     p_hir_exp p_val;
     if (p_exp->p_type->basic == type_int) {
         p_val = hir_exp_int_gen(p_exp->p_var->p_init->memory[offset].i);
@@ -229,12 +229,17 @@ p_hir_exp hir_exp_uexec_gen(hir_exp_op op, p_hir_exp p_src_1) {
 }
 
 static inline bool param_arr_check(p_symbol_type p_type_1, p_symbol_type p_type_2) {
-    while (p_type_1->kind == type_arrary && p_type_2->kind == type_arrary) {
-        p_type_2 = p_type_2->p_item;
-        p_type_1 = p_type_1->p_item;
-        if (p_type_1->size != p_type_2->size) return false;
+    p_list_head p_node_1, p_node_2 = p_type_2->array.p_next;
+    list_for_each(p_node_1, &p_type_1->array) {
+        if (p_node_2 == &p_type_2->array) return false;
+        p_symbol_type_array p_array_1, p_array_2;
+        p_array_1 = list_entry(p_node_1, symbol_type_array, node);
+        p_array_2 = list_entry(p_node_2, symbol_type_array, node);
+        p_node_2 = p_node_2->p_next;
+        if (symbol_type_array_get_size(p_array_1) == 0 || symbol_type_array_get_size(p_array_2) == 0) continue;
+        if (symbol_type_array_get_size(p_array_1) != symbol_type_array_get_size(p_array_2)) return false;
     }
-    return (p_type_2->kind == type_var && p_type_1->kind == type_var);
+    return (p_node_2 == &p_type_2->array);
 }
 
 p_hir_exp hir_exp_call_gen(p_symbol_func p_func, p_hir_param_list p_param_list) {
@@ -256,7 +261,7 @@ p_hir_exp hir_exp_call_gen(p_symbol_func p_func, p_hir_param_list p_param_list) 
         p_symbol_type p_param_type = list_entry(p_node_Fparam, symbol_var, node)->p_type;
 
         p_hir_exp p_param = list_entry(p_node, hir_param, node)->p_exp;
-        if (p_param_type->kind == type_arrary) {
+        if (!list_head_alone(&p_param_type->array)) {
             assert(p_param->kind == hir_exp_val);
             assert(param_arr_check(p_param_type, p_param->p_type));
         }
@@ -276,20 +281,22 @@ p_hir_exp hir_exp_val_gen(p_symbol_var p_var) {
         .kind = hir_exp_val,
         .p_var = p_var,
         .p_offset = NULL,
-        .p_type = p_var->p_type,
+        .p_type = symbol_type_copy(p_var->p_type),
     };
     return exp_val_const(p_exp);
 }
 p_hir_exp hir_exp_val_offset(p_hir_exp p_val, p_hir_exp p_offset) {
-    assert(p_val->p_type->kind == type_arrary);
-    p_hir_exp p_length = hir_exp_int_gen(p_val->p_type->p_item->size);
+    assert(!list_head_alone(&p_val->p_type->array));
+    p_symbol_type_array p_pop = symbol_type_pop_array(p_val->p_type);
+    symbol_type_array_drop(p_pop);
+    p_hir_exp p_length = hir_exp_int_gen(symbol_type_get_size(p_val->p_type));
+
     p_offset = hir_exp_exec_gen(hir_exp_op_mul, p_offset, p_length);
     if (p_val->p_offset) {
         p_offset = hir_exp_exec_gen(hir_exp_op_add, p_val->p_offset, p_offset);
     }
 
     p_val->p_offset = p_offset;
-    p_val->p_type = p_val->p_type->p_item;
     return exp_val_const(p_val);
 }
 
@@ -398,6 +405,7 @@ void hir_exp_drop(p_hir_exp p_exp) {
         if (p_exp->p_offset) {
             hir_exp_drop(p_exp->p_offset);
         }
+        symbol_type_drop(p_exp->p_type);
         break;
     case hir_exp_num:
         break;

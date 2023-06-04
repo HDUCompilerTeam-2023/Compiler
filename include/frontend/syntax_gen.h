@@ -21,10 +21,15 @@ p_syntax_init syntax_init_list_add(p_syntax_init p_list, p_syntax_init p_init);
 p_symbol_func syntax_func_head(p_symbol_table p_table, basic_type type, char *name, p_syntax_param_list p_param_list);
 p_symbol_func syntax_func_end(p_symbol_table p_table, p_symbol_func p_func, p_hir_block p_block);
 
+struct syntax_type_array {
+    uint64_t size;
+    p_syntax_type_array p_prev;
+};
+p_syntax_type_array syntax_type_array_gen(uint64_t size);
+
 struct syntax_decl {
     char *name;
-    p_symbol_type p_type;
-    p_symbol_type p_tail;
+    p_syntax_type_array p_array;
     p_syntax_init p_init;
 
     list_head node;
@@ -32,6 +37,8 @@ struct syntax_decl {
 p_syntax_decl syntax_decl_gen(char *name);
 p_syntax_decl syntax_decl_arr(p_syntax_decl p_decl, p_hir_exp p_exp);
 p_syntax_decl syntax_decl_init(p_syntax_decl p_decl, p_syntax_init p_init);
+
+p_symbol_type syntax_type_trans(p_syntax_type_array p_array, basic_type b_type);
 
 struct syntax_decl_list {
     list_head decl;

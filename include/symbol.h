@@ -16,5 +16,6 @@ typedef enum {
     type_float,
 } basic_type;
 typedef struct symbol_type symbol_type, *p_symbol_type;
+typedef struct symbol_type_array symbol_type_array, *p_symbol_type_array;
 
 #endif

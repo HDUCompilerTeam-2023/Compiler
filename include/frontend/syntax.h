@@ -7,6 +7,7 @@ typedef struct syntax_init syntax_init, *p_syntax_init;
 
 typedef struct syntax_funchead syntax_funchead, *p_syntax_funchead;
 
+typedef struct syntax_type_array syntax_type_array, *p_syntax_type_array;
 typedef struct syntax_decl syntax_decl, *p_syntax_decl;
 typedef struct syntax_decl_list syntax_decl_list, *p_syntax_decl_list;
 
