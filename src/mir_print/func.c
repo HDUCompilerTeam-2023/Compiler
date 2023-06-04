@@ -1,6 +1,7 @@
 #include <mir/basic_block.h>
 #include <mir/func.h>
 #include <mir_print.h>
+#include <symbol_print.h>
 
 #include <mir/instr.h> // 包含问题？
 #include <stdio.h>
@@ -12,13 +13,13 @@
 void mir_func_print(p_mir_func p_func) {
     assert(p_func);
     printf("define ");
-    mir_basic_type_print(p_func->p_func_sym->ret_type);
+    symbol_basic_type_print(p_func->p_func_sym->ret_type);
     printf(" %s (", p_func->p_func_sym->name);
     p_list_head p_node;
     list_for_each(p_node, &p_func->p_func_sym->param) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        mir_symbol_type_print(p_var->p_type);
-        printf("%%l%ld", p_var->id);
+        symbol_type_print(p_var->p_type);
+        printf(" %%l%ld", p_var->id);
         if (p_node != p_func->p_func_sym->param.p_prev) printf(", ");
     }
     printf(")\n");
@@ -28,14 +29,14 @@ void mir_func_print(p_mir_func p_func) {
     list_for_each(p_node, &p_func->p_func_sym->param) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         printf("param ");
-        mir_symbol_type_print(p_var->p_type);
-        printf("%%l%ld\n", p_var->id);
+        symbol_type_print(p_var->p_type);
+        printf(" %%l%ld\n", p_var->id);
     }
     list_for_each(p_node, &p_func->p_func_sym->variable) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         printf("local ");
-        mir_symbol_type_print(p_var->p_type);
-        printf("%%l%ld\n", p_var->id);
+        symbol_type_print(p_var->p_type);
+        printf(" %%l%ld\n", p_var->id);
     }
 
     list_for_each(p_node, &p_func->block) {

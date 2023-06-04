@@ -15,20 +15,19 @@ void symbol_basic_type_print(basic_type b_type) {
 }
 void symbol_type_print(p_symbol_type p_type) {
     assert(p_type);
-    for (uint64_t i  = 0; i < p_type->ref_level; ++i) {
-        printf("arr[0] -> ");
+    uint64_t arr_level = 0;
+    p_list_head p_node;
+    list_for_each(p_node, &p_type->array) {
+        p_symbol_type_array p_array = list_entry(p_node, symbol_type_array, node);
+        printf("[%ld X ", symbol_type_array_get_size(p_array));
+        ++arr_level;
     }
-    if (list_head_alone(&p_type->array)) {
-        assert(p_type->basic != type_void);
-        symbol_basic_type_print(p_type->basic);
+    assert(p_type->basic != type_void);
+    symbol_basic_type_print(p_type->basic);
+    for(uint64_t i = 0; i < arr_level; ++i) {
+        printf("]");
     }
-    else {
-        p_list_head p_node;
-        list_for_each(p_node, &p_type->array) {
-            p_symbol_type_array p_array = list_entry(p_node, symbol_type_array, node);
-            printf("arr[%ld] -> ", symbol_type_array_get_size(p_array));
-        }
-        assert(p_type->basic != type_void);
-        symbol_basic_type_print(p_type->basic);
+    for (uint64_t i = 0; i < p_type->ref_level; ++i) {
+        printf("*");
     }
 }

@@ -49,8 +49,8 @@ void program_mir_print(p_program p_program) {
     list_for_each(p_node, &p_program->variable) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         printf("global ");
-        mir_symbol_type_print(p_var->p_type);
-        printf("%s ", p_var->name);
+        symbol_type_print(p_var->p_type);
+        printf(" %s ", p_var->name);
         if (p_var->p_init) {
             printf("= {");
             for (size_t i = 0; i < p_var->p_init->size; i++) {
