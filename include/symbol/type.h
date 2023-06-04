@@ -13,6 +13,7 @@ struct symbol_type_array {
 
 struct symbol_type {
     list_head array;
+    uint64_t ref_level;
     basic_type basic;
     uint64_t size;
 };

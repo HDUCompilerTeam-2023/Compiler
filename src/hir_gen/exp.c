@@ -9,7 +9,7 @@ static inline basic_type exp_basic(p_hir_exp p_exp) {
         return p_exp->p_func->ret_type;
     }
     if (p_exp->kind == hir_exp_val) {
-        assert(list_head_alone(&p_exp->p_type->array));
+        assert(list_head_alone(&p_exp->p_type->array) && p_exp->p_type->ref_level == 0);
         return p_exp->p_type->basic;
     }
     return p_exp->basic;
@@ -18,7 +18,7 @@ static inline basic_type exp_basic(p_hir_exp p_exp) {
 static inline p_hir_exp exp_val_const(p_hir_exp p_exp) {
     if (!p_exp->p_var->is_const)
         return p_exp;
-    if (!list_head_alone(&p_exp->p_type->array))
+    if (!list_head_alone(&p_exp->p_type->array) || p_exp->p_type->ref_level > 0)
         return p_exp;
 
     size_t offset = 0;
@@ -229,6 +229,8 @@ p_hir_exp hir_exp_uexec_gen(hir_exp_op op, p_hir_exp p_src_1) {
 }
 
 static inline bool param_arr_check(p_symbol_type p_type_1, p_symbol_type p_type_2) {
+    if (p_type_1->ref_level != p_type_2->ref_level) return false;
+    if (p_type_1->basic != p_type_2->basic) return false;
     p_list_head p_node_1, p_node_2 = p_type_2->array.p_next;
     list_for_each(p_node_1, &p_type_1->array) {
         if (p_node_2 == &p_type_2->array) return false;
@@ -261,8 +263,7 @@ p_hir_exp hir_exp_call_gen(p_symbol_func p_func, p_hir_param_list p_param_list) 
         p_symbol_type p_param_type = list_entry(p_node_Fparam, symbol_var, node)->p_type;
 
         p_hir_exp p_param = list_entry(p_node, hir_param, node)->p_exp;
-        if (!list_head_alone(&p_param_type->array)) {
-            assert(p_param->kind == hir_exp_val);
+        if (p_param->kind == hir_exp_val) {
             assert(param_arr_check(p_param_type, p_param->p_type));
         }
         else {
@@ -283,12 +284,16 @@ p_hir_exp hir_exp_val_gen(p_symbol_var p_var) {
         .p_offset = NULL,
         .p_type = symbol_type_copy(p_var->p_type),
     };
+    if (!list_head_alone(&p_exp->p_type->array) && p_exp->p_type->ref_level == 0) {
+        p_symbol_type_array p_pop = symbol_type_pop_array(p_exp->p_type);
+        symbol_type_array_drop(p_pop);
+        symbol_type_push_ptr(p_exp->p_type);
+    }
     return exp_val_const(p_exp);
 }
 p_hir_exp hir_exp_val_offset(p_hir_exp p_val, p_hir_exp p_offset) {
-    assert(!list_head_alone(&p_val->p_type->array));
-    p_symbol_type_array p_pop = symbol_type_pop_array(p_val->p_type);
-    symbol_type_array_drop(p_pop);
+    assert(p_val->p_type->ref_level == 1);
+    symbol_type_pop_ptr(p_val->p_type);
     p_hir_exp p_length = hir_exp_int_gen(symbol_type_get_size(p_val->p_type));
 
     p_offset = hir_exp_exec_gen(hir_exp_op_mul, p_offset, p_length);
@@ -297,6 +302,11 @@ p_hir_exp hir_exp_val_offset(p_hir_exp p_val, p_hir_exp p_offset) {
     }
 
     p_val->p_offset = p_offset;
+    if (!list_head_alone(&p_val->p_type->array)) {
+        p_symbol_type_array p_pop = symbol_type_pop_array(p_val->p_type);
+        symbol_type_array_drop(p_pop);
+        symbol_type_push_ptr(p_val->p_type);
+    }
     return exp_val_const(p_val);
 }
 

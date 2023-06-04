@@ -3,6 +3,7 @@
 p_symbol_type symbol_type_var_gen(basic_type basic) {
     p_symbol_type p_type = malloc(sizeof(*p_type));
     *p_type = (symbol_type) {
+        .ref_level = 0,
         .array = list_init_head(&p_type->array),
         .basic = basic,
         .size = 1,
@@ -41,19 +42,18 @@ p_symbol_type_array symbol_type_top_array(p_symbol_type p_type) {
     return p_array;
 }
 p_symbol_type_array symbol_type_pop_array(p_symbol_type p_type) {
+    assert(p_type->ref_level == 0);
     p_symbol_type_array p_array = list_entry(p_type->array.p_next, symbol_type_array, node);
     list_del(&p_array->node);
-    if (p_array->size == 0) {
-        p_type->size = 1;
-        p_list_head p_node;
-        list_for_each(p_node, &p_type->array) {
-            p_type->size *= list_entry(p_node, symbol_type_array, node)->size;
-        }
-    }
-    else {
-        p_type->size /= p_array->size;
-    }
+    p_type->size /= p_array->size;
     return p_array;
+}
+
+void symbol_type_push_ptr(p_symbol_type p_type) {
+    ++(p_type->ref_level);
+}
+void symbol_type_pop_ptr(p_symbol_type p_type) {
+    --(p_type->ref_level);
 }
 
 p_symbol_type symbol_type_copy(p_symbol_type p_type) {
@@ -64,6 +64,7 @@ p_symbol_type symbol_type_copy(p_symbol_type p_type) {
         p_symbol_type_array p_array_copy = symbol_type_array_copy(p_array);
         symbol_type_push_array(p_copy, p_array_copy);
     }
+    p_copy->ref_level = p_type->ref_level;
 
     return p_copy;
 }
