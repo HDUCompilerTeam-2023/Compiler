@@ -59,6 +59,10 @@ PHONY += build
 rebuild: clean build
 PHONY += rebuild
 
+counter:
+	@  echo ": line count" \
+	&& find $(CSRC_DIR) $(INC_PATH) -name "*.[ch]" | xargs cat | wc -l | xargs echo "  >"
+
 clean:
 	@echo '- CLEAN $(CLEAN)'
 	@rm -rf $(CLEAN)
