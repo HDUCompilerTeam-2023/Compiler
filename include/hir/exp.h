@@ -40,7 +40,6 @@ struct hir_exp {
         struct {
             p_symbol_var p_var;
             p_hir_exp p_offset;
-            p_symbol_type p_type;
         }; // call val
         struct {
             p_symbol_func p_func;
@@ -52,7 +51,7 @@ struct hir_exp {
             p_symbol_str p_str;
         };
     };
-    basic_type basic;
+    p_symbol_type p_type;
 };
 
 #endif

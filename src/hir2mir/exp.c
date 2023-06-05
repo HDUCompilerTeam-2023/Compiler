@@ -48,7 +48,7 @@ static inline p_mir_operand hir2mir_exp_exec_gen(p_hir2mir_info p_info, p_hir_ex
         assert(0);
     }
 
-    p_mir_vreg p_vreg = mir_vreg_gen(symbol_type_var_gen(p_exp->basic));
+    p_mir_vreg p_vreg = mir_vreg_gen(symbol_type_var_gen(p_exp->p_type->basic));
     p_mir_instr p_instr = NULL;
     switch (p_exp->op) {
     case hir_exp_op_add:
@@ -104,13 +104,13 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     if (!p_exp) return NULL;
     switch (p_exp->kind) {
     case hir_exp_num: // 若是常量 直接返回该常量对应的操作数
-        if (p_exp->basic == type_int) {
+        if (p_exp->p_type->basic == type_int) {
             return mir_operand_int_gen(p_exp->intconst);
         }
-        if (p_exp->basic == type_float) {
+        if (p_exp->p_type->basic == type_float) {
             return mir_operand_float_gen(p_exp->floatconst);
         }
-        if (p_exp->basic == type_str) {
+        if (p_exp->p_type->basic == type_str) {
             return mir_operand_str_gen(p_exp->p_str);
         }
         assert(0);

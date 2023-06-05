@@ -20,103 +20,103 @@ void hir_exp_print(p_hir_exp p_exp) {
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_add:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("+ ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_sub:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("- ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_mul:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("* ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_div:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("/ ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_mod:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("%% ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_bool_and:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("&& ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_bool_or:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("|| ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_eq:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("== ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_neq:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("!= ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_l:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("< ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_leq:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("<= ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_g:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("> ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_geq:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf(">= ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
         case hir_exp_op_bool_not:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("! ");
             hir_exp_print(p_exp->p_src_1);
             break;
         case hir_exp_op_minus:
-            if (p_exp->basic == type_float) printf("f");
+            if (p_exp->p_type->basic == type_float) printf("f");
             printf("minus ");
             hir_exp_print(p_exp->p_src_1);
             break;
@@ -149,9 +149,9 @@ void hir_exp_print(p_hir_exp p_exp) {
         }
         break;
     case hir_exp_num:
-        if (p_exp->basic == type_float)
+        if (p_exp->p_type->basic == type_float)
             printf("%lf", p_exp->floatconst);
-        else if (p_exp->basic == type_str)
+        else if (p_exp->p_type->basic == type_str)
             symbol_str_print(p_exp->p_str);
         else
             printf("%ld", p_exp->intconst);

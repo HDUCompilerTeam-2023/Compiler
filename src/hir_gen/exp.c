@@ -5,14 +5,10 @@
 #include <symbol_gen.h>
 
 static inline basic_type exp_basic(p_hir_exp p_exp) {
-    if (p_exp->kind == hir_exp_call) {
-        return p_exp->p_func->ret_type;
-    }
     if (p_exp->kind == hir_exp_val) {
         assert(list_head_alone(&p_exp->p_type->array) && p_exp->p_type->ref_level == 0);
-        return p_exp->p_type->basic;
     }
-    return p_exp->basic;
+    return p_exp->p_type->basic;
 }
 
 static inline p_hir_exp exp_val_const(p_hir_exp p_exp) {
@@ -30,7 +26,7 @@ static inline p_hir_exp exp_val_const(p_hir_exp p_exp) {
     if (p_exp->p_offset->kind != hir_exp_num)
         return p_exp;
 
-    assert(p_exp->p_offset->basic == type_int);
+    assert(p_exp->p_offset->p_type->basic == type_int);
     offset = p_exp->p_offset->intconst;
 
 to_const:
@@ -61,7 +57,7 @@ p_hir_exp hir_exp_assign_gen(p_hir_exp lval, p_hir_exp rval) {
         .op = hir_exp_op_assign,
         .p_src_1 = lval,
         .p_src_2 = rval,
-        .basic = exp_basic(lval),
+        .p_type = symbol_type_var_gen(lval->p_type->basic),
     };
     return p_exp;
 }
@@ -79,77 +75,77 @@ p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) 
     if (p_src_1->kind == hir_exp_num && p_src_2->kind == hir_exp_num) {
         switch (op) {
         case hir_exp_op_add:
-            if (p_src_1->basic == type_int) {
-                if (p_src_2->basic == type_int) {
+            if (p_src_1->p_type->basic == type_int) {
+                if (p_src_2->p_type->basic == type_int) {
                     p_src_1->intconst = p_src_1->intconst + p_src_2->intconst;
                 }
-                else if (p_src_2->basic == type_float) {
-                    p_src_1->basic = type_float;
+                else if (p_src_2->p_type->basic == type_float) {
+                    p_src_1->p_type->basic = type_float;
                     p_src_1->floatconst = p_src_1->intconst + p_src_2->floatconst;
                 }
             }
-            else if (p_src_1->basic == type_float) {
-                if (p_src_2->basic == type_int) {
+            else if (p_src_1->p_type->basic == type_float) {
+                if (p_src_2->p_type->basic == type_int) {
                     p_src_1->floatconst = p_src_1->floatconst + p_src_2->intconst;
                 }
-                else if (p_src_2->basic == type_float) {
+                else if (p_src_2->p_type->basic == type_float) {
                     p_src_1->floatconst = p_src_1->floatconst + p_src_2->floatconst;
                 }
             }
             break;
         case hir_exp_op_sub:
-            if (p_src_1->basic == type_int) {
-                if (p_src_2->basic == type_int) {
+            if (p_src_1->p_type->basic == type_int) {
+                if (p_src_2->p_type->basic == type_int) {
                     p_src_1->intconst = p_src_1->intconst - p_src_2->intconst;
                 }
-                else if (p_src_2->basic == type_float) {
-                    p_src_1->basic = type_float;
+                else if (p_src_2->p_type->basic == type_float) {
+                    p_src_1->p_type->basic = type_float;
                     p_src_1->floatconst = p_src_1->intconst - p_src_2->floatconst;
                 }
             }
-            else if (p_src_1->basic == type_float) {
-                if (p_src_2->basic == type_int) {
+            else if (p_src_1->p_type->basic == type_float) {
+                if (p_src_2->p_type->basic == type_int) {
                     p_src_1->floatconst = p_src_1->floatconst - p_src_2->intconst;
                 }
-                else if (p_src_2->basic == type_float) {
+                else if (p_src_2->p_type->basic == type_float) {
                     p_src_1->floatconst = p_src_1->floatconst - p_src_2->floatconst;
                 }
             }
             break;
         case hir_exp_op_mul:
-            if (p_src_1->basic == type_int) {
-                if (p_src_2->basic == type_int) {
+            if (p_src_1->p_type->basic == type_int) {
+                if (p_src_2->p_type->basic == type_int) {
                     p_src_1->intconst = p_src_1->intconst * p_src_2->intconst;
                 }
-                else if (p_src_2->basic == type_float) {
-                    p_src_1->basic = type_float;
+                else if (p_src_2->p_type->basic == type_float) {
+                    p_src_1->p_type->basic = type_float;
                     p_src_1->floatconst = p_src_1->intconst * p_src_2->floatconst;
                 }
             }
-            else if (p_src_1->basic == type_float) {
-                if (p_src_2->basic == type_int) {
+            else if (p_src_1->p_type->basic == type_float) {
+                if (p_src_2->p_type->basic == type_int) {
                     p_src_1->floatconst = p_src_1->floatconst * p_src_2->intconst;
                 }
-                else if (p_src_2->basic == type_float) {
+                else if (p_src_2->p_type->basic == type_float) {
                     p_src_1->floatconst = p_src_1->floatconst * p_src_2->floatconst;
                 }
             }
             break;
         case hir_exp_op_div:
-            if (p_src_1->basic == type_int) {
-                if (p_src_2->basic == type_int) {
+            if (p_src_1->p_type->basic == type_int) {
+                if (p_src_2->p_type->basic == type_int) {
                     p_src_1->intconst = p_src_1->intconst / p_src_2->intconst;
                 }
-                else if (p_src_2->basic == type_float) {
-                    p_src_1->basic = type_float;
+                else if (p_src_2->p_type->basic == type_float) {
+                    p_src_1->p_type->basic = type_float;
                     p_src_1->floatconst = p_src_1->intconst / p_src_2->floatconst;
                 }
             }
-            else if (p_src_1->basic == type_float) {
-                if (p_src_2->basic == type_int) {
+            else if (p_src_1->p_type->basic == type_float) {
+                if (p_src_2->p_type->basic == type_int) {
                     p_src_1->floatconst = p_src_1->floatconst / p_src_2->intconst;
                 }
-                else if (p_src_2->basic == type_float) {
+                else if (p_src_2->p_type->basic == type_float) {
                     p_src_1->floatconst = p_src_1->floatconst / p_src_2->floatconst;
                 }
             }
@@ -160,7 +156,7 @@ p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) 
         default:
             assert(1);
         }
-        free(p_src_2);
+        hir_exp_drop(p_src_2);
         return p_src_1;
     }
 
@@ -170,7 +166,7 @@ p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) 
         .op = op,
         .p_src_1 = p_src_1,
         .p_src_2 = p_src_2,
-        .basic = type,
+        .p_type = symbol_type_var_gen(type),
     };
     return p_exp;
 }
@@ -185,7 +181,7 @@ p_hir_exp hir_exp_lexec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2)
         .op = op,
         .p_src_1 = p_src_1,
         .p_src_2 = p_src_2,
-        .basic = type_int,
+        .p_type = symbol_type_var_gen(type_int),
     };
     return p_exp;
 }
@@ -201,14 +197,14 @@ p_hir_exp hir_exp_uexec_gen(hir_exp_op op, p_hir_exp p_src_1) {
     if (p_src_1->kind == hir_exp_num) {
         switch (op) {
         case hir_exp_op_bool_not:
-            if (p_src_1->basic == type_int) p_src_1->intconst = !p_src_1->intconst;
-            else if (p_src_1->basic == type_float)
+            if (p_src_1->p_type->basic == type_int) p_src_1->intconst = !p_src_1->intconst;
+            else if (p_src_1->p_type->basic == type_float)
                 p_src_1->intconst = !p_src_1->floatconst;
-            p_src_1->basic = type_int;
+            p_src_1->p_type->basic = type_int;
             break;
         case hir_exp_op_minus:
-            if (p_src_1->basic == type_int) p_src_1->intconst = -p_src_1->intconst;
-            else if (p_src_1->basic == type_float)
+            if (p_src_1->p_type->basic == type_int) p_src_1->intconst = -p_src_1->intconst;
+            else if (p_src_1->p_type->basic == type_float)
                 p_src_1->floatconst = -p_src_1->floatconst;
             break;
         default:
@@ -223,7 +219,7 @@ p_hir_exp hir_exp_uexec_gen(hir_exp_op op, p_hir_exp p_src_1) {
         .op = op,
         .p_src_1 = p_src_1,
         .p_src_2 = NULL,
-        .basic = type,
+        .p_type = symbol_type_var_gen(type),
     };
     return p_exp;
 }
@@ -251,6 +247,7 @@ p_hir_exp hir_exp_call_gen(p_symbol_func p_func, p_hir_param_list p_param_list) 
         .kind = hir_exp_call,
         .p_func = p_func,
         .p_param_list = p_param_list,
+        .p_type = symbol_type_var_gen(p_func->ret_type),
     };
 
     p_list_head p_node_Fparam = p_func->param.p_next;
@@ -315,7 +312,7 @@ p_hir_exp hir_exp_int_gen(INTCONST_t num) {
     *p_exp = (hir_exp) {
         .kind = hir_exp_num,
         .intconst = num,
-        .basic = type_int,
+        .p_type = symbol_type_var_gen(type_int),
     };
     return p_exp;
 }
@@ -324,7 +321,7 @@ p_hir_exp hir_exp_float_gen(FLOATCONST_t num) {
     *p_exp = (hir_exp) {
         .kind = hir_exp_num,
         .floatconst = num,
-        .basic = type_float,
+        .p_type = symbol_type_var_gen(type_float),
     };
     return p_exp;
 }
@@ -334,7 +331,7 @@ p_hir_exp hir_exp_str_gen(p_symbol_str p_str) {
     *p_exp = (hir_exp) {
         .kind = hir_exp_num,
         .p_str = p_str,
-        .basic = type_str,
+        .p_type = symbol_type_var_gen(type_str),
     };
     return p_exp;
 }
@@ -415,10 +412,10 @@ void hir_exp_drop(p_hir_exp p_exp) {
         if (p_exp->p_offset) {
             hir_exp_drop(p_exp->p_offset);
         }
-        symbol_type_drop(p_exp->p_type);
         break;
     case hir_exp_num:
         break;
     }
+    symbol_type_drop(p_exp->p_type);
     free(p_exp);
 }
