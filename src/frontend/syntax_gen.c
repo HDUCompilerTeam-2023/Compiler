@@ -56,10 +56,10 @@ p_syntax_decl syntax_decl_gen(char *name) {
 p_syntax_decl syntax_decl_arr(p_syntax_decl p_decl, p_hir_exp p_exp) {
     size_t size = 0;
     if (p_exp) { // TODO
-        assert(p_exp->basic == type_int);
+        assert(p_exp->p_type->basic == type_int);
         assert(p_exp->intconst > 0);
         size = p_exp->intconst;
-        free(p_exp);
+        hir_exp_drop(p_exp);
     }
     p_syntax_type_array p_arrary = syntax_type_array_gen(size);
     syntax_decl_type_add(p_decl, p_arrary);
