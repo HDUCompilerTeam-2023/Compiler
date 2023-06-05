@@ -6,4 +6,4 @@ $(TMP_DIR)/%.yy.h $(TMP_DIR)/%.yy.c: %.l
 	@mkdir -p $(dir $@)
 	@$(LEX) $(LEXFLAGS) --header-file=$(@:%.c=%.h) -o $@ $<
 
-CSRCS += $(LEXSRC:%.l=$(TMP_DIR)/%.yy.c)
+TMPCSRCS += $(LEXSRC:%.l=$(TMP_DIR)/%.yy.c)
