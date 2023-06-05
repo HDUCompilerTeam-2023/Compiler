@@ -19,7 +19,6 @@
 
 %initial-action
 {
-       yynerrs = yynerrs + 1;
        extra->p_table = symbol_table_gen();
 }
 

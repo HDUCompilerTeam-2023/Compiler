@@ -15,7 +15,9 @@ LEXFLAGS  =
 
 INC_PATH =
 
-debug_C_SETS   = -g -Wall -Werror -DDEBUG
+NOTMP_C_SETS   = -Wall -Werror
+
+debug_C_SETS   = -g -DDEBUG
 debug_LDSETS   = -fsanitize=address -fsanitize=leak
 debug_LDLIBS   =
 
