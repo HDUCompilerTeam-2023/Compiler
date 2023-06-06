@@ -177,7 +177,7 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
 // exp 正确则跳向 true, 错误跳向 false
 p_mir_operand hir2mir_exp_cond_gen(p_hir2mir_info p_info, p_mir_basic_block p_true_block, p_mir_basic_block p_false_block, p_hir_exp p_exp) {
     assert(p_exp);
-    if (p_exp->op == hir_exp_op_bool_or) {
+    if (p_exp->kind == hir_exp_exec && p_exp->op == hir_exp_op_bool_or) {
         p_mir_basic_block p_new_false_block = mir_basic_block_gen();
         // 在当前 block 生成 左边代码
         hir2mir_exp_cond_gen(p_info, p_true_block, p_new_false_block, p_exp->p_src_1);
@@ -186,7 +186,7 @@ p_mir_operand hir2mir_exp_cond_gen(p_hir2mir_info p_info, p_mir_basic_block p_tr
         hir2mir_info_add_basic_block(p_info, p_new_false_block);
         hir2mir_exp_cond_gen(p_info, p_true_block, p_false_block, p_exp->p_src_2);
     }
-    else if (p_exp->op == hir_exp_op_bool_and) {
+    else if (p_exp->kind == hir_exp_exec && p_exp->op == hir_exp_op_bool_and) {
         p_mir_basic_block p_new_true_block = mir_basic_block_gen();
         // 在当前 block 生成 左边代码
         hir2mir_exp_cond_gen(p_info, p_new_true_block, p_false_block, p_exp->p_src_1);
