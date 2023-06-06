@@ -108,6 +108,16 @@ p_syntax_decl_list syntax_decl_list_set(p_syntax_decl_list p_decl_list, bool is_
     return p_decl_list;
 }
 
+p_hir_exp syntax_val_offset(p_hir_exp p_val, p_hir_exp p_offset) {
+    if (p_val->p_type->ref_level > 1) {
+        p_val = hir_exp_load_gen(p_val);
+        return hir_exp_gep_gen(p_val, p_offset, false);
+    }
+    else {
+        return hir_exp_gep_gen(p_val, p_offset, true);
+    }
+}
+
 p_syntax_param_decl syntax_param_decl_gen(basic_type type, p_syntax_decl p_decl) {
     p_symbol_type p_type = syntax_type_trans(p_decl->p_array, type);
 
@@ -201,7 +211,8 @@ static inline void syntax_init_list_trans(p_symbol_type p_type, basic_type basic
 
         if (p_init->is_exp) {
             assert(offset < symbol_type_get_size(p_type));
-            assert(basic == hir_exp_get_basic(p_init->p_exp));
+            p_init->p_exp = hir_exp_ptr_to_val_check_basic(p_init->p_exp);
+            assert(basic == p_init->p_exp->p_type->basic);
             memory[offset++] = p_init->p_exp;
         }
         else {
@@ -227,7 +238,8 @@ static inline p_syntax_init_mem syntax_init_trans(p_syntax_init p_init, p_symbol
     p_syntax_init_mem p_init_mem = syntax_init_mem_gen(symbol_type_get_size(p_type));
     if (p_init->is_exp) {
         assert(list_head_alone(&p_type->array));
-        assert(p_type->basic == hir_exp_get_basic(p_init->p_exp));
+        p_init->p_exp = hir_exp_ptr_to_val_check_basic(p_init->p_exp);
+        assert(p_type->basic == p_init->p_exp->p_type->basic);
         p_init_mem->memory[0] = p_init->p_exp;
     }
     else {
@@ -236,6 +248,23 @@ static inline p_syntax_init_mem syntax_init_trans(p_syntax_init p_init, p_symbol
     }
     free(p_init);
     return p_init_mem;
+}
+static inline size_t syntax_init_by_assign_gen(p_syntax_init_mem p_init, size_t index, p_hir_exp p_addr, p_hir_block p_block) {
+    if (list_head_alone(&p_addr->p_type->array)) {
+        assert(p_addr->p_type->ref_level == 1);
+        assert(index < p_init->size);
+        p_hir_stmt p_assign = hir_stmt_assign_gen(p_addr, p_init->memory[index]);
+        p_init->memory[index++] = NULL;
+        hir_block_add(p_block, p_assign);
+        return index;
+    }
+    p_hir_exp p_element_addr = hir_exp_gep_gen(p_addr, hir_exp_int_gen(0), true);
+    size_t length = symbol_type_get_size(p_addr->p_type) / symbol_type_get_size(p_element_addr->p_type);
+    for (size_t i = 1; i < length; ++i) {
+        index = syntax_init_by_assign_gen(p_init, index, p_element_addr, p_block);
+        p_element_addr = hir_exp_gep_gen(hir_exp_use_gen(p_element_addr), hir_exp_int_gen(1), false);
+    }
+    return syntax_init_by_assign_gen(p_init, index, p_element_addr, p_block);
 }
 p_hir_block syntax_local_vardecl(p_symbol_table p_table, p_hir_block p_block, p_syntax_decl_list p_decl_list) {
     while (!list_head_alone(&p_decl_list->decl)) {
@@ -267,23 +296,15 @@ p_hir_block syntax_local_vardecl(p_symbol_table p_table, p_hir_block p_block, p_
             symbol_func_add_variable(p_table->p_func, p_var);
             if (p_h_init) {
                 if (list_head_alone(&p_var->p_type->array)) {
-                    p_hir_exp p_lval = hir_exp_val_gen(p_var);
+                    p_hir_exp p_lval = hir_exp_ptr_gen(p_var);
                     p_hir_exp p_rval = p_h_init->memory[0];
                     p_h_init->memory[0] = NULL;
-                    p_hir_exp p_assign = hir_exp_assign_gen(p_lval, p_rval);
-                    hir_block_add(p_block, hir_stmt_exp_gen(p_assign));
+                    p_hir_stmt p_assign = hir_stmt_assign_gen(p_lval, p_rval);
+                    hir_block_add(p_block, p_assign);
                 }
                 else {
-                    for (size_t i = 0; i < p_h_init->size; ++i) {
-                        p_hir_exp p_lval = hir_exp_val_gen(p_var);
-                        symbol_type_drop(p_lval->p_type);
-                        p_lval->p_type = symbol_type_var_gen(p_var->p_type->basic);
-                        p_lval->p_offset = hir_exp_int_gen(i);
-                        p_hir_exp p_rval = p_h_init->memory[i];
-                        p_h_init->memory[i] = NULL;
-                        p_hir_exp p_assign = hir_exp_assign_gen(p_lval, p_rval);
-                        hir_block_add(p_block, hir_stmt_exp_gen(p_assign));
-                    }
+                    p_hir_exp p_lval = hir_exp_ptr_gen(p_var);
+                    syntax_init_by_assign_gen(p_h_init, 0, p_lval, p_block);
                 }
             }
         }
@@ -365,6 +386,7 @@ void syntax_rtlib_decl(p_symbol_table p_table, basic_type type, char *name, p_sy
 }
 
 p_hir_exp syntax_const_check(p_hir_exp p_exp) {
+    p_exp = hir_exp_ptr_to_val_check_basic(p_exp);
     assert(p_exp->kind == hir_exp_num);
     return p_exp;
 }

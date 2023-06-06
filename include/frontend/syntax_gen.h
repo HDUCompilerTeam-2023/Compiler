@@ -49,6 +49,8 @@ p_syntax_decl_list syntax_decl_list_gen(void);
 p_syntax_decl_list syntax_decl_list_add(p_syntax_decl_list p_decl_list, p_syntax_decl p_decl);
 p_syntax_decl_list syntax_decl_list_set(p_syntax_decl_list p_decl_list, bool is_const, basic_type type);
 
+p_hir_exp syntax_val_offset(p_hir_exp p_val, p_hir_exp p_offset);
+
 struct syntax_param_decl {
     char *name;
     p_symbol_type p_type;

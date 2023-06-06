@@ -12,7 +12,7 @@ p_hir_param_list hir_param_list_init(void) {
 p_hir_param_list hir_param_list_add(p_hir_param_list p_param_list, p_hir_exp p_exp) {
     p_hir_param p_param = malloc(sizeof(*p_param));
     *p_param = (hir_param) {
-        .p_exp = p_exp,
+        .p_exp = hir_exp_ptr_to_val(p_exp),
         .node = list_head_init(&p_param->node),
     };
 

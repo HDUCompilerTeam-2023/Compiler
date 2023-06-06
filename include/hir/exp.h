@@ -2,10 +2,9 @@
 #define __HIR_EXP__
 
 #include <hir.h>
+#include <mir.h>
 
 enum hir_exp_op {
-    hir_exp_op_assign,
-
     hir_exp_op_bool_or,
     hir_exp_op_bool_and,
 
@@ -27,9 +26,12 @@ enum hir_exp_op {
 };
 struct hir_exp {
     enum {
+        hir_exp_use,
         hir_exp_exec,
         hir_exp_call,
-        hir_exp_val,
+        hir_exp_ptr,
+        hir_exp_gep,
+        hir_exp_load,
         hir_exp_num,
     } kind;
     union {
@@ -37,10 +39,14 @@ struct hir_exp {
             p_hir_exp p_src_1, p_src_2;
             hir_exp_op op;
         }; // exec
+        p_symbol_var p_var; // ptr
         struct {
-            p_symbol_var p_var;
+            bool is_element;
+            p_hir_exp p_addr;
             p_hir_exp p_offset;
-        }; // call val
+        }; // gep
+        p_hir_exp p_ptr; // load
+        p_hir_exp p_exp; // use
         struct {
             p_symbol_func p_func;
             p_hir_param_list p_param_list;
@@ -52,6 +58,8 @@ struct hir_exp {
         };
     };
     p_symbol_type p_type;
+
+    p_mir_vreg p_des;
 };
 
 #endif

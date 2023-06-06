@@ -8,6 +8,14 @@
 void hir_stmt_print(p_hir_stmt p_stmt) {
     assert(p_stmt);
     switch (p_stmt->type) {
+    case hir_stmt_assign:
+        printf("%*s", deep, "");
+        printf("*(");
+        hir_exp_print(p_stmt->p_lval);
+        printf(") = ");
+        hir_exp_print(p_stmt->p_rval);
+        printf(";\n");
+        break;
     case hir_stmt_block:
         hir_block_print(p_stmt->p_block);
         break;

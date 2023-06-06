@@ -8,6 +8,9 @@
 void hir2mir_stmt_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_cond, p_mir_basic_block p_while_end_next, p_hir_stmt p_stmt) {
     if (!p_stmt) return;
     switch (p_stmt->type) {
+    case hir_stmt_assign:
+        hir2mir_stmt_assign_gen(p_info, p_stmt->p_lval, p_stmt->p_rval);
+        break;
     case hir_stmt_return:
         hir2mir_stmt_return_gen(p_info, p_stmt->p_exp);
         break;
@@ -35,6 +38,12 @@ void hir2mir_stmt_gen(p_hir2mir_info p_info, p_mir_basic_block p_while_cond, p_m
     }
 }
 
+void hir2mir_stmt_assign_gen(p_hir2mir_info p_info, p_hir_exp p_lval, p_hir_exp p_rval) {
+    p_mir_operand p_src = hir2mir_exp_gen(p_info, p_rval);
+    p_mir_operand p_addr = hir2mir_exp_gen(p_info, p_lval);
+    p_mir_instr p_instr = mir_store_instr_gen(p_addr, NULL, p_src);
+    hir2mir_info_add_instr(p_info, p_instr);
+}
 // 将返回值全部放到 一个变量, 并跳转到 ret 块
 void hir2mir_stmt_return_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     if (p_exp) {

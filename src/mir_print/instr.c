@@ -19,6 +19,9 @@ void mir_instr_print(p_mir_instr p_instr) {
     case mir_call:
         mir_call_instr_print(&p_instr->mir_call);
         break;
+    case mir_gep:
+        mir_gep_instr_print(&p_instr->mir_gep);
+        break;
     case mir_load:
         mir_load_instr_print(&p_instr->mir_load);
         break;
@@ -103,6 +106,15 @@ void mir_call_instr_print(p_mir_call_instr p_instr) {
     }
     printf("@%s", p_instr->p_func->name);
     mir_param_list_print(p_instr->p_param_list);
+}
+
+void mir_gep_instr_print(p_mir_gep_instr p_instr) {
+    mir_vreg_print(p_instr->p_des);
+    printf(" = getelementptr ");
+    mir_operand_print(p_instr->p_addr);
+    if (p_instr->is_element)
+        printf("i32 0 ");
+    mir_operand_print(p_instr->p_offset);
 }
 
 void mir_load_instr_print(p_mir_load_instr p_instr) {

@@ -14,11 +14,6 @@ void hir_exp_print(p_hir_exp p_exp) {
     switch (p_exp->kind) {
     case hir_exp_exec:
         switch (p_exp->op) {
-        case hir_exp_op_assign:
-            hir_exp_print(p_exp->p_src_1);
-            printf(" = ");
-            hir_exp_print(p_exp->p_src_2);
-            break;
         case hir_exp_op_add:
             if (p_exp->p_type->basic == type_float) printf("f");
             printf("+ ");
@@ -129,24 +124,29 @@ void hir_exp_print(p_hir_exp p_exp) {
         hir_param_list_print(p_exp->p_param_list);
         printf(")");
         break;
-    case hir_exp_val:
-        if (p_exp->p_offset) {
-            if (list_head_alone(&p_exp->p_type->array) && p_exp->p_type->ref_level == 0) {
-                symbol_name_print(p_exp->p_var);
-                printf("[");
-                hir_exp_print(p_exp->p_offset);
-                printf("]");
-            }
-            else {
-                printf("+ ");
-                symbol_name_print(p_exp->p_var);
-                printf(" ");
-                hir_exp_print(p_exp->p_offset);
-            }
+    case hir_exp_ptr:
+        printf("&");
+        symbol_name_print(p_exp->p_var);
+        break;
+    case hir_exp_gep:
+        if (p_exp->is_element) {
+            hir_exp_print(p_exp->p_addr);
+            printf("[");
+            hir_exp_print(p_exp->p_offset);
+            printf("]");
         }
         else {
-            symbol_name_print(p_exp->p_var);
+            printf("(");
+            hir_exp_print(p_exp->p_addr);
+            printf(" + ");
+            hir_exp_print(p_exp->p_offset);
+            printf(")");
         }
+        break;
+    case hir_exp_load:
+        printf("*(");
+        hir_exp_print(p_exp->p_ptr);
+        printf(")");
         break;
     case hir_exp_num:
         if (p_exp->p_type->basic == type_float)
@@ -155,6 +155,9 @@ void hir_exp_print(p_hir_exp p_exp) {
             symbol_str_print(p_exp->p_str);
         else
             printf("%ld", p_exp->intconst);
+        break;
+    case hir_exp_use:
+        hir_exp_print(p_exp->p_exp);
         break;
     }
 }
