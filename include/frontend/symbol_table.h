@@ -47,8 +47,6 @@ struct symbol_table {
     uint16_t next_id;
     p_symbol_zone p_top_table;
 
-    list_head constant;
-
     p_program p_program;
     p_symbol_func p_func;
 };
@@ -61,7 +59,6 @@ void symbol_table_zone_pop(p_symbol_table p_table);
 
 p_symbol_item symbol_table_var_add(p_symbol_table p_table, p_symbol_var p_var);
 p_symbol_item symbol_table_func_add(p_symbol_table p_table, p_symbol_func p_func);
-void symbol_table_constant_add(p_symbol_table p_table, p_symbol_var p_var);
 p_symbol_var symbol_table_var_find(p_symbol_table p_table, const char *name);
 p_symbol_func symbol_table_func_find(p_symbol_table p_table, const char *name);
 p_symbol_str symbol_table_str_get(p_symbol_table p_table, const char *string);

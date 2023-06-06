@@ -52,7 +52,6 @@ p_symbol_table symbol_table_gen() {
         .string_hash = init_hash(),
         .level = 0,
         .next_id = 0,
-        .constant = list_head_init(&p_table->constant),
         .p_program = program_gen(),
         .p_func = NULL,
     };
@@ -65,11 +64,6 @@ void symbol_table_drop(p_symbol_table p_table) {
         assert(hlist_head_empty(p_table->hash + i));
     }
 
-    p_list_head p_node, p_next;
-    list_for_each_safe(p_node, p_next, &p_table->constant) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        symbol_var_drop(p_var);
-    }
     free(p_table->string_hash);
     free(p_table->hash);
     free(p_table);
@@ -162,10 +156,6 @@ p_symbol_item symbol_table_func_add(p_symbol_table p_table, p_symbol_func p_func
 
     program_add_function(p_table->p_program, p_func);
     return p_item;
-}
-
-void symbol_table_constant_add(p_symbol_table p_table, p_symbol_var p_var) {
-    list_add_prev(&p_var->node, &p_table->constant);
 }
 
 p_symbol_var symbol_table_var_find(p_symbol_table p_table, const char *name) {
