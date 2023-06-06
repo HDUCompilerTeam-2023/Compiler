@@ -41,6 +41,9 @@ static inline void mir_simplify_cfg_func_remove_no_predesessor_bb(p_mir_func p_f
             case mir_call:
                 p_des = p_instr->mir_call.p_des;
                 break;
+            case mir_gep:
+                p_des = p_instr->mir_gep.p_des;
+                break;
             case mir_load:
                 p_des = p_instr->mir_load.p_des;
             case mir_store:

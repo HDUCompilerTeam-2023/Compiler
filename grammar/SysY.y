@@ -268,8 +268,8 @@ PrimaryExp : '(' Exp ')' { $$ = $2; }
 Call : ID '(' FuncRParams ')' { $$ = hir_exp_call_gen(find_func($1), $3); free($1); }
      ;
 
-Val : ID                 { $$ = hir_exp_val_gen(find_var($1)); free($1); }
-    | Val '[' Exp ']'    { $$ = hir_exp_val_offset($1, $3); }
+Val : ID                 { $$ = hir_exp_ptr_gen(find_var($1)); free($1); }
+    | Val '[' Exp ']'    { $$ = syntax_val_offset($1, $3); }
     ;
 
 Str : STRING { $$ = hir_exp_str_gen(find_str($1)); free($1); }
@@ -296,7 +296,7 @@ StmtExp : /* *empty */ { $$ = NULL; }
         ;
 
 Stmt : PUSHZONE Block POPZONE             { $$ = hir_stmt_block_gen($2); }
-     | Val '=' Exp ';'                    { $$ = hir_stmt_exp_gen(hir_exp_assign_gen($1, $3)); }
+     | Val '=' Exp ';'                    { $$ = hir_stmt_assign_gen($1, $3); }
      | StmtExp ';'                        { $$ = hir_stmt_exp_gen($1); }
      | RETURN StmtExp ';'                 { $$ = hir_stmt_return_gen($2); }
      | BREAK ';'                          { $$ = hir_stmt_break_gen(); }

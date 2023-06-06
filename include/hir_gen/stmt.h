@@ -12,6 +12,7 @@ p_hir_stmt hir_stmt_if_else_gen(p_hir_exp p_exp, p_hir_stmt p_stmt_1, p_hir_stmt
 p_hir_stmt hir_stmt_while_gen(p_hir_exp p_exp, p_hir_stmt p_stmt_1);
 p_hir_stmt hir_stmt_do_while_gen(p_hir_exp p_exp, p_hir_stmt p_stmt_1);
 p_hir_stmt hir_stmt_block_gen(p_hir_block p_block);
+p_hir_stmt hir_stmt_assign_gen(p_hir_exp lval, p_hir_exp rval);
 void hir_stmt_drop(p_hir_stmt p_stmt);
 
 #endif

@@ -56,9 +56,6 @@ p_mir_operand mir_operand_addr_gen(p_mir_vmem p_global_vmem) {
         .p_global_vmem = p_global_vmem,
         .p_type = symbol_type_copy(p_global_vmem->p_type),
     };
-    if (!list_head_alone(&p_operand->p_type->array) && p_operand->p_type->ref_level == 0) {
-        symbol_type_array_drop(symbol_type_pop_array(p_operand->p_type));
-    }
     symbol_type_push_ptr(p_operand->p_type);
     return p_operand;
 }

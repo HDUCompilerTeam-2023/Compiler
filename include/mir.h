@@ -33,6 +33,7 @@ typedef struct mir_instr mir_instr, *p_mir_instr;
 typedef struct mir_binary_instr mir_binary_instr, *p_mir_binary_instr;
 typedef struct mir_unary_instr mir_unary_instr, *p_mir_unary_instr;
 typedef struct mir_alloca_instr mir_alloca_instr, *p_mir_alloca_instr;
+typedef struct mir_gep_instr mir_gep_instr, *p_mir_gep_instr;
 typedef struct mir_load_instr mir_load_instr, *p_mir_load_instr;
 typedef struct mir_store_instr mir_store_instr, *p_mir_store_instr;
 typedef struct mir_call_instr mir_call_instr, *p_mir_call_instr;

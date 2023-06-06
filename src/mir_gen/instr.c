@@ -51,6 +51,23 @@ p_mir_instr mir_call_instr_gen(p_symbol_func p_func, p_mir_param_list p_param_li
     return p_instr;
 }
 
+
+p_mir_instr mir_gep_instr_gen(p_mir_operand p_addr, p_mir_operand p_offset, p_mir_vreg p_des, bool is_element) {
+    p_mir_instr p_instr = malloc(sizeof(*p_instr));
+    *p_instr = (mir_instr) {
+        .irkind = mir_gep,
+        .mir_gep = (mir_gep_instr) {
+            .p_addr = p_addr,
+            .p_des = p_des,
+            .p_offset = p_offset,
+            .is_element = is_element,
+        },
+        .node = list_head_init(&p_instr->node),
+    };
+    mir_vreg_set_instr_def(p_des, p_instr);
+    return p_instr;
+}
+
 p_mir_instr mir_load_instr_gen(p_mir_operand p_addr, p_mir_operand p_offset, p_mir_vreg p_des) {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
     *p_instr = (mir_instr) {
@@ -108,6 +125,8 @@ p_mir_vreg mir_instr_get_des(p_mir_instr p_instr) {
         return p_instr->mir_call.p_des;
     case mir_load:
         return p_instr->mir_load.p_des;
+    case mir_gep:
+        return p_instr->mir_gep.p_des;
     default:
         return NULL;
     }
@@ -143,6 +162,10 @@ void mir_instr_drop(p_mir_instr p_instr) {
         break;
     case mir_call:
         mir_param_list_drop(p_instr->mir_call.p_param_list);
+        break;
+    case mir_gep:
+        mir_operand_drop(p_instr->mir_gep.p_addr);
+        mir_operand_drop(p_instr->mir_gep.p_offset);
         break;
     case mir_store:
         mir_operand_drop(p_instr->mir_store.p_addr);

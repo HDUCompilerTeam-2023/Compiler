@@ -3,15 +3,18 @@
 
 #include <hir/exp.h>
 
-basic_type hir_exp_get_basic(p_hir_exp p_exp);
+void hir_exp_ptr_check_lval(p_hir_exp p_exp);
+p_hir_exp hir_exp_ptr_to_val_check_basic(p_hir_exp p_exp);
+p_hir_exp hir_exp_ptr_to_val(p_hir_exp p_exp);
 
-p_hir_exp hir_exp_assign_gen(p_hir_exp lval, p_hir_exp rval);
+p_hir_exp hir_exp_use_gen(p_hir_exp p_used_exp);
 p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2);
 p_hir_exp hir_exp_lexec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2);
 p_hir_exp hir_exp_uexec_gen(hir_exp_op op, p_hir_exp p_src_1);
 p_hir_exp hir_exp_call_gen(p_symbol_func p_func, p_hir_param_list p_param_list);
-p_hir_exp hir_exp_val_gen(p_symbol_var p_var);
-p_hir_exp hir_exp_val_offset(p_hir_exp p_val, p_hir_exp p_offset);
+p_hir_exp hir_exp_ptr_gen(p_symbol_var p_var);
+p_hir_exp hir_exp_gep_gen(p_hir_exp p_val, p_hir_exp p_offset, bool is_element);
+p_hir_exp hir_exp_load_gen(p_hir_exp p_ptr);
 p_hir_exp hir_exp_int_gen(INTCONST_t num);
 p_hir_exp hir_exp_float_gen(FLOATCONST_t num);
 p_hir_exp hir_exp_str_gen(p_symbol_str p_str);

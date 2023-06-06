@@ -4,71 +4,93 @@
 
 #include <symbol_gen.h>
 
-static inline basic_type exp_basic(p_hir_exp p_exp) {
-    if (p_exp->kind == hir_exp_val) {
-        assert(list_head_alone(&p_exp->p_type->array) && p_exp->p_type->ref_level == 0);
+static inline p_hir_exp exp_ptr_to_val(p_hir_exp p_exp) {
+    if (p_exp->p_type->ref_level == 0) {
+        assert(list_head_alone(&p_exp->p_type->array));
+        return p_exp;
     }
-    return p_exp->p_type->basic;
+    if (p_exp->p_type->ref_level > 1) {
+        return hir_exp_load_gen(p_exp);
+    }
+    // assert(p_exp->p_type->ref_level == 1);
+    if (list_head_alone(&p_exp->p_type->array)) {
+        return hir_exp_load_gen(p_exp);
+    }
+    return hir_exp_gep_gen(p_exp, hir_exp_int_gen(0), true);
+}
+
+static inline p_hir_exp exp_ptr_to_val_check_basic(p_hir_exp p_exp) {
+    p_exp = exp_ptr_to_val(p_exp);
+    assert(list_head_alone(&p_exp->p_type->array) && p_exp->p_type->ref_level == 0);
+    assert(p_exp->p_type->basic != type_void);
+    return p_exp;
 }
 
 static inline p_hir_exp exp_val_const(p_hir_exp p_exp) {
-    if (!p_exp->p_var->is_const)
-        return p_exp;
-    if (!list_head_alone(&p_exp->p_type->array) || p_exp->p_type->ref_level > 0)
-        return p_exp;
+    if (p_exp->p_type->ref_level != 0) return p_exp;
+    assert(list_head_alone(&p_exp->p_type->array));
 
+    p_hir_exp p_back = p_exp;
     size_t offset = 0;
-
-    if (!p_exp->p_offset) {
-        goto to_const;
+    size_t length = 1;
+    p_exp = p_exp->p_src_1;
+    while (p_exp->kind == hir_exp_gep) {
+        if (p_exp->p_offset->kind != hir_exp_num)
+            break;
+        if (p_exp->p_offset->p_type->basic != type_int)
+            break;
+        length *= symbol_type_get_size(p_exp->p_type);
+        offset += length * p_exp->p_offset->intconst;
+        p_exp = p_exp->p_addr;
     }
+    if (p_exp->kind == hir_exp_ptr && p_exp->p_var->is_const) {
+        assert(offset < symbol_type_get_size(p_exp->p_var->p_type));
+        p_hir_exp p_val;
+        if (p_exp->p_type->basic == type_int) {
+            p_val = hir_exp_int_gen(p_exp->p_var->p_init->memory[offset].i);
+        }
+        else {
+            assert(p_exp->p_var->p_init);
+            p_val = hir_exp_float_gen(p_exp->p_var->p_init->memory[offset].f);
+        }
+        hir_exp_drop(p_back);
 
-    if (p_exp->p_offset->kind != hir_exp_num)
-        return p_exp;
-
-    assert(p_exp->p_offset->p_type->basic == type_int);
-    offset = p_exp->p_offset->intconst;
-
-to_const:
-    assert(offset < symbol_type_get_size(p_exp->p_var->p_type));
-    p_hir_exp p_val;
-    if (p_exp->p_type->basic == type_int) {
-        p_val = hir_exp_int_gen(p_exp->p_var->p_init->memory[offset].i);
+        return p_val;
     }
-    else {
-        p_val = hir_exp_float_gen(p_exp->p_var->p_init->memory[offset].f);
-    }
-    hir_exp_drop(p_exp);
-    return p_val;
+    return p_back;
 }
 
-basic_type hir_exp_get_basic(p_hir_exp p_exp) {
-    return exp_basic(p_exp);
+void hir_exp_ptr_check_lval(p_hir_exp p_exp) {
+    assert(list_head_alone(&p_exp->p_type->array));
+    assert(p_exp->p_type->ref_level == 1);
+    assert(p_exp->p_type->basic != type_void);
 }
-p_hir_exp hir_exp_assign_gen(p_hir_exp lval, p_hir_exp rval) {
-    assert(lval && rval);
-    assert(lval->kind == hir_exp_val);
-    assert(exp_basic(lval) != type_void);
-    assert(exp_basic(rval) != type_void);
+p_hir_exp hir_exp_ptr_to_val_check_basic(p_hir_exp p_exp) {
+    return exp_ptr_to_val_check_basic(p_exp);
+}
+p_hir_exp hir_exp_ptr_to_val(p_hir_exp p_exp) {
+    return exp_ptr_to_val(p_exp);
+}
 
+p_hir_exp hir_exp_use_gen(p_hir_exp p_used_exp) {
+    assert(p_used_exp);
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
-        .kind = hir_exp_exec,
-        .op = hir_exp_op_assign,
-        .p_src_1 = lval,
-        .p_src_2 = rval,
-        .p_type = symbol_type_var_gen(lval->p_type->basic),
+        .kind = hir_exp_use,
+        .p_exp = p_used_exp,
+        .p_type = symbol_type_copy(p_used_exp->p_type),
+        .p_des = NULL,
     };
     return p_exp;
 }
 p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) {
     assert(p_src_1 && p_src_2);
-    assert(exp_basic(p_src_1) != type_void);
-    assert(exp_basic(p_src_2) != type_void);
-    if (op == hir_exp_op_mod) assert(exp_basic(p_src_1) == type_int && exp_basic(p_src_1) == type_int);
+    p_src_1 = exp_ptr_to_val_check_basic(p_src_1);
+    p_src_2 = exp_ptr_to_val_check_basic(p_src_2);
+    if (op == hir_exp_op_mod) assert(p_src_1->p_type->basic == type_int && p_src_2->p_type->basic == type_int);
 
-    basic_type type = exp_basic(p_src_1);
-    if (exp_basic(p_src_2) == type_float) {
+    basic_type type = p_src_1->p_type->basic;
+    if (p_src_2->p_type->basic == type_float) {
         type = type_float;
     }
 
@@ -167,13 +189,14 @@ p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) 
         .p_src_1 = p_src_1,
         .p_src_2 = p_src_2,
         .p_type = symbol_type_var_gen(type),
+        .p_des = NULL,
     };
     return p_exp;
 }
 p_hir_exp hir_exp_lexec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) {
     assert(p_src_1 && p_src_2);
-    assert(exp_basic(p_src_1) != type_void);
-    assert(exp_basic(p_src_2) != type_void);
+    p_src_1 = exp_ptr_to_val_check_basic(p_src_1);
+    p_src_2 = exp_ptr_to_val_check_basic(p_src_2);
 
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
@@ -182,14 +205,15 @@ p_hir_exp hir_exp_lexec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2)
         .p_src_1 = p_src_1,
         .p_src_2 = p_src_2,
         .p_type = symbol_type_var_gen(type_int),
+        .p_des = NULL,
     };
     return p_exp;
 }
 p_hir_exp hir_exp_uexec_gen(hir_exp_op op, p_hir_exp p_src_1) {
     assert(p_src_1);
-    assert(exp_basic(p_src_1) != type_void);
+    p_src_1 = exp_ptr_to_val_check_basic(p_src_1);
 
-    basic_type type = exp_basic(p_src_1);
+    basic_type type = p_src_1->p_type->basic;
     if (op == hir_exp_op_bool_not) {
         type = type_int;
     }
@@ -220,6 +244,7 @@ p_hir_exp hir_exp_uexec_gen(hir_exp_op op, p_hir_exp p_src_1) {
         .p_src_1 = p_src_1,
         .p_src_2 = NULL,
         .p_type = symbol_type_var_gen(type),
+        .p_des = NULL,
     };
     return p_exp;
 }
@@ -248,6 +273,7 @@ p_hir_exp hir_exp_call_gen(p_symbol_func p_func, p_hir_param_list p_param_list) 
         .p_func = p_func,
         .p_param_list = p_param_list,
         .p_type = symbol_type_var_gen(p_func->ret_type),
+        .p_des = NULL,
     };
 
     p_list_head p_node_Fparam = p_func->param.p_next;
@@ -260,51 +286,61 @@ p_hir_exp hir_exp_call_gen(p_symbol_func p_func, p_hir_param_list p_param_list) 
         p_symbol_type p_param_type = list_entry(p_node_Fparam, symbol_var, node)->p_type;
 
         p_hir_exp p_param = list_entry(p_node, hir_param, node)->p_exp;
-        if (p_param->kind == hir_exp_val) {
-            assert(param_arr_check(p_param_type, p_param->p_type));
-        }
-        else {
-            assert(hir_exp_get_basic(p_param) == p_param_type->basic);
-        }
+        assert(param_arr_check(p_param_type, p_param->p_type));
         p_node_Fparam = p_node_Fparam->p_next;
     }
     assert(p_node_Fparam == &p_func->param);
     return p_exp;
 }
 
-p_hir_exp hir_exp_val_gen(p_symbol_var p_var) {
+p_hir_exp hir_exp_ptr_gen(p_symbol_var p_var) {
     assert(p_var);
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
-        .kind = hir_exp_val,
+        .kind = hir_exp_ptr,
         .p_var = p_var,
-        .p_offset = NULL,
         .p_type = symbol_type_copy(p_var->p_type),
+        .p_des = NULL,
     };
-    if (!list_head_alone(&p_exp->p_type->array) && p_exp->p_type->ref_level == 0) {
-        p_symbol_type_array p_pop = symbol_type_pop_array(p_exp->p_type);
-        symbol_type_array_drop(p_pop);
+    symbol_type_push_ptr(p_exp->p_type);
+    return p_exp;
+}
+p_hir_exp hir_exp_gep_gen(p_hir_exp p_val, p_hir_exp p_offset, bool is_element) {
+    assert(p_val->p_type->ref_level == 1);
+    assert(!is_element || !list_head_alone(&p_val->p_type->array));
+    p_offset = exp_ptr_to_val_check_basic(p_offset);
+    p_hir_exp p_exp = malloc(sizeof(*p_exp));
+    *p_exp = (hir_exp) {
+        .kind = hir_exp_gep,
+        .p_addr = p_val,
+        .p_offset = p_offset,
+        .is_element =  is_element,
+        .p_type = symbol_type_copy(p_val->p_type),
+        .p_des = NULL,
+    };
+    if (is_element) {
+        symbol_type_pop_ptr(p_exp->p_type);
+        symbol_type_array_drop(symbol_type_pop_array(p_exp->p_type));
         symbol_type_push_ptr(p_exp->p_type);
     }
-    return exp_val_const(p_exp);
+
+    return p_exp;
 }
-p_hir_exp hir_exp_val_offset(p_hir_exp p_val, p_hir_exp p_offset) {
-    assert(p_val->p_type->ref_level == 1);
-    symbol_type_pop_ptr(p_val->p_type);
-    p_hir_exp p_length = hir_exp_int_gen(symbol_type_get_size(p_val->p_type));
-
-    p_offset = hir_exp_exec_gen(hir_exp_op_mul, p_offset, p_length);
-    if (p_val->p_offset) {
-        p_offset = hir_exp_exec_gen(hir_exp_op_add, p_val->p_offset, p_offset);
+p_hir_exp hir_exp_load_gen(p_hir_exp p_ptr) {
+    assert(p_ptr->p_type->ref_level > 0);
+    if (p_ptr->p_type->ref_level == 1) {
+        assert(list_head_alone(&p_ptr->p_type->array));
     }
+    p_hir_exp p_exp = malloc(sizeof(*p_exp));
+    *p_exp = (hir_exp) {
+        .kind = hir_exp_load,
+        .p_ptr = p_ptr,
+        .p_type = symbol_type_copy(p_ptr->p_type),
+        .p_des = NULL,
+    };
+    symbol_type_pop_ptr(p_exp->p_type);
 
-    p_val->p_offset = p_offset;
-    if (!list_head_alone(&p_val->p_type->array)) {
-        p_symbol_type_array p_pop = symbol_type_pop_array(p_val->p_type);
-        symbol_type_array_drop(p_pop);
-        symbol_type_push_ptr(p_val->p_type);
-    }
-    return exp_val_const(p_val);
+    return exp_val_const(p_exp);
 }
 
 p_hir_exp hir_exp_int_gen(INTCONST_t num) {
@@ -313,6 +349,7 @@ p_hir_exp hir_exp_int_gen(INTCONST_t num) {
         .kind = hir_exp_num,
         .intconst = num,
         .p_type = symbol_type_var_gen(type_int),
+        .p_des = NULL,
     };
     return p_exp;
 }
@@ -322,6 +359,7 @@ p_hir_exp hir_exp_float_gen(FLOATCONST_t num) {
         .kind = hir_exp_num,
         .floatconst = num,
         .p_type = symbol_type_var_gen(type_float),
+        .p_des = NULL,
     };
     return p_exp;
 }
@@ -332,6 +370,7 @@ p_hir_exp hir_exp_str_gen(p_symbol_str p_str) {
         .kind = hir_exp_num,
         .p_str = p_str,
         .p_type = symbol_type_var_gen(type_str),
+        .p_des = NULL,
     };
     return p_exp;
 }
@@ -341,10 +380,6 @@ void hir_exp_drop(p_hir_exp p_exp) {
     switch (p_exp->kind) {
     case hir_exp_exec:
         switch (p_exp->op) {
-        case hir_exp_op_assign:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
         case hir_exp_op_add:
             hir_exp_drop(p_exp->p_src_1);
             hir_exp_drop(p_exp->p_src_2);
@@ -408,12 +443,18 @@ void hir_exp_drop(p_hir_exp p_exp) {
     case hir_exp_call:
         hir_param_list_drop(p_exp->p_param_list);
         break;
-    case hir_exp_val:
-        if (p_exp->p_offset) {
-            hir_exp_drop(p_exp->p_offset);
-        }
+    case hir_exp_ptr:
+        break;
+    case hir_exp_gep:
+        hir_exp_drop(p_exp->p_addr);
+        hir_exp_drop(p_exp->p_offset);
+        break;
+    case hir_exp_load:
+        hir_exp_drop(p_exp->p_ptr);
         break;
     case hir_exp_num:
+        break;
+    case hir_exp_use:
         break;
     }
     symbol_type_drop(p_exp->p_type);

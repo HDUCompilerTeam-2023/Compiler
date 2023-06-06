@@ -33,6 +33,7 @@ enum mir_instr_type {
     mir_unary,
 
     // memory
+    mir_gep,
     mir_store,
     mir_load,
     // func call
@@ -57,6 +58,12 @@ struct mir_call_instr {
     p_mir_vreg p_des;
 };
 
+struct mir_gep_instr {
+    p_mir_operand p_addr;
+    p_mir_operand p_offset;
+    p_mir_vreg p_des;
+    bool is_element;
+};
 struct mir_load_instr {
     p_mir_operand p_addr;
     p_mir_operand p_offset;
@@ -75,6 +82,7 @@ struct mir_instr {
         mir_unary_instr mir_unary;
         mir_call_instr mir_call;
         mir_load_instr mir_load;
+        mir_gep_instr mir_gep;
         mir_store_instr mir_store;
     };
 

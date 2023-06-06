@@ -5,6 +5,7 @@
 
 struct hir_stmt {
     enum {
+        hir_stmt_assign,
         hir_stmt_return,
         hir_stmt_exp, // p_exp (can null)
         hir_stmt_block, // p_block
@@ -19,6 +20,9 @@ struct hir_stmt {
         struct {
             p_hir_exp p_exp;
             p_hir_stmt p_stmt_1, p_stmt_2;
+        };
+        struct {
+            p_hir_exp p_lval, p_rval;
         };
         p_hir_block p_block;
         void *null;
