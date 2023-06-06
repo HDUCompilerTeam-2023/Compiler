@@ -257,9 +257,9 @@ p_hir_block syntax_local_vardecl(p_symbol_table p_table, p_hir_block p_block, p_
                 }
                 symbol_init_add(p_init, i, init_val);
             }
-            p_symbol_var p_var = symbol_var_gen(p_decl->name, p_type, p_decl_list->is_const, p_init != NULL, p_init);
+            p_symbol_var p_var = symbol_var_gen(p_decl->name, p_type, p_decl_list->is_const, false, p_init);
             symbol_table_var_add(p_table, p_var); // false
-            symbol_table_constant_add(p_table, p_var);
+            symbol_func_add_constant(p_table->p_func, p_var);
         }
         else {
             p_symbol_var p_var = symbol_var_gen(p_decl->name, p_type, p_decl_list->is_const, false, NULL);
@@ -332,7 +332,7 @@ void syntax_global_vardecl(p_symbol_table p_table, p_syntax_decl_list p_decl_lis
         p_symbol_var p_var = symbol_var_gen(p_decl->name, p_type, p_decl_list->is_const, true, p_init);
         symbol_table_var_add(p_table, p_var); // true
         if (p_decl_list->is_const) {
-            symbol_table_constant_add(p_table, p_var);
+            program_add_constant(p_table->p_program, p_var);
         }
         else {
             program_add_global(p_table->p_program, p_var);
