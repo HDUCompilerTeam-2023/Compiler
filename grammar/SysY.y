@@ -214,23 +214,23 @@ ArraryParameter : ID '[' ']'                  { $$ = syntax_decl_arr(syntax_decl
 Cond : LOrExp
      ;
 
-LOrExp : LOrExp OR LAndExp { $$ = hir_exp_lexec_gen(hir_exp_op_bool_or, $1, $3); }
+LOrExp : LOrExp OR LAndExp { $$ = hir_exp_logic_gen(hir_exp_op_bool_or, $1, $3); }
        | LAndExp
        ;
 
-LAndExp : LAndExp AND EqExp { $$ = hir_exp_lexec_gen(hir_exp_op_bool_and, $1, $3); }
+LAndExp : LAndExp AND EqExp { $$ = hir_exp_logic_gen(hir_exp_op_bool_and, $1, $3); }
         | EqExp
         ;
 
-EqExp : EqExp EQ RelExp  { $$ = hir_exp_lexec_gen(hir_exp_op_eq, $1, $3); }
-      | EqExp NEQ RelExp { $$ = hir_exp_lexec_gen(hir_exp_op_neq, $1, $3); }
+EqExp : EqExp EQ RelExp  { $$ = hir_exp_relational_gen(hir_exp_op_eq, $1, $3); }
+      | EqExp NEQ RelExp { $$ = hir_exp_relational_gen(hir_exp_op_neq, $1, $3); }
       | RelExp
       ;
 
-RelExp : RelExp '<' AddExp { $$ = hir_exp_lexec_gen(hir_exp_op_l, $1, $3); }
-       | RelExp '>' AddExp { $$ = hir_exp_lexec_gen(hir_exp_op_g, $1, $3); }
-       | RelExp LE AddExp  { $$ = hir_exp_lexec_gen(hir_exp_op_leq, $1, $3); }
-       | RelExp GE AddExp  { $$ = hir_exp_lexec_gen(hir_exp_op_geq, $1, $3); }
+RelExp : RelExp '<' AddExp { $$ = hir_exp_relational_gen(hir_exp_op_l, $1, $3); }
+       | RelExp '>' AddExp { $$ = hir_exp_relational_gen(hir_exp_op_g, $1, $3); }
+       | RelExp LE AddExp  { $$ = hir_exp_relational_gen(hir_exp_op_leq, $1, $3); }
+       | RelExp GE AddExp  { $$ = hir_exp_relational_gen(hir_exp_op_geq, $1, $3); }
        | AddExp
        ;
 
@@ -240,20 +240,20 @@ ConstExp : Exp { $$ = syntax_const_check($1); }
 Exp : AddExp
     ;
 
-AddExp : AddExp '+' MulExp { $$ = hir_exp_exec_gen(hir_exp_op_add, $1, $3); }
-       | AddExp '-' MulExp { $$ = hir_exp_exec_gen(hir_exp_op_sub, $1, $3); }
+AddExp : AddExp '+' MulExp { $$ = hir_exp_binary_gen(hir_exp_op_add, $1, $3); }
+       | AddExp '-' MulExp { $$ = hir_exp_binary_gen(hir_exp_op_sub, $1, $3); }
        | MulExp
        ;
 
-MulExp : MulExp '*' UnaryExp { $$ = hir_exp_exec_gen(hir_exp_op_mul, $1, $3); }
-       | MulExp '/' UnaryExp { $$ = hir_exp_exec_gen(hir_exp_op_div, $1, $3); }
-       | MulExp '%' UnaryExp { $$ = hir_exp_exec_gen(hir_exp_op_mod, $1, $3); }
+MulExp : MulExp '*' UnaryExp { $$ = hir_exp_binary_gen(hir_exp_op_mul, $1, $3); }
+       | MulExp '/' UnaryExp { $$ = hir_exp_binary_gen(hir_exp_op_div, $1, $3); }
+       | MulExp '%' UnaryExp { $$ = hir_exp_binary_gen(hir_exp_op_mod, $1, $3); }
        | UnaryExp
        ;
 
-UnaryExp : '-' UnaryExp     { $$ = hir_exp_uexec_gen(hir_exp_op_minus, $2); }
+UnaryExp : '-' UnaryExp     { $$ = hir_exp_unary_gen(hir_exp_op_minus, $2); }
          | '+' UnaryExp     { $$ = $2; }
-         | '!' UnaryExp     { $$ = hir_exp_uexec_gen(hir_exp_op_bool_not, $2); }
+         | '!' UnaryExp     { $$ = hir_exp_ulogic_gen(hir_exp_op_bool_not, $2); }
          | PrimaryExp
          ;
 

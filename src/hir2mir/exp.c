@@ -4,38 +4,14 @@
 #include <symbol_gen.h>
 #include <program/gen.h>
 
-static inline p_mir_operand hir2mir_exp_exec_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
-    p_mir_operand p_src_1 = NULL;
-    p_mir_operand p_src_2 = NULL;
-    switch (p_exp->op) {
-    case hir_exp_op_add:
-    case hir_exp_op_sub:
-    case hir_exp_op_mul:
-    case hir_exp_op_div:
-    case hir_exp_op_mod:
-    case hir_exp_op_eq:
-    case hir_exp_op_neq:
-    case hir_exp_op_l:
-    case hir_exp_op_leq:
-    case hir_exp_op_g:
-    case hir_exp_op_geq:
+static inline p_mir_operand hir2mir_exp_binary_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
         assert(p_exp->p_src_1 && p_exp->p_src_2);
-        p_src_1 = hir2mir_exp_gen(p_info, p_exp->p_src_1);
-        p_src_2 = hir2mir_exp_gen(p_info, p_exp->p_src_2);
-        break;
-    case hir_exp_op_bool_not:
-    case hir_exp_op_minus:
-        assert(p_exp->p_src_1);
-        p_src_1 = hir2mir_exp_gen(p_info, p_exp->p_src_1);
-        break;
-    case hir_exp_op_bool_and:
-    case hir_exp_op_bool_or:
-        assert(0);
-    }
+    p_mir_operand p_src_1 = hir2mir_exp_gen(p_info, p_exp->p_src_1);
+    p_mir_operand p_src_2 = hir2mir_exp_gen(p_info, p_exp->p_src_2);
 
     p_mir_vreg p_vreg = mir_vreg_gen(symbol_type_var_gen(p_exp->p_type->basic));
     p_mir_instr p_instr = NULL;
-    switch (p_exp->op) {
+    switch (p_exp->b_op) {
     case hir_exp_op_add:
         p_instr = mir_binary_instr_gen(mir_add_op, p_src_1, p_src_2, p_vreg);
         break;
@@ -69,15 +45,54 @@ static inline p_mir_operand hir2mir_exp_exec_gen(p_hir2mir_info p_info, p_hir_ex
     case hir_exp_op_geq:
         p_instr = mir_binary_instr_gen(mir_geq_op, p_src_1, p_src_2, p_vreg);
         break;
-    case hir_exp_op_bool_not:
-        p_instr = mir_unary_instr_gen(mir_not_op, p_src_1, p_vreg);
-        break;
+    }
+    p_exp->p_des = p_vreg;
+    hir2mir_info_add_instr(p_info, p_instr);
+    return mir_operand_vreg_gen(p_vreg);
+}
+static inline p_mir_operand hir2mir_exp_unary_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
+    assert(p_exp->p_src);
+    p_mir_operand p_src = hir2mir_exp_gen(p_info, p_exp->p_src);
+
+    p_mir_vreg p_vreg = mir_vreg_gen(symbol_type_var_gen(p_exp->p_type->basic));
+    p_mir_instr p_instr = NULL;
+    switch (p_exp->u_op) {
     case hir_exp_op_minus:
-        p_instr = mir_unary_instr_gen(mir_minus_op, p_src_1, p_vreg);
+        p_instr = mir_unary_instr_gen(mir_minus_op, p_src, p_vreg);
+        break;
+    }
+    p_exp->p_des = p_vreg;
+    hir2mir_info_add_instr(p_info, p_instr);
+    return mir_operand_vreg_gen(p_vreg);
+}
+static inline p_mir_operand hir2mir_exp_logic_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
+    assert(0);
+    assert(p_exp->p_bool_1 && p_exp->p_bool_2);
+    // p_mir_operand p_bool_1 = hir2mir_exp_gen(p_info, p_exp->p_bool_1);
+    // p_mir_operand p_bool_2 = hir2mir_exp_gen(p_info, p_exp->p_bool_2);
+
+    p_mir_vreg p_vreg = mir_vreg_gen(symbol_type_var_gen(p_exp->p_type->basic));
+    p_mir_instr p_instr = NULL;
+    switch (p_exp->l_op) {
+    case hir_exp_op_bool_or:
         break;
     case hir_exp_op_bool_and:
-    case hir_exp_op_bool_or:
-        assert(0);
+        break;
+    }
+    p_exp->p_des = p_vreg;
+    hir2mir_info_add_instr(p_info, p_instr);
+    return mir_operand_vreg_gen(p_vreg);
+}
+static inline p_mir_operand hir2mir_exp_ulogic_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
+    assert(p_exp->p_bool);
+    p_mir_operand p_bool = hir2mir_exp_gen(p_info, p_exp->p_bool);
+
+    p_mir_vreg p_vreg = mir_vreg_gen(symbol_type_var_gen(p_exp->p_type->basic));
+    p_mir_instr p_instr = NULL;
+    switch (p_exp->ul_op) {
+    case hir_exp_op_bool_not:
+        p_instr = mir_unary_instr_gen(mir_not_op, p_bool, p_vreg);
+        break;
     }
     p_exp->p_des = p_vreg;
     hir2mir_info_add_instr(p_info, p_instr);
@@ -162,8 +177,17 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     case hir_exp_load: {
         return hir2mir_exp_load_gen(p_info, p_exp);
     }
-    case hir_exp_exec: {
-        return hir2mir_exp_exec_gen(p_info, p_exp);
+    case hir_exp_binary: {
+        return hir2mir_exp_binary_gen(p_info, p_exp);
+    }
+    case hir_exp_unary: {
+        return hir2mir_exp_unary_gen(p_info, p_exp);
+    }
+    case hir_exp_logic: {
+        return hir2mir_exp_logic_gen(p_info, p_exp);
+    }
+    case hir_exp_ulogic: {
+        return hir2mir_exp_ulogic_gen(p_info, p_exp);
     }
     case hir_exp_call: {
         return hir2mir_exp_call_gen(p_info, p_exp);
@@ -176,22 +200,21 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
 // exp 正确则跳向 true, 错误跳向 false
 p_mir_operand hir2mir_exp_cond_gen(p_hir2mir_info p_info, p_mir_basic_block p_true_block, p_mir_basic_block p_false_block, p_hir_exp p_exp) {
     assert(p_exp);
-    if (p_exp->kind == hir_exp_exec && p_exp->op == hir_exp_op_bool_or) {
+    if (p_exp->kind == hir_exp_logic && p_exp->l_op == hir_exp_op_bool_or) {
         p_mir_basic_block p_new_false_block = mir_basic_block_gen();
         // 在当前 block 生成 左边代码
-        hir2mir_exp_cond_gen(p_info, p_true_block, p_new_false_block, p_exp->p_src_1);
-
+        hir2mir_exp_cond_gen(p_info, p_true_block, p_new_false_block, p_exp->p_bool_1);
         // 在新block 生成右边代码， 该block 也是左边的 false block
         hir2mir_info_add_basic_block(p_info, p_new_false_block);
-        hir2mir_exp_cond_gen(p_info, p_true_block, p_false_block, p_exp->p_src_2);
+        hir2mir_exp_cond_gen(p_info, p_true_block, p_false_block, p_exp->p_bool_2);
     }
-    else if (p_exp->kind == hir_exp_exec && p_exp->op == hir_exp_op_bool_and) {
+    else if (p_exp->kind == hir_exp_logic && p_exp->l_op == hir_exp_op_bool_and) {
         p_mir_basic_block p_new_true_block = mir_basic_block_gen();
         // 在当前 block 生成 左边代码
-        hir2mir_exp_cond_gen(p_info, p_new_true_block, p_false_block, p_exp->p_src_1);
+        hir2mir_exp_cond_gen(p_info, p_new_true_block, p_false_block, p_exp->p_bool_1);
         // 在新block 生成右边代码， 该block 也是左边的 true block
         hir2mir_info_add_basic_block(p_info, p_new_true_block);
-        hir2mir_exp_cond_gen(p_info, p_true_block, p_false_block, p_exp->p_src_2);
+        hir2mir_exp_cond_gen(p_info, p_true_block, p_false_block, p_exp->p_bool_2);
     }
     else {
         p_mir_operand p_cond = hir2mir_exp_gen(p_info, p_exp);

@@ -10,6 +10,9 @@ typedef struct hir_func hir_func, *p_hir_func;
 typedef struct hir_block hir_block, *p_hir_block;
 typedef struct hir_stmt hir_stmt, *p_hir_stmt;
 typedef struct hir_exp hir_exp, *p_hir_exp;
-typedef enum hir_exp_op hir_exp_op;
+typedef enum hir_exp_binary_op hir_exp_binary_op;
+typedef enum hir_exp_unary_op hir_exp_unary_op;
+typedef enum hir_exp_logic_op hir_exp_logic_op;
+typedef enum hir_exp_ulogic_op hir_exp_ulogic_op;
 
 #endif

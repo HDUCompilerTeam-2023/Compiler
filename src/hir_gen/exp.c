@@ -83,11 +83,11 @@ p_hir_exp hir_exp_use_gen(p_hir_exp p_used_exp) {
     };
     return p_exp;
 }
-p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) {
+p_hir_exp hir_exp_binary_gen(hir_exp_binary_op b_op, p_hir_exp p_src_1, p_hir_exp p_src_2) {
     assert(p_src_1 && p_src_2);
     p_src_1 = exp_ptr_to_val_check_basic(p_src_1);
     p_src_2 = exp_ptr_to_val_check_basic(p_src_2);
-    if (op == hir_exp_op_mod) assert(p_src_1->p_type->basic == type_int && p_src_2->p_type->basic == type_int);
+    if (b_op == hir_exp_op_mod) assert(p_src_1->p_type->basic == type_int && p_src_2->p_type->basic == type_int);
 
     basic_type type = p_src_1->p_type->basic;
     if (p_src_2->p_type->basic == type_float) {
@@ -95,7 +95,7 @@ p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) 
     }
 
     if (p_src_1->kind == hir_exp_num && p_src_2->kind == hir_exp_num) {
-        switch (op) {
+        switch (b_op) {
         case hir_exp_op_add:
             if (p_src_1->p_type->basic == type_int) {
                 if (p_src_2->p_type->basic == type_int) {
@@ -184,8 +184,8 @@ p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) 
 
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
-        .kind = hir_exp_exec,
-        .op = op,
+        .kind = hir_exp_binary,
+        .b_op = b_op,
         .p_src_1 = p_src_1,
         .p_src_2 = p_src_2,
         .p_type = symbol_type_var_gen(type),
@@ -193,15 +193,15 @@ p_hir_exp hir_exp_exec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) 
     };
     return p_exp;
 }
-p_hir_exp hir_exp_lexec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2) {
+p_hir_exp hir_exp_relational_gen(hir_exp_binary_op b_op, p_hir_exp p_src_1, p_hir_exp p_src_2) {
     assert(p_src_1 && p_src_2);
     p_src_1 = exp_ptr_to_val_check_basic(p_src_1);
     p_src_2 = exp_ptr_to_val_check_basic(p_src_2);
 
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
-        .kind = hir_exp_exec,
-        .op = op,
+        .kind = hir_exp_binary,
+        .b_op = b_op,
         .p_src_1 = p_src_1,
         .p_src_2 = p_src_2,
         .p_type = symbol_type_var_gen(type_int),
@@ -209,40 +209,63 @@ p_hir_exp hir_exp_lexec_gen(hir_exp_op op, p_hir_exp p_src_1, p_hir_exp p_src_2)
     };
     return p_exp;
 }
-p_hir_exp hir_exp_uexec_gen(hir_exp_op op, p_hir_exp p_src_1) {
-    assert(p_src_1);
-    p_src_1 = exp_ptr_to_val_check_basic(p_src_1);
+p_hir_exp hir_exp_logic_gen(hir_exp_logic_op l_op, p_hir_exp p_bool_1, p_hir_exp p_bool_2) {
+    assert(p_bool_1 && p_bool_2);
+    p_bool_1 = exp_ptr_to_val_check_basic(p_bool_1);
+    p_bool_2 = exp_ptr_to_val_check_basic(p_bool_2);
 
-    basic_type type = p_src_1->p_type->basic;
-    if (op == hir_exp_op_bool_not) {
+    p_hir_exp p_exp = malloc(sizeof(*p_exp));
+    *p_exp = (hir_exp) {
+        .kind = hir_exp_logic,
+        .l_op = l_op,
+        .p_bool_1 = p_bool_1,
+        .p_bool_2 = p_bool_2,
+        .p_type = symbol_type_var_gen(type_int),
+        .p_des = NULL,
+    };
+    return p_exp;
+}
+p_hir_exp hir_exp_ulogic_gen(hir_exp_ulogic_op ul_op, p_hir_exp p_bool) {
+    assert(p_bool);
+    p_bool = exp_ptr_to_val_check_basic(p_bool);
+
+    p_hir_exp p_exp = malloc(sizeof(*p_exp));
+    *p_exp = (hir_exp) {
+        .kind = hir_exp_ulogic,
+        .ul_op = ul_op,
+        .p_bool = p_bool,
+        .p_type = symbol_type_var_gen(type_int),
+        .p_des = NULL,
+    };
+    return p_exp;
+}
+p_hir_exp hir_exp_unary_gen(hir_exp_unary_op u_op, p_hir_exp p_src) {
+    assert(p_src);
+    p_src = exp_ptr_to_val_check_basic(p_src);
+
+    basic_type type = p_src->p_type->basic;
+    if (u_op == hir_exp_op_bool_not) {
         type = type_int;
     }
 
-    if (p_src_1->kind == hir_exp_num) {
-        switch (op) {
-        case hir_exp_op_bool_not:
-            if (p_src_1->p_type->basic == type_int) p_src_1->intconst = !p_src_1->intconst;
-            else if (p_src_1->p_type->basic == type_float)
-                p_src_1->intconst = !p_src_1->floatconst;
-            p_src_1->p_type->basic = type_int;
-            break;
+    if (p_src->kind == hir_exp_num) {
+        switch (u_op) {
         case hir_exp_op_minus:
-            if (p_src_1->p_type->basic == type_int) p_src_1->intconst = -p_src_1->intconst;
-            else if (p_src_1->p_type->basic == type_float)
-                p_src_1->floatconst = -p_src_1->floatconst;
+            if (p_src->p_type->basic == type_int) p_src->intconst = -p_src->intconst;
+            else if (p_src->p_type->basic == type_float)
+                p_src->floatconst = -p_src->floatconst;
             break;
         default:
             assert(1);
         }
-        return p_src_1;
+        return p_src;
     }
 
     p_hir_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (hir_exp) {
-        .kind = hir_exp_exec,
-        .op = op,
-        .p_src_1 = p_src_1,
-        .p_src_2 = NULL,
+        .kind = hir_exp_unary,
+        .u_op = u_op,
+        .p_src = p_src,
         .p_type = symbol_type_var_gen(type),
         .p_des = NULL,
     };
@@ -378,8 +401,8 @@ p_hir_exp hir_exp_str_gen(p_symbol_str p_str) {
 void hir_exp_drop(p_hir_exp p_exp) {
     assert(p_exp);
     switch (p_exp->kind) {
-    case hir_exp_exec:
-        switch (p_exp->op) {
+    case hir_exp_binary:
+        switch (p_exp->b_op) {
         case hir_exp_op_add:
             hir_exp_drop(p_exp->p_src_1);
             hir_exp_drop(p_exp->p_src_2);
@@ -397,14 +420,6 @@ void hir_exp_drop(p_hir_exp p_exp) {
             hir_exp_drop(p_exp->p_src_2);
             break;
         case hir_exp_op_mod:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_bool_and:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_bool_or:
             hir_exp_drop(p_exp->p_src_1);
             hir_exp_drop(p_exp->p_src_2);
             break;
@@ -432,11 +447,31 @@ void hir_exp_drop(p_hir_exp p_exp) {
             hir_exp_drop(p_exp->p_src_1);
             hir_exp_drop(p_exp->p_src_2);
             break;
-        case hir_exp_op_bool_not:
-            hir_exp_drop(p_exp->p_src_1);
-            break;
+        }
+        break;
+    case hir_exp_unary:
+        switch (p_exp->u_op) {
         case hir_exp_op_minus:
-            hir_exp_drop(p_exp->p_src_1);
+            hir_exp_drop(p_exp->p_src);
+            break;
+        }
+        break;
+    case hir_exp_logic:
+        switch (p_exp->l_op) {
+        case hir_exp_op_bool_and:
+            hir_exp_drop(p_exp->p_bool_1);
+            hir_exp_drop(p_exp->p_bool_2);
+            break;
+        case hir_exp_op_bool_or:
+            hir_exp_drop(p_exp->p_bool_1);
+            hir_exp_drop(p_exp->p_bool_2);
+            break;
+        }
+        break;
+    case hir_exp_ulogic:
+        switch (p_exp->ul_op) {
+        case hir_exp_op_bool_not:
+            hir_exp_drop(p_exp->p_bool);
             break;
         }
         break;
