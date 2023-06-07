@@ -15,18 +15,17 @@ void mir_operand_print(p_mir_operand p_operand) {
         if (p_operand->p_type->ref_level > 0) {
             printf(" (addr ");
             mir_vmem_print(p_operand->p_global_vmem);
-            printf(") ");
+            printf(")");
         }
         else if (p_operand->p_type->basic == type_int)
-            printf(" %ld ", p_operand->intconst);
+            printf(" %ld", p_operand->intconst);
         else if (p_operand->p_type->basic == type_float)
-            printf(" %f ", p_operand->floatconst);
+            printf(" %f", p_operand->floatconst);
         else if (p_operand->p_type->basic == type_str)
             symbol_str_print(p_operand->strconst);
         break;
     case reg:
         mir_vreg_print(p_operand->p_vreg);
-        printf(" ");
         break;
     }
 }

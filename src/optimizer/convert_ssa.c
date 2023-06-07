@@ -280,14 +280,14 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_se
 }
 #include <stdio.h>
 static inline void print_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
-    printf(" --- dom_frontier start---\n");
+    printf("--- dom_frontier start---\n");
     for (size_t i = 0; i < block_num; i++) {
         p_convert_ssa p_info = dfs_seq + i;
         printf("b%ld (dfn_id: %ld): ", p_info->p_basic_block->block_id, p_info->p_basic_block->dfn_id);
         bitmap_print(p_info->dom_frontier);
         printf("\n");
     }
-    printf(" --- dom_frontier end---\n");
+    printf("--- dom_frontier end---\n");
 }
 
 void convert_ssa_func(p_mir_func p_func) {
