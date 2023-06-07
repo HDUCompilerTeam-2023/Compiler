@@ -402,83 +402,21 @@ void hir_exp_drop(p_hir_exp p_exp) {
     assert(p_exp);
     switch (p_exp->kind) {
     case hir_exp_binary:
-        switch (p_exp->b_op) {
-        case hir_exp_op_add:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_sub:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_mul:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_div:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_mod:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_eq:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_neq:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_l:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_leq:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_g:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        case hir_exp_op_geq:
-            hir_exp_drop(p_exp->p_src_1);
-            hir_exp_drop(p_exp->p_src_2);
-            break;
-        }
+        hir_exp_drop(p_exp->p_src_1);
+        hir_exp_drop(p_exp->p_src_2);
         break;
     case hir_exp_unary:
-        switch (p_exp->u_op) {
-        case hir_exp_op_minus:
-            hir_exp_drop(p_exp->p_src);
-            break;
-        }
+        hir_exp_drop(p_exp->p_src);
         break;
     case hir_exp_logic:
-        switch (p_exp->l_op) {
-        case hir_exp_op_bool_and:
-            hir_exp_drop(p_exp->p_bool_1);
-            hir_exp_drop(p_exp->p_bool_2);
-            break;
-        case hir_exp_op_bool_or:
-            hir_exp_drop(p_exp->p_bool_1);
-            hir_exp_drop(p_exp->p_bool_2);
-            break;
-        }
+        hir_exp_drop(p_exp->p_bool_1);
+        hir_exp_drop(p_exp->p_bool_2);
         break;
     case hir_exp_ulogic:
-        switch (p_exp->ul_op) {
-        case hir_exp_op_bool_not:
-            hir_exp_drop(p_exp->p_bool);
-            break;
-        }
+        hir_exp_drop(p_exp->p_bool);
         break;
     case hir_exp_call:
         hir_param_list_drop(p_exp->p_param_list);
-        break;
-    case hir_exp_ptr:
         break;
     case hir_exp_gep:
         hir_exp_drop(p_exp->p_addr);
@@ -487,8 +425,8 @@ void hir_exp_drop(p_hir_exp p_exp) {
     case hir_exp_load:
         hir_exp_drop(p_exp->p_ptr);
         break;
+    case hir_exp_ptr:
     case hir_exp_num:
-        break;
     case hir_exp_use:
         break;
     }
