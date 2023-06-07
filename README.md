@@ -95,3 +95,5 @@
   - [x] 数组
   - other
 - [ ] 32. 输出成 llvm 格式，采用 llvm 做检验
+- [ ] 33. 合并 symbol 与 mir 的 func
+
