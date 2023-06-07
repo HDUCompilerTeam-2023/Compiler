@@ -216,6 +216,9 @@ p_mir_operand hir2mir_exp_cond_gen(p_hir2mir_info p_info, p_mir_basic_block p_tr
         hir2mir_info_add_basic_block(p_info, p_new_true_block);
         hir2mir_exp_cond_gen(p_info, p_true_block, p_false_block, p_exp->p_bool_2);
     }
+    else if (p_exp->kind == hir_exp_ulogic && p_exp->ul_op == hir_exp_op_bool_not) {
+        hir2mir_exp_cond_gen(p_info, p_false_block, p_true_block, p_exp->p_bool);
+    }
     else {
         p_mir_operand p_cond = hir2mir_exp_gen(p_info, p_exp);
         mir_basic_block_set_cond(p_info->p_current_basic_block, p_cond, p_true_block, p_false_block);
