@@ -2,6 +2,7 @@
 #include <mir/func.h>
 #include <mir/instr.h>
 #include <mir_print.h>
+#include <symbol_print.h>
 #include <stdio.h>
 
 #include <symbol/var.h>
@@ -37,46 +38,44 @@ void mir_binary_instr_print(p_mir_binary_instr p_instr) {
     mir_operand_print(p_instr->p_src1);
     switch (p_instr->op) {
     case mir_add_op:
-        printf("+ ");
+        printf(" + ");
         break;
     case mir_sub_op:
-        printf("- ");
+        printf(" - ");
         break;
     case mir_mul_op:
-        printf("* ");
+        printf(" * ");
         break;
     case mir_div_op:
-        printf("/ ");
+        printf(" / ");
         break;
     case mir_mod_op:
-        printf("%% ");
+        printf(" %% ");
         break;
     case mir_and_op:
-        printf("&& ");
+        printf(" && ");
         break;
     case mir_or_op:
-        printf("|| ");
+        printf(" || ");
         break;
     case mir_eq_op:
-        printf("== ");
+        printf(" == ");
         break;
     case mir_neq_op:
-        printf("!= ");
+        printf(" != ");
         break;
     case mir_l_op:
-        printf("< ");
+        printf(" < ");
         break;
     case mir_leq_op:
-        printf("<= ");
+        printf(" <= ");
         break;
     case mir_g_op:
-        printf("> ");
+        printf(" > ");
         break;
     case mir_geq_op:
-        printf(">= ");
+        printf(" >= ");
         break;
-    default:
-        assert(0);
     }
     mir_operand_print(p_instr->p_src2);
 }
@@ -86,15 +85,13 @@ void mir_unary_instr_print(p_mir_unary_instr p_instr) {
     printf(" = ");
     switch (p_instr->op) {
     case mir_minus_op:
-        printf("- ");
+        printf("-");
         break;
     case mir_not_op:
-        printf("! ");
+        printf("!");
         break;
     case mir_val_assign:
         break;
-    default:
-        assert(0);
     }
     mir_operand_print(p_instr->p_src);
 }
@@ -104,7 +101,7 @@ void mir_call_instr_print(p_mir_call_instr p_instr) {
         mir_vreg_print(p_instr->p_des);
         printf(" = ");
     }
-    printf("@%s", p_instr->p_func->name);
+    symbol_func_name_print(p_instr->p_func);
     mir_param_list_print(p_instr->p_param_list);
 }
 
@@ -113,7 +110,8 @@ void mir_gep_instr_print(p_mir_gep_instr p_instr) {
     printf(" = getelementptr ");
     mir_operand_print(p_instr->p_addr);
     if (p_instr->is_element)
-        printf("i32 0 ");
+        printf(" i32 0");
+    printf(" ");
     mir_operand_print(p_instr->p_offset);
 }
 
@@ -122,6 +120,7 @@ void mir_load_instr_print(p_mir_load_instr p_instr) {
     printf(" = load ");
     mir_operand_print(p_instr->p_addr);
     if (p_instr->p_offset) {
+        printf(" ");
         mir_operand_print(p_instr->p_offset);
     }
 }
@@ -130,8 +129,9 @@ void mir_store_instr_print(p_mir_store_instr p_instr) {
     printf("store ");
     mir_operand_print(p_instr->p_addr);
     if (p_instr->p_offset) {
+        printf(" ");
         mir_operand_print(p_instr->p_offset);
     }
-    printf("= ");
+    printf(" = ");
     mir_operand_print(p_instr->p_src);
 }

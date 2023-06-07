@@ -6,17 +6,13 @@
 #include <symbol/type.h>
 
 void symbol_name_print(p_symbol_var p_var) {
-    if (p_var->is_global) {
-        printf("@%s", p_var->name);
-        return;
-    }
-    printf("%%%s", p_var->name);
+    printf("%s", p_var->name);
 }
 
 void symbol_init_print(p_symbol_var p_var) {
-    symbol_name_print(p_var);
-    printf(" -> ");
     symbol_type_print(p_var->p_type);
+    printf(" ");
+    symbol_name_print(p_var);
     if (!p_var->p_init) {
         printf("\n");
         return;

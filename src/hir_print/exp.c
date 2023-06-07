@@ -137,7 +137,6 @@ void hir_exp_print(p_hir_exp p_exp) {
         printf(")");
         break;
     case hir_exp_ptr:
-        printf("&");
         symbol_name_print(p_exp->p_var);
         break;
     case hir_exp_gep:
