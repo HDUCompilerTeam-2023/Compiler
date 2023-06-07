@@ -12,8 +12,8 @@
 void hir_exp_print(p_hir_exp p_exp) {
     assert(p_exp);
     switch (p_exp->kind) {
-    case hir_exp_exec:
-        switch (p_exp->op) {
+    case hir_exp_binary:
+        switch (p_exp->b_op) {
         case hir_exp_op_add:
             if (p_exp->p_type->basic == type_float) printf("f");
             printf("+ ");
@@ -45,20 +45,6 @@ void hir_exp_print(p_hir_exp p_exp) {
         case hir_exp_op_mod:
             if (p_exp->p_type->basic == type_float) printf("f");
             printf("%% ");
-            hir_exp_print(p_exp->p_src_1);
-            printf(" ");
-            hir_exp_print(p_exp->p_src_2);
-            break;
-        case hir_exp_op_bool_and:
-            if (p_exp->p_type->basic == type_float) printf("f");
-            printf("&& ");
-            hir_exp_print(p_exp->p_src_1);
-            printf(" ");
-            hir_exp_print(p_exp->p_src_2);
-            break;
-        case hir_exp_op_bool_or:
-            if (p_exp->p_type->basic == type_float) printf("f");
-            printf("|| ");
             hir_exp_print(p_exp->p_src_1);
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
@@ -105,15 +91,41 @@ void hir_exp_print(p_hir_exp p_exp) {
             printf(" ");
             hir_exp_print(p_exp->p_src_2);
             break;
-        case hir_exp_op_bool_not:
-            if (p_exp->p_type->basic == type_float) printf("f");
-            printf("! ");
-            hir_exp_print(p_exp->p_src_1);
-            break;
+        }
+        break;
+    case hir_exp_unary:
+        switch (p_exp->u_op) {
         case hir_exp_op_minus:
             if (p_exp->p_type->basic == type_float) printf("f");
             printf("minus ");
-            hir_exp_print(p_exp->p_src_1);
+            hir_exp_print(p_exp->p_src);
+            break;
+        }
+        break;
+    case hir_exp_ulogic:
+        switch (p_exp->u_op) {
+        case hir_exp_op_bool_not:
+            if (p_exp->p_type->basic == type_float) printf("f");
+            printf("! ");
+            hir_exp_print(p_exp->p_src);
+            break;
+        }
+        break;
+    case hir_exp_logic:
+        switch (p_exp->l_op) {
+        case hir_exp_op_bool_and:
+            if (p_exp->p_type->basic == type_float) printf("f");
+            printf("&& ");
+            hir_exp_print(p_exp->p_bool_1);
+            printf(" ");
+            hir_exp_print(p_exp->p_bool_2);
+            break;
+        case hir_exp_op_bool_or:
+            if (p_exp->p_type->basic == type_float) printf("f");
+            printf("|| ");
+            hir_exp_print(p_exp->p_bool_1);
+            printf(" ");
+            hir_exp_print(p_exp->p_bool_2);
             break;
         }
         break;
