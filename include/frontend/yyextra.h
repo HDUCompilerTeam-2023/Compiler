@@ -9,7 +9,7 @@ typedef struct file_stack file_stack, *p_file_stack;
 
 struct extra_info {
     p_file_stack fs;
-    p_symbol_table p_table;
+    p_syntax_info p_info;
 };
 
 void frontend_push_file(const char *file_name, YYLTYPE *loc, p_extra_info extra, yyscan_t scanner);

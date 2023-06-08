@@ -44,11 +44,7 @@ struct symbol_table {
     hlist_hash string_hash;
 
     uint16_t level;
-    uint16_t next_id;
     p_symbol_zone p_top_table;
-
-    p_program p_program;
-    p_symbol_func p_func;
 };
 
 p_symbol_table symbol_table_gen();
@@ -61,6 +57,7 @@ p_symbol_item symbol_table_var_add(p_symbol_table p_table, p_symbol_var p_var);
 p_symbol_item symbol_table_func_add(p_symbol_table p_table, p_symbol_func p_func);
 p_symbol_var symbol_table_var_find(p_symbol_table p_table, const char *name);
 p_symbol_func symbol_table_func_find(p_symbol_table p_table, const char *name);
-p_symbol_str symbol_table_str_get(p_symbol_table p_table, const char *string);
+p_symbol_str symbol_table_str_find(p_symbol_table p_table, const char *string);
+p_symbol_str symbol_table_str_add(p_symbol_table p_table, const char *string);
 
 #endif

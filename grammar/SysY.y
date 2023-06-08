@@ -12,14 +12,14 @@
 
 #define extra yyget_extra(yyscanner)
 
-#define find_var(name) symbol_table_var_find(extra->p_table, name)
-#define find_func(name) symbol_table_func_find(extra->p_table, name)
-#define find_str(str) symbol_table_str_get(extra->p_table, str)
+#define find_var(name) syntax_find_var(extra->p_info, name)
+#define find_func(name) syntax_find_func(extra->p_info, name)
+#define find_str(str) syntax_get_str(extra->p_info, str)
 %}
 
 %initial-action
 {
-       extra->p_table = symbol_table_gen();
+       extra->p_info = syntax_info_gen();
 }
 
 %code requires{
@@ -130,10 +130,10 @@
 begin : PUSHZONE CompUnit POPZONE
       ;
 
-CompUnit : CompUnit Declaration     { syntax_global_vardecl(extra->p_table, $2); }
+CompUnit : CompUnit Declaration     { syntax_global_vardecl(extra->p_info, $2); }
          | CompUnit FuncDeclaration
-         | CompUnitInit
          | CompUnit error
+         | /* *empty */             { syntax_rtlib_func_init(extra->p_info); }
          ;
 
 Type : INT   { $$ = type_int; }
@@ -188,11 +188,11 @@ VarInitializerList : VarInitializerList ',' VarInitializer { $$ = syntax_init_li
                    | VarInitializer                        { $$ = syntax_init_list_add(syntax_init_list_gen(), $1); }
                    ;
 
-FuncHead : Type ID '(' Parameters ')' { $$ = syntax_func_head(extra->p_table, $1, $2, $4); }
-         | VOID ID '(' Parameters ')' { $$ = syntax_func_head(extra->p_table, type_void, $2, $4); }
+FuncHead : Type ID '(' Parameters ')' { $$ = syntax_func_head(extra->p_info, $1, $2, $4); }
+         | VOID ID '(' Parameters ')' { $$ = syntax_func_head(extra->p_info, type_void, $2, $4); }
          ;
 
-FuncDeclaration : FuncHead Block { $$ = syntax_func_end(extra->p_table, $1, $2); }
+FuncDeclaration : FuncHead Block { $$ = syntax_func_end(extra->p_info, $1, $2); }
                 ;
 
 Parameters : ParameterList
@@ -286,7 +286,7 @@ FuncRParamList : FuncRParamList ',' Exp { $$ = hir_param_list_add($1, $3); }
 Block : '{' BlockItems '}' { $$ = $2; }
       ;
 
-BlockItems : BlockItems Declaration { $$ = syntax_local_vardecl(extra->p_table, $1, $2); }
+BlockItems : BlockItems Declaration { $$ = syntax_local_vardecl(extra->p_info, $1, $2); }
            | BlockItems Stmt           { $$ = hir_block_add($1, $2); }
            | /* *empty */              { $$ = hir_block_gen(); }
            ;
@@ -307,39 +307,9 @@ Stmt : PUSHZONE Block POPZONE             { $$ = hir_stmt_block_gen($2); }
      | error                              { $$ = hir_stmt_exp_gen(NULL); }
      ;
 
-PUSHZONE : /* *empty */ { symbol_table_zone_push(extra->p_table); }
+PUSHZONE : /* *empty */ { syntax_zone_push(extra->p_info); }
          ;
 
-POPZONE : /* *empty */ { symbol_table_zone_pop(extra->p_table); }
+POPZONE : /* *empty */ { syntax_zone_pop(extra->p_info); }
         ;
-
-CompUnitInit : /* *empty */ {
-                     syntax_rtlib_decl(extra->p_table, type_int, "getint", NULL, NULL, false);
-                     syntax_rtlib_decl(extra->p_table, type_int, "getch", NULL, NULL, false);
-                     syntax_rtlib_decl(extra->p_table, type_float, "getfloat", NULL, NULL, false);
-
-                     p_symbol_type p_type = symbol_type_var_gen(type_int);
-                     symbol_type_push_ptr(p_type);
-                     syntax_rtlib_decl(extra->p_table, type_int, "getarray", p_type, NULL, false);
-                     p_type = symbol_type_var_gen(type_float);
-                     symbol_type_push_ptr(p_type);
-                     syntax_rtlib_decl(extra->p_table, type_int, "getfarray", p_type, NULL, false);
-
-                     syntax_rtlib_decl(extra->p_table, type_void, "putint", symbol_type_var_gen(type_int), NULL, false);
-                     syntax_rtlib_decl(extra->p_table, type_void, "putch", symbol_type_var_gen(type_int), NULL, false);
-                     syntax_rtlib_decl(extra->p_table, type_void, "putfloat", symbol_type_var_gen(type_float), NULL, false);
-
-                     p_type = symbol_type_var_gen(type_int);
-                     symbol_type_push_ptr(p_type);
-                     syntax_rtlib_decl(extra->p_table, type_void, "putarray", symbol_type_var_gen(type_int), p_type, false);
-                     p_type = symbol_type_var_gen(type_float);
-                     symbol_type_push_ptr(p_type);
-                     syntax_rtlib_decl(extra->p_table, type_void, "putfarray", symbol_type_var_gen(type_int), p_type, false);
-
-                     syntax_rtlib_decl(extra->p_table, type_void, "putf", symbol_type_var_gen(type_str), NULL, true);
-
-                     syntax_rtlib_decl(extra->p_table, type_void, "starttime", NULL, NULL, false);
-                     syntax_rtlib_decl(extra->p_table, type_void, "stoptime", NULL, NULL, false);
-              }
-             ;
 %%
