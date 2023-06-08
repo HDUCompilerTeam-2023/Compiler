@@ -1,10 +1,7 @@
 #ifndef __FRONTEND_SYMBOL_TABLE__
 #define __FRONTEND_SYMBOL_TABLE__
 
-#include <hir.h>
 #include <symbol.h>
-
-#include <program/use.h>
 
 typedef struct symbol_item symbol_item, *p_symbol_item;
 typedef struct symbol_name symbol_name, *p_symbol_name;

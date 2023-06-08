@@ -3,7 +3,6 @@
  */
 
 %{
-#include <frontend/yyextra.h>
 #include <frontend/parser.h>
 #include <frontend/log.h>
 
@@ -16,7 +15,7 @@ FLOATCONST_t str2float(const char *text, YYLTYPE *loc, yyscan_t scanner);
 %option reentrant bison-bridge bison-locations
 %option yylineno batch noinput nounput noyywrap
 
-%option extra-type="p_extra_info"
+%option extra-type="p_syntax_info"
 
 %x MULTICOMMENT
 %x LINECOMMENT
@@ -139,12 +138,8 @@ STRING (["][^"\n]*["])
 <MULTICOMMENT>[*]+/[^/]
 <MULTICOMMENT>[*][/] { BEGIN(INITIAL); }
 
-^[ \t]*#[ \t]*include[ \t]* { BEGIN(header); }
-<header>[<][^\n>]+[>] { yytext[yyleng - 1] = '\0'; frontend_push_file(yytext + 1, yylloc, yyextra, yyscanner); BEGIN(INITIAL); }
-<header>["][^\n"]+["] { yytext[yyleng - 1] = '\0'; frontend_push_file(yytext + 1, yylloc, yyextra, yyscanner); BEGIN(INITIAL); }
-
-^[ \t]*#[ \t]*endfile { if (frontend_pop_file(yyextra, yyscanner)) yyterminate(); }
-<<EOF>> { if (frontend_pop_file(yyextra, yyscanner)) yyterminate(); }
+^[ \t]*#[ \t]*endfile { yyterminate(); }
+<<EOF>> { yyterminate(); }
 
 . { yyerror(yylloc, yyscanner, "lexical error, unexpected \"%s\"", yytext); }
 %%

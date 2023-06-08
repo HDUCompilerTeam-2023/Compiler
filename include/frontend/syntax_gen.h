@@ -2,7 +2,9 @@
 #define __FRONTEND_SYNTAX_GEN__
 
 #include <frontend/syntax.h>
+
 #include <frontend/symbol_table.h>
+#include <program/use.h>
 
 struct syntax_info {
     p_symbol_table p_table;

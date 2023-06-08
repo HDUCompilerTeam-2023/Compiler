@@ -12,15 +12,10 @@
 
 #define extra yyget_extra(yyscanner)
 
-#define find_var(name) syntax_find_var(extra->p_info, name)
-#define find_func(name) syntax_find_func(extra->p_info, name)
-#define find_str(str) syntax_get_str(extra->p_info, str)
+#define find_var(name) syntax_find_var(extra, name)
+#define find_func(name) syntax_find_func(extra, name)
+#define find_str(str) syntax_get_str(extra, str)
 %}
-
-%initial-action
-{
-       extra->p_info = syntax_info_gen();
-}
 
 %code requires{
 #include <frontend/syntax.h>
@@ -125,10 +120,10 @@
 begin : PUSHZONE CompUnit POPZONE
       ;
 
-CompUnit : CompUnit Declaration     { syntax_global_vardecl(extra->p_info, $2); }
+CompUnit : CompUnit Declaration     { syntax_global_vardecl(extra, $2); }
          | CompUnit FuncDeclaration
          | CompUnit error
-         | /* *empty */             { syntax_rtlib_func_init(extra->p_info); }
+         | /* *empty */             { syntax_rtlib_func_init(extra); }
          ;
 
 Type : INT   { $$ = type_int; }
@@ -183,11 +178,11 @@ VarInitializerList : VarInitializerList ',' VarInitializer { $$ = syntax_init_li
                    | VarInitializer                        { $$ = syntax_init_list_add(syntax_init_list_gen(), $1); }
                    ;
 
-FuncHead : Type ID '(' Parameters ')' { syntax_func_head(extra->p_info, $1, $2, $4); }
-         | VOID ID '(' Parameters ')' { syntax_func_head(extra->p_info, type_void, $2, $4); }
+FuncHead : Type ID '(' Parameters ')' { syntax_func_head(extra, $1, $2, $4); }
+         | VOID ID '(' Parameters ')' { syntax_func_head(extra, type_void, $2, $4); }
          ;
 
-FuncDeclaration : FuncHead Block { syntax_func_end(extra->p_info, $2); }
+FuncDeclaration : FuncHead Block { syntax_func_end(extra, $2); }
                 ;
 
 Parameters : ParameterList
@@ -281,7 +276,7 @@ FuncRParamList : FuncRParamList ',' Exp { $$ = hir_param_list_add($1, $3); }
 Block : '{' BlockItems '}' { $$ = $2; }
       ;
 
-BlockItems : BlockItems Declaration { $$ = syntax_local_vardecl(extra->p_info, $1, $2); }
+BlockItems : BlockItems Declaration { $$ = syntax_local_vardecl(extra, $1, $2); }
            | BlockItems Stmt           { $$ = hir_block_add($1, $2); }
            | /* *empty */              { $$ = hir_block_gen(); }
            ;
@@ -302,9 +297,9 @@ Stmt : PUSHZONE Block POPZONE             { $$ = hir_stmt_block_gen($2); }
      | error                              { $$ = hir_stmt_exp_gen(NULL); }
      ;
 
-PUSHZONE : /* *empty */ { syntax_zone_push(extra->p_info); }
+PUSHZONE : /* *empty */ { syntax_zone_push(extra); }
          ;
 
-POPZONE : /* *empty */ { syntax_zone_pop(extra->p_info); }
+POPZONE : /* *empty */ { syntax_zone_pop(extra); }
         ;
 %%
