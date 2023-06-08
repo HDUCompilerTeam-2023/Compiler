@@ -3,6 +3,8 @@
 
 typedef void *yyscan_t;
 
+typedef struct syntax_info syntax_info, *p_syntax_info;
+
 typedef struct syntax_init syntax_init, *p_syntax_init;
 
 typedef struct syntax_funchead syntax_funchead, *p_syntax_funchead;

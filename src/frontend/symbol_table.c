@@ -51,9 +51,6 @@ p_symbol_table symbol_table_gen() {
         .hash = init_hash(),
         .string_hash = init_hash(),
         .level = 0,
-        .next_id = 0,
-        .p_program = program_gen(),
-        .p_func = NULL,
     };
     return p_table;
 }
@@ -135,7 +132,6 @@ p_symbol_item symbol_table_var_add(p_symbol_table p_table, p_symbol_var p_var) {
 
     return p_item;
 }
-
 p_symbol_item symbol_table_func_add(p_symbol_table p_table, p_symbol_func p_func) {
     assert(p_table->level > 0);
 
@@ -154,7 +150,6 @@ p_symbol_item symbol_table_func_add(p_symbol_table p_table, p_symbol_func p_func
     p_table->p_top_table->p_item = p_item;
     p_name->p_item = p_item;
 
-    program_add_function(p_table->p_program, p_func);
     return p_item;
 }
 
@@ -185,18 +180,28 @@ p_symbol_func symbol_table_func_find(p_symbol_table p_table, const char *name) {
     return p_name->p_item->p_func;
 }
 
-p_symbol_str symbol_table_str_get(p_symbol_table p_table, const char *string) {
-    size_t hash_tag = symbol_str_tag(string);
-    p_hlist_head p_head = p_table->string_hash + (hash_tag % hash_MOD);
-
+static inline p_symbol_str __symbol_table_str_find(p_hlist_head p_head, const char*string) {
     p_hlist_node p_node;
     hlist_for_each(p_node, p_head) {
         p_symbol_str p_str = hlist_entry(p_node, symbol_str, h_node);
         if (!strcmp(p_str->string, string)) return p_str;
     }
+    return NULL;
+}
+
+p_symbol_str symbol_table_str_find(p_symbol_table p_table, const char *string) {
+    size_t hash_tag = symbol_str_tag(string);
+    p_hlist_head p_head = p_table->string_hash + (hash_tag % hash_MOD);
+
+    return __symbol_table_str_find(p_head, string);
+}
+p_symbol_str symbol_table_str_add(p_symbol_table p_table, const char *string) {
+    size_t hash_tag = symbol_str_tag(string);
+    p_hlist_head p_head = p_table->string_hash + (hash_tag % hash_MOD);
+
+    assert(!__symbol_table_str_find(p_head, string));
 
     p_symbol_str p_str = symbol_str_gen(string);
     hlist_node_add(p_head, &p_str->h_node);
-    program_add_str(p_table->p_program, p_str);
     return p_str;
 }
