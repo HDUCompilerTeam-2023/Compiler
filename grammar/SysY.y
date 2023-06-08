@@ -33,8 +33,6 @@
        p_hir_stmt p_stmt;
        p_hir_exp p_exp;
 
-       p_symbol_func p_func;
-
        p_hir_param_list p_param_list;
 
        p_syntax_decl p_decl;
@@ -77,9 +75,6 @@
 
 %type <p_param_list> FuncRParamList
 %type <p_param_list> FuncRParams
-
-%type <p_func> FuncHead
-%type <p_func> FuncDeclaration
 
 %type <p_param_decl> ParameterDeclaration
 %type <p_parameter_list> ParameterList
@@ -188,11 +183,11 @@ VarInitializerList : VarInitializerList ',' VarInitializer { $$ = syntax_init_li
                    | VarInitializer                        { $$ = syntax_init_list_add(syntax_init_list_gen(), $1); }
                    ;
 
-FuncHead : Type ID '(' Parameters ')' { $$ = syntax_func_head(extra->p_info, $1, $2, $4); }
-         | VOID ID '(' Parameters ')' { $$ = syntax_func_head(extra->p_info, type_void, $2, $4); }
+FuncHead : Type ID '(' Parameters ')' { syntax_func_head(extra->p_info, $1, $2, $4); }
+         | VOID ID '(' Parameters ')' { syntax_func_head(extra->p_info, type_void, $2, $4); }
          ;
 
-FuncDeclaration : FuncHead Block { $$ = syntax_func_end(extra->p_info, $1, $2); }
+FuncDeclaration : FuncHead Block { syntax_func_end(extra->p_info, $2); }
                 ;
 
 Parameters : ParameterList
