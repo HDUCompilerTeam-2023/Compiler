@@ -41,8 +41,8 @@ p_syntax_init syntax_init_list_gen(void);
 p_syntax_init syntax_init_exp_gen(p_hir_exp p_exp);
 p_syntax_init syntax_init_list_add(p_syntax_init p_list, p_syntax_init p_init);
 
-p_symbol_func syntax_func_head(p_syntax_info p_info, basic_type type, char *name, p_syntax_param_list p_param_list);
-p_symbol_func syntax_func_end(p_syntax_info p_info, p_symbol_func p_func, p_hir_block p_block);
+void syntax_func_head(p_syntax_info p_info, basic_type type, char *name, p_syntax_param_list p_param_list);
+void syntax_func_end(p_syntax_info p_info, p_hir_block p_block);
 
 struct syntax_type_array {
     uint64_t size;

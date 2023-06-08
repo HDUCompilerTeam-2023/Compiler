@@ -211,7 +211,7 @@ p_syntax_param_list syntax_param_list_add(p_syntax_param_list p_list, p_syntax_p
     return p_list;
 }
 
-p_symbol_func syntax_func_head(p_syntax_info p_info, basic_type type, char *name, p_syntax_param_list p_param_list) {
+void syntax_func_head(p_syntax_info p_info, basic_type type, char *name, p_syntax_param_list p_param_list) {
     p_symbol_func p_func = symbol_func_gen(name, type, false);
     syntax_program_add_function(p_info, p_func);
     p_info->p_func = p_func;
@@ -228,13 +228,12 @@ p_symbol_func syntax_func_head(p_syntax_info p_info, basic_type type, char *name
         free(p_decl);
     }
     free(p_param_list);
-    return p_func;
 }
-p_symbol_func syntax_func_end(p_syntax_info p_info, p_symbol_func p_func, p_hir_block p_block) {
+void syntax_func_end(p_syntax_info p_info, p_hir_block p_block) {
     syntax_zone_pop(p_info);
+    p_symbol_func p_func = p_info->p_func;
     p_info->p_func = NULL;
     p_func->p_h_block = p_block;
-    return p_func;
 }
 
 typedef struct syntax_init_mem syntax_init_mem, *p_syntax_init_mem;
