@@ -1,4 +1,3 @@
-#include <hir_print.h>
 #include <mir_print.h>
 #include <stdio.h>
 #include <symbol_print.h>
@@ -36,23 +35,6 @@ void program_variable_print(p_program p_program) {
         symbol_func_init_print(p_func);
     }
     printf("=== program end ===\n");
-}
-
-void program_hir_print(p_program p_program) {
-    assert(p_program);
-    printf("=== hir program start ===\n");
-    p_list_head p_node;
-    list_for_each(p_node, &p_program->function) {
-        p_symbol_func p_func = list_entry(p_node, symbol_func, node);
-        if (!p_func->p_h_block) continue;
-        symbol_func_init_print(p_func);
-        printf("{\n");
-        deep += 4;
-        hir_block_print(p_func->p_h_block);
-        deep -= 4;
-        printf("}\n");
-    }
-    printf("=== hir program end ===\n");
 }
 
 void program_mir_print(p_program p_program) {

@@ -6,7 +6,6 @@
 #include <mir.h>
 
 p_program program_gen(void);
-void program_hir_drop(p_program p_program);
 void program_mir_drop(p_program p_program);
 void program_drop(p_program p_program);
 

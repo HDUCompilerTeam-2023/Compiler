@@ -14,7 +14,6 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va) {
         .constant_cnt = 0,
         .variable = list_head_init(&p_func->variable),
         .variable_cnt = 0,
-        .p_h_block = NULL,
         .p_m_func = NULL,
     };
     strcpy(p_func->name, name);

@@ -3,7 +3,6 @@
 #include <program/gen.h>
 
 #include <symbol_gen.h>
-#include <hir_gen.h>
 #include <mir_gen.h>
 
 p_program program_gen(void) {
@@ -21,15 +20,6 @@ p_program program_gen(void) {
     };
     return p_program;
 }
-void program_hir_drop(p_program p_program) {
-    p_list_head p_node;
-    list_for_each(p_node, &p_program->function) {
-        p_symbol_func p_func = list_entry(p_node, symbol_func, node);
-        if (p_func->p_h_block)
-            hir_block_drop(p_func->p_h_block);
-        p_func->p_h_block = NULL;
-    }
-}
 void program_mir_drop(p_program p_program) {
     p_list_head p_node, p_netx;
     list_for_each_safe(p_node, p_netx, &p_program->v_memory) {
@@ -46,7 +36,6 @@ void program_mir_drop(p_program p_program) {
 void program_drop(p_program p_program) {
     while (!list_head_alone(&p_program->function)) {
         p_symbol_func p_del = list_entry(p_program->function.p_next, symbol_func, node);
-        assert(!p_del->p_h_block);
         assert(!p_del->p_m_func);
         symbol_func_drop(p_del);
     }

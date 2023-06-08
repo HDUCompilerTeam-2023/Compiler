@@ -27,18 +27,15 @@ static inline void hir2mir_func_retval_gen(p_hir2mir_info p_info, p_mir_func p_f
 }
 
 // 生成函数 mir 将 p_info 传来的信息回馈给 mir_func
-void hir2mir_func_gen(p_symbol_func p_func, p_program p_program) {
-    p_mir_func p_m_func = p_func->p_m_func = mir_func_gen();
-    p_m_func->p_func_sym = p_func;
-
-    if (!p_func->p_h_block) return;
+void hir2mir_func_gen(p_hir_block p_h_block, p_mir_func p_m_func, p_program p_program) {
+    assert(p_h_block);
 
     p_hir2mir_info p_info = hir2mir_info_gen(p_m_func, p_program);
 
     hir2mir_func_param_gen(p_info, p_m_func);
     hir2mir_func_retval_gen(p_info, p_m_func);
 
-    hir2mir_block_gen(p_info, p_func->p_h_block);
+    hir2mir_block_gen(p_info, p_h_block);
 
     hir2mir_info_add_basic_block(p_info, p_info->p_ret_block);
 

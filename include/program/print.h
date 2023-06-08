@@ -4,7 +4,6 @@
 #include <program/use.h>
 
 void program_variable_print(p_program p_program);
-void program_hir_print(p_program p_program);
 void program_mir_print(p_program p_program);
 void program_mir_dom_info_print(p_program p_program);
 
