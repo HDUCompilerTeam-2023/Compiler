@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <symbol_print.h>
 
-#include <hir_print.h>
 #include <symbol/var.h>
 #include <symbol/type.h>
 

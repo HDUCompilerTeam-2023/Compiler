@@ -7,6 +7,8 @@
 #include <program/gen.h>
 #include <symbol_gen.h>
 
+#include <hir2mir.h>
+
 p_syntax_info syntax_info_gen(void) {
     p_syntax_info p_info = malloc(sizeof(*p_info));
     *p_info = (syntax_info) {
@@ -233,7 +235,10 @@ void syntax_func_end(p_syntax_info p_info, p_hir_block p_block) {
     syntax_zone_pop(p_info);
     p_symbol_func p_func = p_info->p_func;
     p_info->p_func = NULL;
-    p_func->p_h_block = p_block;
+    p_func->p_m_func = mir_func_gen();
+    p_func->p_m_func->p_func_sym = p_func;
+    hir2mir_func_gen(p_block, p_func->p_m_func, p_info->p_program);
+    hir_block_drop(p_block);
 }
 
 typedef struct syntax_init_mem syntax_init_mem, *p_syntax_init_mem;
@@ -442,6 +447,8 @@ void syntax_rtlib_decl(p_syntax_info p_info, basic_type type, char *name, p_symb
     }
     syntax_zone_pop(p_info);
     p_info->p_func = NULL;
+    p_func->p_m_func = mir_func_gen();
+    p_func->p_m_func->p_func_sym = p_func;
 }
 
 void syntax_rtlib_func_init(p_syntax_info p_info) {

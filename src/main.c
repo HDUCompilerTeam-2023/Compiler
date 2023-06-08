@@ -11,13 +11,9 @@ int main(int argc, char *argv[]) {
     if (argc == 1)
         argv[argc++] = NULL;
     for (int i = 1; i < argc; ++i) {
-        // gen hir
+        // gen ir
         p_program p_program = frontend_trans(argv[i]);
         program_variable_print(p_program);
-        program_hir_print(p_program);
-
-        // gen mir
-        hir2mir_program_gen(p_program);
         program_mir_print(p_program);
 
         // simplify cfg

@@ -20,7 +20,6 @@ struct symbol_func {
     list_head variable;
     size_t variable_cnt;
 
-    p_hir_block p_h_block;
     p_mir_func p_m_func;
 
     list_head node;
