@@ -26,7 +26,6 @@ int main(int argc, char *argv[]) {
         program_mir_print(p_program);
 
         // drop mir
-        program_mir_drop(p_program);
         program_drop(p_program);
     }
     return 0;

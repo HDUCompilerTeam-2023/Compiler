@@ -13,8 +13,6 @@ void mir_basic_block_set_ret(p_mir_basic_block p_bb, p_mir_operand p_exp);
 p_mir_basic_block_branch_target mir_basic_block_branch_target_gen(p_mir_basic_block p_block);
 void mir_basic_block_branch_target_add_param(p_mir_basic_block_branch_target p_branch_target, p_mir_operand p_operand);
 
-void mir_basic_block_init_visited(p_mir_func p_func);
-
 void mir_basic_block_add_dom_son(p_mir_basic_block p_basic_block, p_mir_basic_block p_son);
 void mir_basic_block_add_param(p_mir_basic_block p_basic_block, p_mir_vreg p_vreg);
 

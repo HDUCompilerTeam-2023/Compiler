@@ -1,6 +1,6 @@
 #include <mir_gen.h>
 #include <program/def.h>
-#include <symbol/func.h>
+#include <symbol_gen/func.h>
 #include <mir_opt/simplify_cfg.h>
 #include <stdio.h>
 
@@ -18,8 +18,8 @@ static inline void mir_simplify_cfg_dfs_basic_block(p_mir_basic_block p_bb) {
     }
 }
 
-static inline void mir_simplify_cfg_func_remove_no_predesessor_bb(p_mir_func p_func) {
-    mir_basic_block_init_visited(p_func);
+static inline void mir_simplify_cfg_func_remove_no_predesessor_bb(p_symbol_func p_func) {
+    symbol_func_basic_block_init_visited(p_func);
     p_mir_basic_block p_entry_bb = list_entry(p_func->block.p_next, mir_basic_block, node);
     mir_simplify_cfg_dfs_basic_block(p_entry_bb);
     p_list_head p_node;
@@ -50,7 +50,7 @@ static inline void mir_simplify_cfg_func_remove_no_predesessor_bb(p_mir_func p_f
                 break;
             }
             if (p_des) {
-                mir_func_vreg_del(p_func, p_des);
+                symbol_func_vreg_del(p_func, p_des);
             }
         }
 
@@ -83,11 +83,11 @@ static inline void mir_simplify_cfg_func_remove_no_predesessor_bb(p_mir_func p_f
         p_mir_basic_block p_bb = list_entry(p_node, mir_basic_block, node);
         if (p_bb->if_visited) continue;
 
-        mir_func_bb_del(p_func, p_bb);
+        symbol_func_bb_del(p_func, p_bb);
     }
 }
 
-static inline void mir_simplify_cfg_func_merge_single_predecessor_bb(p_mir_func p_func) {
+static inline void mir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_func p_func) {
     p_list_head p_node;
     p_list_head p_next;
     list_for_each_safe(p_node, p_next, &p_func->block) {
@@ -132,11 +132,11 @@ static inline void mir_simplify_cfg_func_merge_single_predecessor_bb(p_mir_func 
         p_prev_bb->p_branch = p_bb->p_branch;
         p_bb->p_branch = p_tmp_branch;
 
-        mir_func_bb_del(p_func, p_bb);
+        symbol_func_bb_del(p_func, p_bb);
     }
 }
 
-static inline void mir_simplify_cfg_func_eliminate_single_br_bb(p_mir_func p_func) {
+static inline void mir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_func) {
     // TODO solve ssa bb param
     p_list_head p_node;
     p_list_head p_next;
@@ -181,11 +181,11 @@ static inline void mir_simplify_cfg_func_eliminate_single_br_bb(p_mir_func p_fun
             p_prev_target_1->p_block = p_target->p_block;
         }
 
-        mir_func_bb_del(p_func, p_bb);
+        symbol_func_bb_del(p_func, p_bb);
     }
 }
 
-static inline void mir_simplify_cfg_func_pass(p_mir_func p_func) {
+static inline void mir_simplify_cfg_func_pass(p_symbol_func p_func) {
     if (list_head_alone(&p_func->block)) return;
 
     mir_simplify_cfg_func_remove_no_predesessor_bb(p_func);
@@ -198,10 +198,10 @@ static inline void mir_simplify_cfg_func_pass(p_mir_func p_func) {
 void mir_simplify_cfg_pass(p_program p_program) {
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
-        p_mir_func p_func = list_entry(p_node, symbol_func, node)->p_m_func;
+        p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         mir_simplify_cfg_func_pass(p_func);
 
-        mir_func_set_block_id(p_func);
-        mir_func_set_vreg_id(p_func);
+        symbol_func_set_block_id(p_func);
+        symbol_func_set_vreg_id(p_func);
     }
 }

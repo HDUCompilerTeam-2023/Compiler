@@ -10,33 +10,17 @@ p_program program_gen(void) {
     *p_program = (program) {
         .variable = list_head_init(&p_program->variable),
         .constant = list_head_init(&p_program->constant),
-        .v_memory = list_head_init(&p_program->v_memory),
         .function = list_head_init(&p_program->function),
         .string = list_head_init(&p_program->string),
         .variable_cnt = 0,
         .constant_cnt = 0,
-        .v_memory_cnt = 0,
         .function_cnt = 0,
     };
     return p_program;
 }
-void program_mir_drop(p_program p_program) {
-    p_list_head p_node, p_netx;
-    list_for_each_safe(p_node, p_netx, &p_program->v_memory) {
-        p_mir_vmem p_vmem = list_entry(p_node, mir_vmem, node);
-        program_mir_vmem_del(p_program, p_vmem);
-    }
-    list_for_each(p_node, &p_program->function) {
-        p_symbol_func p_func = list_entry(p_node, symbol_func, node);
-        if (p_func->p_m_func)
-            mir_func_drop(p_func->p_m_func);
-        p_func->p_m_func = NULL;
-    }
-}
 void program_drop(p_program p_program) {
     while (!list_head_alone(&p_program->function)) {
         p_symbol_func p_del = list_entry(p_program->function.p_next, symbol_func, node);
-        assert(!p_del->p_m_func);
         symbol_func_drop(p_del);
     }
 
@@ -77,20 +61,3 @@ bool program_add_function(p_program p_program, p_symbol_func p_func) {
     return list_add_prev(&p_func->node, &p_program->function);
 }
 
-void program_mir_vmem_add(p_program p_program, p_mir_vmem p_vmem) {
-    list_add_prev(&p_vmem->node, &p_program->v_memory);
-    ++p_program->v_memory_cnt;
-}
-void program_mir_vmem_del(p_program p_program, p_mir_vmem p_vmem) {
-    list_del(&p_vmem->node);
-    mir_vmem_drop(p_vmem);
-    --p_program->v_memory_cnt;
-}
-void program_mir_set_vmem_id(p_program p_program) {
-    p_list_head p_node;
-    size_t id = 0;
-    list_for_each(p_node, &p_program->v_memory) {
-        p_mir_vmem p_vmem = list_entry(p_node, mir_vmem, node);
-        p_vmem->id = id++;
-    }
-}
