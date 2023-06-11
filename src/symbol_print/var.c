@@ -5,7 +5,18 @@
 #include <symbol/type.h>
 
 void symbol_name_print(p_symbol_var p_var) {
-    printf("%s", p_var->name);
+    symbol_type_print(p_var->p_type);
+
+    if (p_var->is_global) {
+        printf(" @");
+    }
+    else {
+        printf(" $");
+    }
+    printf("%ld", p_var->id);
+    if (p_var->name) {
+        printf("_%s", p_var->name);
+    }
 }
 
 void symbol_init_print(p_symbol_var p_var) {

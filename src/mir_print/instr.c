@@ -1,5 +1,4 @@
 #include <mir/basic_block.h>
-#include <mir/func.h>
 #include <mir/instr.h>
 #include <mir_print.h>
 #include <symbol_print.h>

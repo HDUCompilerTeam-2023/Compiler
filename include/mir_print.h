@@ -5,7 +5,6 @@
 #include <mir_print/instr.h>
 #include <mir_print/operand.h>
 #include <mir_print/param.h>
-#include <mir_print/vmem.h>
 #include <mir_print/vreg.h>
 
 #endif

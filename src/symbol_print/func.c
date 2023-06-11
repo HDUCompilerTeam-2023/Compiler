@@ -18,8 +18,6 @@ void symbol_func_init_print(p_symbol_func p_func) {
     p_list_head p_node;
     list_for_each(p_node, &p_func->param) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        symbol_type_print(p_var->p_type);
-        printf(" ");
         symbol_name_print(p_var);
         if (p_node != p_func->param.p_prev) printf(", ");
     }

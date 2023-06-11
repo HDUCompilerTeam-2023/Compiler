@@ -106,20 +106,6 @@ static inline p_mir_operand hir2mir_exp_num_gen(p_hir2mir_info p_info, p_hir_exp
     }
     assert(0);
 }
-static inline p_mir_operand hir2mir_exp_ptr_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
-    if (!p_exp->p_var->p_vmem) {
-        p_mir_vmem p_vmem = mir_vmem_sym_gen(p_exp->p_var);
-        if (p_exp->p_var->is_global) {
-            program_mir_vmem_add(p_info->p_program, p_vmem);
-        }
-        else {
-            mir_func_vmem_add(p_info->p_func, p_vmem);
-        }
-        p_exp->p_var->p_vmem = p_vmem;
-    }
-
-    return mir_operand_addr_gen(p_exp->p_var->p_vmem);
-}
 static inline p_mir_instr hir2mir_exp_gep_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     p_mir_operand p_addr = hir2mir_exp_gen(p_info, p_exp->p_addr);
     p_mir_operand p_offset = hir2mir_exp_gen(p_info, p_exp->p_offset);
@@ -159,7 +145,7 @@ p_mir_operand hir2mir_exp_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
     case hir_exp_num: // 若是常量 直接返回该常量对应的操作数
         return hir2mir_exp_num_gen(p_info, p_exp);
     case hir_exp_ptr:
-        return hir2mir_exp_ptr_gen(p_info, p_exp);
+        return mir_operand_addr_gen(p_exp->p_var);
     case hir_exp_gep:
         p_instr = hir2mir_exp_gep_gen(p_info, p_exp);
         break;

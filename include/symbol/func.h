@@ -13,14 +13,16 @@ struct symbol_func {
     char *name;
     uint64_t id;
 
+    size_t var_cnt;
     list_head param;
-    size_t param_cnt;
     list_head constant;
-    size_t constant_cnt;
     list_head variable;
-    size_t variable_cnt;
 
-    p_mir_func p_m_func;
+    list_head param_reg_list;
+    list_head vreg_list;
+
+    size_t block_cnt;
+    list_head block;
 
     list_head node;
 };

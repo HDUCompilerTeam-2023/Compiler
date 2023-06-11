@@ -49,12 +49,12 @@ p_mir_operand mir_operand_void_gen(void) {
     return p_mir_void;
 }
 
-p_mir_operand mir_operand_addr_gen(p_mir_vmem p_global_vmem) {
+p_mir_operand mir_operand_addr_gen(p_symbol_var p_vmem) {
     p_mir_operand p_operand = malloc(sizeof(*p_operand));
     *p_operand = (mir_operand) {
         .kind = imme,
-        .p_global_vmem = p_global_vmem,
-        .p_type = symbol_type_copy(p_global_vmem->p_type),
+        .p_vmem = p_vmem,
+        .p_type = symbol_type_copy(p_vmem->p_type),
     };
     symbol_type_push_ptr(p_operand->p_type);
     return p_operand;

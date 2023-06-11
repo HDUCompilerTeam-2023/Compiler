@@ -14,7 +14,7 @@ void mir_operand_print(p_mir_operand p_operand) {
         symbol_type_print(p_operand->p_type);
         if (p_operand->p_type->ref_level > 0) {
             printf(" (addr ");
-            mir_vmem_print(p_operand->p_global_vmem);
+            symbol_name_print(p_operand->p_vmem);
             printf(")");
         }
         else if (p_operand->p_type->basic == type_int)

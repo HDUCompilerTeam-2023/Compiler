@@ -19,7 +19,7 @@ struct mir_operand {
                 INTCONST_t intconst;
                 FLOATCONST_t floatconst;
                 p_symbol_str strconst;
-                p_mir_vmem p_global_vmem;
+                p_symbol_var p_vmem;
             };
         };
     };

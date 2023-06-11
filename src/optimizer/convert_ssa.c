@@ -2,7 +2,7 @@
 #include <optimizer/convert_ssa.h>
 #include <program/def.h>
 #include <symbol/var.h>
-#include <symbol/func.h>
+#include <symbol_gen/func.h>
 #include <symbol/type.h>
 #include <symbol_gen/type.h>
 void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_mir_basic_block p_basic_block, size_t current_num) {
@@ -35,22 +35,38 @@ size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t block_num, siz
     return current_num;
 }
 
-p_ssa_var_list_info convert_ssa_init_var_list(p_mir_func p_func) {
+p_ssa_var_list_info convert_ssa_init_var_list(p_symbol_func p_func) {
     p_ssa_var_list_info p_var_list = malloc(sizeof(*p_var_list));
     *p_var_list = (ssa_var_list_info) {
-        .vmem_num = p_func->vmem_cnt,
+        .vmem_num = p_func->var_cnt,
         .p_func = p_func,
     };
 
     p_var_list->p_base = malloc(p_var_list->vmem_num * sizeof(*p_var_list->p_base));
     p_list_head p_node;
     // 全局变量, 已初始化
-    list_for_each(p_node, &p_func->vmem_list) {
-        p_mir_vmem p_vmem = list_entry(p_node, mir_vmem, node);
+    list_for_each(p_node, &p_func->constant) {
+        p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
         *(p_var_list->p_base + p_vmem->id) = (ssa_var_info) {
             .p_vmem = p_vmem,
             .p_current_vreg = NULL,
-            .sym_stack = list_head_init(&(p_var_list->p_base + p_vmem->id)->sym_stack),
+            .sym_stack = list_init_head(&(p_var_list->p_base + p_vmem->id)->sym_stack),
+        };
+    }
+    list_for_each(p_node, &p_func->param) {
+        p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
+        *(p_var_list->p_base + p_vmem->id) = (ssa_var_info) {
+            .p_vmem = p_vmem,
+            .p_current_vreg = NULL,
+            .sym_stack = list_init_head(&(p_var_list->p_base + p_vmem->id)->sym_stack),
+        };
+    }
+    list_for_each(p_node, &p_func->variable) {
+        p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
+        *(p_var_list->p_base + p_vmem->id) = (ssa_var_info) {
+            .p_vmem = p_vmem,
+            .p_current_vreg = NULL,
+            .sym_stack = list_init_head(&(p_var_list->p_base + p_vmem->id)->sym_stack),
         };
     }
 
@@ -63,10 +79,10 @@ static inline size_t get_var_index(p_mir_operand p_operand, p_ssa_var_list_info 
     if (p_operand->kind == reg) return -1;
     if (p_operand->p_type->ref_level == 0) return -1;
 
-    p_mir_vmem p_vmem = p_operand->p_global_vmem;
+    p_symbol_var p_vmem = p_operand->p_vmem;
 
     if (!list_head_alone(&p_vmem->p_type->array) && p_vmem->p_type->ref_level == 0) return -1;
-    if (p_vmem->p_var && p_vmem->p_var->is_global) return -1;
+    if (p_vmem->is_global) return -1;
     return p_vmem->id;
 }
 
@@ -187,7 +203,7 @@ static inline void set_block_param_ssa_id(p_mir_basic_block p_basic_block, p_con
     for (size_t i = 0; i < var_num; i++) {
         if (bitmap_if_in(p_phi_var, i)) {
             p_mir_vreg p_vreg = mir_vreg_gen(symbol_type_copy((p_var_list->p_base + i)->p_vmem->p_type));
-            mir_func_vreg_add_at(p_var_list->p_func, p_vreg, p_basic_block, list_entry(&p_basic_block->instr_list, mir_instr, node));
+            symbol_func_vreg_add_at(p_var_list->p_func, p_vreg, p_basic_block, list_entry(&p_basic_block->instr_list, mir_instr, node));
             (p_var_list->p_base + i)->p_current_vreg = p_vreg;
             mir_basic_block_add_param(p_basic_block, p_vreg);
         }
@@ -253,7 +269,7 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_se
 
             p_mir_vreg p_vreg = mir_vreg_gen(symbol_type_copy(p_var_list->p_base[var_index].p_vmem->p_type));
             mir_vreg_set_instr_def(p_vreg, p_instr);
-            mir_func_vreg_add_at(p_var_list->p_func, p_vreg, p_entry, p_instr);
+            symbol_func_vreg_add_at(p_var_list->p_func, p_vreg, p_entry, p_instr);
             p_var_list->p_base[var_index].p_current_vreg = p_vreg;
 
             mir_operand_drop(p_instr->mir_store.p_addr);
@@ -290,14 +306,14 @@ static inline void print_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
     printf("--- dom_frontier end---\n");
 }
 
-void convert_ssa_func(p_mir_func p_func) {
+void convert_ssa_func(p_symbol_func p_func) {
     if (list_head_alone(&p_func->block)) return;
     size_t block_num = p_func->block_cnt;
     p_convert_ssa dfs_seq = malloc(block_num * sizeof(*dfs_seq));
     // 初始化变量集合
     p_ssa_var_list_info p_var_list = convert_ssa_init_var_list(p_func);
     // 初始化 dfs 序
-    mir_basic_block_init_visited(p_func);
+    symbol_func_basic_block_init_visited(p_func);
     p_mir_basic_block p_entry = list_entry(p_func->block.p_next, mir_basic_block, node);
     convert_ssa_init_dfs_sequence(dfs_seq, block_num, p_var_list->vmem_num, p_entry, 0);
     // 计算支配树
@@ -308,19 +324,19 @@ void convert_ssa_func(p_mir_func p_func) {
     // 插入 phi 函数
     convert_ssa_insert_phi(dfs_seq, block_num, p_var_list);
     // // 重命名
-    mir_basic_block_init_visited(p_func);
+    symbol_func_basic_block_init_visited(p_func);
     convert_ssa_rename_var(p_var_list, dfs_seq, p_entry);
 
     convert_ssa_dfs_seq_drop(dfs_seq, block_num);
     ssa_var_list_info_drop(p_var_list);
 
-    mir_func_set_vreg_id(p_func);
+    symbol_func_set_vreg_id(p_func);
 }
 
 void convert_ssa_program(p_program p_program) {
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
-        p_mir_func p_func = list_entry(p_node, symbol_func, node)->p_m_func;
+        p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         convert_ssa_func(p_func);
     }
 }

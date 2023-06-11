@@ -11,4 +11,15 @@ void symbol_func_add_param(p_symbol_func p_func, p_symbol_var p_var);
 
 void symbol_func_drop(p_symbol_func p_func);
 
+void symbol_func_bb_add(p_symbol_func p_func, p_mir_basic_block p_basic_block);
+void symbol_func_bb_del(p_symbol_func p_func, p_mir_basic_block p_basic_block);
+void symbol_func_param_reg_add(p_symbol_func p_func, p_mir_vreg p_vreg);
+void symbol_func_param_reg_del(p_symbol_func p_func, p_mir_vreg p_vreg);
+void symbol_func_vreg_add(p_symbol_func p_func, p_mir_vreg p_vreg);
+void symbol_func_vreg_del(p_symbol_func p_func, p_mir_vreg p_vreg);
+void symbol_func_vreg_add_at(p_symbol_func p_func, p_mir_vreg p_new_sym, p_mir_basic_block p_current_block, p_mir_instr p_instr);
+void symbol_func_basic_block_init_visited(p_symbol_func p_func);
+void symbol_func_set_block_id(p_symbol_func p_func);
+void symbol_func_set_vreg_id(p_symbol_func p_func);
+
 #endif

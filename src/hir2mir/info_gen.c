@@ -1,10 +1,10 @@
 #include <hir2mir.h>
 #include <program/def.h>
-#include <symbol/func.h>
+#include <symbol_gen/func.h>
 #include <symbol/type.h>
 
 // 根据函数信息 生成接下来需要收集的信息的返回值类型
-p_hir2mir_info hir2mir_info_gen(p_mir_func p_m_func, p_program p_program) {
+p_hir2mir_info hir2mir_info_gen(p_symbol_func p_m_func, p_program p_program) {
     p_hir2mir_info p_info = malloc(sizeof(*p_info));
     *p_info = (hir2mir_info) {
         .p_current_basic_block = NULL,
@@ -25,7 +25,7 @@ void hir2mir_info_drop(p_hir2mir_info p_info) {
 }
 
 void hir2mir_info_add_basic_block(p_hir2mir_info p_info, p_mir_basic_block p_new) {
-    mir_func_bb_add(p_info->p_func, p_new);
+    symbol_func_bb_add(p_info->p_func, p_new);
     p_info->p_current_basic_block = p_new;
 }
 
@@ -33,6 +33,6 @@ void hir2mir_info_add_instr(p_hir2mir_info p_info, p_mir_instr p_instr) {
     mir_basic_block_addinstr(p_info->p_current_basic_block, p_instr);
     p_mir_vreg p_des = mir_instr_get_des(p_instr);
     if (p_des) {
-        mir_func_vreg_add(p_info->p_func, p_des);
+        symbol_func_vreg_add(p_info->p_func, p_des);
     }
 }

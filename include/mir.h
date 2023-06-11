@@ -1,8 +1,6 @@
 #include <symbol.h>
 #include <util.h>
 
-typedef struct mir_func mir_func, *p_mir_func;
-
 typedef enum mir_basic_block_branch_kind mir_basic_block_branch_kind;
 typedef struct mir_basic_block_branch mir_basic_block_branch, *p_mir_basic_block_branch;
 typedef struct mir_basic_block mir_basic_block, *p_mir_basic_block;
@@ -21,7 +19,6 @@ typedef struct mir_param_list mir_param_list, *p_mir_param_list;
 typedef struct mir_operand mir_operand, *p_mir_operand;
 
 typedef struct mir_vreg mir_vreg, *p_mir_vreg;
-typedef struct mir_vmem mir_vmem, *p_mir_vmem;
 
 typedef enum mir_instr_type mir_instr_type;
 typedef enum mir_binary_op mir_binary_op;

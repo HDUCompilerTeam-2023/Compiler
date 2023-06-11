@@ -14,7 +14,6 @@ p_program frontend_trans(const char *file_name) {
 
     yyparse(scanner);
     p_program p_program = syntax_info_get_program(p_info);
-    program_mir_set_vmem_id(p_program);
     syntax_info_drop(p_info);
 
     yylex_destroy(scanner);
