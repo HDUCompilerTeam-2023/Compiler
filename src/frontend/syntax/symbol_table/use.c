@@ -1,12 +1,8 @@
-#include <frontend/symbol_table.h>
+#include <frontend/syntax/symbol_table/def.h>
 
-#include <hir_gen.h>
-
-#include <program/gen.h>
-#include <symbol_gen.h>
-
-#define hash_P (65537)
-#define hash_MOD (109)
+#include <symbol/var.h>
+#include <symbol/func.h>
+#include <symbol_gen/str.h>
 
 static inline size_t symbol_str_tag(const char *name) {
     size_t hash = 0;
@@ -38,33 +34,6 @@ static inline p_symbol_name symbol_add_name(p_hlist_head p_head, size_t hash_tag
     return p_name;
 }
 
-static inline hlist_hash init_hash() {
-    hlist_hash hash = malloc(sizeof(*hash) * hash_MOD);
-    for (size_t i = 0; i < hash_MOD; ++i)
-        hlist_head_init(hash + i);
-    return hash;
-}
-p_symbol_table symbol_table_gen() {
-    p_symbol_table p_table = malloc(sizeof(*p_table));
-    *p_table = (typeof(*p_table)) {
-        .p_top_table = NULL,
-        .hash = init_hash(),
-        .string_hash = init_hash(),
-        .level = 0,
-    };
-    return p_table;
-}
-void symbol_table_drop(p_symbol_table p_table) {
-    assert(p_table->p_top_table == NULL);
-    assert(p_table->level == 0);
-    for (size_t i = 0; i < hash_MOD; ++i) {
-        assert(hlist_head_empty(p_table->hash + i));
-    }
-
-    free(p_table->string_hash);
-    free(p_table->hash);
-    free(p_table);
-}
 
 void symbol_table_zone_push(p_symbol_table p_table) {
     p_symbol_zone pst = malloc(sizeof(*pst));

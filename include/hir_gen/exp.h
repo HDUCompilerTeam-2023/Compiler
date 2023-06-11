@@ -4,6 +4,7 @@
 #include <hir/exp.h>
 
 void hir_exp_ptr_check_lval(p_hir_exp p_exp);
+p_hir_exp hir_exp_ptr_check_const(p_hir_exp p_exp);
 p_hir_exp hir_exp_ptr_to_val_check_basic(p_hir_exp p_exp);
 p_hir_exp hir_exp_ptr_to_val(p_hir_exp p_exp);
 

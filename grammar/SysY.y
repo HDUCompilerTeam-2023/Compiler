@@ -8,7 +8,11 @@
 %{
 #include <frontend/lexer.h>
 #include <frontend/log.h>
-#include <frontend/syntax_gen.h>
+#include <frontend/syntax/init/gen.h>
+#include <frontend/syntax/decl_list/gen.h>
+#include <frontend/syntax/decl_list/node/gen.h>
+
+#include <hir_gen.h>
 
 #define extra yyget_extra(yyscanner)
 
@@ -18,7 +22,7 @@
 %}
 
 %code requires{
-#include <frontend/syntax.h>
+#include <frontend/syntax/use.h>
 }
 
 %define api.pure full
@@ -32,9 +36,6 @@
 
        p_syntax_decl p_decl;
        p_syntax_decl_list p_decl_list;
-
-       p_syntax_param_decl p_param_decl;
-       p_syntax_param_list p_parameter_list;
 
        p_syntax_init p_init;
 
@@ -71,9 +72,9 @@
 %type <p_param_list> FuncRParamList
 %type <p_param_list> FuncRParams
 
-%type <p_param_decl> ParameterDeclaration
-%type <p_parameter_list> ParameterList
-%type <p_parameter_list> Parameters
+%type <p_decl> ParameterDeclaration
+%type <p_decl_list> ParameterList
+%type <p_decl_list> Parameters
 
 %type <p_decl> ArraryParameter
 %type <p_decl> Declarator
@@ -186,15 +187,15 @@ FuncDeclaration : FuncHead Block { syntax_func_end(extra, $2); }
                 ;
 
 Parameters : ParameterList
-           | /* *empty */  { $$ = syntax_param_list_gen(); }
+           | /* *empty */  { $$ = syntax_decl_list_gen(); }
            ;
 
-ParameterList : ParameterList ',' ParameterDeclaration { $$ = syntax_param_list_add($1, $3); }
-              | ParameterDeclaration                   { $$ = syntax_param_list_add(NULL, $1); }
+ParameterList : ParameterList ',' ParameterDeclaration { $$ = syntax_decl_list_add($1, $3); }
+              | ParameterDeclaration                   { $$ = syntax_decl_list_add(syntax_decl_list_gen(), $1); }
               ;
 
-ParameterDeclaration : Type ArraryParameter { $$ = syntax_param_decl_gen($1, $2); }
-                     | Type ID              { $$ = syntax_param_decl_gen($1, syntax_decl_gen($2)); }
+ParameterDeclaration : Type ArraryParameter { $$ = $2; syntax_decl_list_node_set_basic($$, $1); }
+                     | Type ID              { $$ = syntax_decl_gen($2); syntax_decl_list_node_set_basic($$, $1); }
                      ;
 
 ArraryParameter : ID '[' ']'                  { $$ = syntax_decl_arr(syntax_decl_gen($1), NULL); }
@@ -224,7 +225,7 @@ RelExp : RelExp '<' AddExp { $$ = hir_exp_relational_gen(hir_exp_op_l, $1, $3); 
        | AddExp
        ;
 
-ConstExp : Exp { $$ = syntax_const_check($1); }
+ConstExp : Exp { $$ = hir_exp_ptr_check_const($1); }
          ;
 
 Exp : AddExp

@@ -65,6 +65,11 @@ void hir_exp_ptr_check_lval(p_hir_exp p_exp) {
     assert(p_exp->p_type->ref_level == 1);
     assert(p_exp->p_type->basic != type_void);
 }
+p_hir_exp hir_exp_ptr_check_const(p_hir_exp p_exp) {
+    p_exp = hir_exp_ptr_to_val_check_basic(p_exp);
+    assert(p_exp->kind == hir_exp_num);
+    return p_exp;
+}
 p_hir_exp hir_exp_ptr_to_val_check_basic(p_hir_exp p_exp) {
     return exp_ptr_to_val_check_basic(p_exp);
 }
