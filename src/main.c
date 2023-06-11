@@ -1,4 +1,4 @@
-#include <frontend.h>
+#include <frontend/use.h>
 #include <hir2mir.h>
 
 #include <program/print.h>
