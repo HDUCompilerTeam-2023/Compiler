@@ -1,9 +1,9 @@
 #include <mir_manager.h>
 #include <optimizer/convert_ssa.h>
 #include <program/def.h>
+#include <symbol/type.h>
 #include <symbol/var.h>
 #include <symbol_gen/func.h>
-#include <symbol/type.h>
 #include <symbol_gen/type.h>
 void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_mir_basic_block p_basic_block, size_t current_num) {
     dfs_seq[current_num] = (convert_ssa) {

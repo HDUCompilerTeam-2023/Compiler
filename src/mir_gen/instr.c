@@ -51,7 +51,6 @@ p_mir_instr mir_call_instr_gen(p_symbol_func p_func, p_mir_param_list p_param_li
     return p_instr;
 }
 
-
 p_mir_instr mir_gep_instr_gen(p_mir_operand p_addr, p_mir_operand p_offset, p_mir_vreg p_des, bool is_element) {
     p_mir_instr p_instr = malloc(sizeof(*p_instr));
     *p_instr = (mir_instr) {

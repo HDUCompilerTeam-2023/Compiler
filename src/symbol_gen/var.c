@@ -59,4 +59,3 @@ void symbol_var_drop(p_symbol_var p_var) {
     free(p_var->name);
     free(p_var);
 }
-

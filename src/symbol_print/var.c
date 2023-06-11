@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <symbol_print.h>
 
-#include <symbol/var.h>
 #include <symbol/type.h>
+#include <symbol/var.h>
 
 void symbol_name_print(p_symbol_var p_var) {
     symbol_type_print(p_var->p_type);

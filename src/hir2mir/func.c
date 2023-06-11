@@ -1,9 +1,9 @@
 #include <hir2mir.h>
 
-#include <symbol_gen/type.h>
-#include <symbol_gen/func.h>
-#include <symbol_gen/var.h>
 #include <stdio.h>
+#include <symbol_gen/func.h>
+#include <symbol_gen/type.h>
+#include <symbol_gen/var.h>
 
 static inline void hir2symbol_func_param_gen(p_hir2mir_info p_info, p_symbol_func p_func) {
     p_list_head p_node;

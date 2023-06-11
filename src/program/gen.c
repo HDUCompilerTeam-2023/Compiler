@@ -1,9 +1,9 @@
-#include <program/use.h>
 #include <program/def.h>
 #include <program/gen.h>
+#include <program/use.h>
 
-#include <symbol_gen.h>
 #include <mir_gen.h>
+#include <symbol_gen.h>
 
 p_program program_gen(void) {
     p_program p_program = malloc(sizeof(*p_program));
@@ -60,4 +60,3 @@ bool program_add_function(p_program p_program, p_symbol_func p_func) {
     p_func->id = p_program->function_cnt++;
     return list_add_prev(&p_func->node, &p_program->function);
 }
-

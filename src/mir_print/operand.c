@@ -4,8 +4,8 @@
 
 #include <mir/vreg.h>
 #include <stdio.h>
-#include <symbol/var.h>
 #include <symbol/type.h>
+#include <symbol/var.h>
 #include <symbol_print.h>
 
 void mir_operand_print(p_mir_operand p_operand) {
