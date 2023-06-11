@@ -1,11 +1,11 @@
 #include <mir/basic_block.h>
 #include <mir/instr.h>
 #include <mir_print.h>
-#include <symbol_print.h>
 #include <stdio.h>
+#include <symbol_print.h>
 
-#include <symbol/var.h>
 #include <symbol/func.h>
+#include <symbol/var.h>
 void mir_instr_print(p_mir_instr p_instr) {
     assert(p_instr);
     printf("    ");

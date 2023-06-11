@@ -1,7 +1,7 @@
 #include <mir_manager/builddomtree.h>
 
-#include <program/def.h>
 #include <mir_gen.h>
+#include <program/def.h>
 #include <symbol_gen/func.h>
 
 void cfg_build_dom_tree_info_gen(cfg_build_dom_tree_info dom_info[], p_mir_basic_block p_basic_block, size_t block_num, size_t parent, size_t current_num) {

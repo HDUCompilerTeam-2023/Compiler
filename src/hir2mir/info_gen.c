@@ -1,7 +1,7 @@
 #include <hir2mir.h>
 #include <program/def.h>
-#include <symbol_gen/func.h>
 #include <symbol/type.h>
+#include <symbol_gen/func.h>
 
 // 根据函数信息 生成接下来需要收集的信息的返回值类型
 p_hir2mir_info hir2mir_info_gen(p_symbol_func p_m_func, p_program p_program) {

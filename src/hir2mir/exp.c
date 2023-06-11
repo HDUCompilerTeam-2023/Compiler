@@ -1,11 +1,11 @@
 #include <hir/exp.h>
 #include <hir2mir.h>
 
-#include <symbol_gen.h>
 #include <program/gen.h>
+#include <symbol_gen.h>
 
 static inline p_mir_instr hir2mir_exp_binary_gen(p_hir2mir_info p_info, p_hir_exp p_exp) {
-        assert(p_exp->p_src_1 && p_exp->p_src_2);
+    assert(p_exp->p_src_1 && p_exp->p_src_2);
     p_mir_operand p_src_1 = hir2mir_exp_gen(p_info, p_exp->p_src_1);
     p_mir_operand p_src_2 = hir2mir_exp_gen(p_info, p_exp->p_src_2);
 

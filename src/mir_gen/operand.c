@@ -2,8 +2,8 @@
 #include <mir_gen.h>
 #include <mir_gen/operand.h>
 
-#include <symbol/var.h>
 #include <symbol/type.h>
+#include <symbol/var.h>
 #include <symbol_gen/type.h>
 
 basic_type mir_operand_get_basic_type(p_mir_operand p_operand) {

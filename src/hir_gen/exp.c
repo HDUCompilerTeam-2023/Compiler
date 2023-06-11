@@ -342,7 +342,7 @@ p_hir_exp hir_exp_gep_gen(p_hir_exp p_val, p_hir_exp p_offset, bool is_element) 
         .kind = hir_exp_gep,
         .p_addr = p_val,
         .p_offset = p_offset,
-        .is_element =  is_element,
+        .is_element = is_element,
         .p_type = symbol_type_copy(p_val->p_type),
         .p_des = NULL,
     };

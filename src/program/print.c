@@ -42,7 +42,8 @@ void program_mir_print(p_program p_program) {
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
-        if (list_head_alone(&p_func->block)) continue;;
+        if (list_head_alone(&p_func->block)) continue;
+        ;
         symbol_func_init_print(p_func);
         printf("{\n");
         p_list_head p_node;
@@ -72,7 +73,8 @@ void program_mir_dom_info_print(p_program p_program) {
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
-        if (list_head_alone(&p_func->block)) continue;;
+        if (list_head_alone(&p_func->block)) continue;
+        ;
         symbol_func_init_print(p_func);
         p_mir_basic_block p_basic_block = list_entry(p_func->block.p_next, mir_basic_block, node);
         mir_basic_block_dom_info_print(p_basic_block, 0);

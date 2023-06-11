@@ -1,8 +1,8 @@
 #include <mir_gen.h>
-#include <program/def.h>
-#include <symbol_gen/func.h>
 #include <mir_opt/simplify_cfg.h>
+#include <program/def.h>
 #include <stdio.h>
+#include <symbol_gen/func.h>
 
 static inline void mir_simplify_cfg_dfs_basic_block(p_mir_basic_block p_bb) {
     if (p_bb->if_visited) return;

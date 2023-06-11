@@ -1,8 +1,8 @@
 #include <frontend/use.h>
 #include <hir2mir.h>
 
-#include <program/print.h>
 #include <program/gen.h>
+#include <program/print.h>
 
 #include <mir_opt/simplify_cfg.h>
 #include <optimizer.h>

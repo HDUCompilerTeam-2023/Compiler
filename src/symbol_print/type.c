@@ -24,7 +24,7 @@ void symbol_type_print(p_symbol_type p_type) {
     }
     assert(p_type->basic != type_void);
     symbol_basic_type_print(p_type->basic);
-    for(uint64_t i = 0; i < arr_level; ++i) {
+    for (uint64_t i = 0; i < arr_level; ++i) {
         printf("]");
     }
     for (uint64_t i = 0; i < p_type->ref_level; ++i) {
