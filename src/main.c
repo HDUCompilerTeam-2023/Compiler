@@ -4,7 +4,7 @@
 #include <program/print.h>
 
 #include <ir_opt/simplify_cfg.h>
-#include <optimizer.h>
+#include <ir_opt/mem2reg.h>
 
 int main(int argc, char *argv[]) {
     if (argc == 1)
@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
         program_ir_print(p_program);
 
         // into ssa
-        convert_ssa_program(p_program);
+        mem2reg_program_pass(p_program);
         program_ir_dom_info_print(p_program);
         program_ir_print(p_program);
 
