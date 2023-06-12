@@ -36,20 +36,20 @@ struct ssa_var_list_info {
     p_symbol_func p_func;
 };
 
-void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_ir_basic_block p_basic_block, size_t current_num);
-size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t var_num, size_t block_num, p_ir_basic_block p_entry, size_t current_num);
-p_ssa_var_list_info convert_ssa_init_var_list(p_symbol_func p_func);
+void mem2reg_info_gen(p_convert_ssa dfs_seq, size_t block_num, size_t var_num, p_ir_basic_block p_basic_block, size_t current_num);
+size_t mem2reg_init_dfs_sequence(p_convert_ssa dfs_seq, size_t var_num, size_t block_num, p_ir_basic_block p_entry, size_t current_num);
+p_ssa_var_list_info mem2reg_init_var_list(p_symbol_func p_func);
 
-void convert_ssa_compute_dom_frontier(convert_ssa *dfs_seq, size_t block_num);
+void mem2reg_compute_dom_frontier(p_convert_ssa dfs_seq, size_t block_num);
 
-void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_info p_var_list);
+void mem2reg_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_info p_var_list);
 
-void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p_ir_basic_block p_entry);
+void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p_ir_basic_block p_entry);
 
-void convert_ssa_func(p_symbol_func p_func);
-void convert_ssa_program(p_program p_program);
+void mem2reg_func_pass(p_symbol_func p_func);
+void mem2reg_program_pass(p_program p_program);
 
-void convert_ssa_dfs_seq_drop(convert_ssa *dfs_seq, size_t block_num);
+void convert_ssa_dfs_seq_drop(p_convert_ssa dfs_seq, size_t block_num);
 void ssa_var_list_info_drop(p_ssa_var_list_info p_info);
 
 #endif

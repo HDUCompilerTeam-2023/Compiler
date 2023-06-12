@@ -1,11 +1,11 @@
 #include <ir_manager.h>
-#include <optimizer/convert_ssa.h>
+#include <ir_opt/mem2reg.h>
 #include <program/def.h>
 #include <symbol/type.h>
 #include <symbol/var.h>
 #include <symbol_gen/func.h>
 #include <symbol_gen/type.h>
-void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_ir_basic_block p_basic_block, size_t current_num) {
+void mem2reg_info_gen(p_convert_ssa dfs_seq, size_t block_num, size_t var_num, p_ir_basic_block p_basic_block, size_t current_num) {
     dfs_seq[current_num] = (convert_ssa) {
         .dom_frontier = bitmap_gen(block_num),
         .p_def_var = bitmap_gen(var_num),
@@ -19,23 +19,23 @@ void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_i
     bitmap_set_empty(dfs_seq[current_num].p_phi_var);
 }
 
-size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_ir_basic_block p_entry, size_t current_num) {
+size_t mem2reg_init_dfs_sequence(p_convert_ssa dfs_seq, size_t block_num, size_t var_num, p_ir_basic_block p_entry, size_t current_num) {
     if (p_entry->if_visited) return current_num;
     p_entry->if_visited = true;
-    convert_ssa_gen(dfs_seq, block_num, var_num, p_entry, current_num);
+    mem2reg_info_gen(dfs_seq, block_num, var_num, p_entry, current_num);
     current_num++;
 
     p_ir_basic_block_branch_target p_true_target = p_entry->p_branch->p_target_1;
     p_ir_basic_block_branch_target p_false_target = p_entry->p_branch->p_target_2;
 
     if (p_true_target)
-        current_num = convert_ssa_init_dfs_sequence(dfs_seq, block_num, var_num, p_true_target->p_block, current_num);
+        current_num = mem2reg_init_dfs_sequence(dfs_seq, block_num, var_num, p_true_target->p_block, current_num);
     if (p_false_target)
-        current_num = convert_ssa_init_dfs_sequence(dfs_seq, block_num, var_num, p_false_target->p_block, current_num);
+        current_num = mem2reg_init_dfs_sequence(dfs_seq, block_num, var_num, p_false_target->p_block, current_num);
     return current_num;
 }
 
-p_ssa_var_list_info convert_ssa_init_var_list(p_symbol_func p_func) {
+p_ssa_var_list_info mem2reg_init_var_list(p_symbol_func p_func) {
     p_ssa_var_list_info p_var_list = malloc(sizeof(*p_var_list));
     *p_var_list = (ssa_var_list_info) {
         .vmem_num = p_func->var_cnt,
@@ -86,7 +86,7 @@ static inline size_t get_var_index(p_ir_operand p_operand, p_ssa_var_list_info p
     return p_vmem->id;
 }
 
-void convert_ssa_compute_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
+void mem2reg_compute_dom_frontier(p_convert_ssa dfs_seq, size_t block_num) {
     for (size_t i = block_num - 1; i < block_num; i--) {
         p_convert_ssa p_info = dfs_seq + i;
 
@@ -119,7 +119,7 @@ void convert_ssa_compute_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
     }
 }
 
-void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_info p_var_list) {
+void mem2reg_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_list_info p_var_list) {
     // 入口块对所有变量已经定值
     bitmap_set_full(dfs_seq->p_def_var);
     size_t work_num = block_num + 1;
@@ -233,7 +233,7 @@ static inline void restore_current_sym(p_ssa_var_list_info p_var_list) {
         free(p_node);
     }
 }
-void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p_ir_basic_block p_entry) {
+void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p_ir_basic_block p_entry) {
     if (p_entry->if_visited) return;
     p_entry->if_visited = true;
     // 记录入块信息
@@ -283,19 +283,19 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_se
     p_ir_basic_block_branch p_branch = p_entry->p_branch;
     if (p_branch->kind == ir_br_branch) {
         set_branch_target_ssa_id(p_branch->p_target_1, dfs_seq, p_var_list);
-        convert_ssa_rename_var(p_var_list, dfs_seq, p_branch->p_target_1->p_block);
+        mem2reg_rename_var(p_var_list, dfs_seq, p_branch->p_target_1->p_block);
     }
     if (p_branch->kind == ir_cond_branch) {
         set_branch_target_ssa_id(p_branch->p_target_1, dfs_seq, p_var_list);
-        convert_ssa_rename_var(p_var_list, dfs_seq, p_branch->p_target_1->p_block);
+        mem2reg_rename_var(p_var_list, dfs_seq, p_branch->p_target_1->p_block);
         set_branch_target_ssa_id(p_branch->p_target_2, dfs_seq, p_var_list);
-        convert_ssa_rename_var(p_var_list, dfs_seq, p_branch->p_target_2->p_block);
+        mem2reg_rename_var(p_var_list, dfs_seq, p_branch->p_target_2->p_block);
     }
     // 恢复信息
     restore_current_sym(p_var_list);
 }
 #include <stdio.h>
-static inline void print_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
+static inline void print_dom_frontier(p_convert_ssa dfs_seq, size_t block_num) {
     printf("--- dom_frontier start---\n");
     for (size_t i = 0; i < block_num; i++) {
         p_convert_ssa p_info = dfs_seq + i;
@@ -306,26 +306,26 @@ static inline void print_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
     printf("--- dom_frontier end---\n");
 }
 
-void convert_ssa_func(p_symbol_func p_func) {
+void mem2reg_func_pass(p_symbol_func p_func) {
     if (list_head_alone(&p_func->block)) return;
     size_t block_num = p_func->block_cnt;
     p_convert_ssa dfs_seq = malloc(block_num * sizeof(*dfs_seq));
     // 初始化变量集合
-    p_ssa_var_list_info p_var_list = convert_ssa_init_var_list(p_func);
+    p_ssa_var_list_info p_var_list = mem2reg_init_var_list(p_func);
     // 初始化 dfs 序
     symbol_func_basic_block_init_visited(p_func);
     p_ir_basic_block p_entry = list_entry(p_func->block.p_next, ir_basic_block, node);
-    convert_ssa_init_dfs_sequence(dfs_seq, block_num, p_var_list->vmem_num, p_entry, 0);
+    mem2reg_init_dfs_sequence(dfs_seq, block_num, p_var_list->vmem_num, p_entry, 0);
     // 计算支配树
     ir_cfg_set_func_dom(p_func);
     // 计算支配边界
-    convert_ssa_compute_dom_frontier(dfs_seq, block_num);
+    mem2reg_compute_dom_frontier(dfs_seq, block_num);
     print_dom_frontier(dfs_seq, block_num);
     // 插入 phi 函数
-    convert_ssa_insert_phi(dfs_seq, block_num, p_var_list);
+    mem2reg_insert_phi(dfs_seq, block_num, p_var_list);
     // // 重命名
     symbol_func_basic_block_init_visited(p_func);
-    convert_ssa_rename_var(p_var_list, dfs_seq, p_entry);
+    mem2reg_rename_var(p_var_list, dfs_seq, p_entry);
 
     convert_ssa_dfs_seq_drop(dfs_seq, block_num);
     ssa_var_list_info_drop(p_var_list);
@@ -333,15 +333,15 @@ void convert_ssa_func(p_symbol_func p_func) {
     symbol_func_set_vreg_id(p_func);
 }
 
-void convert_ssa_program(p_program p_program) {
+void mem2reg_program_pass(p_program p_program) {
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
-        convert_ssa_func(p_func);
+        mem2reg_func_pass(p_func);
     }
 }
 
-void convert_ssa_dfs_seq_drop(convert_ssa *dfs_seq, size_t block_num) {
+void convert_ssa_dfs_seq_drop(p_convert_ssa dfs_seq, size_t block_num) {
     for (size_t i = 0; i < block_num; i++) {
         bitmap_drop((dfs_seq + i)->dom_frontier);
         bitmap_drop((dfs_seq + i)->p_def_var);
