@@ -7,7 +7,7 @@ struct syntax_init {
     bool is_exp;
     bool syntax_const;
     union {
-        p_hir_exp p_exp;
+        p_ast_exp p_exp;
         list_head list;
     };
 
@@ -15,7 +15,7 @@ struct syntax_init {
 };
 struct syntax_init_mem {
     size_t size;
-    p_hir_exp *memory;
+    p_ast_exp *memory;
 };
 
 #endif

@@ -1,8 +1,7 @@
 #ifndef __SYMBOL_VAR__
 #define __SYMBOL_VAR__
 
-#include <hir.h>
-#include <mir.h>
+#include <ir.h>
 #include <symbol.h>
 
 struct symbol_init_val {

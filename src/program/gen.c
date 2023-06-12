@@ -2,7 +2,7 @@
 #include <program/gen.h>
 #include <program/use.h>
 
-#include <mir_gen.h>
+#include <ir_gen.h>
 #include <symbol_gen.h>
 
 p_program program_gen(void) {

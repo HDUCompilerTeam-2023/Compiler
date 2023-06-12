@@ -1,11 +1,11 @@
-#include <mir_manager.h>
+#include <ir_manager.h>
 #include <optimizer/convert_ssa.h>
 #include <program/def.h>
 #include <symbol/type.h>
 #include <symbol/var.h>
 #include <symbol_gen/func.h>
 #include <symbol_gen/type.h>
-void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_mir_basic_block p_basic_block, size_t current_num) {
+void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_ir_basic_block p_basic_block, size_t current_num) {
     dfs_seq[current_num] = (convert_ssa) {
         .dom_frontier = bitmap_gen(block_num),
         .p_def_var = bitmap_gen(var_num),
@@ -19,14 +19,14 @@ void convert_ssa_gen(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_m
     bitmap_set_empty(dfs_seq[current_num].p_phi_var);
 }
 
-size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_mir_basic_block p_entry, size_t current_num) {
+size_t convert_ssa_init_dfs_sequence(convert_ssa *dfs_seq, size_t block_num, size_t var_num, p_ir_basic_block p_entry, size_t current_num) {
     if (p_entry->if_visited) return current_num;
     p_entry->if_visited = true;
     convert_ssa_gen(dfs_seq, block_num, var_num, p_entry, current_num);
     current_num++;
 
-    p_mir_basic_block_branch_target p_true_target = p_entry->p_branch->p_target_1;
-    p_mir_basic_block_branch_target p_false_target = p_entry->p_branch->p_target_2;
+    p_ir_basic_block_branch_target p_true_target = p_entry->p_branch->p_target_1;
+    p_ir_basic_block_branch_target p_false_target = p_entry->p_branch->p_target_2;
 
     if (p_true_target)
         current_num = convert_ssa_init_dfs_sequence(dfs_seq, block_num, var_num, p_true_target->p_block, current_num);
@@ -74,7 +74,7 @@ p_ssa_var_list_info convert_ssa_init_var_list(p_symbol_func p_func) {
 }
 
 // 将变量转换到对应的标号，若不存在标号返回 -1
-static inline size_t get_var_index(p_mir_operand p_operand, p_ssa_var_list_info p_var_list) {
+static inline size_t get_var_index(p_ir_operand p_operand, p_ssa_var_list_info p_var_list) {
     if (!p_operand) return -1;
     if (p_operand->kind == reg) return -1;
     if (p_operand->p_type->ref_level == 0) return -1;
@@ -90,8 +90,8 @@ void convert_ssa_compute_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
     for (size_t i = block_num - 1; i < block_num; i--) {
         p_convert_ssa p_info = dfs_seq + i;
 
-        p_mir_basic_block_branch_target p_true_block = p_info->p_basic_block->p_branch->p_target_1;
-        p_mir_basic_block_branch_target p_false_block = p_info->p_basic_block->p_branch->p_target_2;
+        p_ir_basic_block_branch_target p_true_block = p_info->p_basic_block->p_branch->p_target_1;
+        p_ir_basic_block_branch_target p_false_block = p_info->p_basic_block->p_branch->p_target_2;
 
         // 将直接后继做为 DF_up 的候选
         if (p_true_block)
@@ -107,7 +107,7 @@ void convert_ssa_compute_dom_frontier(convert_ssa *dfs_seq, size_t block_num) {
         bitmap_add_element(p_son_list, p_info->p_basic_block->dfn_id);
         // 将支配树上的直接儿子的支配边界作为候选
         list_for_each(p_node, &p_info->p_basic_block->dom_son_list) {
-            size_t son_id = list_entry(p_node, mir_basic_block_list_node, node)->p_basic_block->dfn_id;
+            size_t son_id = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block->dfn_id;
             p_convert_ssa p_son_info = dfs_seq + son_id;
             bitmap_add_element(p_son_list, p_son_info->p_basic_block->dfn_id);
             bitmap_merge_not_new(p_info->dom_frontier, p_son_info->dom_frontier);
@@ -135,8 +135,8 @@ void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_l
         bitmap_merge_not_new(p_info->p_def_var, p_info->p_phi_var);
         p_list_head p_node;
         list_for_each(p_node, &p_info->p_basic_block->instr_list) {
-            p_mir_instr p_instr = list_entry(p_node, mir_instr, node);
-            p_mir_operand p_operand = mir_instr_get_store_addr(p_instr);
+            p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
+            p_ir_operand p_operand = ir_instr_get_store_addr(p_instr);
             //  将已经声明的变量和ret变量加入到该块定值集合
             size_t id = get_var_index(p_operand, p_var_list);
             if (id != -1)
@@ -179,33 +179,33 @@ void convert_ssa_insert_phi(p_convert_ssa dfs_seq, size_t block_num, p_ssa_var_l
     free(p_work_list);
 }
 
-static inline p_mir_operand get_top_operand(p_ssa_var_list_info p_var_list, size_t index) {
+static inline p_ir_operand get_top_operand(p_ssa_var_list_info p_var_list, size_t index) {
     p_ssa_var_info p_info = p_var_list->p_base + index;
     if (!p_info->p_current_vreg) return NULL;
-    return mir_operand_vreg_gen(p_info->p_current_vreg);
+    return ir_operand_vreg_gen(p_info->p_current_vreg);
 }
 
-static inline void set_branch_target_ssa_id(p_mir_basic_block_branch_target p_branch_target, p_convert_ssa dfs_seq, p_ssa_var_list_info p_var_list) {
+static inline void set_branch_target_ssa_id(p_ir_basic_block_branch_target p_branch_target, p_convert_ssa dfs_seq, p_ssa_var_list_info p_var_list) {
     size_t var_num = p_var_list->vmem_num;
     p_bitmap p_phi_var = (dfs_seq + p_branch_target->p_block->dfn_id)->p_phi_var;
     for (size_t i = 0; i < var_num; i++) {
         if (bitmap_if_in(p_phi_var, i)) {
-            p_mir_operand p_param = get_top_operand(p_var_list, i);
-            mir_basic_block_branch_target_add_param(p_branch_target, p_param);
+            p_ir_operand p_param = get_top_operand(p_var_list, i);
+            ir_basic_block_branch_target_add_param(p_branch_target, p_param);
         }
     }
 }
 
 // 为基本块创建 phi 参数列表并命名
-static inline void set_block_param_ssa_id(p_mir_basic_block p_basic_block, p_convert_ssa dfs_seq, p_ssa_var_list_info p_var_list) {
+static inline void set_block_param_ssa_id(p_ir_basic_block p_basic_block, p_convert_ssa dfs_seq, p_ssa_var_list_info p_var_list) {
     size_t var_num = p_var_list->vmem_num;
     p_bitmap p_phi_var = (dfs_seq + p_basic_block->dfn_id)->p_phi_var;
     for (size_t i = 0; i < var_num; i++) {
         if (bitmap_if_in(p_phi_var, i)) {
-            p_mir_vreg p_vreg = mir_vreg_gen(symbol_type_copy((p_var_list->p_base + i)->p_vmem->p_type));
-            symbol_func_vreg_add_at(p_var_list->p_func, p_vreg, p_basic_block, list_entry(&p_basic_block->instr_list, mir_instr, node));
+            p_ir_vreg p_vreg = ir_vreg_gen(symbol_type_copy((p_var_list->p_base + i)->p_vmem->p_type));
+            symbol_func_vreg_add_at(p_var_list->p_func, p_vreg, p_basic_block, list_entry(&p_basic_block->instr_list, ir_instr, node));
             (p_var_list->p_base + i)->p_current_vreg = p_vreg;
-            mir_basic_block_add_param(p_basic_block, p_vreg);
+            ir_basic_block_add_param(p_basic_block, p_vreg);
         }
     }
 }
@@ -233,7 +233,7 @@ static inline void restore_current_sym(p_ssa_var_list_info p_var_list) {
         free(p_node);
     }
 }
-void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p_mir_basic_block p_entry) {
+void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_seq, p_ir_basic_block p_entry) {
     if (p_entry->if_visited) return;
     p_entry->if_visited = true;
     // 记录入块信息
@@ -242,50 +242,50 @@ void convert_ssa_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa dfs_se
 
     p_list_head p_node;
     list_for_each(p_node, &p_entry->instr_list) {
-        p_mir_instr p_instr = list_entry(p_node, mir_instr, node);
+        p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
 
-        if (p_instr->irkind == mir_load) {
-            size_t var_index = get_var_index(p_instr->mir_load.p_addr, p_var_list);
+        if (p_instr->irkind == ir_load) {
+            size_t var_index = get_var_index(p_instr->ir_load.p_addr, p_var_list);
             if (var_index == -1) continue;
-            assert(!p_instr->mir_store.p_offset);
+            assert(!p_instr->ir_store.p_offset);
 
-            p_mir_operand p_top_operand = get_top_operand(p_var_list, var_index);
+            p_ir_operand p_top_operand = get_top_operand(p_var_list, var_index);
             if (!p_top_operand) {
-                p_var_list->p_base[var_index].p_current_vreg = p_instr->mir_load.p_des;
+                p_var_list->p_base[var_index].p_current_vreg = p_instr->ir_load.p_des;
                 continue;
             }
 
-            mir_operand_drop(p_instr->mir_load.p_addr);
-            p_instr->irkind = mir_unary;
-            p_instr->mir_unary.op = mir_val_assign;
-            p_instr->mir_unary.p_des = p_instr->mir_load.p_des;
-            p_instr->mir_unary.p_src = p_top_operand;
+            ir_operand_drop(p_instr->ir_load.p_addr);
+            p_instr->irkind = ir_unary;
+            p_instr->ir_unary.op = ir_val_assign;
+            p_instr->ir_unary.p_des = p_instr->ir_load.p_des;
+            p_instr->ir_unary.p_src = p_top_operand;
             continue;
         }
-        if (p_instr->irkind == mir_store) {
-            size_t var_index = get_var_index(p_instr->mir_store.p_addr, p_var_list);
+        if (p_instr->irkind == ir_store) {
+            size_t var_index = get_var_index(p_instr->ir_store.p_addr, p_var_list);
             if (var_index == -1) continue;
-            assert(!p_instr->mir_store.p_offset);
+            assert(!p_instr->ir_store.p_offset);
 
-            p_mir_vreg p_vreg = mir_vreg_gen(symbol_type_copy(p_var_list->p_base[var_index].p_vmem->p_type));
-            mir_vreg_set_instr_def(p_vreg, p_instr);
+            p_ir_vreg p_vreg = ir_vreg_gen(symbol_type_copy(p_var_list->p_base[var_index].p_vmem->p_type));
+            ir_vreg_set_instr_def(p_vreg, p_instr);
             symbol_func_vreg_add_at(p_var_list->p_func, p_vreg, p_entry, p_instr);
             p_var_list->p_base[var_index].p_current_vreg = p_vreg;
 
-            mir_operand_drop(p_instr->mir_store.p_addr);
-            p_instr->irkind = mir_unary;
-            p_instr->mir_unary.op = mir_val_assign;
-            p_instr->mir_unary.p_src = p_instr->mir_store.p_src;
-            p_instr->mir_unary.p_des = p_vreg;
+            ir_operand_drop(p_instr->ir_store.p_addr);
+            p_instr->irkind = ir_unary;
+            p_instr->ir_unary.op = ir_val_assign;
+            p_instr->ir_unary.p_src = p_instr->ir_store.p_src;
+            p_instr->ir_unary.p_des = p_vreg;
             continue;
         }
     }
-    p_mir_basic_block_branch p_branch = p_entry->p_branch;
-    if (p_branch->kind == mir_br_branch) {
+    p_ir_basic_block_branch p_branch = p_entry->p_branch;
+    if (p_branch->kind == ir_br_branch) {
         set_branch_target_ssa_id(p_branch->p_target_1, dfs_seq, p_var_list);
         convert_ssa_rename_var(p_var_list, dfs_seq, p_branch->p_target_1->p_block);
     }
-    if (p_branch->kind == mir_cond_branch) {
+    if (p_branch->kind == ir_cond_branch) {
         set_branch_target_ssa_id(p_branch->p_target_1, dfs_seq, p_var_list);
         convert_ssa_rename_var(p_var_list, dfs_seq, p_branch->p_target_1->p_block);
         set_branch_target_ssa_id(p_branch->p_target_2, dfs_seq, p_var_list);
@@ -314,10 +314,10 @@ void convert_ssa_func(p_symbol_func p_func) {
     p_ssa_var_list_info p_var_list = convert_ssa_init_var_list(p_func);
     // 初始化 dfs 序
     symbol_func_basic_block_init_visited(p_func);
-    p_mir_basic_block p_entry = list_entry(p_func->block.p_next, mir_basic_block, node);
+    p_ir_basic_block p_entry = list_entry(p_func->block.p_next, ir_basic_block, node);
     convert_ssa_init_dfs_sequence(dfs_seq, block_num, p_var_list->vmem_num, p_entry, 0);
     // 计算支配树
-    mir_cfg_set_func_dom(p_func);
+    ir_cfg_set_func_dom(p_func);
     // 计算支配边界
     convert_ssa_compute_dom_frontier(dfs_seq, block_num);
     print_dom_frontier(dfs_seq, block_num);
