@@ -12,8 +12,8 @@ typedef void *yyscan_t;
 
 #include <frontend/syntax/type/use.h>
 
-#include <hir.h>
+#include <ast.h>
 
-p_hir_exp syntax_val_offset(p_hir_exp p_val, p_hir_exp p_offset);
+p_ast_exp syntax_val_offset(p_ast_exp p_val, p_ast_exp p_offset);
 
 #endif

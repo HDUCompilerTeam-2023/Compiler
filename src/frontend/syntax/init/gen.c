@@ -1,6 +1,6 @@
 #include <frontend/syntax/init/def.h>
 
-#include <hir_gen/exp.h>
+#include <ast_gen/exp.h>
 #include <symbol_gen.h>
 
 p_syntax_init syntax_init_list_gen(void) {
@@ -13,10 +13,10 @@ p_syntax_init syntax_init_list_gen(void) {
     };
     return p_init;
 }
-p_syntax_init syntax_init_exp_gen(p_hir_exp p_exp) {
+p_syntax_init syntax_init_exp_gen(p_ast_exp p_exp) {
     p_syntax_init p_init = malloc(sizeof(*p_init));
     *p_init = (syntax_init) {
-        .syntax_const = (p_exp->kind == hir_exp_num),
+        .syntax_const = (p_exp->kind == ast_exp_num),
         .is_exp = true,
         .p_exp = p_exp,
         .node = list_head_init(&p_init->node),
@@ -31,7 +31,7 @@ p_syntax_init syntax_init_list_add(p_syntax_init p_list, p_syntax_init p_init) {
 }
 
 
-static inline void syntax_init_list_trans(p_symbol_type p_type, basic_type basic, p_syntax_init p_srcs, p_hir_exp *memory) {
+static inline void syntax_init_list_trans(p_symbol_type p_type, basic_type basic, p_syntax_init p_srcs, p_ast_exp *memory) {
     assert(!p_srcs->is_exp);
 
     size_t offset = 0;
@@ -41,7 +41,7 @@ static inline void syntax_init_list_trans(p_symbol_type p_type, basic_type basic
 
         if (p_init->is_exp) {
             assert(offset < symbol_type_get_size(p_type));
-            p_init->p_exp = hir_exp_ptr_to_val_check_basic(p_init->p_exp);
+            p_init->p_exp = ast_exp_ptr_to_val_check_basic(p_init->p_exp);
             assert(basic == p_init->p_exp->p_type->basic);
             memory[offset++] = p_init->p_exp;
         }
@@ -56,9 +56,9 @@ static inline void syntax_init_list_trans(p_symbol_type p_type, basic_type basic
         free(p_init);
     }
     for (; offset < symbol_type_get_size(p_type); ++offset) {
-        if (basic == type_int) memory[offset] = hir_exp_int_gen(0);
+        if (basic == type_int) memory[offset] = ast_exp_int_gen(0);
         else
-            memory[offset] = hir_exp_float_gen(0);
+            memory[offset] = ast_exp_float_gen(0);
     }
 }
 p_syntax_init_mem syntax_init_mem_gen(p_syntax_init p_init, p_symbol_type p_type) {
@@ -75,7 +75,7 @@ p_syntax_init_mem syntax_init_mem_gen(p_syntax_init p_init, p_symbol_type p_type
 
     if (p_init->is_exp) {
         assert(list_head_alone(&p_type->array));
-        p_init->p_exp = hir_exp_ptr_to_val_check_basic(p_init->p_exp);
+        p_init->p_exp = ast_exp_ptr_to_val_check_basic(p_init->p_exp);
         assert(p_type->basic == p_init->p_exp->p_type->basic);
         p_init_mem->memory[0] = p_init->p_exp;
     }
@@ -90,7 +90,7 @@ void syntax_init_mem_drop(p_syntax_init_mem p_init) {
     if (!p_init)
         return;
     for (size_t i = 0; i < p_init->size; ++i) {
-        if (p_init->memory[i]) hir_exp_drop(p_init->memory[i]);
+        if (p_init->memory[i]) ast_exp_drop(p_init->memory[i]);
     }
     free(p_init->memory);
     free(p_init);

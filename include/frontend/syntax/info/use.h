@@ -24,11 +24,11 @@ void syntax_program_add_variable(p_syntax_info p_info, p_symbol_var p_var);
 void syntax_program_add_constant(p_syntax_info p_info, p_symbol_var p_var);
 void syntax_program_add_function(p_syntax_info p_info, p_symbol_func p_func);
 
-p_hir_block syntax_local_vardecl(p_syntax_info p_info, p_hir_block p_block, p_syntax_decl_list p_decl_list);
+p_ast_block syntax_local_vardecl(p_syntax_info p_info, p_ast_block p_block, p_syntax_decl_list p_decl_list);
 void syntax_global_vardecl(p_syntax_info p_info, p_syntax_decl_list p_decl_list);
 
 void syntax_func_head(p_syntax_info p_info, basic_type type, char *name, p_syntax_decl_list p_decl_list);
-void syntax_func_end(p_syntax_info p_info, p_hir_block p_block);
+void syntax_func_end(p_syntax_info p_info, p_ast_block p_block);
 
 void syntax_rtlib_func_init(p_syntax_info p_info);
 

@@ -1,6 +1,5 @@
 #include <symbol_gen/var.h>
 
-#include <hir_gen.h>
 #include <symbol_gen.h>
 
 p_symbol_init symbol_init_gen(size_t size, basic_type basic) {

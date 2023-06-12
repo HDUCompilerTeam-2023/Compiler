@@ -3,7 +3,7 @@
 
 #include <program/use.h>
 
-#include <mir.h>
+#include <ir.h>
 
 p_program program_gen(void);
 void program_drop(p_program p_program);

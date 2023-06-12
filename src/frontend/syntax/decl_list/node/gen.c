@@ -1,6 +1,6 @@
 #include <frontend/syntax/decl_list/node/def.h>
 
-#include <hir_gen/exp.h>
+#include <ast_gen/exp.h>
 #include <frontend/syntax/type/gen.h>
 
 p_syntax_decl syntax_decl_gen(char *name) {
