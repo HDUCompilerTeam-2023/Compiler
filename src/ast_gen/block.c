@@ -23,7 +23,8 @@ p_ast_block ast_block_add(p_ast_block p_block, p_ast_stmt p_stmt) {
     }
     else {
         p_block->length += p_stmt->p_block->length;
-        list_blk_add_prev(&p_stmt->p_block->stmt, &p_block->stmt);
+        if (!list_blk_add_prev(&p_stmt->p_block->stmt, &p_block->stmt))
+            list_replace(&p_block->stmt, &p_stmt->p_block->stmt);
         free(p_stmt->p_block);
         free(p_stmt);
     }
