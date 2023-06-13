@@ -76,7 +76,6 @@ p_syntax_init_mem syntax_init_mem_gen(p_syntax_init p_init, p_symbol_type p_type
     if (p_init->is_exp) {
         assert(list_head_alone(&p_type->array));
         p_init->p_exp = ast_exp_ptr_to_val_check_basic(p_init->p_exp);
-        assert(p_type->basic == p_init->p_exp->p_type->basic);
         p_init_mem->memory[0] = p_init->p_exp;
     }
     else {
