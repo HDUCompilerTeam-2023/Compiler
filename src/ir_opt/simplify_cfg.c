@@ -174,7 +174,9 @@ static inline void ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
                 p_prev_bb->p_branch->kind = ir_br_branch;
                 p_prev_bb->p_branch->p_target_1 = p_prev_target_2;
                 ir_operand_drop(p_prev_bb->p_branch->p_exp);
+                p_prev_bb->p_branch->p_exp = NULL;
                 ir_basic_block_branch_target_drop(p_prev_target_1);
+                p_prev_bb->p_branch->p_target_2 = NULL;
                 continue;
             }
             ir_basic_block_add_prev(p_prev_bb, p_target->p_block);
