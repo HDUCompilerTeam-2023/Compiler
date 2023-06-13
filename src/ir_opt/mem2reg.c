@@ -83,6 +83,7 @@ static inline size_t get_var_index(p_ir_operand p_operand, p_ssa_var_list_info p
 
     if (!list_head_alone(&p_vmem->p_type->array) && p_vmem->p_type->ref_level == 0) return -1;
     if (p_vmem->is_global) return -1;
+    if (p_vmem->is_const) return -1;
     return p_vmem->id;
 }
 
