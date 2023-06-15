@@ -11,6 +11,8 @@ p_ir_operand ir_operand_addr_gen(p_symbol_var p_vmem);
 
 p_ir_operand ir_operand_vreg_gen(p_ir_vreg p_vreg);
 
+p_ir_operand ir_operand_copy(p_ir_operand p_src);
+
 basic_type ir_operand_get_basic_type(p_ir_operand p_operand);
 
 void ir_operand_drop(p_ir_operand p_operand);
