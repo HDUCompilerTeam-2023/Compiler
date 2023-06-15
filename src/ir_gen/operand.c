@@ -60,6 +60,13 @@ p_ir_operand ir_operand_addr_gen(p_symbol_var p_vmem) {
     return p_operand;
 }
 
+p_ir_operand ir_operand_copy(p_ir_operand p_src) {
+    p_ir_operand p_copy = malloc(sizeof(*p_copy));
+    *p_copy = *p_src;
+    p_copy->p_type = symbol_type_copy(p_src->p_type);
+    return p_copy;
+}
+
 p_ir_operand ir_operand_vreg_gen(p_ir_vreg p_vreg) {
     p_ir_operand p_operand = malloc(sizeof(*p_operand));
     *p_operand = (ir_operand) {
