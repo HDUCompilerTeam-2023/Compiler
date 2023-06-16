@@ -9,6 +9,7 @@
 #include <ir_opt/lir_gen/share_trans.h>
 #include <ir_opt/lir_gen/arm_trans.h>
 #include <ir_opt/reg_alloca/reg_alloca.h>
+#include <ir_opt/lir_gen/set_cond.h>
 
 int main(int argc, char *argv[]) {
     if (argc == 1)
@@ -41,6 +42,9 @@ int main(int argc, char *argv[]) {
         program_ir_print(p_program);
 
         reg_alloca_pass(alloca_whole_in_mem, 13, p_program);
+        program_ir_print(p_program);
+        // set_cond
+        set_cond_pass(p_program);
         program_ir_print(p_program);
         // drop ir
         program_drop(p_program);

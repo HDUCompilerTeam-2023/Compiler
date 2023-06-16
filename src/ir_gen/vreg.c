@@ -9,6 +9,7 @@ p_ir_vreg ir_vreg_gen(p_symbol_type p_type) {
         .id = 0,
         .node = list_head_init(&p_vreg->node),
         .reg_id = -1,
+        .if_cond = false,
     };
     return p_vreg;
 }
