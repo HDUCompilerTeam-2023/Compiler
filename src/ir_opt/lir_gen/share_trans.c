@@ -21,11 +21,64 @@ static inline void gep_trans(p_ir_instr p_instr, p_ir_basic_block p_basic_block,
     ir_instr_drop(p_instr);
 }
 
+static void binary_trans(p_ir_instr p_instr, p_symbol_func p_func) {
+    p_ir_binary_instr p_binary_instr = &p_instr->ir_binary;
+    switch (p_binary_instr->op) {
+    case ir_mod_op:
+        assert(ir_operand_get_basic_type(p_binary_instr->p_src1) == type_i32);
+        assert(ir_operand_get_basic_type(p_binary_instr->p_src2) == type_i32);
+
+        p_ir_vreg p_div_des = ir_vreg_gen(symbol_type_var_gen(type_i32));
+        p_ir_instr p_div = ir_binary_instr_gen(ir_div_op, ir_operand_copy(p_binary_instr->p_src1), ir_operand_copy(p_binary_instr->p_src2), p_div_des);
+        symbol_func_vreg_add(p_func, p_div_des);
+        list_add_prev(&p_div->node, &p_instr->node);
+
+        p_ir_vreg p_mul_des = ir_vreg_gen(symbol_type_var_gen(type_i32));
+        p_ir_instr p_mul = ir_binary_instr_gen(ir_mul_op, ir_operand_vreg_gen(p_div_des), ir_operand_copy(p_binary_instr->p_src2), p_mul_des);
+        symbol_func_vreg_add(p_func, p_mul_des);
+        list_add_prev(&p_mul->node, &p_instr->node);
+
+        p_ir_vreg p_sub_des = p_binary_instr->p_des;
+        p_ir_instr p_sub = ir_binary_instr_gen(ir_sub_op, ir_operand_copy(p_binary_instr->p_src1), ir_operand_vreg_gen(p_mul_des), p_sub_des);
+        list_add_prev(&p_sub->node, &p_instr->node);
+
+        ir_instr_drop(p_instr);
+        break;
+    case ir_add_op:
+    case ir_sub_op:
+    case ir_mul_op:
+    case ir_div_op:
+    case ir_l_op:
+    case ir_leq_op:
+    case ir_g_op:
+    case ir_geq_op:
+    case ir_eq_op:
+    case ir_neq_op:
+        break;
+    case ir_and_op:
+    case ir_or_op:
+        assert(0);
+    }
+}
+
+static void unary_trans(p_ir_instr p_instr, p_symbol_func p_func) {
+    p_ir_unary_instr p_unary_instr = &p_instr->ir_unary;
+    switch (p_unary_instr->op) {
+    case ir_minus_op:
+    case ir_val_assign:
+    case ir_f2i_op:
+    case ir_i2f_op:
+        break;
+    }
+}
+
 static inline void deal_instr(p_ir_instr p_instr, p_ir_basic_block p_basic_block, p_symbol_func p_func) {
     switch (p_instr->irkind) {
     case ir_binary:
+        binary_trans(p_instr, p_func);
         break;
     case ir_unary:
+        unary_trans(p_instr, p_func);
         break;
     case ir_gep:
         gep_trans(p_instr, p_basic_block, p_func);
