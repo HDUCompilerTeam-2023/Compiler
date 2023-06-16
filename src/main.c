@@ -7,6 +7,7 @@
 #include <ir_opt/mem2reg.h>
 #include <ir_opt/deadcode_elimate.h>
 #include <ir_opt/lir_gen/share_trans.h>
+#include <ir_opt/lir_gen/arm_trans.h>
 
 int main(int argc, char *argv[]) {
     if (argc == 1)
@@ -32,6 +33,10 @@ int main(int argc, char *argv[]) {
 
         // shared lir trans
         share_lir_trans_pass(p_program);
+        program_ir_print(p_program);
+
+        // arm lir trans
+        arm_lir_trans_pass(p_program);
         program_ir_print(p_program);
 
         // drop ir
