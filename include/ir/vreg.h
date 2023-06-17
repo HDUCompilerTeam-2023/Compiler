@@ -12,6 +12,7 @@ struct ir_vreg {
     };
     bool is_bb_param;
 
+    size_t reg_id;
     list_head node;
 };
 
