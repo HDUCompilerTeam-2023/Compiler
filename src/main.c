@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
         arm_lir_trans_pass(p_program);
         program_ir_print(p_program);
         
-        reg_alloca_pass(alloca_whole_in_mem, 13, p_program);
+        reg_alloca_pass(alloca_whole_in_mem, 13, 32, p_program);
         program_ir_print(p_program);
         
         critical_edge_cut_pass(p_program);

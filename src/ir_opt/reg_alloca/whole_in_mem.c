@@ -2,6 +2,15 @@
 #include <ir_opt/reg_alloca/whole_in_mem.h>
 #include <symbol_gen.h>
 
+static inline void set_reg_id(p_inmem_alloca_info p_info, p_ir_vreg p_vreg) {
+    assert(p_info->current_reg_r < p_info->reg_num_r);
+    assert(p_info->current_reg_s < p_info->reg_num_s);
+    if (p_vreg->if_float)
+        p_vreg->reg_id = p_info->current_reg_s++;
+    else
+        p_vreg->reg_id = p_info->current_reg_r++;
+}
+
 static inline p_ir_vreg copy_vreg(p_inmem_alloca_info p_info, p_ir_vreg p_vreg) {
     p_ir_vreg p_new_vreg = ir_vreg_copy(p_vreg);
     symbol_func_vreg_add(p_info->p_func, p_new_vreg);
@@ -11,12 +20,11 @@ static inline p_ir_vreg copy_vreg(p_inmem_alloca_info p_info, p_ir_vreg p_vreg) 
 static void new_load_operand(p_inmem_alloca_info p_info, p_ir_instr p_instr, p_ir_operand p_operand) {
     assert(p_operand);
     if (p_operand->kind == reg) {
-        assert(p_info->current_reg < p_info->reg_num);
         assert(p_info->pp_vmem[p_operand->p_vreg->id]);
         p_ir_vreg p_new_src = copy_vreg(p_info, p_operand->p_vreg);
         p_ir_operand p_vmem_operand = ir_operand_addr_gen(p_info->pp_vmem[p_operand->p_vreg->id]);
         p_ir_instr p_load = ir_load_instr_gen(p_vmem_operand, NULL, p_new_src);
-        p_new_src->reg_id = p_info->current_reg++;
+        set_reg_id(p_info, p_new_src);
         list_add_prev(&p_load->node, &p_instr->node);
         p_operand->p_vreg = p_new_src;
     }
@@ -30,9 +38,8 @@ static inline p_symbol_var reg2mem(p_inmem_alloca_info p_info, p_ir_vreg p_vreg)
     return p_vmem;
 }
 static inline void new_store_vreg(p_inmem_alloca_info p_info, p_ir_instr p_instr, p_ir_vreg p_vreg) {
-    assert(p_info->current_reg < p_info->reg_num);
     p_symbol_var p_vmem = reg2mem(p_info, p_vreg);
-    p_vreg->reg_id = p_info->current_reg++;
+    set_reg_id(p_info, p_vreg);
     p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), NULL, ir_operand_vreg_gen(p_vreg));
     list_add_next(&p_store->node, &p_instr->node);
 }
@@ -81,7 +88,8 @@ static void deal_unary_instr(p_inmem_alloca_info p_info, p_ir_instr p_instr) {
 }
 
 static void deal_instr(p_inmem_alloca_info p_info, p_ir_instr p_instr) {
-    size_t current_reg = p_info->current_reg;
+    size_t current_reg_r = p_info->current_reg_r;
+    size_t current_reg_s = p_info->current_reg_s;
     switch (p_instr->irkind) {
     case ir_binary:
         deal_binary_instr(p_info, p_instr);
@@ -90,7 +98,8 @@ static void deal_instr(p_inmem_alloca_info p_info, p_ir_instr p_instr) {
         deal_unary_instr(p_info, p_instr);
         break;
     case ir_call:
-        assert(current_reg == 0);
+        assert(current_reg_r == 0);
+        assert(current_reg_s == 0);
         p_list_head p_node;
         list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
             p_ir_param p_param = list_entry(p_node, ir_param, node);
@@ -117,7 +126,8 @@ static void deal_instr(p_inmem_alloca_info p_info, p_ir_instr p_instr) {
         assert(0);
         break;
     }
-    p_info->current_reg = current_reg;
+    p_info->current_reg_r = current_reg_r;
+    p_info->current_reg_s = current_reg_s;
 }
 
 static inline void deal_block_param(p_inmem_alloca_info p_info, p_ir_basic_block p_block, p_ir_bb_param_list p_param_list) {
@@ -129,9 +139,10 @@ static inline void deal_block_param(p_inmem_alloca_info p_info, p_ir_basic_block
     }
 }
 
-static inline p_inmem_alloca_info inmem_alloca_info_gen(size_t reg_num, p_symbol_func p_func) {
+static inline p_inmem_alloca_info inmem_alloca_info_gen(size_t reg_num_r, size_t reg_num_s, p_symbol_func p_func) {
     p_inmem_alloca_info p_info = malloc(sizeof(*p_info));
-    p_info->reg_num = reg_num;
+    p_info->reg_num_r = reg_num_r;
+    p_info->reg_num_s = reg_num_s;
     size_t origin_vreg_num = p_func->vreg_cnt + p_func->param_reg_cnt;
     p_info->pp_vmem = malloc(sizeof(void *) * origin_vreg_num);
     p_info->p_func = p_func;
@@ -144,10 +155,10 @@ static inline void inmem_alloca_info_drop(p_inmem_alloca_info p_info) {
     free(p_info);
 }
 
-void whole_in_mem_alloca(p_symbol_func p_func, size_t reg_num) {
-    p_inmem_alloca_info p_info = inmem_alloca_info_gen(reg_num, p_func);
-    size_t current_reg = p_info->current_reg = 0;
-    assert(p_func->param_reg_cnt <= p_info->reg_num);
+void whole_in_mem_alloca(p_symbol_func p_func, size_t reg_r_num, size_t reg_s_num) {
+    p_inmem_alloca_info p_info = inmem_alloca_info_gen(reg_r_num, reg_s_num, p_func);
+    size_t current_reg_r = p_info->current_reg_r = 0;
+    size_t current_reg_s = p_info->current_reg_s = 0;
 
     p_list_head p_node;
     p_list_head p_instr_node;
@@ -159,7 +170,8 @@ void whole_in_mem_alloca(p_symbol_func p_func, size_t reg_num) {
         p_ir_vreg p_param = list_entry(p_node, ir_vreg, node);
         new_store_vreg(p_info, p_head_instr, p_param);
     }
-    p_info->current_reg = current_reg;
+    p_info->current_reg_r = current_reg_r;
+    p_info->current_reg_s = current_reg_s;
 
     p_list_head p_block_node;
     list_for_each(p_block_node, &p_func->block) {
@@ -171,7 +183,8 @@ void whole_in_mem_alloca(p_symbol_func p_func, size_t reg_num) {
             p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
             new_store_vreg(p_info, p_head_instr, p_phi);
         }
-        p_info->current_reg = current_reg;
+        p_info->current_reg_r = current_reg_r;
+        p_info->current_reg_s = current_reg_s;
 
         p_list_head p_instr_node_next;
         while (p_instr_node != &p_basic_block->instr_list) {
@@ -196,7 +209,8 @@ void whole_in_mem_alloca(p_symbol_func p_func, size_t reg_num) {
             break;
         }
         p_instr_node = NULL;
-        p_info->current_reg = current_reg;
+        p_info->current_reg_r = current_reg_r;
+        p_info->current_reg_s = current_reg_s;
     }
     inmem_alloca_info_drop(p_info);
     symbol_func_set_vreg_id(p_func);

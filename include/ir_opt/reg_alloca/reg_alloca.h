@@ -10,5 +10,5 @@ enum alloca_type {
     alloca_color_graph,
 };
 
-void reg_alloca_pass(alloca_type type, size_t reg_num, p_program p_program);
+void reg_alloca_pass(alloca_type type, size_t reg_r_num, size_t reg_s_num, p_program p_program);
 #endif
