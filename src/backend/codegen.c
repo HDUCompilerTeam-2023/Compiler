@@ -572,7 +572,7 @@ static arm_cond_type get_jump_type(p_arm_codegen_info p_info, p_ir_vreg p_vreg) 
     }
 }
 
-static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block p_block, p_symbol_func p_func) {
+static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block p_block, p_ir_basic_block p_next_block, p_symbol_func p_func) {
     arm_block_label_gen(p_info->asm_code, p_func->name, p_block->block_id);
     p_list_head p_node;
     list_for_each(p_node, &p_block->instr_list) {
@@ -582,7 +582,8 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
     switch (p_block->p_branch->kind) {
     case ir_br_branch:
         swap_in_phi(p_info, p_block->p_branch->p_target_1->p_block->basic_block_phis, p_block->p_branch->p_target_1->p_block_param);
-        arm_block_jump_label_gen(p_info->asm_code, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_1->p_block->block_id);
+        if(p_block->p_branch->p_target_1->p_block != p_next_block)
+            arm_block_jump_label_gen(p_info->asm_code, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_1->p_block->block_id);
         break;
     case ir_cond_branch:
         assert(p_block->p_branch->p_exp->kind == reg);
@@ -592,7 +593,8 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
         swap_in_phi(p_info, p_block->p_branch->p_target_1->p_block->basic_block_phis, p_block->p_branch->p_target_1->p_block_param);
         arm_block_jump_label_gen(p_info->asm_code, arm_b, type, p_func->name, p_block->p_branch->p_target_1->p_block->block_id);
         swap_in_phi(p_info, p_block->p_branch->p_target_2->p_block->basic_block_phis, p_block->p_branch->p_target_2->p_block_param);
-        arm_block_jump_label_gen(p_info->asm_code, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_2->p_block->block_id);
+        if (p_block->p_branch->p_target_2->p_block != p_next_block)
+            arm_block_jump_label_gen(p_info->asm_code, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_2->p_block->block_id);
         break;
     case ir_ret_branch:
         if (!p_block->p_branch->p_exp) {
@@ -633,7 +635,8 @@ void arm_func_codegen(p_symbol_func p_func, char *asm_code) {
     p_list_head p_block_node;
     list_for_each(p_block_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
-        arm_basic_block_codegen(p_info, p_basic_block, p_func);
+        p_ir_basic_block p_next_block = list_entry(p_block_node->p_next, ir_basic_block, node);
+        arm_basic_block_codegen(p_info, p_basic_block, p_next_block, p_func);
     }
     arm_codegen_info_drop(p_info);
 }
