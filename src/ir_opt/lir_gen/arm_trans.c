@@ -211,6 +211,7 @@ static void deal_store_instr(p_ir_instr p_instr, p_symbol_func p_func) {
 }
 
 static void deal_instr(p_ir_instr p_instr, p_symbol_func p_func) {
+    p_list_head p_node;
     switch (p_instr->irkind) {
     case ir_binary:
         deal_binary_instr(p_instr, p_func);
@@ -219,10 +220,8 @@ static void deal_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         deal_unary_instr(p_instr, p_func);
         break;
     case ir_call:
-        if (p_instr->ir_call.p_des && if_need_float(p_instr->ir_call.p_des))
-            set_float_reg(p_instr->ir_call.p_des);
+        // 返回值在代码生成的时候新增 mov, 不一定放浮点寄存器
         // 调用时浮点数放浮点寄存器
-        p_list_head p_node;
         list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
             p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
             if (p_param->kind == reg && if_need_float(p_param->p_vreg))

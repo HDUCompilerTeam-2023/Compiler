@@ -582,7 +582,7 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
     switch (p_block->p_branch->kind) {
     case ir_br_branch:
         swap_in_phi(p_info, p_block->p_branch->p_target_1->p_block->basic_block_phis, p_block->p_branch->p_target_1->p_block_param);
-        if(p_block->p_branch->p_target_1->p_block != p_next_block)
+        if (p_block->p_branch->p_target_1->p_block != p_next_block)
             arm_block_jump_label_gen(p_info->asm_code, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_1->p_block->block_id);
         break;
     case ir_cond_branch:
