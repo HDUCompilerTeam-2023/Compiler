@@ -13,6 +13,7 @@ struct ir_vreg {
     bool is_bb_param;
 
     size_t reg_id;
+    bool if_float; // 是否在浮点寄存器
     bool if_cond;  // 是否是条件跳转的条件
     list_head node;
 };
