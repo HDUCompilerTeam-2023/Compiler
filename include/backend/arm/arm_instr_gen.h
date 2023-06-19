@@ -78,4 +78,5 @@ void arm_push_gen(char *asm_code, size_t *reg_id, size_t num);
 void arm_pop_gen(char *asm_code, size_t *reg_id, size_t num);
 
 void arm_get_float_label_val(char *asm_code, size_t rd, char *func_name, size_t len);
+void arm_vmov_gen(char *asm_code, size_t rd, size_t rs);
 void arm_float_code_gen(char *asm_code, char *func_name, char *extra_code);
