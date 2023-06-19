@@ -67,15 +67,25 @@ static inline void stack_alloc(p_arm_codegen_info p_info, p_symbol_func p_func) 
 static inline void remap_reg_id(p_symbol_func p_func) {
     size_t r_map[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
         12, 14 };
+    size_t s_map[32] = { 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37,
+        38, 39, 40, 41, 42, 43, 44, 45, 46, 47 };
     p_list_head p_node;
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        p_vreg->reg_id = r_map[p_vreg->reg_id];
+        if (p_vreg->if_float)
+            p_vreg->reg_id = s_map[p_vreg->reg_id];
+        else
+            p_vreg->reg_id = r_map[p_vreg->reg_id];
     }
     list_for_each(p_node, &p_func->vreg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        if (p_vreg->reg_id != -1)
-            p_vreg->reg_id = r_map[p_vreg->reg_id];
+        if (p_vreg->reg_id != -1) {
+            if (p_vreg->if_float)
+                p_vreg->reg_id = s_map[p_vreg->reg_id];
+            else
+                p_vreg->reg_id = r_map[p_vreg->reg_id];
+        }
     }
 }
 
@@ -160,6 +170,18 @@ static void mov_int2reg(char *asm_code, size_t rd, I32CONST_t i32const, bool s) 
     arm_mov_gen(asm_code, arm_mov, rd, i32const, s, 0, true);
 }
 
+static void mov_float2reg(p_arm_codegen_info p_info, size_t rd, F32CONST_t floatconst) {
+    // 浮点数放到标量寄存器
+    if (rd < R_NUM)
+        mov_imm32_gen(p_info->asm_code, rd, *(uint32_t *) (&floatconst), false);
+    else {
+        // 浮点数放到浮点寄存器
+        arm_word_gen(p_info->extra_code, *(uint32_t *) (&floatconst));
+        arm_get_float_label_val(p_info->asm_code, rd, p_info->p_func->name, p_info->extra_len);
+        p_info->extra_len++;
+    }
+}
+
 static void mov_imme2reg(p_arm_codegen_info p_info, size_t rd, p_ir_operand p_operand, bool s) {
     assert(p_operand->kind == imme);
     if (p_operand->p_type->ref_level > 0) {
@@ -169,8 +191,17 @@ static void mov_imme2reg(p_arm_codegen_info p_info, size_t rd, p_ir_operand p_op
             arm_data_process_gen(p_info->asm_code, arm_add, rd, FP, p_info->mem_stack_offset[p_operand->p_vmem->id], s, 2, true);
         return;
     }
-    assert(p_operand->p_type->basic == type_i32);
-    mov_int2reg(p_info->asm_code, rd, p_operand->i32const, s);
+    switch (p_operand->p_type->basic) {
+    case type_i32:
+        mov_int2reg(p_info->asm_code, rd, p_operand->i32const, s);
+        break;
+    case type_f32:
+        mov_float2reg(p_info, rd, p_operand->f32const);
+        break;
+    default:
+        assert(0);
+        break;
+    }
 }
 
 static void arm_global_sym_gen(char *asm_code, p_symbol_var p_sym) {
@@ -201,31 +232,33 @@ static void arm_global_sym_gen(char *asm_code, p_symbol_var p_sym) {
     strcat(asm_code, "\n");
 }
 
-static void arm_into_func_gen(char *asm_code, p_symbol_func p_func, size_t stack_size) {
-    arm_func_sym_declare_gen(asm_code, p_func->name);
-    arm_label_gen(asm_code, p_func->name);
+static void arm_into_func_gen(p_arm_codegen_info p_info, p_symbol_func p_func, size_t stack_size) {
+    arm_func_sym_declare_gen(p_info->asm_code, p_func->name);
+    arm_label_gen(p_info->asm_code, p_func->name);
     size_t r[2] = { FP, LR };
-    arm_push_gen(asm_code, r, 2);
+    arm_push_gen(p_info->asm_code, r, 2);
     if (!if_legal_rotate_imme12(stack_size)) {
-        mov_int2reg(asm_code, 12, stack_size, false);
-        arm_data_process_gen(asm_code, arm_sub, SP, SP, 12, false, 2, false);
+        mov_int2reg(p_info->asm_code, 12, stack_size, false);
+        arm_data_process_gen(p_info->asm_code, arm_sub, SP, SP, 12, false, 2, false);
     }
     else
-        arm_data_process_gen(asm_code, arm_sub, SP, SP, stack_size, false, 2, true);
-    arm_mov_gen(asm_code, arm_mov, FP, SP, false, 0, false);
+        arm_data_process_gen(p_info->asm_code, arm_sub, SP, SP, stack_size, false, 2, true);
+    arm_mov_gen(p_info->asm_code, arm_mov, FP, SP, false, 0, false);
 }
 
-static void arm_out_func_gen(char *asm_code, size_t stack_size) {
+static void arm_out_func_gen(p_arm_codegen_info p_info, size_t stack_size) {
     if (!if_legal_rotate_imme12(stack_size)) {
-        mov_int2reg(asm_code, 12, stack_size, false);
-        arm_data_process_gen(asm_code, arm_add, FP, FP, 12, false, 2, false);
+        mov_int2reg(p_info->asm_code, 12, stack_size, false);
+        arm_data_process_gen(p_info->asm_code, arm_add, FP, FP, 12, false, 2, false);
     }
     else
-        arm_data_process_gen(asm_code, arm_add, FP, FP, stack_size, false, 2, true);
-    arm_mov_gen(asm_code, arm_mov, SP, FP, false, 0, false);
+        arm_data_process_gen(p_info->asm_code, arm_add, FP, FP, stack_size, false, 2, true);
+    arm_mov_gen(p_info->asm_code, arm_mov, SP, FP, false, 0, false);
     size_t r[2] = { FP, PC };
-    arm_pop_gen(asm_code, r, 2);
-    arm_jump_reg_gen(asm_code, arm_bx, arm_al, LR);
+    arm_pop_gen(p_info->asm_code, r, 2);
+    arm_jump_reg_gen(p_info->asm_code, arm_bx, arm_al, LR);
+    if (p_info->extra_len)
+        arm_float_code_gen(p_info->asm_code, p_info->p_func->name, p_info->extra_code);
 }
 
 static inline char *get_block_label(char *func_name, size_t block_id) {
@@ -609,14 +642,14 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
         break;
     case ir_ret_branch:
         if (!p_block->p_branch->p_exp) {
-            arm_out_func_gen(p_info->asm_code, p_info->stack_size);
+            arm_out_func_gen(p_info, p_info->stack_size);
             break;
         }
         if (p_block->p_branch->p_exp->kind == imme)
             mov_imme2reg(p_info, 0, p_block->p_branch->p_exp, false);
         else if (0 != p_block->p_branch->p_exp->p_vreg->reg_id)
             arm_mov_gen(p_info->asm_code, arm_mov, 0, p_block->p_branch->p_exp->p_vreg->reg_id, false, 0, false);
-        arm_out_func_gen(p_info->asm_code, p_info->stack_size);
+        arm_out_func_gen(p_info, p_info->stack_size);
         break;
     case ir_abort_branch:
         break;
@@ -627,6 +660,9 @@ static p_arm_codegen_info arm_codegen_info_gen(p_symbol_func p_func, char *asm_c
     p_arm_codegen_info p_info = malloc(sizeof(*p_info));
     p_info->mem_stack_offset = malloc(p_func->var_cnt * sizeof(*p_info->mem_stack_offset));
     p_info->asm_code = asm_code;
+    p_info->extra_len = 0;
+    p_info->p_func = p_func;
+    strcpy(p_info->extra_code, "");
     return p_info;
 }
 static void arm_codegen_info_drop(p_arm_codegen_info p_info) {
@@ -641,7 +677,7 @@ void arm_func_codegen(p_symbol_func p_func, char *asm_code) {
     stack_alloc(p_info, p_func);
     remap_reg_id(p_func);
 
-    arm_into_func_gen(p_info->asm_code, p_func, p_info->stack_size);
+    arm_into_func_gen(p_info, p_func, p_info->stack_size);
 
     p_list_head p_block_node;
     list_for_each(p_block_node, &p_func->block) {
@@ -655,6 +691,8 @@ void arm_func_codegen(p_symbol_func p_func, char *asm_code) {
 void arm_codegen_pass(p_program p_ir, char *asm_code) {
     strcat(asm_code, "   .arch armv7ve\n");
     strcat(asm_code, "   .arm\n");
+    strcat(asm_code, "   .fpu vfpv4\n");
+
     p_list_head p_node;
     list_for_each(p_node, &p_ir->variable) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
