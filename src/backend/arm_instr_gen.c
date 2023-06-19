@@ -358,3 +358,21 @@ void arm_get_global_addr(char *asm_code, size_t rd, char *name) {
     strcat(asm_code, name);
     strcat(asm_code, "\n");
 }
+
+void arm_get_float_label_val(char *asm_code, size_t rd, char *func_name, size_t len) {
+    strcat(asm_code, "   vldr.32 ");
+    strcat(asm_code, regs[rd]);
+    strcat(asm_code, ", .");
+    strcat(asm_code, func_name);
+    strcat(asm_code, "_float+");
+    uint32_str_cat(asm_code, len << 2);
+    strcat(asm_code, "\n");
+}
+
+void arm_float_code_gen(char *asm_code, char *func_name, char *extra_code)
+{
+    strcat(asm_code, ".");
+    strcat(asm_code, func_name);
+    strcat(asm_code, "_float:\n");
+    strcat(asm_code, extra_code);
+}
