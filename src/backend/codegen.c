@@ -176,6 +176,12 @@ static void mov_int2reg(char *asm_code, size_t rd, I32CONST_t i32const, bool s) 
         mov_imm32_gen(asm_code, rd, i32const, s);
         return;
     }
+    // movs 和 mov 的立即数范围不同
+    if (s && !if_legal_rotate_imme12(i32const)) {
+        mov_int2reg(asm_code, rd, i32const, false);
+        arm_compare_gen(asm_code, arm_cmp, rd, 0, 0, true);
+        return;
+    }
     arm_mov_gen(asm_code, arm_mov, rd, i32const, s, 0, true);
 }
 
@@ -371,7 +377,10 @@ static void arm_unary_instr_codegen(p_arm_codegen_info p_info, p_ir_unary_instr 
     switch (p_unary_instr->op) {
     case ir_minus_op:
         assert(p_unary_instr->p_src->kind == reg);
-        arm_data_process_gen(asm_code, arm_rsb, rd, p_unary_instr->p_src->p_vreg->reg_id, 0, s, 0, true);
+        if (rd >= R_NUM)
+            arm_vneg_gen(asm_code, rd, p_unary_instr->p_src->p_vreg->reg_id);
+        else
+            arm_data_process_gen(asm_code, arm_rsb, rd, p_unary_instr->p_src->p_vreg->reg_id, 0, s, 0, true);
         break;
     case ir_val_assign:
         if (p_unary_instr->p_src->kind == imme) {
@@ -380,8 +389,14 @@ static void arm_unary_instr_codegen(p_arm_codegen_info p_info, p_ir_unary_instr 
         }
         mov_reg2reg(asm_code, rd, p_unary_instr->p_src->p_vreg->reg_id, s);
         break;
+    case ir_i2f_op:
+        arm_vcvt_gen(asm_code, arm_int2float, rd, p_unary_instr->p_src->p_vreg->reg_id);
+        break;
+    case ir_f2i_op:
+        arm_vcvt_gen(asm_code, arm_float2int, rd, p_unary_instr->p_src->p_vreg->reg_id);
+        break;
     default:
-        assert(1);
+        assert(0);
         break;
     }
 }
@@ -440,7 +455,10 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
             arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src2->p_vreg->reg_id, p_binary_instr->p_src1->p_vreg->reg_id, s, 2, false);
             break;
         }
-        arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s, 0, false);
+        if (rd >= R_NUM)
+            arm_vdata_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+        else
+            arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s, 0, false);
         break;
     case ir_sub_op:
         if (p_binary_instr->p_src1->kind == imme && p_binary_instr->p_src2->kind == imme) {
@@ -479,14 +497,23 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
             arm_data_process_gen(asm_code, arm_sub, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s, 2, false);
             break;
         }
-        arm_data_process_gen(asm_code, arm_sub, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s, 0, false);
+        if (rd >= R_NUM)
+            arm_vdata_process_gen(asm_code, arm_sub, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+        else
+            arm_data_process_gen(asm_code, arm_sub, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s, 0, false);
         break;
     case ir_mul_op:
-        arm_mul_gen(asm_code, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s);
+        if (rd >= R_NUM)
+            arm_vdata_process_gen(asm_code, arm_mul, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+        else
+            arm_mul_gen(asm_code, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s);
         break;
     case ir_div_op:
         assert(!s);
-        arm_sdiv_gen(asm_code, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+        if (rd >= R_NUM)
+            arm_vdata_process_gen(asm_code, arm_div, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+        else
+            arm_sdiv_gen(asm_code, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
         break;
     case ir_eq_op:
     case ir_neq_op:
@@ -502,9 +529,13 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
                 arm_compare_gen(asm_code, arm_cmn, p_binary_instr->p_src1->p_vreg->reg_id, -p_binary_instr->p_src2->i32const, 0, true);
             else
                 arm_compare_gen(asm_code, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->i32const, 0, true);
-            break;
         }
-        arm_compare_gen(asm_code, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, 0, false);
+        else {
+            if (p_binary_instr->p_src1->p_vreg->reg_id >= R_NUM)
+                arm_vcompare_gen(asm_code, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+            else
+                arm_compare_gen(asm_code, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, 0, false);
+        }
         if (!s) {
             arm_movcond_gen(asm_code, arm_eq, rd, 1, 0, true);
             arm_movcond_gen(asm_code, arm_ne, rd, 0, 0, true);
@@ -709,7 +740,7 @@ void arm_func_codegen(p_symbol_func p_func, char *asm_code) {
 void arm_codegen_pass(p_program p_ir, char *asm_code) {
     strcat(asm_code, "   .arch armv7ve\n");
     strcat(asm_code, "   .arm\n");
-    strcat(asm_code, "   .fpu vfpv4\n");
+    strcat(asm_code, "   .fpu neon-vfpv4\n");
 
     p_list_head p_node;
     list_for_each(p_node, &p_ir->variable) {
