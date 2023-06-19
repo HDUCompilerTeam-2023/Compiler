@@ -1,8 +1,15 @@
 
 #include <backend/arm/arm_instr_gen.h>
 
-static char regs[16][4] = { "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
-    "r8", "r9", "r10", "r11", "r12", "sp", "lr", "pc" };
+static char regs[48][4] = { "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+    "r8", "r9", "r10", "r11", "r12", "sp", "lr", "pc", "s0", "s1", "s2", "s3", "s4", "s5", "s16",
+    "s7", "s8", "s9", "s10", "s11", "s12", "s13",
+    "s14", "s15", "s16", "s17", "s18", "s19", "s20",
+    "s21", "s22", "s23", "s24", "s25", "s26", "s27",
+    "s28", "s29", "s30", "s31" };
+
+// static const size_t R_NUM = 16;
+// static const size_t S_NUM = 32;
 
 char *uint32_str(uint32_t intconst) {
     if (!intconst) {
