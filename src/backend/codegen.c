@@ -52,6 +52,10 @@ static inline bool if_legal_direct_imme12(I32CONST_t i32const) {
     return !(i32const > imm_12_max || i32const < -imm_12_max);
 }
 
+static inline bool if_legal_direct_imme8(I32CONST_t i32const) {
+    return !(i32const > imm_8_max || i32const < -imm_8_max);
+}
+
 static inline void stack_alloc(p_arm_codegen_info p_info, p_symbol_func p_func) {
     p_list_head p_node;
     size_t stack_size = 0;
@@ -115,6 +119,7 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
         size_t current_work_r1 = r1[i];
         size_t current_work_r2 = r2[i];
         while (use_reg_count[current_work_r2] == 0 && current_work_r1 != current_work_r2) {
+            assert((current_work_r1 >= R_NUM && current_work_r2 >= R_NUM) || (current_work_r1 < R_NUM && current_work_r2 < R_NUM));
             mov_reg2reg(p_info->asm_code, current_work_r2, current_work_r1, false);
             use_reg_count[current_work_r1]--;
             if_deal[current_work_r2] = true;
@@ -320,7 +325,7 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
             continue;
         }
         src_reg[num] = p_param->p_vreg->reg_id;
-        if (p_param->p_vreg->if_cond)
+        if (p_param->p_vreg->if_float)
             des_reg[num] = s++;
         else
             des_reg[num] = r++;
@@ -571,6 +576,19 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
             assert(p_store_instr->p_offset->kind == imme);
             stack_offset += p_store_instr->p_offset->i32const;
         }
+        if (rd >= R_NUM) {
+            if (!if_legal_direct_imme8(stack_offset)) {
+                arm_mov_gen(asm_code, arm_mov, TMP, FP, false, 0, false);
+                while (!if_legal_direct_imme8(stack_offset)) {
+                    arm_data_process_gen(asm_code, arm_add, TMP, TMP, imm_8_max, false, 2, true);
+                    stack_offset -= imm_8_max;
+                }
+                arm_vstore_gen(asm_code, rd, TMP, stack_offset << 2, true);
+            }
+            else
+                arm_vstore_gen(asm_code, rd, FP, stack_offset << 2, true);
+            return;
+        }
         if (!if_legal_direct_imme12(stack_offset << 2)) { // 这里有bug,要用到临时寄存器,待解决
             mov_int2reg(asm_code, TMP, stack_offset << 2, false);
             arm_store_gen(asm_code, arm_store, rd, FP, TMP, 0, false);
@@ -580,6 +598,29 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
         return;
     }
     size_t rn = p_store_instr->p_addr->p_vreg->reg_id;
+    if (rd >= R_NUM) {
+        if (p_store_instr->p_offset) // 这边为了保证vldr 的 offset 是合法的，应该在 arm_lir 的imme2reg添加对应处理，待解决
+            if (p_store_instr->p_offset->kind == imme) {
+                size_t stack_offset = p_store_instr->p_offset->i32const;
+                if (!if_legal_direct_imme8(stack_offset)) {
+                    arm_mov_gen(asm_code, arm_mov, TMP, rn, false, 0, false);
+                    while (!if_legal_direct_imme8(stack_offset)) {
+                        arm_data_process_gen(asm_code, arm_add, TMP, TMP, imm_8_max, false, 2, true);
+                        stack_offset -= imm_8_max;
+                    }
+                    arm_vstore_gen(asm_code, rd, TMP, stack_offset << 2, true);
+                }
+                else
+                    arm_vstore_gen(asm_code, rd, rn, stack_offset << 2, false);
+            }
+            else {
+                arm_data_process_gen(asm_code, arm_lsl, TMP, p_store_instr->p_offset->p_vreg->reg_id, 2, false, 0, true);
+                arm_vstore_gen(asm_code, rd, rn, TMP, false);
+            }
+        else
+            arm_vstore_gen(asm_code, rd, rn, 0, true);
+        return;
+    }
     if (p_store_instr->p_offset)
         if (p_store_instr->p_offset->kind == imme)
             arm_store_gen(asm_code, arm_store, rd, rn, p_store_instr->p_offset->i32const, 2, true);
@@ -600,6 +641,19 @@ static void arm_load_instr_gen(p_arm_codegen_info p_info, p_ir_load_instr p_load
             stack_offset += p_load_instr->p_offset->i32const;
             return;
         }
+        if (rd >= R_NUM) {
+            if (!if_legal_direct_imme8(stack_offset)) {
+                arm_mov_gen(asm_code, arm_mov, TMP, FP, false, 0, false);
+                while (!if_legal_direct_imme8(stack_offset)) {
+                    arm_data_process_gen(asm_code, arm_add, TMP, TMP, imm_8_max, false, 2, true);
+                    stack_offset -= imm_8_max;
+                }
+                arm_vload_gen(asm_code, rd, TMP, stack_offset << 2, true);
+            }
+            else
+                arm_vload_gen(asm_code, rd, FP, stack_offset << 2, 2);
+            return;
+        }
         if (!if_legal_direct_imme12(stack_offset << 2)) {
             mov_int2reg(asm_code, rd, stack_offset << 2, false);
             arm_load_gen(asm_code, arm_load, rd, FP, rd, 0, false);
@@ -609,6 +663,29 @@ static void arm_load_instr_gen(p_arm_codegen_info p_info, p_ir_load_instr p_load
         return;
     }
     size_t rn = p_load_instr->p_addr->p_vreg->reg_id;
+    if (rd >= R_NUM) {
+        if (p_load_instr->p_offset)
+            if (p_load_instr->p_offset->kind == imme) {
+                size_t stack_offset = p_load_instr->p_offset->i32const;
+                if (!if_legal_direct_imme8(stack_offset)) {
+                    arm_mov_gen(asm_code, arm_mov, TMP, rn, false, 0, false);
+                    while (!if_legal_direct_imme8(stack_offset)) {
+                        arm_data_process_gen(asm_code, arm_add, TMP, TMP, imm_8_max, false, 2, true);
+                        stack_offset -= imm_8_max;
+                    }
+                    arm_vload_gen(asm_code, rd, TMP, stack_offset << 2, true);
+                }
+                else
+                    arm_vload_gen(asm_code, rd, rn, stack_offset << 2, true);
+            }
+            else {
+                arm_data_process_gen(asm_code, arm_lsl, TMP, p_load_instr->p_offset->p_vreg->reg_id, 2, false, 0, true);
+                arm_vload_gen(asm_code, rd, rn, TMP, false);
+            }
+        else
+            arm_vload_gen(asm_code, rd, rn, 0, true);
+        return;
+    }
     if (p_load_instr->p_offset)
         if (p_load_instr->p_offset->kind == imme)
             arm_load_gen(asm_code, arm_load, rd, rn, p_load_instr->p_offset->i32const, 2, true);
