@@ -20,6 +20,8 @@
 #include <backend/arm/codegen.h>
 #include <stdio.h>
 static const size_t R_NUM = 16;
+// static const size_t S_NUM = 32;
+static const size_t REG_NUM = 48;
 static const size_t FP = 11;
 static const size_t SP = 13;
 static const size_t LR = 14;
@@ -78,14 +80,14 @@ static inline void remap_reg_id(p_symbol_func p_func) {
 }
 
 static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t num) {
-    size_t *use_reg_count = malloc(sizeof(*use_reg_count) * R_NUM);
-    memset(use_reg_count, 0, R_NUM * sizeof(*use_reg_count));
-    size_t *r2_r1 = malloc(sizeof(*r2_r1) * R_NUM);
-    memset(r2_r1, -1, R_NUM * sizeof(*r2_r1));
-    bool *if_deal = malloc(sizeof(*if_deal) * R_NUM);
-    memset(if_deal, 0, sizeof(*if_deal) * R_NUM);
+    size_t *use_reg_count = malloc(sizeof(*use_reg_count) * REG_NUM);
+    memset(use_reg_count, 0, REG_NUM * sizeof(*use_reg_count));
+    size_t *r2_r1 = malloc(sizeof(*r2_r1) * REG_NUM);
+    memset(r2_r1, -1, REG_NUM * sizeof(*r2_r1));
+    bool *if_deal = malloc(sizeof(*if_deal) * REG_NUM);
+    memset(if_deal, 0, sizeof(*if_deal) * REG_NUM);
     for (size_t i = 0; i < num; i++) {
-        assert(r1[i] < R_NUM && r2[i] < R_NUM);
+        assert(r1[i] < REG_NUM && r2[i] < REG_NUM);
         use_reg_count[r1[i]]++;
         r2_r1[r2[i]] = r1[i];
     }
@@ -110,8 +112,8 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
     }
 
     // 现在变成了一一映射
-    size_t *current_val_in = malloc(sizeof(*current_val_in) * R_NUM);
-    memset(current_val_in, 0, sizeof(*current_val_in) * R_NUM);
+    size_t *current_val_in = malloc(sizeof(*current_val_in) * REG_NUM);
+    memset(current_val_in, 0, sizeof(*current_val_in) * REG_NUM);
     for (size_t i = 0; i < num; i++) {
         if (use_reg_count[r1[i]] == 0) continue; // 之前已经被处理过, 处理完后原始reg的使用次数都为1或0
         assert(use_reg_count[r1[i]] == 1);
@@ -249,37 +251,46 @@ static inline void arm_block_jump_label_gen(char *asm_code, arm_instr_type instr
 
 void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
     p_list_head p_node;
-    size_t *src_reg = malloc(sizeof(*src_reg) * R_NUM);
-    size_t *des_reg = malloc(sizeof(*des_reg) * R_NUM);
+    size_t *src_reg = malloc(sizeof(*src_reg) * REG_NUM);
+    size_t *des_reg = malloc(sizeof(*des_reg) * REG_NUM);
+    p_ir_operand *src_immes = malloc(sizeof(void *) * REG_NUM);
+    size_t *des_imme_reg = malloc(sizeof(*des_imme_reg) * REG_NUM);
+
     size_t num = 0;
     size_t i = 0;
+    size_t r = 0;
+    size_t s = R_NUM;
     list_for_each(p_node, &p_param_list->param) {
         p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
         if (p_param->kind == imme) {
+            src_immes[i] = p_param;
+            if (p_param->p_type->ref_level > 0 || p_param->p_type->basic == type_i32)
+                des_imme_reg[i] = r++;
+            else if (p_param->p_type->basic == type_f32)
+                des_imme_reg[i] = s++;
             i++;
             continue;
         }
         src_reg[num] = p_param->p_vreg->reg_id;
-        des_reg[num] = i;
+        if (p_param->p_vreg->if_cond)
+            des_reg[num] = s++;
+        else
+            des_reg[num] = r++;
         num++;
-        i++;
     }
     // TO DO: param in stack
     swap_reg(p_info, src_reg, des_reg, num);
-    i = 0;
-    list_for_each(p_node, &p_param_list->param) {
-        p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
-        if (p_param->kind == imme)
-            mov_imme2reg(p_info, i, p_param, false);
-        i++;
-    }
+    for (size_t j = 0; j < i; j++)
+        mov_imme2reg(p_info, des_imme_reg[j], src_immes[j], false);
     free(src_reg);
     free(des_reg);
+    free(des_imme_reg);
+    free(src_immes);
 }
 
 static void swap_in_phi(p_arm_codegen_info p_info, p_ir_bb_phi_list p_bb_phi_list, p_ir_bb_param_list p_bb_param_list) {
-    size_t *src_reg = malloc(sizeof(*src_reg) * R_NUM);
-    size_t *des_reg = malloc(sizeof(*des_reg) * R_NUM);
+    size_t *src_reg = malloc(sizeof(*src_reg) * REG_NUM);
+    size_t *des_reg = malloc(sizeof(*des_reg) * REG_NUM);
     size_t num = 0;
     p_list_head p_node1, p_node2;
     for (p_node1 = p_bb_param_list->bb_param.p_next, p_node2 = p_bb_phi_list->bb_phi.p_next; p_node1 != &p_bb_param_list->bb_param
