@@ -468,6 +468,48 @@ void arm_vcompare_gen(char *asm_code, arm_instr_type type, size_t rs1, size_t rs
     strcat(asm_code, "   vmrs APSR_nzcv, FPSCR\n");
 }
 
+void arm_vload_gen(char *asm_code, size_t rd, size_t rs, size_t offset, bool if_imme) {
+    assert(rd >= R_NUM);
+    assert(rs < R_NUM);
+    assert(if_imme || offset < R_NUM);
+    strcat(asm_code, "   vldr.32 ");
+    strcat(asm_code, regs[rd]);
+    strcat(asm_code, ", [");
+    strcat(asm_code, regs[rs]);
+    if (if_imme) {
+        if (offset) {
+            strcat(asm_code, ", #");
+            uint32_str_cat(asm_code, offset);
+        }
+    }
+    else {
+        strcat(asm_code, ", ");
+        strcat(asm_code, regs[offset]);
+    }
+    strcat(asm_code, "]\n");
+}
+
+void arm_vstore_gen(char *asm_code, size_t rd, size_t rs, size_t offset, bool if_imme) {
+    assert(rd >= R_NUM);
+    assert(rs < R_NUM);
+    assert(if_imme || offset < R_NUM);
+    strcat(asm_code, "   vstr.32 ");
+    strcat(asm_code, regs[rd]);
+    strcat(asm_code, ", [");
+    strcat(asm_code, regs[rs]);
+    if (if_imme) {
+        if (offset) {
+            strcat(asm_code, ", #");
+            uint32_str_cat(asm_code, offset);
+        }
+    }
+    else {
+        strcat(asm_code, ", ");
+        strcat(asm_code, regs[offset]);
+    }
+    strcat(asm_code, "]\n");
+}
+
 void arm_vpush_gen(char *asm_code, size_t *reg_id, size_t num) {
     if (num == 0) return;
     strcat(asm_code, "   vpush {");
