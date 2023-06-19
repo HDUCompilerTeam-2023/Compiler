@@ -285,9 +285,19 @@ void arm_jump_label_gen(char *asm_code, arm_instr_type type, arm_cond_type cond_
 
 void arm_swap_gen(char *asm_code, size_t r1, size_t r2) {
     if (r1 == r2) return;
-    arm_data_process_gen(asm_code, arm_eor, r1, r1, r2, false, 0, false);
-    arm_data_process_gen(asm_code, arm_eor, r2, r1, r2, false, 0, false);
-    arm_data_process_gen(asm_code, arm_eor, r1, r1, r2, false, 0, false);
+    bool if_r1 = r1 < R_NUM;
+    bool if_r2 = r2 < R_NUM;
+    assert(if_r1 == if_r2);
+    if (if_r1 && if_r2) {
+        arm_data_process_gen(asm_code, arm_eor, r1, r1, r2, false, 0, false);
+        arm_data_process_gen(asm_code, arm_eor, r2, r1, r2, false, 0, false);
+        arm_data_process_gen(asm_code, arm_eor, r1, r1, r2, false, 0, false);
+    }
+    else {
+        arm_vdata_process_gen(asm_code, arm_add, r1, r1, r2);
+        arm_vdata_process_gen(asm_code, arm_sub, r2, r1, r2);
+        arm_vdata_process_gen(asm_code, arm_sub, r1, r1, r2);
+    }
 }
 
 void arm_word_gen(char *asm_code, size_t imme32) {
@@ -359,6 +369,14 @@ void arm_get_global_addr(char *asm_code, size_t rd, char *name) {
     strcat(asm_code, "\n");
 }
 
+
+void arm_vset_flag(char *asm_code, size_t r) {
+    strcat(asm_code, "   vcmp.f32 ");
+    strcat(asm_code, regs[r]);
+    strcat(asm_code, ", #0\n");
+    strcat(asm_code, "   vmrs APSR_nzcv, FPSCR\n");
+}
+
 void arm_vmov_gen(char *asm_code, size_t rd, size_t rs) {
     bool if_sd = rd >= R_NUM;
     bool if_ss = rs >= R_NUM;
@@ -373,6 +391,102 @@ void arm_vmov_gen(char *asm_code, size_t rd, size_t rs) {
     strcat(asm_code, ", ");
     strcat(asm_code, regs[rs]);
     strcat(asm_code, "\n");
+}
+
+void arm_vneg_gen(char *asm_code, size_t rd, size_t rs) {
+    strcat(asm_code, "   vneg.f32 ");
+    strcat(asm_code, regs[rd]);
+    strcat(asm_code, ", ");
+    strcat(asm_code, regs[rs]);
+    strcat(asm_code, "\n");
+}
+
+void arm_vcvt_gen(char *asm_code, arm_instr_type type, size_t rd, size_t rs) {
+    strcat(asm_code, "   vcvt");
+    switch (type) {
+    case arm_int2float:
+        strcat(asm_code, ".f32.s32 ");
+        break;
+    case arm_float2int:
+        strcat(asm_code, ".s32.f32 ");
+        break;
+    default:
+        assert(0);
+    }
+    strcat(asm_code, regs[rd]);
+    strcat(asm_code, ", ");
+    strcat(asm_code, regs[rs]);
+    strcat(asm_code, "\n");
+}
+
+void arm_vdata_process_gen(char *asm_code, arm_instr_type type, size_t rd, size_t rs1, size_t rs2) {
+    switch (type) {
+    case arm_add:
+        strcat(asm_code, "   vadd");
+        break;
+    case arm_sub:
+        strcat(asm_code, "   vsub");
+        break;
+    case arm_mul:
+        strcat(asm_code, "   vmul");
+        break;
+    case arm_div:
+        strcat(asm_code, "   vdiv");
+        break;
+    case arm_and:
+        strcat(asm_code, "   vand");
+        break;
+    default:
+        assert(0);
+    }
+    strcat(asm_code, ".f32 ");
+    strcat(asm_code, regs[rd]);
+    strcat(asm_code, ", ");
+    strcat(asm_code, regs[rs1]);
+    strcat(asm_code, ", ");
+    strcat(asm_code, regs[rs2]);
+    strcat(asm_code, "\n");
+}
+
+void arm_vcompare_gen(char *asm_code, arm_instr_type type, size_t rs1, size_t rs2) {
+    switch (type) {
+    case arm_cmp:
+        strcat(asm_code, "  vcmp");
+        break;
+    case arm_tst:
+        strcat(asm_code, "  vtst");
+        break;
+    default:
+        assert(0);
+        break;
+    }
+    strcat(asm_code, ".f32 ");
+    strcat(asm_code, regs[rs1]);
+    strcat(asm_code, ", ");
+    strcat(asm_code, regs[rs2]);
+    strcat(asm_code, "\n");
+    strcat(asm_code, "   vmrs APSR_nzcv, FPSCR\n");
+}
+
+void arm_vpush_gen(char *asm_code, size_t *reg_id, size_t num) {
+    if (num == 0) return;
+    strcat(asm_code, "   vpush {");
+    strcat(asm_code, regs[reg_id[0]]);
+    for (size_t i = 1; i < num; i++) {
+        strcat(asm_code, ", ");
+        strcat(asm_code, regs[reg_id[i]]);
+    }
+    strcat(asm_code, "}\n");
+}
+void arm_vpop_gen(char *asm_code, size_t *reg_id, size_t num) {
+    if (num == 0) return;
+    strcat(asm_code, "   vpop {");
+    strcat(asm_code, regs[reg_id[0]]);
+    for (size_t i = 1; i < num; i++) {
+        strcat(asm_code, ", ");
+        strcat(asm_code, regs[reg_id[i]]);
+    }
+    strcat(asm_code, "}\n");
 }
 
 void arm_get_float_label_val(char *asm_code, size_t rd, char *func_name, size_t len) {

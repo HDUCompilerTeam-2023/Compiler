@@ -77,6 +77,14 @@ void arm_space_gen(char *asm_code, size_t size);
 void arm_push_gen(char *asm_code, size_t *reg_id, size_t num);
 void arm_pop_gen(char *asm_code, size_t *reg_id, size_t num);
 
-void arm_get_float_label_val(char *asm_code, size_t rd, char *func_name, size_t len);
 void arm_vmov_gen(char *asm_code, size_t rd, size_t rs);
+void arm_vset_flag(char *asm_code, size_t r);
+void arm_vdata_process_gen(char *asm_code, arm_instr_type type, size_t rd, size_t rs1, size_t rs2);
+void arm_vneg_gen(char *asm_code, size_t rd, size_t rs);
+void arm_vcvt_gen(char *asm_code, arm_instr_type type, size_t rd, size_t rs);
+void arm_vcompare_gen(char *asm_code, arm_instr_type type, size_t rs1, size_t rs2);
+void arm_vpush_gen(char *asm_code, size_t *reg_id, size_t num);
+void arm_vpop_gen(char *asm_code, size_t *reg_id, size_t num);
+
+void arm_get_float_label_val(char *asm_code, size_t rd, char *func_name, size_t len);
 void arm_float_code_gen(char *asm_code, char *func_name, char *extra_code);
