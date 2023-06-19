@@ -8,7 +8,7 @@ static char regs[48][4] = { "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
     "s21", "s22", "s23", "s24", "s25", "s26", "s27",
     "s28", "s29", "s30", "s31" };
 
-// static const size_t R_NUM = 16;
+static const size_t R_NUM = 16;
 // static const size_t S_NUM = 32;
 
 char *uint32_str(uint32_t intconst) {
@@ -359,6 +359,22 @@ void arm_get_global_addr(char *asm_code, size_t rd, char *name) {
     strcat(asm_code, "\n");
 }
 
+void arm_vmov_gen(char *asm_code, size_t rd, size_t rs) {
+    bool if_sd = rd >= R_NUM;
+    bool if_ss = rs >= R_NUM;
+    assert(if_sd || if_ss);
+    strcat(asm_code, "   vmov");
+    if (if_sd && if_ss)
+        strcat(asm_code, ".f32 ");
+    else
+        strcat(asm_code, " ");
+
+    strcat(asm_code, regs[rd]);
+    strcat(asm_code, ", ");
+    strcat(asm_code, regs[rs]);
+    strcat(asm_code, "\n");
+}
+
 void arm_get_float_label_val(char *asm_code, size_t rd, char *func_name, size_t len) {
     strcat(asm_code, "   vldr.32 ");
     strcat(asm_code, regs[rd]);
@@ -369,8 +385,7 @@ void arm_get_float_label_val(char *asm_code, size_t rd, char *func_name, size_t 
     strcat(asm_code, "\n");
 }
 
-void arm_float_code_gen(char *asm_code, char *func_name, char *extra_code)
-{
+void arm_float_code_gen(char *asm_code, char *func_name, char *extra_code) {
     strcat(asm_code, ".");
     strcat(asm_code, func_name);
     strcat(asm_code, "_float:\n");

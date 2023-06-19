@@ -89,6 +89,15 @@ static inline void remap_reg_id(p_symbol_func p_func) {
     }
 }
 
+static inline void mov_reg2reg(char *asm_code, size_t rd, size_t rs, bool s) {
+    if (rd < R_NUM && rs < R_NUM)
+        arm_mov_gen(asm_code, arm_mov, rd, rs, s, 0, false);
+    else {
+        assert(!s);
+        arm_vmov_gen(asm_code, rd, rs);
+    }
+}
+
 static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t num) {
     size_t *use_reg_count = malloc(sizeof(*use_reg_count) * REG_NUM);
     memset(use_reg_count, 0, REG_NUM * sizeof(*use_reg_count));
@@ -106,7 +115,7 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
         size_t current_work_r1 = r1[i];
         size_t current_work_r2 = r2[i];
         while (use_reg_count[current_work_r2] == 0 && current_work_r1 != current_work_r2) {
-            arm_mov_gen(p_info->asm_code, arm_mov, current_work_r2, current_work_r1, true, 0, false);
+            mov_reg2reg(p_info->asm_code, current_work_r2, current_work_r1, false);
             use_reg_count[current_work_r1]--;
             if_deal[current_work_r2] = true;
             current_work_r2 = current_work_r1;
@@ -369,7 +378,7 @@ static void arm_unary_instr_codegen(p_arm_codegen_info p_info, p_ir_unary_instr 
             mov_imme2reg(p_info, rd, p_unary_instr->p_src, s);
             break;
         }
-        arm_mov_gen(asm_code, arm_mov, rd, p_unary_instr->p_src->p_vreg->reg_id, s, 0, false);
+        mov_reg2reg(asm_code, rd, p_unary_instr->p_src->p_vreg->reg_id, s);
         break;
     default:
         assert(1);
@@ -512,6 +521,12 @@ static void arm_call_instr_codegen(p_arm_codegen_info p_info, p_ir_call_instr p_
     // TODO: store var in reg
     swap_in_call(p_info, p_call_instr->p_param_list);
     arm_jump_label_gen(p_info->asm_code, arm_bl, arm_al, p_call_instr->p_func->name);
+    if (p_call_instr->p_des) {
+        size_t rs = 0;
+        if (p_call_instr->p_des->p_type->basic == type_f32)
+            rs = R_NUM;
+        mov_reg2reg(p_info->asm_code, p_call_instr->p_des->reg_id, rs, false);
+    }
 }
 
 static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_store_instr) {
@@ -645,10 +660,13 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
             arm_out_func_gen(p_info, p_info->stack_size);
             break;
         }
+        size_t rd = 0;
+        if (p_block->p_branch->p_exp->p_type->basic == type_f32)
+            rd = R_NUM;
         if (p_block->p_branch->p_exp->kind == imme)
-            mov_imme2reg(p_info, 0, p_block->p_branch->p_exp, false);
-        else if (0 != p_block->p_branch->p_exp->p_vreg->reg_id)
-            arm_mov_gen(p_info->asm_code, arm_mov, 0, p_block->p_branch->p_exp->p_vreg->reg_id, false, 0, false);
+            mov_imme2reg(p_info, rd, p_block->p_branch->p_exp, false);
+        else if (rd != p_block->p_branch->p_exp->p_vreg->reg_id)
+            mov_reg2reg(p_info->asm_code, rd, p_block->p_branch->p_exp->p_vreg->reg_id, false);
         arm_out_func_gen(p_info, p_info->stack_size);
         break;
     case ir_abort_branch:
