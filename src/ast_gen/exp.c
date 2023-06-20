@@ -292,9 +292,6 @@ p_ast_exp ast_exp_unary_gen(ast_exp_unary_op u_op, p_ast_exp p_src) {
     p_src = exp_ptr_to_val_check_basic(p_src);
 
     basic_type type = p_src->p_type->basic;
-    if (u_op == ast_exp_op_bool_not) {
-        type = type_i32;
-    }
 
     if (p_src->kind == ast_exp_num) {
         switch (u_op) {

@@ -1,21 +1,21 @@
 #include <frontend/syntax/info/def.h>
 
+#include <frontend/syntax/decl/gen.h>
+#include <frontend/syntax/decl_head/gen.h>
 #include <frontend/syntax/init/gen.h>
 #include <frontend/syntax/symbol_table/gen.h>
-#include <frontend/syntax/decl_head/gen.h>
-#include <frontend/syntax/decl/gen.h>
 
 #include <program/gen.h>
 
 #include <symbol_gen/func.h>
-#include <symbol_gen/var.h>
 #include <symbol_gen/type.h>
+#include <symbol_gen/var.h>
 
 #include <ast2ir.h>
 
+#include <ast_gen/block.h>
 #include <ast_gen/exp.h>
 #include <ast_gen/stmt.h>
-#include <ast_gen/block.h>
 
 p_program syntax_info_get_program(p_syntax_info p_info) {
     return p_info->p_program;
@@ -83,6 +83,19 @@ void syntax_func_end(p_syntax_info p_info, p_ast_block p_block) {
     syntax_zone_pop(p_info);
     p_symbol_func p_func = p_info->p_func;
     p_info->p_func = NULL;
+    switch (p_func->ret_type) {
+    case type_void:
+        ast_block_add(p_block, ast_stmt_return_gen(type_void, NULL));
+        break;
+    case type_i32:
+        ast_block_add(p_block, ast_stmt_return_gen(type_i32, ast_exp_int_gen(0)));
+        break;
+    case type_f32:
+        ast_block_add(p_block, ast_stmt_return_gen(type_f32, ast_exp_float_gen(0.0)));
+        break;
+    case type_str:
+        break;
+    }
     ast2ir_symbol_func_gen(p_block, p_func, p_info->p_program);
     ast_block_drop(p_block);
 }
@@ -164,7 +177,8 @@ p_syntax_decl_head syntax_declaration(p_syntax_info p_info, p_syntax_decl_head p
                 symbol_init_val init_val;
                 p_ast_exp p_rval = syntax_init_get_exp(p_s_init, p_type, i);
                 if (!p_rval) p_rval = ast_exp_int_gen(0);
-                else p_rval = ast_exp_ptr_check_const(p_rval);
+                else
+                    p_rval = ast_exp_ptr_check_const(p_rval);
                 if (p_init->basic == type_i32) {
                     init_val.i = p_rval->i32const;
                 }
@@ -198,7 +212,8 @@ p_syntax_decl_head syntax_declaration(p_syntax_info p_info, p_syntax_decl_head p
             symbol_init_val init_val;
             p_ast_exp p_rval = syntax_init_get_exp(p_s_init, p_type, i);
             if (!p_rval) p_rval = ast_exp_int_gen(0);
-            else p_rval = ast_exp_ptr_check_const(p_rval);
+            else
+                p_rval = ast_exp_ptr_check_const(p_rval);
             if (p_init->basic == type_i32) {
                 init_val.i = p_rval->i32const;
             }
