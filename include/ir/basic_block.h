@@ -29,6 +29,8 @@ struct ir_basic_block {
     p_ir_basic_block p_dom_parent; // 支配树上的父亲
     list_head dom_son_list; // 支配树上的儿子
 
+    p_ir_bb_phi_list p_live_in;
+    p_ir_bb_phi_list p_live_out;
     bool if_visited;
 };
 

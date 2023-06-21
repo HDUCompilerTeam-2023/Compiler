@@ -292,6 +292,7 @@ void arm_lir_func_trans(p_symbol_func p_func) {
             break;
         }
     }
+    symbol_func_set_block_id(p_func);
     symbol_func_set_vreg_id(p_func);
 }
 

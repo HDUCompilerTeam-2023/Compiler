@@ -8,7 +8,7 @@
 #include <symbol/var.h>
 void ir_instr_print(p_ir_instr p_instr) {
     assert(p_instr);
-    printf("    ");
+    printf("%ld:        ", p_instr->instr_id);
     switch (p_instr->irkind) {
     case ir_binary:
         ir_binary_instr_print(&p_instr->ir_binary);

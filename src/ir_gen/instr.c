@@ -13,6 +13,9 @@ p_ir_instr ir_binary_instr_gen(ir_binary_op op, p_ir_operand p_src1, p_ir_operan
             .p_des = p_des,
         },
         .node = list_head_init(&p_instr->node),
+        .instr_id = 0,
+        .p_live_in = ir_bb_phi_list_init(),
+        .p_live_out = ir_bb_phi_list_init(),
     };
     ir_vreg_set_instr_def(p_des, p_instr);
     return p_instr;
@@ -29,6 +32,9 @@ p_ir_instr ir_unary_instr_gen(ir_unary_op op, p_ir_operand p_src, p_ir_vreg p_de
             .p_des = p_des,
         },
         .node = list_head_init(&p_instr->node),
+        .instr_id = 0,
+        .p_live_in = ir_bb_phi_list_init(),
+        .p_live_out = ir_bb_phi_list_init(),
     };
     ir_vreg_set_instr_def(p_des, p_instr);
     return p_instr;
@@ -45,6 +51,9 @@ p_ir_instr ir_call_instr_gen(p_symbol_func p_func, p_ir_param_list p_param_list,
             .p_param_list = p_param_list,
         },
         .node = list_head_init(&p_instr->node),
+        .instr_id = 0,
+        .p_live_in = ir_bb_phi_list_init(),
+        .p_live_out = ir_bb_phi_list_init(),
     };
     if (p_des)
         ir_vreg_set_instr_def(p_des, p_instr);
@@ -62,6 +71,9 @@ p_ir_instr ir_gep_instr_gen(p_ir_operand p_addr, p_ir_operand p_offset, p_ir_vre
             .is_element = is_element,
         },
         .node = list_head_init(&p_instr->node),
+        .instr_id = 0,
+        .p_live_in = ir_bb_phi_list_init(),
+        .p_live_out = ir_bb_phi_list_init(),
     };
     ir_vreg_set_instr_def(p_des, p_instr);
     return p_instr;
@@ -77,6 +89,9 @@ p_ir_instr ir_load_instr_gen(p_ir_operand p_addr, p_ir_operand p_offset, p_ir_vr
             .p_offset = p_offset,
         },
         .node = list_head_init(&p_instr->node),
+        .instr_id = 0,
+        .p_live_in = ir_bb_phi_list_init(),
+        .p_live_out = ir_bb_phi_list_init(),
     };
     ir_vreg_set_instr_def(p_des, p_instr);
     return p_instr;
@@ -92,6 +107,9 @@ p_ir_instr ir_store_instr_gen(p_ir_operand p_addr, p_ir_operand p_offset, p_ir_o
             .p_offset = p_offset,
         },
         .node = list_head_init(&p_instr->node),
+        .instr_id = 0,
+        .p_live_in = ir_bb_phi_list_init(),
+        .p_live_out = ir_bb_phi_list_init(),
     };
     return p_instr;
 }
@@ -186,5 +204,7 @@ void ir_instr_drop(p_ir_instr p_instr) {
             ir_operand_drop(p_instr->ir_load.p_offset);
         break;
     }
+    ir_bb_phi_list_drop(p_instr->p_live_in);
+    ir_bb_phi_list_drop(p_instr->p_live_out);
     free(p_instr);
 }
