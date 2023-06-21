@@ -37,6 +37,8 @@ p_ir_basic_block ir_basic_block_gen() {
         .dom_son_list = list_head_init(&p_ir_block->dom_son_list),
         .p_dom_parent = NULL,
         .if_visited = false,
+        .p_live_in = ir_bb_phi_list_init(),
+        .p_live_out = ir_bb_phi_list_init(),
     };
     return p_ir_block;
 }
@@ -126,6 +128,8 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
     }
     ir_basic_block_branch_drop(p_basic_block->p_branch);
     ir_bb_phi_list_drop(p_basic_block->basic_block_phis);
+    ir_bb_phi_list_drop(p_basic_block->p_live_in);
+    ir_bb_phi_list_drop(p_basic_block->p_live_out);
     free(p_basic_block);
 }
 

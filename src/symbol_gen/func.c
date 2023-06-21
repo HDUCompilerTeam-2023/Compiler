@@ -93,11 +93,17 @@ void symbol_func_vreg_add_at(p_symbol_func p_func, p_ir_vreg p_new_sym, p_ir_bas
 }
 
 void symbol_func_set_block_id(p_symbol_func p_func) {
-    size_t id = 0;
+    size_t block_id = 0;
+    size_t instr_id = 0;
     p_list_head p_node;
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
-        p_basic_block->block_id = id++;
+        p_list_head p_instr_node;
+        list_for_each(p_instr_node, &p_basic_block->instr_list) {
+            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            p_instr->instr_id = instr_id++;
+        }
+        p_basic_block->block_id = block_id++;
     }
 }
 

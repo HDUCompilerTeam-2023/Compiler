@@ -86,7 +86,9 @@ struct ir_instr {
         ir_gep_instr ir_gep;
         ir_store_instr ir_store;
     };
-
+    size_t instr_id;
+    p_ir_bb_phi_list p_live_in;
+    p_ir_bb_phi_list p_live_out;
     list_head node; // 下一条指令
 };
 

@@ -100,6 +100,7 @@ static inline void share_lir_func_trans(p_symbol_func p_func) {
             deal_instr(p_instr, p_basic_block, p_func);
         }
     }
+    symbol_func_set_block_id(p_func);
     symbol_func_set_vreg_id(p_func);
 }
 

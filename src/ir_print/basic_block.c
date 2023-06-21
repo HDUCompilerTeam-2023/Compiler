@@ -43,7 +43,7 @@ static inline void ir_basic_block_branch_print(p_ir_basic_block_branch p_branch)
 void ir_basic_block_print(p_ir_basic_block p_basic_block) {
     assert(p_basic_block);
 
-    printf("b%ld", p_basic_block->block_id);
+    printf("    b%ld", p_basic_block->block_id);
     if (!list_head_alone(&p_basic_block->basic_block_phis->bb_phi))
         ir_bb_phi_list_print(p_basic_block->basic_block_phis);
     printf(":");
