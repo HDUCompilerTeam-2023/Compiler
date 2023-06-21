@@ -4,10 +4,16 @@
 
 #include <stdio.h>
 
-void graph_node_gen(p_graph_node p_node, p_ir_vreg p_vreg) {
+void graph_node_gen(p_graph_node p_node, p_ir_vreg p_vreg, size_t reg_num) {
     p_node->p_vreg = p_vreg;
     p_node->color = -1;
     p_node->neighbors = list_head_init(&p_node->neighbors);
+    p_node->used_color = malloc(sizeof(*p_node->used_color) * reg_num);
+}
+
+void graph_nodes_init(p_conflict_graph p_graph) {
+    for (size_t i = 0; i < p_graph->node_num; i++)
+        memset(p_graph->p_nodes[i].used_color, false, sizeof(*p_graph->p_nodes->used_color) * p_graph->reg_num);
 }
 
 p_neighbor_node graph_neighbor_node_gen(p_graph_node p_node){
@@ -78,14 +84,18 @@ void print_conflict_graph(p_conflict_graph p_graph) {
     }
 }
 
-void conflict_graph_drop(p_conflict_graph p_graph) {
-    for (size_t i = 0; i < p_graph->node_num; i++) {
-        while (!list_head_alone(&(p_graph->p_nodes + i)->neighbors)) {
-            p_neighbor_node p_neighbor = list_entry((p_graph->p_nodes + i)->neighbors.p_next, neighbor_node, node);
-            list_del(&p_neighbor->node);
-            free(p_neighbor);
-        }
+void graph_node_drop(p_graph_node p_node) {
+    while (!list_head_alone(&p_node->neighbors)) {
+        p_neighbor_node p_neighbor = list_entry(p_node->neighbors.p_next, neighbor_node, node);
+        list_del(&p_neighbor->node);
+        free(p_neighbor);
     }
+    free(p_node->used_color);
+}
+
+void conflict_graph_drop(p_conflict_graph p_graph) {
+    for (size_t i = 0; i < p_graph->node_num; i++)
+        graph_node_drop(p_graph->p_nodes + i);
     free(p_graph->p_nodes);
     free(p_graph->seo_seq);
     free(p_graph->map);
