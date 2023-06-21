@@ -15,6 +15,7 @@ struct graph_node {
     p_ir_vreg p_vreg;
     size_t color;
     list_head neighbors;
+    bool *used_color;
 };
 
 struct conflict_graph {
@@ -26,7 +27,8 @@ struct conflict_graph {
     size_t *map; // vreg 编号到图的节点编号的映射
 };
 
-void graph_node_gen(p_graph_node p_node, p_ir_vreg p_vreg);
+void graph_node_gen(p_graph_node p_node, p_ir_vreg p_vreg, size_t reg_num);
+void graph_nodes_init(p_conflict_graph p_graph);
 p_neighbor_node graph_neighbor_node_gen(p_graph_node p_node);
 void add_graph_edge(p_graph_node r1, p_graph_node r2);
 bool if_in_neighbors(p_graph_node p_g_node, p_graph_node p_n_node);
