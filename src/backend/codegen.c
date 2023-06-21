@@ -20,7 +20,7 @@
 #include <backend/arm/codegen.h>
 #include <stdio.h>
 static const size_t R_NUM = 16;
-// static const size_t S_NUM = 32;
+static const size_t S_NUM = 32;
 static const size_t REG_NUM = 48;
 static const size_t FP = 11;
 static const size_t SP = 13;
@@ -553,16 +553,39 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
     }
 }
 
-static void arm_call_instr_codegen(p_arm_codegen_info p_info, p_ir_call_instr p_call_instr) {
-    // TODO: store var in reg
+static void arm_call_instr_codegen(p_arm_codegen_info p_info, p_ir_instr p_instr) {
+    // store var in reg
+    p_ir_call_instr p_call_instr = &p_instr->ir_call;
+    size_t r_num = 0;
+    size_t s_num = 0;
+    size_t *r_regs = malloc(sizeof(*r_regs) * R_NUM);
+    size_t *s_regs = malloc(sizeof(*r_regs) * S_NUM);
+    size_t rs = 0;
+    if(p_call_instr->p_des && p_call_instr->p_func->ret_type == type_f32)
+        rs = R_NUM;
+    size_t rd = -1;
+    p_list_head p_node;
+    list_for_each(p_node, &p_instr->p_live_out->bb_phi) {
+        p_ir_vreg p_vreg = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
+        if (p_vreg == p_call_instr->p_des) {
+            rd = p_vreg->reg_id;
+            continue;
+        }
+        if (p_vreg->reg_id < R_NUM)
+            r_regs[r_num++] = p_vreg->reg_id;
+        else
+            s_regs[s_num++] = p_vreg->reg_id;
+    }
+    arm_push_gen(p_info->asm_code, r_regs, r_num);
+    arm_vpush_gen(p_info->asm_code, s_regs, s_num);
     swap_in_call(p_info, p_call_instr->p_param_list);
     arm_jump_label_gen(p_info->asm_code, arm_bl, arm_al, p_call_instr->p_func->name);
-    if (p_call_instr->p_des) {
-        size_t rs = 0;
-        if (p_call_instr->p_des->p_type->basic == type_f32)
-            rs = R_NUM;
+    if (rd != -1 && rs != rd) // rd = -1 时函数返回值不活跃
         mov_reg2reg(p_info->asm_code, p_call_instr->p_des->reg_id, rs, false);
-    }
+    arm_vpop_gen(p_info->asm_code, s_regs, s_num);
+    arm_pop_gen(p_info->asm_code, r_regs, r_num);
+    free(r_regs);
+    free(s_regs);
 }
 
 static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_store_instr) {
@@ -703,7 +726,7 @@ static void arm_instr_codegen(p_arm_codegen_info p_info, p_ir_instr p_instr) {
         arm_unary_instr_codegen(p_info, &p_instr->ir_unary);
         break;
     case ir_call:
-        arm_call_instr_codegen(p_info, &p_instr->ir_call);
+        arm_call_instr_codegen(p_info, p_instr);
         break;
     case ir_store:
         arm_store_instr_gen(p_info, &p_instr->ir_store);
