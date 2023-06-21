@@ -357,9 +357,14 @@ void arm_func_sym_declare_gen(char *asm_code, char *p_func) {
     strcat(asm_code, ", %function\n");
 }
 
+static inline int cmp(const void *a, const void *b) {
+    return *(int *) a - *(int *) b;
+}
+
 void arm_push_gen(char *asm_code, size_t *reg_id, size_t num) {
     if (num == 0) return;
     assert(reg_id[0] < R_NUM);
+    qsort(reg_id, num, sizeof(size_t), cmp);
     strcat(asm_code, "   push {");
     strcat(asm_code, regs[reg_id[0]]);
     for (size_t i = 1; i < num; i++) {
@@ -373,6 +378,7 @@ void arm_push_gen(char *asm_code, size_t *reg_id, size_t num) {
 void arm_pop_gen(char *asm_code, size_t *reg_id, size_t num) {
     if (num == 0) return;
     assert(reg_id[0] < R_NUM);
+    qsort(reg_id, num, sizeof(size_t), cmp);
     strcat(asm_code, "   pop {");
     strcat(asm_code, regs[reg_id[0]]);
     for (size_t i = 1; i < num; i++) {
@@ -558,31 +564,43 @@ void arm_vstore_gen(char *asm_code, size_t rd, size_t rs, size_t offset, bool if
 
 void arm_vpush_gen(char *asm_code, size_t *reg_id, size_t num) {
     if (num == 0) return;
-    assert(reg_id[0] >= R_NUM);
-    assert(reg_id[0] < R_NUM + S_NUM);
-    strcat(asm_code, "   vpush {");
-    strcat(asm_code, regs[reg_id[0]]);
-    for (size_t i = 1; i < num; i++) {
+    qsort(reg_id, num, sizeof(size_t), cmp);
+    size_t i = 0;
+    while (i < num) {
         assert(reg_id[i] >= R_NUM);
         assert(reg_id[i] < R_NUM + S_NUM);
-        strcat(asm_code, ", ");
+        strcat(asm_code, "   vpush {");
         strcat(asm_code, regs[reg_id[i]]);
+        i++;
+        while (i < num && reg_id[i] == reg_id[i - 1] + 1) {
+            assert(reg_id[i] >= R_NUM);
+            assert(reg_id[i] < R_NUM + S_NUM);
+            strcat(asm_code, ", ");
+            strcat(asm_code, regs[reg_id[i]]);
+            i++;
+        }
+        strcat(asm_code, "}\n");
     }
-    strcat(asm_code, "}\n");
 }
 void arm_vpop_gen(char *asm_code, size_t *reg_id, size_t num) {
     if (num == 0) return;
-    assert(reg_id[0] >= R_NUM);
-    assert(reg_id[0] < R_NUM + S_NUM);
-    strcat(asm_code, "   vpop {");
-    strcat(asm_code, regs[reg_id[0]]);
-    for (size_t i = 1; i < num; i++) {
+    qsort(reg_id, num, sizeof(size_t), cmp);
+    size_t i = 0;
+    while (i < num) {
         assert(reg_id[i] >= R_NUM);
         assert(reg_id[i] < R_NUM + S_NUM);
-        strcat(asm_code, ", ");
+        strcat(asm_code, "   vpop {");
         strcat(asm_code, regs[reg_id[i]]);
+        i++;
+        while (i < num && reg_id[i] == reg_id[i - 1] + 1) {
+            assert(reg_id[i] >= R_NUM);
+            assert(reg_id[i] < R_NUM + S_NUM);
+            strcat(asm_code, ", ");
+            strcat(asm_code, regs[reg_id[i]]);
+            i++;
+        }
+        strcat(asm_code, "}\n");
     }
-    strcat(asm_code, "}\n");
 }
 
 void arm_get_float_label_val(char *asm_code, size_t rd, char *func_name, size_t len) {
