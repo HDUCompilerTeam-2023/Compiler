@@ -1,9 +1,9 @@
 #include <ir_opt/reg_alloca/graph_alloca/liveness.h>
 
-#include <symbol/func.h>
 #include <ir/basic_block.h>
 #include <ir/instr.h>
 #include <ir/vreg.h>
+#include <symbol/func.h>
 // 生成浮点和通用寄存器的节点和映射，并生成对应的图
 // 初始化所有指令和基本块的活跃变量集合
 p_graph_alloca_info graph_alloca_info_gen(size_t reg_num_r, size_t reg_num_s, p_symbol_func p_func) {
@@ -113,12 +113,42 @@ void graph_alloca_info_drop(p_graph_alloca_info p_info) {
     free(p_info);
 }
 
+// 对传入的参数进行预着色
+void pre_color(p_graph_alloca_info p_info, p_symbol_func p_func) {
+    p_list_head p_node;
+    size_t current_r = 0;
+    size_t current_s = 0;
+    list_for_each(p_node, &p_func->param_reg_list) {
+        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
+        if (p_vreg->if_float) {
+            set_node_color(p_info->p_s_graph, p_info->p_s_graph->p_nodes + p_info->p_s_graph->map[p_vreg->id], current_s);
+            current_s++;
+        }
+        else {
+            set_node_color(p_info->p_r_graph, p_info->p_r_graph->p_nodes + p_info->p_r_graph->map[p_vreg->id], current_r);
+            current_r++;
+        }
+    }
+}
+
 void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     p_graph_alloca_info p_info = graph_alloca_info_gen(reg_num_r, reg_num_s, p_func);
     liveness_analysis(p_info, p_func);
-    print_conflict_graph(p_info->p_r_graph);
-    print_conflict_graph(p_info->p_s_graph);
     set_func_live(p_info, p_func);
+
+    graph_nodes_init(p_info->p_r_graph);
+    graph_nodes_init(p_info->p_s_graph);
+    pre_color(p_info, p_func);
+
+    print_conflict_graph(p_info->p_r_graph);
+    mcs_get_seqs(p_info->p_r_graph);
+    set_graph_color(p_info->p_r_graph);
+    check_chordal(p_info->p_r_graph);
+    print_conflict_graph(p_info->p_s_graph);
+    mcs_get_seqs(p_info->p_s_graph);
+    set_graph_color(p_info->p_s_graph);
+    check_chordal(p_info->p_s_graph);
+
     check_liveness(p_func);
     graph_alloca_info_drop(p_info);
 }

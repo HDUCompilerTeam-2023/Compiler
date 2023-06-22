@@ -35,4 +35,10 @@ bool if_in_neighbors(p_graph_node p_g_node, p_graph_node p_n_node);
 p_conflict_graph conflict_graph_gen(size_t node_num, size_t *map, p_graph_node p_nodes, size_t reg_num);
 void print_conflict_graph(p_conflict_graph p_graph);
 void conflict_graph_drop(p_conflict_graph p_graph);
+
+void mcs_get_seqs(p_conflict_graph p_graph);
+void set_graph_color(p_conflict_graph p_graph);
+void set_node_color(p_conflict_graph p_graph, p_graph_node p_node, size_t color);
+void check_chordal(p_conflict_graph p_graph);
+
 #endif

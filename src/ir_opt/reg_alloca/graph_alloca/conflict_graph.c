@@ -16,7 +16,7 @@ void graph_nodes_init(p_conflict_graph p_graph) {
         memset(p_graph->p_nodes[i].used_color, false, sizeof(*p_graph->p_nodes->used_color) * p_graph->reg_num);
 }
 
-p_neighbor_node graph_neighbor_node_gen(p_graph_node p_node){
+p_neighbor_node graph_neighbor_node_gen(p_graph_node p_node) {
     p_neighbor_node p_neighbor = malloc(sizeof(*p_neighbor));
     p_neighbor->node = list_head_init(&p_neighbor->node);
     p_neighbor->p_neighbor = p_node;
@@ -100,4 +100,100 @@ void conflict_graph_drop(p_conflict_graph p_graph) {
     free(p_graph->seo_seq);
     free(p_graph->map);
     free(p_graph);
+}
+
+// 获得完美消除序列的逆序，也就是着色顺序以及图的色数，可优化
+void mcs_get_seqs(p_conflict_graph p_graph) {
+    if (p_graph->node_num == 0) {
+        p_graph->color_num = 0;
+        return;
+    }
+    typedef struct node_info {
+        p_graph_node p_node;
+        size_t label;
+        bool visited;
+        list_head node;
+    } node_info, *p_node_info;
+    p_list_head seq_heads = malloc(sizeof(*seq_heads) * p_graph->node_num);
+    p_node_info seqs_info = malloc(sizeof(*seqs_info) * p_graph->node_num);
+    for (size_t i = 0; i < p_graph->node_num; i++) {
+        list_head_init(seq_heads + i);
+        (seqs_info + i)->p_node = p_graph->p_nodes + i;
+        (seqs_info + i)->label = 0;
+        (seqs_info + i)->visited = false;
+        (seqs_info + i)->node = list_head_init(&(seqs_info + i)->node);
+        list_add_prev(&(seqs_info + i)->node, seq_heads + 0);
+    }
+    size_t max_label = 0;
+    size_t current = 0;
+    for (size_t i = 0; i < p_graph->node_num; i++) {
+        while (list_head_alone(seq_heads + current))
+            current--;
+        if (max_label < current)
+            max_label = current;
+        p_node_info p_current_node_info = list_entry((seq_heads + current)->p_next, node_info, node);
+        p_graph->seo_seq[i] = p_current_node_info->p_node;
+        p_current_node_info->visited = true;
+        list_del(&p_current_node_info->node);
+        p_list_head p_node;
+        list_for_each(p_node, &p_current_node_info->p_node->neighbors) {
+            p_graph_node p_neighbor = list_entry(p_node, neighbor_node, node)->p_neighbor;
+            p_node_info p_neighbor_info = seqs_info + p_graph->map[p_neighbor->p_vreg->id];
+            if (p_neighbor_info->visited)
+                continue;
+            p_neighbor_info->label++;
+            list_del(&p_neighbor_info->node);
+            list_add_next(&p_neighbor_info->node, seq_heads + p_neighbor_info->label);
+        }
+        current++;
+    }
+    // 得到色数(为 最大的 label + 1)
+    p_graph->color_num = max_label + 1;
+    free(seqs_info);
+    free(seq_heads);
+}
+
+// 保险起见检验是否是弦图（可删）
+void check_chordal(p_conflict_graph p_graph) {
+    bool *visited = malloc(sizeof(*visited) * p_graph->node_num);
+    memset(visited, false, sizeof(*visited) * p_graph->node_num);
+    for (size_t i = p_graph->node_num - 1; i < p_graph->node_num; i--) {
+        visited[p_graph->map[p_graph->seo_seq[i]->p_vreg->id]] = true;
+        p_list_head p_node;
+        p_graph_node p_min_node = NULL;
+        list_for_each(p_node, &p_graph->seo_seq[i]->neighbors) {
+            p_graph_node p_neighbor = list_entry(p_node, neighbor_node, node)->p_neighbor;
+            if (!visited[p_graph->map[p_neighbor->p_vreg->id]]) {
+                if (!p_min_node)
+                    p_min_node = p_neighbor;
+                else // 最小的节点与其他节点必定相邻
+                    assert(if_in_neighbors(p_min_node, p_neighbor));
+            }
+        }
+    }
+    free(visited);
+}
+
+void set_node_color(p_conflict_graph p_graph, p_graph_node p_node, size_t color) {
+    assert(color < p_graph->reg_num);
+    p_node->color = color;
+    p_node->p_vreg->reg_id = color;
+    p_list_head p_neighbor_node;
+    list_for_each(p_neighbor_node, &p_node->neighbors) {
+        p_graph_node p_neighbor = list_entry(p_neighbor_node, neighbor_node, node)->p_neighbor;
+        p_neighbor->used_color[color] = true;
+    }
+}
+
+// 根据顺序进行着色
+void set_graph_color(p_conflict_graph p_graph) {
+    assert(p_graph->color_num <= p_graph->reg_num);
+    for (size_t i = 0; i < p_graph->node_num; i++) {
+        p_graph_node p_node = p_graph->seo_seq[i];
+        if (p_node->color != -1) continue;
+        size_t lowest = 0;
+        while (p_node->used_color[lowest])
+            lowest++;
+        set_node_color(p_graph, p_node, lowest);
+    }
 }
