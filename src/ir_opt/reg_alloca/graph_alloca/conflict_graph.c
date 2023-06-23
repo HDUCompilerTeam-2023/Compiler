@@ -4,9 +4,10 @@
 
 #include <stdio.h>
 
-void graph_node_gen(p_graph_node p_node, p_ir_vreg p_vreg, size_t reg_num) {
+void graph_node_gen(p_graph_node p_node, p_ir_vreg p_vreg, size_t reg_num, size_t node_id) {
     p_node->p_vreg = p_vreg;
     p_node->color = -1;
+    p_node->node_id = node_id;
     p_node->neighbors = list_head_init(&p_node->neighbors);
     p_node->used_color = malloc(sizeof(*p_node->used_color) * reg_num);
 }
@@ -25,7 +26,7 @@ p_neighbor_node graph_neighbor_node_gen(p_graph_node p_node) {
 
 p_conflict_graph conflict_graph_gen(size_t node_num, size_t *map, p_graph_node p_nodes, size_t reg_num) {
     p_conflict_graph p_graph = malloc(sizeof(*p_graph));
-    p_graph->node_num = node_num;
+    p_graph->node_num = p_graph->origin_node_num = node_num;
     p_graph->map = map;
     p_graph->reg_num = reg_num;
     p_graph->p_nodes = p_nodes;
@@ -39,10 +40,10 @@ void add_graph_edge(p_graph_node r1, p_graph_node r2) {
     p_neighbor_node p_pos;
     list_for_each(p_node, p_head) {
         p_pos = list_entry(p_node, neighbor_node, node);
-        if (p_pos->p_neighbor->p_vreg->id >= r1->p_vreg->id)
+        if (p_pos->p_neighbor->node_id >= r1->node_id)
             break;
     }
-    if (p_node == p_head || p_pos->p_neighbor->p_vreg->id > r1->p_vreg->id) {
+    if (p_node == p_head || p_pos->p_neighbor->node_id > r1->node_id) {
         p_neighbor_node p_neighbor = graph_neighbor_node_gen(r1);
         list_add_prev(&p_neighbor->node, p_node);
     }
@@ -50,10 +51,10 @@ void add_graph_edge(p_graph_node r1, p_graph_node r2) {
     p_head = &r1->neighbors;
     list_for_each(p_node, p_head) {
         p_pos = list_entry(p_node, neighbor_node, node);
-        if (p_pos->p_neighbor->p_vreg->id >= r2->p_vreg->id)
+        if (p_pos->p_neighbor->node_id >= r2->node_id)
             break;
     }
-    if (p_node == p_head || p_pos->p_neighbor->p_vreg->id > r2->p_vreg->id) {
+    if (p_node == p_head || p_pos->p_neighbor->node_id > r2->node_id) {
         p_neighbor_node p_neighbor = graph_neighbor_node_gen(r2);
         list_add_prev(&p_neighbor->node, p_node);
     }
@@ -74,11 +75,11 @@ void print_conflict_graph(p_conflict_graph p_graph) {
         printf("%ld: {", i);
         p_list_head p_node;
         list_for_each(p_node, &(p_graph->p_nodes + i)->neighbors) {
-            p_ir_vreg p_neighbor = list_entry(p_node, neighbor_node, node)->p_neighbor->p_vreg;
+            p_graph_node p_neighbor = list_entry(p_node, neighbor_node, node)->p_neighbor;
             if (p_node->p_next != &(p_graph->p_nodes + i)->neighbors)
-                printf("%ld, ", p_neighbor->id);
+                printf("%ld, ", p_neighbor->node_id);
             else
-                printf("%ld ", p_neighbor->id);
+                printf("%ld ", p_neighbor->node_id);
         }
         printf("}\n");
     }
@@ -138,7 +139,7 @@ void mcs_get_seqs(p_conflict_graph p_graph) {
         p_list_head p_node;
         list_for_each(p_node, &p_current_node_info->p_node->neighbors) {
             p_graph_node p_neighbor = list_entry(p_node, neighbor_node, node)->p_neighbor;
-            p_node_info p_neighbor_info = seqs_info + p_graph->map[p_neighbor->p_vreg->id];
+            p_node_info p_neighbor_info = seqs_info + p_neighbor->node_id;
             if (p_neighbor_info->visited)
                 continue;
             p_neighbor_info->label++;
@@ -158,12 +159,12 @@ void check_chordal(p_conflict_graph p_graph) {
     bool *visited = malloc(sizeof(*visited) * p_graph->node_num);
     memset(visited, false, sizeof(*visited) * p_graph->node_num);
     for (size_t i = p_graph->node_num - 1; i < p_graph->node_num; i--) {
-        visited[p_graph->map[p_graph->seo_seq[i]->p_vreg->id]] = true;
+        visited[p_graph->seo_seq[i]->node_id] = true;
         p_list_head p_node;
         p_graph_node p_min_node = NULL;
         list_for_each(p_node, &p_graph->seo_seq[i]->neighbors) {
             p_graph_node p_neighbor = list_entry(p_node, neighbor_node, node)->p_neighbor;
-            if (!visited[p_graph->map[p_neighbor->p_vreg->id]]) {
+            if (!visited[p_neighbor->node_id]) {
                 if (!p_min_node)
                     p_min_node = p_neighbor;
                 else // 最小的节点与其他节点必定相邻
