@@ -47,6 +47,7 @@ p_graph_node graph_node_gen(p_ir_vreg p_vreg, size_t reg_num, size_t node_id);
 void graph_nodes_init(p_conflict_graph p_graph);
 p_neighbor_node graph_neighbor_node_gen(p_graph_node p_node);
 void spill_list_add(p_origin_graph_node p_s_node, p_graph_node p_g_node);
+void add_graph_edge_at(p_graph_node node, p_list_head p_next);
 void add_graph_edge(p_graph_node r1, p_graph_node r2);
 bool if_in_neighbors(p_graph_node p_g_node, p_graph_node p_n_node);
 p_conflict_graph conflict_graph_gen(size_t node_num, size_t *map, p_origin_graph_node p_nodes, size_t reg_num);
