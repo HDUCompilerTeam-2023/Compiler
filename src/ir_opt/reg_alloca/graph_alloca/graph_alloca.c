@@ -29,28 +29,28 @@ p_graph_alloca_info graph_alloca_info_gen(size_t reg_num_r, size_t reg_num_s, p_
             mapr[p_vreg->id] = numr++;
     }
 
-    p_graph_node p_nodes_r = malloc(sizeof(*p_nodes_r) * numr);
-    p_graph_node p_nodes_s = malloc(sizeof(*p_nodes_s) * nums);
+    p_origin_graph_node p_nodes_r = malloc(sizeof(*p_nodes_r) * numr);
+    p_origin_graph_node p_nodes_s = malloc(sizeof(*p_nodes_s) * nums);
     numr = nums = 0;
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
         if (p_vreg->if_float) {
-            graph_node_gen(p_nodes_s + nums, p_vreg, reg_num_s, nums);
+            origin_graph_node_gen(p_nodes_s + nums, p_vreg, reg_num_s, nums);
             nums++;
         }
         else {
-            graph_node_gen(p_nodes_r + numr, p_vreg, reg_num_r, numr);
+            origin_graph_node_gen(p_nodes_r + numr, p_vreg, reg_num_r, numr);
             numr++;
         }
     }
     list_for_each(p_node, &p_func->vreg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
         if (p_vreg->if_float) {
-            graph_node_gen(p_nodes_s + nums, p_vreg, reg_num_s, nums);
+            origin_graph_node_gen(p_nodes_s + nums, p_vreg, reg_num_s, nums);
             nums++;
         }
         else {
-            graph_node_gen(p_nodes_r + numr, p_vreg, reg_num_r, numr);
+            origin_graph_node_gen(p_nodes_r + numr, p_vreg, reg_num_r, numr);
             numr++;
         }
     }
@@ -121,11 +121,11 @@ void pre_color(p_graph_alloca_info p_info, p_symbol_func p_func) {
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
         if (p_vreg->if_float) {
-            set_node_color(p_info->p_s_graph, p_info->p_s_graph->p_nodes + p_info->p_s_graph->map[p_vreg->id], current_s);
+            set_node_color(p_info->p_s_graph, (p_info->p_s_graph->p_nodes + p_info->p_s_graph->map[p_vreg->id])->p_def_node, current_s);
             current_s++;
         }
         else {
-            set_node_color(p_info->p_r_graph, p_info->p_r_graph->p_nodes + p_info->p_r_graph->map[p_vreg->id], current_r);
+            set_node_color(p_info->p_r_graph, (p_info->p_r_graph->p_nodes + p_info->p_r_graph->map[p_vreg->id])->p_def_node, current_r);
             current_r++;
         }
     }

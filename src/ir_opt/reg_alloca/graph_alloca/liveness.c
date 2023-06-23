@@ -10,13 +10,13 @@ static void p_live_out_block(p_graph_alloca_info p_info, p_ir_basic_block p_basi
 static inline void add_graph_edge_(p_graph_alloca_info p_info, p_ir_vreg r1, p_ir_vreg r2) {
     assert(r1 != r2);
     if (r1->if_float && r2->if_float) {
-        p_graph_node p_node1 = p_info->p_s_graph->p_nodes + p_info->p_s_graph->map[r1->id];
-        p_graph_node p_node2 = p_info->p_s_graph->p_nodes + p_info->p_s_graph->map[r2->id];
+        p_graph_node p_node1 = (p_info->p_s_graph->p_nodes + p_info->p_s_graph->map[r1->id])->p_def_node;
+        p_graph_node p_node2 = (p_info->p_s_graph->p_nodes + p_info->p_s_graph->map[r2->id])->p_def_node;
         add_graph_edge(p_node1, p_node2);
     }
     else if (!r1->if_float && !r2->if_float) {
-        p_graph_node p_node1 = p_info->p_r_graph->p_nodes + p_info->p_r_graph->map[r1->id];
-        p_graph_node p_node2 = p_info->p_r_graph->p_nodes + p_info->p_r_graph->map[r2->id];
+        p_graph_node p_node1 = (p_info->p_r_graph->p_nodes + p_info->p_r_graph->map[r1->id])->p_def_node;
+        p_graph_node p_node2 = (p_info->p_r_graph->p_nodes + p_info->p_r_graph->map[r2->id])->p_def_node;
         add_graph_edge(p_node1, p_node2);
     }
 }
