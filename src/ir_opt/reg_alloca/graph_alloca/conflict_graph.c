@@ -57,29 +57,41 @@ p_conflict_graph conflict_graph_gen(size_t node_num, size_t *map, p_origin_graph
     return p_graph;
 }
 
+void add_graph_edge_at(p_graph_node node, p_list_head p_next) {
+    p_neighbor_node p_neighbor = malloc(sizeof(*p_neighbor));
+    p_neighbor->node = list_head_init(&p_neighbor->node);
+    p_neighbor->p_neighbor = node;
+    list_add_prev(&p_neighbor->node, p_next);
+}
+
 void add_graph_edge(p_graph_node r1, p_graph_node r2) {
-    p_list_head p_head = &r2->neighbors;
+    p_list_head p_head = &(r2)->neighbors;
     p_list_head p_node = p_head;
-    p_neighbor_node p_pos;
     list_for_each(p_node, p_head) {
-        p_pos = list_entry(p_node, neighbor_node, node);
-        if (p_pos->p_neighbor->node_id >= r1->node_id)
+        p_graph_node p_neighbor = list_entry(p_node, neighbor_node, node)->p_neighbor;
+        if (p_neighbor->node_id > r1->node_id) {
+            add_graph_edge_at(r1, p_node);
+            break;
+        }
+        if (p_neighbor->node_id == r1->node_id)
             break;
     }
-    if (p_node == p_head || p_pos->p_neighbor->node_id > r1->node_id) {
-        p_neighbor_node p_neighbor = graph_neighbor_node_gen(r1);
-        list_add_prev(&p_neighbor->node, p_node);
+    if (p_node == p_head) {
+        add_graph_edge_at(r1, p_node);
     }
 
-    p_head = &r1->neighbors;
+    p_head = &(r1)->neighbors;
     list_for_each(p_node, p_head) {
-        p_pos = list_entry(p_node, neighbor_node, node);
-        if (p_pos->p_neighbor->node_id >= r2->node_id)
+        p_graph_node p_neighbor = list_entry(p_node, neighbor_node, node)->p_neighbor;
+        if (p_neighbor->node_id > r2->node_id) {
+            add_graph_edge_at(r2, p_node);
+            break;
+        }
+        if (p_neighbor->node_id == r2->node_id)
             break;
     }
-    if (p_node == p_head || p_pos->p_neighbor->node_id > r2->node_id) {
-        p_neighbor_node p_neighbor = graph_neighbor_node_gen(r2);
-        list_add_prev(&p_neighbor->node, p_node);
+    if (p_node == p_head) {
+        add_graph_edge_at(r2, p_node);
     }
 }
 
