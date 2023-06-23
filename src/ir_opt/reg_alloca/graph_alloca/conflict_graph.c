@@ -18,6 +18,7 @@ void origin_graph_node_gen(p_origin_graph_node p_node, p_ir_vreg p_vreg, size_t 
     p_node->p_def_node = graph_node_gen(p_vreg, reg_num, node_id);
     p_node->p_vmem = NULL;
     p_node->use_spill_list = list_head_init(&p_node->use_spill_list);
+    p_node->if_pre_color = false;
 }
 
 void graph_nodes_init(p_conflict_graph p_graph) {
