@@ -14,6 +14,7 @@ struct neighbor_node {
 struct graph_node {
     p_ir_vreg p_vreg;
     size_t color;
+    size_t node_id;
     list_head neighbors;
     bool *used_color;
 };
@@ -21,13 +22,14 @@ struct graph_node {
 struct conflict_graph {
     p_graph_node p_nodes; // 节点列表
     size_t node_num; // 节点数量
+    size_t origin_node_num; // 未溢出前的节点数量
     p_graph_node *seo_seq; // 完美消除序列
     size_t color_num; // 冲突图的色数
     size_t reg_num; // 可用寄存器数量
     size_t *map; // vreg 编号到图的节点编号的映射
 };
 
-void graph_node_gen(p_graph_node p_node, p_ir_vreg p_vreg, size_t reg_num);
+void graph_node_gen(p_graph_node p_node, p_ir_vreg p_vreg, size_t reg_num, size_t node_id);
 void graph_nodes_init(p_conflict_graph p_graph);
 p_neighbor_node graph_neighbor_node_gen(p_graph_node p_node);
 void add_graph_edge(p_graph_node r1, p_graph_node r2);

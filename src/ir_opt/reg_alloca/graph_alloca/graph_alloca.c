@@ -35,22 +35,22 @@ p_graph_alloca_info graph_alloca_info_gen(size_t reg_num_r, size_t reg_num_s, p_
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
         if (p_vreg->if_float) {
-            graph_node_gen(p_nodes_s + nums, p_vreg, reg_num_s);
+            graph_node_gen(p_nodes_s + nums, p_vreg, reg_num_s, nums);
             nums++;
         }
         else {
-            graph_node_gen(p_nodes_r + numr, p_vreg, reg_num_r);
+            graph_node_gen(p_nodes_r + numr, p_vreg, reg_num_r, numr);
             numr++;
         }
     }
     list_for_each(p_node, &p_func->vreg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
         if (p_vreg->if_float) {
-            graph_node_gen(p_nodes_s + nums, p_vreg, reg_num_s);
+            graph_node_gen(p_nodes_s + nums, p_vreg, reg_num_s, nums);
             nums++;
         }
         else {
-            graph_node_gen(p_nodes_r + numr, p_vreg, reg_num_r);
+            graph_node_gen(p_nodes_r + numr, p_vreg, reg_num_r, numr);
             numr++;
         }
     }
