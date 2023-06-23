@@ -121,11 +121,13 @@ void pre_color(p_graph_alloca_info p_info, p_symbol_func p_func) {
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
         if (p_vreg->if_float) {
-            set_node_color(p_info->p_s_graph, (p_info->p_s_graph->p_nodes + p_info->p_s_graph->map[p_vreg->id])->p_def_node, current_s);
+            p_origin_graph_node p_g_node = (p_info->p_s_graph->p_nodes + p_info->p_s_graph->map[p_vreg->id]);
+            set_node_color(p_info->p_s_graph, p_g_node->p_def_node, current_s);
             current_s++;
         }
         else {
-            set_node_color(p_info->p_r_graph, (p_info->p_r_graph->p_nodes + p_info->p_r_graph->map[p_vreg->id])->p_def_node, current_r);
+            p_origin_graph_node p_g_node = (p_info->p_r_graph->p_nodes + p_info->p_r_graph->map[p_vreg->id]);
+            set_node_color(p_info->p_r_graph, p_g_node->p_def_node, current_r);
             current_r++;
         }
     }

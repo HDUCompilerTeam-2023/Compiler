@@ -19,6 +19,7 @@ struct spill_node {
 };
 
 struct origin_graph_node {
+    bool if_pre_color;
     p_graph_node p_def_node;
     p_symbol_var p_vmem;
     list_head use_spill_list;
