@@ -4,17 +4,40 @@
 
 #include <stdio.h>
 
-void graph_node_gen(p_graph_node p_node, p_ir_vreg p_vreg, size_t reg_num, size_t node_id) {
+p_graph_node graph_node_gen(p_ir_vreg p_vreg, size_t reg_num, size_t node_id) {
+    p_graph_node p_node = malloc(sizeof(*p_node));
     p_node->p_vreg = p_vreg;
     p_node->color = -1;
-    p_node->node_id = node_id;
     p_node->neighbors = list_head_init(&p_node->neighbors);
     p_node->used_color = malloc(sizeof(*p_node->used_color) * reg_num);
+    p_node->node_id = node_id;
+    return p_node;
+}
+
+void origin_graph_node_gen(p_origin_graph_node p_node, p_ir_vreg p_vreg, size_t reg_num, size_t node_id) {
+    p_node->p_def_node = graph_node_gen(p_vreg, reg_num, node_id);
+    p_node->p_vmem = NULL;
+    p_node->use_spill_list = list_head_init(&p_node->use_spill_list);
 }
 
 void graph_nodes_init(p_conflict_graph p_graph) {
-    for (size_t i = 0; i < p_graph->node_num; i++)
-        memset(p_graph->p_nodes[i].used_color, false, sizeof(*p_graph->p_nodes->used_color) * p_graph->reg_num);
+    for (size_t i = 0; i < p_graph->origin_node_num; i++) {
+        memset((p_graph->p_nodes + i)->p_def_node->used_color, false, sizeof(*(p_graph->p_nodes + i)->p_def_node->used_color) * p_graph->reg_num);
+        p_list_head p_node;
+        list_for_each(p_node, &p_graph->p_nodes[i].use_spill_list) {
+            p_graph_node p_g_node = list_entry(p_node, spill_node, node)->p_spill;
+            memset(p_g_node->used_color, false, sizeof(*p_g_node->used_color) * p_graph->reg_num);
+        }
+    }
+    free(p_graph->seo_seq);
+    p_graph->seo_seq = malloc(sizeof(*p_graph->seo_seq) * p_graph->node_num);
+}
+
+void spill_list_add(p_origin_graph_node p_o_node, p_graph_node p_g_node) {
+    p_spill_node p_s_node = malloc(sizeof(*p_s_node));
+    p_s_node->node = list_head_init(&p_s_node->node);
+    p_s_node->p_spill = p_g_node;
+    list_add_prev(&p_s_node->node, &p_o_node->use_spill_list);
 }
 
 p_neighbor_node graph_neighbor_node_gen(p_graph_node p_node) {
@@ -24,13 +47,13 @@ p_neighbor_node graph_neighbor_node_gen(p_graph_node p_node) {
     return p_neighbor;
 }
 
-p_conflict_graph conflict_graph_gen(size_t node_num, size_t *map, p_graph_node p_nodes, size_t reg_num) {
+p_conflict_graph conflict_graph_gen(size_t node_num, size_t *map, p_origin_graph_node p_nodes, size_t reg_num) {
     p_conflict_graph p_graph = malloc(sizeof(*p_graph));
     p_graph->node_num = p_graph->origin_node_num = node_num;
     p_graph->map = map;
     p_graph->reg_num = reg_num;
     p_graph->p_nodes = p_nodes;
-    p_graph->seo_seq = malloc(sizeof(*p_graph->seo_seq) * p_graph->node_num);
+    p_graph->seo_seq = NULL;
     return p_graph;
 }
 
@@ -70,18 +93,27 @@ bool if_in_neighbors(p_graph_node p_g_node, p_graph_node p_n_node) {
     return false;
 }
 
+static inline void print_conflict_node(p_graph_node p_g_node) {
+    printf("%ld: {", p_g_node->node_id);
+    p_list_head p_node;
+    list_for_each(p_node, &p_g_node->neighbors) {
+        p_graph_node p_neighbor = list_entry(p_node, neighbor_node, node)->p_neighbor;
+        if (p_node->p_next != &p_g_node->neighbors)
+            printf("%ld, ", p_neighbor->node_id);
+        else
+            printf("%ld ", p_neighbor->node_id);
+    }
+    printf("}\n");
+}
 void print_conflict_graph(p_conflict_graph p_graph) {
-    for (size_t i = 0; i < p_graph->node_num; i++) {
-        printf("%ld: {", i);
+    for (size_t i = 0; i < p_graph->origin_node_num; i++) {
+        p_graph_node p_g_node = (p_graph->p_nodes + i)->p_def_node;
+        print_conflict_node(p_g_node);
         p_list_head p_node;
-        list_for_each(p_node, &(p_graph->p_nodes + i)->neighbors) {
-            p_graph_node p_neighbor = list_entry(p_node, neighbor_node, node)->p_neighbor;
-            if (p_node->p_next != &(p_graph->p_nodes + i)->neighbors)
-                printf("%ld, ", p_neighbor->node_id);
-            else
-                printf("%ld ", p_neighbor->node_id);
+        list_for_each(p_node, &(p_graph->p_nodes + i)->use_spill_list) {
+            p_g_node = list_entry(p_node, spill_node, node)->p_spill;
+            print_conflict_node(p_g_node);
         }
-        printf("}\n");
     }
 }
 
@@ -92,11 +124,19 @@ void graph_node_drop(p_graph_node p_node) {
         free(p_neighbor);
     }
     free(p_node->used_color);
+    free(p_node);
 }
 
 void conflict_graph_drop(p_conflict_graph p_graph) {
-    for (size_t i = 0; i < p_graph->node_num; i++)
-        graph_node_drop(p_graph->p_nodes + i);
+    for (size_t i = 0; i < p_graph->origin_node_num; i++) {
+        graph_node_drop((p_graph->p_nodes + i)->p_def_node);
+        p_list_head p_node, p_next;
+        list_for_each_safe(p_node, p_next, &(p_graph->p_nodes + i)->use_spill_list) {
+            p_spill_node p_s_node = list_entry(p_node, spill_node, node);
+            graph_node_drop(p_s_node->p_spill);
+            free(p_s_node);
+        }
+    }
     free(p_graph->p_nodes);
     free(p_graph->seo_seq);
     free(p_graph->map);
@@ -117,13 +157,24 @@ void mcs_get_seqs(p_conflict_graph p_graph) {
     } node_info, *p_node_info;
     p_list_head seq_heads = malloc(sizeof(*seq_heads) * p_graph->node_num);
     p_node_info seqs_info = malloc(sizeof(*seqs_info) * p_graph->node_num);
-    for (size_t i = 0; i < p_graph->node_num; i++) {
-        list_head_init(seq_heads + i);
-        (seqs_info + i)->p_node = p_graph->p_nodes + i;
-        (seqs_info + i)->label = 0;
-        (seqs_info + i)->visited = false;
-        (seqs_info + i)->node = list_head_init(&(seqs_info + i)->node);
-        list_add_prev(&(seqs_info + i)->node, seq_heads + 0);
+    for (size_t i = 0; i < p_graph->origin_node_num; i++) {
+        p_graph_node p_g_node = (p_graph->p_nodes + i)->p_def_node;
+        list_head_init(seq_heads + p_g_node->node_id);
+        (seqs_info + p_g_node->node_id)->p_node = p_g_node;
+        (seqs_info + p_g_node->node_id)->label = 0;
+        (seqs_info + p_g_node->node_id)->visited = false;
+        (seqs_info + p_g_node->node_id)->node = list_head_init(&(seqs_info + p_g_node->node_id)->node);
+        list_add_prev(&(seqs_info + p_g_node->node_id)->node, seq_heads + 0);
+        p_list_head p_node;
+        list_for_each(p_node, &(p_graph->p_nodes + i)->use_spill_list) {
+            p_g_node = list_entry(p_node, spill_node, node)->p_spill;
+            list_head_init(seq_heads + p_g_node->node_id);
+            (seqs_info + p_g_node->node_id)->p_node = p_g_node;
+            (seqs_info + p_g_node->node_id)->label = 0;
+            (seqs_info + p_g_node->node_id)->visited = false;
+            (seqs_info + p_g_node->node_id)->node = list_head_init(&(seqs_info + p_g_node->node_id)->node);
+            list_add_prev(&(seqs_info + p_g_node->node_id)->node, seq_heads + 0);
+        }
     }
     size_t max_label = 0;
     size_t current = 0;
