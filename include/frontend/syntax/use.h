@@ -7,8 +7,8 @@ typedef void *yyscan_t;
 
 #include <frontend/syntax/init/use.h>
 
-#include <frontend/syntax/decl_list/use.h>
-#include <frontend/syntax/decl_list/node/use.h>
+#include <frontend/syntax/decl_head/use.h>
+#include <frontend/syntax/decl/use.h>
 
 #include <frontend/syntax/type/use.h>
 

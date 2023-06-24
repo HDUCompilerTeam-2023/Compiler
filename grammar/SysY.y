@@ -9,8 +9,8 @@
 #include <frontend/lexer.h>
 #include <frontend/log.h>
 #include <frontend/syntax/init/gen.h>
-#include <frontend/syntax/decl_list/gen.h>
-#include <frontend/syntax/decl_list/node/gen.h>
+#include <frontend/syntax/decl_head/gen.h>
+#include <frontend/syntax/decl/gen.h>
 
 #include <ast_gen.h>
 
@@ -35,7 +35,7 @@
        p_ast_param_list p_param_list;
 
        p_syntax_decl p_decl;
-       p_syntax_decl_list p_decl_list;
+       p_syntax_decl_head p_decl_head;
 
        p_syntax_init p_init;
 
@@ -72,19 +72,13 @@
 %type <p_param_list> FuncRParamList
 %type <p_param_list> FuncRParams
 
-%type <p_decl> ParameterDeclaration
-%type <p_decl_list> ParameterList
-%type <p_decl_list> Parameters
-
 %type <p_decl> ArraryParameter
+
 %type <p_decl> Declarator
 %type <p_decl> VarInitDeclarator
-%type <p_decl_list> VarInitDeclaratorList
-%type <p_decl_list> VarDeclaration
+%type <p_decl_head> VarInitDeclaratorList
 %type <p_decl> ConstInitDeclarator
-%type <p_decl_list> ConstInitDeclaratorList
-%type <p_decl_list> ConstDeclaration
-%type <p_decl_list> Declaration
+%type <p_decl_head> ConstInitDeclaratorList
 
 %type <p_init> VarInitializer
 %type <p_init> VarInitializerList
@@ -121,7 +115,7 @@
 begin : PUSHZONE CompUnit POPZONE
       ;
 
-CompUnit : CompUnit Declaration     { syntax_global_vardecl(extra, $2); }
+CompUnit : CompUnit Declaration
          | CompUnit FuncDeclaration
          | CompUnit error
          | /* *empty */             { syntax_rtlib_func_init(extra); }
@@ -135,18 +129,18 @@ Declaration : ConstDeclaration
             | VarDeclaration
             ;
 
-ConstDeclaration : CONST Type ConstInitDeclaratorList ';' { $$ = syntax_decl_list_set($3, true, $2); }
+ConstDeclaration : ConstInitDeclaratorList ';' { syntax_decl_head_drop($1); }
                  ;
 
-VarDeclaration : Type VarInitDeclaratorList ';' { $$ = syntax_decl_list_set($2, false, $1); }
+VarDeclaration : VarInitDeclaratorList ';' { syntax_decl_head_drop($1); }
                ;
 
-ConstInitDeclaratorList : ConstInitDeclaratorList ',' ConstInitDeclarator { $$ = syntax_decl_list_add($1, $3); }
-                        | ConstInitDeclarator                             { $$ = syntax_decl_list_add(syntax_decl_list_gen(), $1); }
+ConstInitDeclaratorList : ConstInitDeclaratorList ',' ConstInitDeclarator { $$ = syntax_declaration(extra, $1, $3); }
+                        | CONST Type ConstInitDeclarator                  { $$ = syntax_declaration(extra, syntax_decl_head_gen($2, true), $3); }
                         ;
 
-VarInitDeclaratorList : VarInitDeclaratorList ',' VarInitDeclarator { $$ = syntax_decl_list_add($1, $3); }
-                      | VarInitDeclarator                           { $$ = syntax_decl_list_add(syntax_decl_list_gen(), $1); }
+VarInitDeclaratorList : VarInitDeclaratorList ',' VarInitDeclarator { $$ = syntax_declaration(extra, $1, $3); }
+                      | Type VarInitDeclarator                      { $$ = syntax_declaration(extra, syntax_decl_head_gen($1, false), $2); }
                       ;
 
 ConstInitDeclarator : Declarator '=' ConstInitializer { $$ = syntax_decl_init($1, $3); }
@@ -179,23 +173,23 @@ VarInitializerList : VarInitializerList ',' VarInitializer { $$ = syntax_init_li
                    | VarInitializer                        { $$ = syntax_init_list_add(syntax_init_list_gen(), $1); }
                    ;
 
-FuncHead : Type ID '(' Parameters ')' { syntax_func_head(extra, $1, $2, $4); }
-         | VOID ID '(' Parameters ')' { syntax_func_head(extra, type_void, $2, $4); }
+FuncHead : Type ID { syntax_func_head(extra, $1, $2); }
+         | VOID ID { syntax_func_head(extra, type_void, $2); }
          ;
 
-FuncDeclaration : FuncHead Block { syntax_func_end(extra, $2); }
+FuncDeclaration : FuncHead '(' Parameters ')' Block { syntax_func_end(extra, $5); }
                 ;
 
 Parameters : ParameterList
-           | /* *empty */  { $$ = syntax_decl_list_gen(); }
+           | /* *empty */
            ;
 
-ParameterList : ParameterList ',' ParameterDeclaration { $$ = syntax_decl_list_add($1, $3); }
-              | ParameterDeclaration                   { $$ = syntax_decl_list_add(syntax_decl_list_gen(), $1); }
+ParameterList : ParameterList ',' ParameterDeclaration
+              | ParameterDeclaration
               ;
 
-ParameterDeclaration : Type ArraryParameter { $$ = $2; syntax_decl_list_node_set_basic($$, $1); }
-                     | Type ID              { $$ = syntax_decl_gen($2); syntax_decl_list_node_set_basic($$, $1); }
+ParameterDeclaration : Type ArraryParameter { p_syntax_decl_head p_head = syntax_decl_head_gen($1, false); syntax_declaration(extra, p_head, $2); syntax_decl_head_drop(p_head); }
+                     | Type ID              { p_syntax_decl_head p_head = syntax_decl_head_gen($1, false); syntax_declaration(extra, p_head, syntax_decl_gen($2)); syntax_decl_head_drop(p_head); }
                      ;
 
 ArraryParameter : ID '[' ']'                  { $$ = syntax_decl_arr(syntax_decl_gen($1), NULL); }
@@ -274,12 +268,12 @@ FuncRParamList : FuncRParamList ',' Exp { $$ = ast_param_list_add($1, $3); }
                | Exp                    { $$ = ast_param_list_add(ast_param_list_init(), $1); }
                ;
 
-Block : '{' BlockItems '}' { $$ = $2; }
+Block : '{' BlockItems '}' { $$ = $2; syntax_set_block(extra, NULL); }
       ;
 
-BlockItems : BlockItems Declaration { $$ = syntax_local_vardecl(extra, $1, $2); }
-           | BlockItems Stmt           { $$ = ast_block_add($1, $2); }
-           | /* *empty */              { $$ = ast_block_gen(); }
+BlockItems : BlockItems Declaration
+           | BlockItems Stmt           { $$ = ast_block_add($1, $2); syntax_set_block(extra, $$); }
+           | /* *empty */              { $$ = ast_block_gen(); syntax_set_block(extra, $$); }
            ;
 
 StmtExp : /* *empty */ { $$ = NULL; }

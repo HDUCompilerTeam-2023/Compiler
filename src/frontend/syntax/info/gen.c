@@ -9,6 +9,7 @@ p_syntax_info syntax_info_gen(void) {
         .p_table = symbol_table_gen(),
         .p_program = program_gen(),
         .p_func = NULL,
+        .p_block = NULL,
     };
     return p_info;
 }

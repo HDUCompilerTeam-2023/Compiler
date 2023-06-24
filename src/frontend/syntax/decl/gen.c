@@ -1,4 +1,4 @@
-#include <frontend/syntax/decl_list/node/def.h>
+#include <frontend/syntax/decl/def.h>
 
 #include <ast_gen/exp.h>
 #include <frontend/syntax/type/gen.h>
@@ -9,7 +9,6 @@ p_syntax_decl syntax_decl_gen(char *name) {
         .name = name,
         .p_array = NULL,
         .p_init = NULL,
-        .node = list_head_init(&p_decl->node),
     };
     return p_decl;
 }
