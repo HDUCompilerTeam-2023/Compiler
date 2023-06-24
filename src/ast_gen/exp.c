@@ -19,10 +19,14 @@ static inline p_ast_exp exp_ptr_to_val(p_ast_exp p_exp) {
     return ast_exp_gep_gen(p_exp, ast_exp_int_gen(0), true);
 }
 
-static inline p_ast_exp exp_ptr_to_val_check_basic(p_ast_exp p_exp) {
-    p_exp = exp_ptr_to_val(p_exp);
+static inline void exp_check_basic(p_ast_exp p_exp) {
     assert(list_head_alone(&p_exp->p_type->array) && p_exp->p_type->ref_level == 0);
     assert(p_exp->p_type->basic != type_void);
+}
+
+static inline p_ast_exp exp_ptr_to_val_check_basic(p_ast_exp p_exp) {
+    p_exp = exp_ptr_to_val(p_exp);
+    exp_check_basic(p_exp);
     return p_exp;
 }
 
@@ -77,6 +81,63 @@ p_ast_exp ast_exp_ptr_to_val(p_ast_exp p_exp) {
     return exp_ptr_to_val(p_exp);
 }
 
+static inline p_ast_exp ast_exp_i2f_gen(p_ast_exp p_i32) {
+    assert(p_i32);
+    p_i32 = exp_ptr_to_val_check_basic(p_i32);
+    assert(p_i32->p_type->basic == type_int);
+
+    if (p_i32->kind == ast_exp_num) {
+        p_i32->p_type->basic = type_float;
+        p_i32->floatconst = p_i32->intconst;
+        return p_i32;
+    }
+
+    p_ast_exp p_exp = malloc(sizeof(*p_exp));
+    *p_exp = (ast_exp) {
+        .kind = ast_exp_unary,
+        .u_op = ast_exp_op_i2f,
+        .p_src = p_i32,
+        .p_type = symbol_type_var_gen(type_float),
+        .p_des = NULL,
+    };
+    return p_exp;
+}
+
+static inline p_ast_exp ast_exp_f2i_gen(p_ast_exp p_f32) {
+    assert(p_f32);
+    p_f32 = exp_ptr_to_val_check_basic(p_f32);
+    assert(p_f32->p_type->basic == type_float);
+
+    if (p_f32->kind == ast_exp_num) {
+        p_f32->p_type->basic = type_int;
+        p_f32->intconst = p_f32->floatconst;
+        return p_f32;
+    }
+
+    p_ast_exp p_exp = malloc(sizeof(*p_exp));
+    *p_exp = (ast_exp) {
+        .kind = ast_exp_unary,
+        .u_op = ast_exp_op_f2i,
+        .p_src = p_f32,
+        .p_type = symbol_type_var_gen(type_int),
+        .p_des = NULL,
+    };
+    return p_exp;
+}
+
+p_ast_exp ast_exp_cov_gen(p_ast_exp p_exp, basic_type b_type) {
+    exp_check_basic(p_exp);
+    if (p_exp->p_type->basic != b_type) {
+        if (p_exp->p_type->basic == type_int) {
+            return ast_exp_i2f_gen(p_exp);
+        }
+        else if (p_exp->p_type->basic == type_float) {
+            return ast_exp_f2i_gen(p_exp);
+        }
+    }
+    return p_exp;
+}
+
 p_ast_exp ast_exp_use_gen(p_ast_exp p_used_exp) {
     assert(p_used_exp);
     p_ast_exp p_exp = malloc(sizeof(*p_exp));
@@ -94,87 +155,46 @@ p_ast_exp ast_exp_binary_gen(ast_exp_binary_op b_op, p_ast_exp p_src_1, p_ast_ex
     p_src_2 = exp_ptr_to_val_check_basic(p_src_2);
     if (b_op == ast_exp_op_mod) assert(p_src_1->p_type->basic == type_int && p_src_2->p_type->basic == type_int);
 
-    basic_type type = p_src_1->p_type->basic;
-    if (p_src_2->p_type->basic == type_float) {
-        type = type_float;
+    if (p_src_1->p_type->basic == type_float) {
+        p_src_2 = ast_exp_cov_gen(p_src_2, type_float);
     }
+    else if (p_src_2->p_type->basic == type_float) {
+        p_src_1 = ast_exp_cov_gen(p_src_1, type_float);
+    }
+    basic_type type = p_src_1->p_type->basic;
 
     if (p_src_1->kind == ast_exp_num && p_src_2->kind == ast_exp_num) {
         switch (b_op) {
         case ast_exp_op_add:
-            if (p_src_1->p_type->basic == type_int) {
-                if (p_src_2->p_type->basic == type_int) {
-                    p_src_1->intconst = p_src_1->intconst + p_src_2->intconst;
-                }
-                else if (p_src_2->p_type->basic == type_float) {
-                    p_src_1->p_type->basic = type_float;
-                    p_src_1->floatconst = p_src_1->intconst + p_src_2->floatconst;
-                }
+            if (type == type_int) {
+                p_src_1->intconst = p_src_1->intconst + p_src_2->intconst;
             }
-            else if (p_src_1->p_type->basic == type_float) {
-                if (p_src_2->p_type->basic == type_int) {
-                    p_src_1->floatconst = p_src_1->floatconst + p_src_2->intconst;
-                }
-                else if (p_src_2->p_type->basic == type_float) {
-                    p_src_1->floatconst = p_src_1->floatconst + p_src_2->floatconst;
-                }
+            else if (type == type_float) {
+                p_src_1->floatconst = p_src_1->floatconst + p_src_2->floatconst;
             }
             break;
         case ast_exp_op_sub:
-            if (p_src_1->p_type->basic == type_int) {
-                if (p_src_2->p_type->basic == type_int) {
-                    p_src_1->intconst = p_src_1->intconst - p_src_2->intconst;
-                }
-                else if (p_src_2->p_type->basic == type_float) {
-                    p_src_1->p_type->basic = type_float;
-                    p_src_1->floatconst = p_src_1->intconst - p_src_2->floatconst;
-                }
+            if (type == type_int) {
+                p_src_1->intconst = p_src_1->intconst - p_src_2->intconst;
             }
-            else if (p_src_1->p_type->basic == type_float) {
-                if (p_src_2->p_type->basic == type_int) {
-                    p_src_1->floatconst = p_src_1->floatconst - p_src_2->intconst;
-                }
-                else if (p_src_2->p_type->basic == type_float) {
-                    p_src_1->floatconst = p_src_1->floatconst - p_src_2->floatconst;
-                }
+            else if (type == type_float) {
+                p_src_1->floatconst = p_src_1->floatconst - p_src_2->floatconst;
             }
             break;
         case ast_exp_op_mul:
-            if (p_src_1->p_type->basic == type_int) {
-                if (p_src_2->p_type->basic == type_int) {
-                    p_src_1->intconst = p_src_1->intconst * p_src_2->intconst;
-                }
-                else if (p_src_2->p_type->basic == type_float) {
-                    p_src_1->p_type->basic = type_float;
-                    p_src_1->floatconst = p_src_1->intconst * p_src_2->floatconst;
-                }
+            if (type == type_int) {
+                p_src_1->intconst = p_src_1->intconst * p_src_2->intconst;
             }
-            else if (p_src_1->p_type->basic == type_float) {
-                if (p_src_2->p_type->basic == type_int) {
-                    p_src_1->floatconst = p_src_1->floatconst * p_src_2->intconst;
-                }
-                else if (p_src_2->p_type->basic == type_float) {
-                    p_src_1->floatconst = p_src_1->floatconst * p_src_2->floatconst;
-                }
+            else if (type == type_float) {
+                p_src_1->floatconst = p_src_1->floatconst * p_src_2->floatconst;
             }
             break;
         case ast_exp_op_div:
-            if (p_src_1->p_type->basic == type_int) {
-                if (p_src_2->p_type->basic == type_int) {
-                    p_src_1->intconst = p_src_1->intconst / p_src_2->intconst;
-                }
-                else if (p_src_2->p_type->basic == type_float) {
-                    p_src_1->p_type->basic = type_float;
-                    p_src_1->floatconst = p_src_1->intconst / p_src_2->floatconst;
-                }
+            if (type == type_int) {
+                p_src_1->intconst = p_src_1->intconst / p_src_2->intconst;
             }
-            else if (p_src_1->p_type->basic == type_float) {
-                if (p_src_2->p_type->basic == type_int) {
-                    p_src_1->floatconst = p_src_1->floatconst / p_src_2->intconst;
-                }
-                else if (p_src_2->p_type->basic == type_float) {
-                    p_src_1->floatconst = p_src_1->floatconst / p_src_2->floatconst;
-                }
+            else if (type == type_float) {
+                p_src_1->floatconst = p_src_1->floatconst / p_src_2->floatconst;
             }
             break;
         case ast_exp_op_mod:
@@ -202,6 +222,13 @@ p_ast_exp ast_exp_relational_gen(ast_exp_binary_op b_op, p_ast_exp p_src_1, p_as
     assert(p_src_1 && p_src_2);
     p_src_1 = exp_ptr_to_val_check_basic(p_src_1);
     p_src_2 = exp_ptr_to_val_check_basic(p_src_2);
+
+    if (p_src_1->p_type->basic == type_float) {
+        p_src_2 = ast_exp_cov_gen(p_src_2, type_float);
+    }
+    else if (p_src_2->p_type->basic == type_float) {
+        p_src_1 = ast_exp_cov_gen(p_src_1, type_float);
+    }
 
     p_ast_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (ast_exp) {
@@ -313,8 +340,12 @@ p_ast_exp ast_exp_call_gen(p_symbol_func p_func, p_ast_param_list p_param_list) 
         }
         p_symbol_type p_param_type = list_entry(p_node_Fparam, symbol_var, node)->p_type;
 
-        p_ast_exp p_param = list_entry(p_node, ast_param, node)->p_exp;
-        assert(param_arr_check(p_param_type, p_param->p_type));
+        p_ast_param p_param = list_entry(p_node, ast_param, node);
+        p_ast_exp p_param_exp = p_param->p_exp;
+        if (p_param_type->ref_level == 0 && list_head_alone(&p_param_type->array)) {
+            p_param_exp = p_param->p_exp = ast_exp_cov_gen(p_param_exp, p_param_type->basic);
+        }
+        assert(param_arr_check(p_param_type, p_param_exp->p_type));
         p_node_Fparam = p_node_Fparam->p_next;
     }
     assert(p_node_Fparam == &p_func->param);

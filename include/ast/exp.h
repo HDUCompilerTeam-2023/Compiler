@@ -27,6 +27,8 @@ enum ast_exp_binary_op {
 };
 enum ast_exp_unary_op {
     ast_exp_op_minus,
+    ast_exp_op_i2f,
+    ast_exp_op_f2i,
 };
 struct ast_exp {
     enum {

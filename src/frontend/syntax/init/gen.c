@@ -42,8 +42,7 @@ static inline void syntax_init_list_trans(p_symbol_type p_type, basic_type basic
         if (p_init->is_exp) {
             assert(offset < symbol_type_get_size(p_type));
             p_init->p_exp = ast_exp_ptr_to_val_check_basic(p_init->p_exp);
-            assert(basic == p_init->p_exp->p_type->basic);
-            memory[offset++] = p_init->p_exp;
+            memory[offset++] = ast_exp_cov_gen(p_init->p_exp, basic);
         }
         else {
             assert(!list_head_alone(&p_type->array));
@@ -76,7 +75,7 @@ p_syntax_init_mem syntax_init_mem_gen(p_syntax_init p_init, p_symbol_type p_type
     if (p_init->is_exp) {
         assert(list_head_alone(&p_type->array));
         p_init->p_exp = ast_exp_ptr_to_val_check_basic(p_init->p_exp);
-        p_init_mem->memory[0] = p_init->p_exp;
+        p_init_mem->memory[0] = ast_exp_cov_gen(p_init->p_exp, p_type->basic);
     }
     else {
         assert(!list_head_alone(&p_type->array));

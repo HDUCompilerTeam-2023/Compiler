@@ -23,6 +23,8 @@ enum ir_unary_op {
     ir_minus_op,
     ir_not_op,
     ir_val_assign,
+    ir_i2f_op,
+    ir_f2i_op,
 };
 
 enum ir_instr_type {

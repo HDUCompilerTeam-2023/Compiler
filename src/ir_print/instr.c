@@ -91,6 +91,12 @@ void ir_unary_instr_print(p_ir_unary_instr p_instr) {
         break;
     case ir_val_assign:
         break;
+    case ir_i2f_op:
+        printf("i2f ");
+        break;
+    case ir_f2i_op:
+        printf("f2i ");
+        break;
     }
     ir_operand_print(p_instr->p_src);
 }

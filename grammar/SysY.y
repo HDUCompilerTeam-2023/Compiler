@@ -283,7 +283,7 @@ StmtExp : /* *empty */ { $$ = NULL; }
 Stmt : PUSHZONE Block POPZONE             { $$ = ast_stmt_block_gen($2); }
      | Val '=' Exp ';'                    { $$ = ast_stmt_assign_gen($1, $3); }
      | StmtExp ';'                        { $$ = ast_stmt_exp_gen($1); }
-     | RETURN StmtExp ';'                 { $$ = ast_stmt_return_gen($2); }
+     | RETURN StmtExp ';'                 { $$ = syntax_return(extra, $2); }
      | BREAK ';'                          { $$ = ast_stmt_break_gen(); }
      | CONTINUE ';'                       { $$ = ast_stmt_continue_gen(); }
      | IF '(' Cond ')' Stmt ELSE Stmt     { $$ = ast_stmt_if_else_gen($3, $5, $7); }
