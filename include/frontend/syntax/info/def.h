@@ -7,6 +7,7 @@ struct syntax_info {
     p_symbol_table p_table;
     p_program p_program;
     p_symbol_func p_func;
+    p_ast_block p_block;
 };
 
 #endif
