@@ -15,6 +15,7 @@ p_syntax_init syntax_decl_list_node_get_init(p_syntax_decl p_decl) {
 p_syntax_decl syntax_decl_arr(p_syntax_decl p_decl, p_ast_exp p_exp) {
     size_t size = 0;
     if (p_exp) { // TODO
+        p_exp = ast_exp_ptr_to_val_check_basic(p_exp);
         assert(p_exp->p_type->basic == type_int);
         assert(p_exp->intconst > 0);
         size = p_exp->intconst;
