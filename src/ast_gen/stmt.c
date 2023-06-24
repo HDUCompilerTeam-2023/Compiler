@@ -1,10 +1,17 @@
 #include <ast_gen/stmt.h>
 
 #include <ast_gen.h>
+#include <symbol/type.h>
 
-p_ast_stmt ast_stmt_return_gen(p_ast_exp p_exp) {
-    if (p_exp)
+p_ast_stmt ast_stmt_return_gen(basic_type ret_type, p_ast_exp p_exp) {
+    if (p_exp) {
         p_exp = ast_exp_ptr_to_val_check_basic(p_exp);
+        p_exp = ast_exp_cov_gen(p_exp, ret_type);
+    }
+    else {
+        assert(ret_type == type_void);
+    }
+
     p_ast_stmt p_stmt = malloc(sizeof(*p_stmt));
     *p_stmt = (ast_stmt) {
         .node = list_head_init(&p_stmt->node),
@@ -103,6 +110,7 @@ p_ast_stmt ast_stmt_assign_gen(p_ast_exp lval, p_ast_exp rval) {
     assert(lval && rval);
     ast_exp_ptr_check_lval(lval);
     rval = ast_exp_ptr_to_val_check_basic(rval);
+    rval = ast_exp_cov_gen(rval, lval->p_type->basic);
 
     p_ast_stmt p_exp = malloc(sizeof(*p_exp));
     *p_exp = (ast_stmt) {

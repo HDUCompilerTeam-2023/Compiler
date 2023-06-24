@@ -59,6 +59,12 @@ static inline p_ir_instr ast2ir_exp_unary_gen(p_ast2ir_info p_info, p_ast_exp p_
     case ast_exp_op_minus:
         p_instr = ir_unary_instr_gen(ir_minus_op, p_src, p_vreg);
         break;
+    case ast_exp_op_i2f:
+        p_instr = ir_unary_instr_gen(ir_i2f_op, p_src, p_vreg);
+        break;
+    case ast_exp_op_f2i:
+        p_instr = ir_unary_instr_gen(ir_f2i_op, p_src, p_vreg);
+        break;
     }
     p_exp->p_des = p_vreg;
     return p_instr;

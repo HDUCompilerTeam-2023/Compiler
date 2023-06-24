@@ -3,7 +3,7 @@
 
 #include <ast/stmt.h>
 
-p_ast_stmt ast_stmt_return_gen(p_ast_exp p_exp);
+p_ast_stmt ast_stmt_return_gen(basic_type ret_type, p_ast_exp p_exp);
 p_ast_stmt ast_stmt_exp_gen(p_ast_exp p_exp);
 p_ast_stmt ast_stmt_break_gen(void);
 p_ast_stmt ast_stmt_continue_gen(void);
