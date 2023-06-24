@@ -29,6 +29,7 @@ void graph_nodes_init(p_conflict_graph p_graph) {
             p_graph_node p_g_node = list_entry(p_node, spill_node, node)->p_spill;
             memset(p_g_node->used_color, false, sizeof(*p_g_node->used_color) * p_graph->reg_num);
         }
+        (p_graph->p_nodes + i)->if_need_spill = false;
     }
     free(p_graph->seo_seq);
     p_graph->seo_seq = malloc(sizeof(*p_graph->seo_seq) * p_graph->node_num);
@@ -104,6 +105,18 @@ bool if_in_neighbors(p_graph_node p_g_node, p_graph_node p_n_node) {
             return true;
     }
     return false;
+}
+
+void node_neighbor_del(p_graph_node p_g_node, p_graph_node p_del_node) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_g_node->neighbors) {
+        p_neighbor_node p_n_node = list_entry(p_node, neighbor_node, node);
+        if (p_n_node->p_neighbor == p_del_node) {
+            list_del(&p_n_node->node);
+            free(p_n_node);
+            break;
+        }
+    }
 }
 
 static inline void print_conflict_node(p_graph_node p_g_node) {
@@ -262,3 +275,5 @@ void set_graph_color(p_conflict_graph p_graph) {
         set_node_color(p_graph, p_node, lowest);
     }
 }
+
+
