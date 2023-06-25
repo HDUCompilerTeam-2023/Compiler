@@ -156,8 +156,9 @@ p_syntax_decl_head syntax_declaration(p_syntax_info p_info, p_syntax_decl_head p
     const char *name = syntax_decl_list_node_get_name(p_decl);
 
     if (!p_info->p_func) {
-        p_symbol_init p_init = symbol_init_gen(symbol_type_get_size(p_type), p_type->basic);
+        p_symbol_var p_var;
         if (p_h_init) {
+            p_symbol_init p_init = symbol_init_gen(symbol_type_get_size(p_type), p_type->basic);
             for (size_t i = 0; i < p_init->size; ++i) {
                 symbol_init_val init_val;
                 if (p_init->basic == type_int) {
@@ -168,20 +169,12 @@ p_syntax_decl_head syntax_declaration(p_syntax_info p_info, p_syntax_decl_head p
                 }
                 symbol_init_add(p_init, i, init_val);
             }
+            p_var = symbol_var_gen(name, p_type, is_const, true, p_init);
         }
         else {
-            for (size_t i = 0; i < p_init->size; ++i) {
-                symbol_init_val init_val;
-                if (p_init->basic == type_int) {
-                    init_val.i = 0;
-                }
-                else {
-                    init_val.f = 0;
-                }
-                symbol_init_add(p_init, i, init_val);
-            }
+            assert(!is_const);
+            p_var = symbol_var_gen(name, p_type, is_const, true, NULL);
         }
-        p_symbol_var p_var = symbol_var_gen(name, p_type, is_const, true, p_init);
         if (is_const) {
             syntax_program_add_constant(p_info, p_var);
         }
