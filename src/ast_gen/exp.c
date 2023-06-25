@@ -218,24 +218,24 @@ p_ast_exp ast_exp_binary_gen(ast_exp_binary_op b_op, p_ast_exp p_src_1, p_ast_ex
     };
     return p_exp;
 }
-p_ast_exp ast_exp_relational_gen(ast_exp_binary_op b_op, p_ast_exp p_src_1, p_ast_exp p_src_2) {
-    assert(p_src_1 && p_src_2);
-    p_src_1 = exp_ptr_to_val_check_basic(p_src_1);
-    p_src_2 = exp_ptr_to_val_check_basic(p_src_2);
+p_ast_exp ast_exp_relational_gen(ast_exp_relational_op r_op, p_ast_exp p_rsrc_1, p_ast_exp p_rsrc_2) {
+    assert(p_rsrc_1 && p_rsrc_2);
+    p_rsrc_1 = exp_ptr_to_val_check_basic(p_rsrc_1);
+    p_rsrc_2 = exp_ptr_to_val_check_basic(p_rsrc_2);
 
-    if (p_src_1->p_type->basic == type_float) {
-        p_src_2 = ast_exp_cov_gen(p_src_2, type_float);
+    if (p_rsrc_1->p_type->basic == type_float) {
+        p_rsrc_2 = ast_exp_cov_gen(p_rsrc_2, type_float);
     }
-    else if (p_src_2->p_type->basic == type_float) {
-        p_src_1 = ast_exp_cov_gen(p_src_1, type_float);
+    else if (p_rsrc_2->p_type->basic == type_float) {
+        p_rsrc_1 = ast_exp_cov_gen(p_rsrc_1, type_float);
     }
 
     p_ast_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (ast_exp) {
-        .kind = ast_exp_binary,
-        .b_op = b_op,
-        .p_src_1 = p_src_1,
-        .p_src_2 = p_src_2,
+        .kind = ast_exp_relational,
+        .r_op = r_op,
+        .p_rsrc_1 = p_rsrc_1,
+        .p_rsrc_2 = p_rsrc_2,
         .p_type = symbol_type_var_gen(type_int),
         .p_des = NULL,
     };
@@ -440,6 +440,10 @@ void ast_exp_drop(p_ast_exp p_exp) {
     case ast_exp_binary:
         ast_exp_drop(p_exp->p_src_1);
         ast_exp_drop(p_exp->p_src_2);
+        break;
+    case ast_exp_relational:
+        ast_exp_drop(p_exp->p_rsrc_1);
+        ast_exp_drop(p_exp->p_rsrc_2);
         break;
     case ast_exp_unary:
         ast_exp_drop(p_exp->p_src);

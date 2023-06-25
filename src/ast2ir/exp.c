@@ -4,6 +4,36 @@
 #include <program/gen.h>
 #include <symbol_gen.h>
 
+static inline p_ir_instr ast2ir_exp_relational_gen(p_ast2ir_info p_info, p_ast_exp p_exp) {
+    assert(p_exp->p_rsrc_1 && p_exp->p_rsrc_2);
+    p_ir_operand p_rsrc_1 = ast2ir_exp_gen(p_info, p_exp->p_rsrc_1);
+    p_ir_operand p_rsrc_2 = ast2ir_exp_gen(p_info, p_exp->p_rsrc_2);
+
+    p_ir_vreg p_vreg = ir_vreg_gen(symbol_type_var_gen(p_exp->p_type->basic));
+    p_ir_instr p_instr = NULL;
+    switch (p_exp->r_op) {
+    case ast_exp_op_eq:
+        p_instr = ir_binary_instr_gen(ir_eq_op, p_rsrc_1, p_rsrc_2, p_vreg);
+        break;
+    case ast_exp_op_neq:
+        p_instr = ir_binary_instr_gen(ir_neq_op, p_rsrc_1, p_rsrc_2, p_vreg);
+        break;
+    case ast_exp_op_l:
+        p_instr = ir_binary_instr_gen(ir_l_op, p_rsrc_1, p_rsrc_2, p_vreg);
+        break;
+    case ast_exp_op_leq:
+        p_instr = ir_binary_instr_gen(ir_leq_op, p_rsrc_1, p_rsrc_2, p_vreg);
+        break;
+    case ast_exp_op_g:
+        p_instr = ir_binary_instr_gen(ir_g_op, p_rsrc_1, p_rsrc_2, p_vreg);
+        break;
+    case ast_exp_op_geq:
+        p_instr = ir_binary_instr_gen(ir_geq_op, p_rsrc_1, p_rsrc_2, p_vreg);
+        break;
+    }
+    p_exp->p_des = p_vreg;
+    return p_instr;
+}
 static inline p_ir_instr ast2ir_exp_binary_gen(p_ast2ir_info p_info, p_ast_exp p_exp) {
     assert(p_exp->p_src_1 && p_exp->p_src_2);
     p_ir_operand p_src_1 = ast2ir_exp_gen(p_info, p_exp->p_src_1);
@@ -26,24 +56,6 @@ static inline p_ir_instr ast2ir_exp_binary_gen(p_ast2ir_info p_info, p_ast_exp p
         break;
     case ast_exp_op_mod:
         p_instr = ir_binary_instr_gen(ir_mod_op, p_src_1, p_src_2, p_vreg);
-        break;
-    case ast_exp_op_eq:
-        p_instr = ir_binary_instr_gen(ir_eq_op, p_src_1, p_src_2, p_vreg);
-        break;
-    case ast_exp_op_neq:
-        p_instr = ir_binary_instr_gen(ir_neq_op, p_src_1, p_src_2, p_vreg);
-        break;
-    case ast_exp_op_l:
-        p_instr = ir_binary_instr_gen(ir_l_op, p_src_1, p_src_2, p_vreg);
-        break;
-    case ast_exp_op_leq:
-        p_instr = ir_binary_instr_gen(ir_leq_op, p_src_1, p_src_2, p_vreg);
-        break;
-    case ast_exp_op_g:
-        p_instr = ir_binary_instr_gen(ir_g_op, p_src_1, p_src_2, p_vreg);
-        break;
-    case ast_exp_op_geq:
-        p_instr = ir_binary_instr_gen(ir_geq_op, p_src_1, p_src_2, p_vreg);
         break;
     }
     p_exp->p_des = p_vreg;
@@ -157,6 +169,9 @@ p_ir_operand ast2ir_exp_gen(p_ast2ir_info p_info, p_ast_exp p_exp) {
         break;
     case ast_exp_load:
         p_instr = ast2ir_exp_load_gen(p_info, p_exp);
+        break;
+    case ast_exp_relational:
+        p_instr = ast2ir_exp_relational_gen(p_info, p_exp);
         break;
     case ast_exp_binary:
         p_instr = ast2ir_exp_binary_gen(p_info, p_exp);
