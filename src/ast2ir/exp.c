@@ -100,16 +100,49 @@ static inline p_ir_instr ast2ir_exp_logic_gen(p_ast2ir_info p_info, p_ast_exp p_
 }
 static inline p_ir_instr ast2ir_exp_ulogic_gen(p_ast2ir_info p_info, p_ast_exp p_exp) {
     assert(p_exp->p_bool);
-    p_ir_operand p_bool = ast2ir_exp_gen(p_info, p_exp->p_bool);
-
-    p_ir_vreg p_vreg = ir_vreg_gen(symbol_type_var_gen(p_exp->p_type->basic));
     p_ir_instr p_instr = NULL;
-    switch (p_exp->ul_op) {
-    case ast_exp_op_bool_not:
-        p_instr = ir_unary_instr_gen(ir_not_op, p_bool, p_vreg);
-        break;
+
+    p_ast_exp p_new = p_exp;
+    while (p_new->kind == ast_exp_ulogic && p_new->ul_op == ast_exp_op_bool_not) {
+        p_ast_exp p_inner = p_new->p_bool;
+        if (p_inner->kind == ast_exp_ulogic && p_inner->ul_op == ast_exp_op_bool_not) {
+            p_new = p_inner->p_bool;
+        }
+        else {
+            p_new = p_inner;
+            break;
+        }
     }
-    p_exp->p_des = p_vreg;
+    if (p_new->kind == ast_exp_logic) {
+        // NEED: exchange true false
+        p_instr = ast2ir_exp_logic_gen(p_info, p_new);
+        p_exp->p_des = p_new->p_des;
+        return p_instr;
+    }
+    assert(p_new->kind == ast_exp_relational);
+    switch (p_new->r_op) {
+        case ast_exp_op_neq:
+            p_new->r_op = ast_exp_op_eq;
+            break;
+        case ast_exp_op_eq:
+            p_new->r_op = ast_exp_op_neq;
+            break;
+        case ast_exp_op_g:
+            p_new->r_op = ast_exp_op_leq;
+            break;
+        case ast_exp_op_geq:
+            p_new->r_op = ast_exp_op_l;
+            break;
+        case ast_exp_op_l:
+            p_new->r_op = ast_exp_op_geq;
+            break;
+        case ast_exp_op_leq:
+            p_new->r_op = ast_exp_op_g;
+            break;
+    }
+
+    p_instr = ast2ir_exp_relational_gen(p_info, p_new);
+    p_exp->p_des = p_new->p_des;
     return p_instr;
 }
 static inline p_ir_operand ast2ir_exp_num_gen(p_ast2ir_info p_info, p_ast_exp p_exp) {

@@ -204,7 +204,7 @@ LOrExp : LOrExp OR LAndExp { $$ = ast_exp_logic_gen(ast_exp_op_bool_or, $1, $3);
        ;
 
 LAndExp : LAndExp AND EqExp { $$ = ast_exp_logic_gen(ast_exp_op_bool_and, $1, $3); }
-        | EqExp
+        | EqExp             { $$ = ast_exp_to_cond($1); }
         ;
 
 EqExp : EqExp EQ RelExp  { $$ = ast_exp_relational_gen(ast_exp_op_eq, $1, $3); }

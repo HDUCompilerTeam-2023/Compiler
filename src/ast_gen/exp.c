@@ -138,6 +138,17 @@ p_ast_exp ast_exp_cov_gen(p_ast_exp p_exp, basic_type b_type) {
     return p_exp;
 }
 
+p_ast_exp ast_exp_to_cond(p_ast_exp p_exp) {
+    p_exp = ast_exp_ptr_to_val_check_basic(p_exp);
+    if (p_exp->kind == ast_exp_relational)
+        return p_exp;
+    if (p_exp->kind == ast_exp_logic)
+        return p_exp;
+    if (p_exp->kind == ast_exp_ulogic)
+        return p_exp;
+    return ast_exp_relational_gen(ast_exp_op_neq, p_exp, ast_exp_int_gen(0));
+}
+
 p_ast_exp ast_exp_use_gen(p_ast_exp p_used_exp) {
     assert(p_used_exp);
     p_ast_exp p_exp = malloc(sizeof(*p_exp));
@@ -246,6 +257,9 @@ p_ast_exp ast_exp_logic_gen(ast_exp_logic_op l_op, p_ast_exp p_bool_1, p_ast_exp
     p_bool_1 = exp_ptr_to_val_check_basic(p_bool_1);
     p_bool_2 = exp_ptr_to_val_check_basic(p_bool_2);
 
+    p_bool_1 = ast_exp_to_cond(p_bool_1);
+    p_bool_2 = ast_exp_to_cond(p_bool_2);
+
     p_ast_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (ast_exp) {
         .kind = ast_exp_logic,
@@ -260,6 +274,8 @@ p_ast_exp ast_exp_logic_gen(ast_exp_logic_op l_op, p_ast_exp p_bool_1, p_ast_exp
 p_ast_exp ast_exp_ulogic_gen(ast_exp_ulogic_op ul_op, p_ast_exp p_bool) {
     assert(p_bool);
     p_bool = exp_ptr_to_val_check_basic(p_bool);
+
+    p_bool = ast_exp_to_cond(p_bool);
 
     p_ast_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (ast_exp) {

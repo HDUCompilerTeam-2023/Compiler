@@ -86,9 +86,6 @@ void ir_unary_instr_print(p_ir_unary_instr p_instr) {
     case ir_minus_op:
         printf("-");
         break;
-    case ir_not_op:
-        printf("!");
-        break;
     case ir_val_assign:
         break;
     case ir_i2f_op:

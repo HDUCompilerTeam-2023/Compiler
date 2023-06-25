@@ -21,7 +21,6 @@ enum ir_binary_op {
 enum ir_unary_op {
     // unary instr
     ir_minus_op,
-    ir_not_op,
     ir_val_assign,
     ir_i2f_op,
     ir_f2i_op,
