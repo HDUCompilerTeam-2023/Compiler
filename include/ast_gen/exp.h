@@ -11,7 +11,7 @@ p_ast_exp ast_exp_ptr_to_val(p_ast_exp p_exp);
 p_ast_exp ast_exp_cov_gen(p_ast_exp p_exp, basic_type b_type);
 p_ast_exp ast_exp_use_gen(p_ast_exp p_used_exp);
 p_ast_exp ast_exp_binary_gen(ast_exp_binary_op op, p_ast_exp p_src_1, p_ast_exp p_src_2);
-p_ast_exp ast_exp_relational_gen(ast_exp_binary_op op, p_ast_exp p_src_1, p_ast_exp p_src_2);
+p_ast_exp ast_exp_relational_gen(ast_exp_relational_op op, p_ast_exp p_rsrc_1, p_ast_exp p_rsrc_2);
 p_ast_exp ast_exp_unary_gen(ast_exp_unary_op op, p_ast_exp p_src);
 p_ast_exp ast_exp_logic_gen(ast_exp_logic_op l_op, p_ast_exp p_bool_1, p_ast_exp p_bool_2);
 p_ast_exp ast_exp_ulogic_gen(ast_exp_ulogic_op ul_op, p_ast_exp p_bool);

@@ -11,14 +11,15 @@ enum ast_exp_logic_op {
 enum ast_exp_ulogic_op {
     ast_exp_op_bool_not,
 };
-enum ast_exp_binary_op {
+enum ast_exp_relational_op {
     ast_exp_op_eq,
     ast_exp_op_neq,
     ast_exp_op_l,
     ast_exp_op_leq,
     ast_exp_op_g,
     ast_exp_op_geq,
-
+};
+enum ast_exp_binary_op {
     ast_exp_op_add,
     ast_exp_op_sub,
     ast_exp_op_mul,
@@ -33,6 +34,7 @@ enum ast_exp_unary_op {
 struct ast_exp {
     enum {
         ast_exp_binary,
+        ast_exp_relational,
         ast_exp_unary,
         ast_exp_logic,
         ast_exp_ulogic,
@@ -44,6 +46,10 @@ struct ast_exp {
         ast_exp_num,
     } kind;
     union {
+        struct {
+            p_ast_exp p_rsrc_1, p_rsrc_2;
+            ast_exp_relational_op r_op;
+        }; // relational
         struct {
             p_ast_exp p_src_1, p_src_2;
             ast_exp_binary_op b_op;
