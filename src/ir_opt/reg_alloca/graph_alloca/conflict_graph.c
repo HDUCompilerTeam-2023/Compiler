@@ -7,6 +7,7 @@
 p_graph_node graph_node_gen(p_ir_vreg p_vreg, size_t reg_num, size_t node_id) {
     p_graph_node p_node = malloc(sizeof(*p_node));
     p_node->p_vreg = p_vreg;
+    p_vreg->p_info = p_node;
     p_node->color = -1;
     p_node->neighbors = list_head_init(&p_node->neighbors);
     p_node->used_color = malloc(sizeof(*p_node->used_color) * reg_num);
@@ -49,10 +50,9 @@ p_neighbor_node graph_neighbor_node_gen(p_graph_node p_node) {
     return p_neighbor;
 }
 
-p_conflict_graph conflict_graph_gen(size_t node_num, size_t *map, p_origin_graph_node p_nodes, size_t reg_num) {
+p_conflict_graph conflict_graph_gen(size_t node_num, p_origin_graph_node p_nodes, size_t reg_num) {
     p_conflict_graph p_graph = malloc(sizeof(*p_graph));
     p_graph->node_num = p_graph->origin_node_num = node_num;
-    p_graph->map = map;
     p_graph->reg_num = reg_num;
     p_graph->p_nodes = p_nodes;
     p_graph->seo_seq = NULL;
@@ -165,7 +165,6 @@ void conflict_graph_drop(p_conflict_graph p_graph) {
     }
     free(p_graph->p_nodes);
     free(p_graph->seo_seq);
-    free(p_graph->map);
     free(p_graph);
 }
 
@@ -275,5 +274,4 @@ void set_graph_color(p_conflict_graph p_graph) {
         set_node_color(p_graph, p_node, lowest);
     }
 }
-
 
