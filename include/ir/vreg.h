@@ -15,6 +15,8 @@ struct ir_vreg {
     size_t reg_id;
     bool if_float; // 是否在浮点寄存器
     bool if_cond;  // 是否是条件跳转的条件
+
+    void *p_info; // 额外信息（目前只用在图着色）
     list_head node;
 };
 

@@ -8,30 +8,15 @@ p_graph_alloca_info graph_alloca_info_gen(size_t reg_num_r, size_t reg_num_s, p_
     p_graph_alloca_info p_info = malloc(sizeof(*p_info));
     p_info->p_func = p_func;
     p_list_head p_node;
-    size_t *mapr = malloc(sizeof(*mapr) * (p_func->param_reg_cnt + p_func->vreg_cnt));
-    size_t *maps = malloc(sizeof(*maps) * (p_func->param_reg_cnt + p_func->vreg_cnt));
+
+    size_t vreg_num = p_func->vreg_cnt + p_func->param_reg_cnt;
+
+    p_origin_graph_node p_nodes_r = malloc(sizeof(*p_nodes_r) * vreg_num);
+    p_origin_graph_node p_nodes_s = malloc(sizeof(*p_nodes_s) * vreg_num);
     size_t numr = 0;
     size_t nums = 0;
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        if (p_vreg->if_float)
-            maps[p_vreg->id] = nums++;
-        else
-            mapr[p_vreg->id] = numr++;
-    }
-    list_for_each(p_node, &p_func->vreg_list) {
-        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        if (p_vreg->if_float)
-            maps[p_vreg->id] = nums++;
-        else
-            mapr[p_vreg->id] = numr++;
-    }
-
-    p_origin_graph_node p_nodes_r = malloc(sizeof(*p_nodes_r) * numr);
-    p_origin_graph_node p_nodes_s = malloc(sizeof(*p_nodes_s) * nums);
-    numr = nums = 0;
-    list_for_each(p_node, &p_func->param_reg_list) {
-        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
         if (p_vreg->if_float) {
             origin_graph_node_gen(p_nodes_s + nums, p_vreg, reg_num_s, nums);
             nums++;
@@ -53,9 +38,8 @@ p_graph_alloca_info graph_alloca_info_gen(size_t reg_num_r, size_t reg_num_s, p_
         }
     }
 
-    p_info->p_r_graph = conflict_graph_gen(numr, mapr, p_nodes_r, reg_num_r);
-    p_info->p_s_graph = conflict_graph_gen(nums, maps, p_nodes_s, reg_num_s);
-    size_t vreg_num = p_func->vreg_cnt + p_func->param_reg_cnt;
+    p_info->p_r_graph = conflict_graph_gen(numr, p_nodes_r, reg_num_r);
+    p_info->p_s_graph = conflict_graph_gen(nums, p_nodes_s, reg_num_s);
     p_info->block_live_in = malloc(sizeof(void *) * p_func->block_cnt);
     p_info->block_live_out = malloc(sizeof(void *) * p_func->block_cnt);
     for (size_t i = 0; i < p_func->block_cnt; i++) {
@@ -118,21 +102,21 @@ void pre_color(p_graph_alloca_info p_info, p_symbol_func p_func) {
     size_t current_s = 0;
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
+        p_graph_node p_g_node = (p_graph_node) p_vreg->p_info;
         if (p_vreg->if_float) {
-            p_origin_graph_node p_g_node = (p_info->p_s_graph->p_nodes + p_info->p_s_graph->map[p_vreg->id]);
-            set_node_color(p_info->p_s_graph, p_g_node->p_def_node, current_s);
+            set_node_color(p_info->p_s_graph, p_g_node, current_s);
             current_s++;
         }
         else {
-            p_origin_graph_node p_g_node = (p_info->p_r_graph->p_nodes + p_info->p_r_graph->map[p_vreg->id]);
-            set_node_color(p_info->p_r_graph, p_g_node->p_def_node, current_r);
+            set_node_color(p_info->p_r_graph, p_g_node, current_r);
             current_r++;
         }
     }
 }
 
 static void new_store(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_instr p_instr, p_ir_bb_phi_list p_live_out, p_symbol_func p_func) {
-    p_origin_graph_node p_o_node = p_graph->p_nodes + p_graph->map[p_vreg->id];
+    if (((p_graph_node) p_vreg->p_info)->node_id >= p_graph->origin_node_num) return;
+    p_origin_graph_node p_o_node = p_graph->p_nodes + ((p_graph_node) p_vreg->p_info)->node_id;
     if (!p_o_node->if_need_spill) return;
     assert(!p_o_node->p_vmem);
     p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_vreg->p_type));
@@ -153,8 +137,9 @@ static void new_store(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_instr p_i
     while (p_live_node != &p_store->p_live_out->bb_phi
         && p_neigh_node != &p_o_node->p_def_node->neighbors) {
         p_ir_vreg p_live_vreg = list_entry(p_live_node, ir_bb_phi, node)->p_bb_phi;
-        assert(p_live_vreg->id != -1);
-        if ((p_graph->p_nodes + p_graph->map[p_live_vreg->id])->p_vmem) { // 已经溢出干涉图已经改变
+        p_graph_node p_g_node = (p_graph_node) p_live_vreg->p_info;
+        assert(p_g_node->node_id < p_graph->origin_node_num);
+        if ((p_graph->p_nodes + p_g_node->node_id)->p_vmem) { // 已经溢出干涉图已经改变
             p_live_node = p_live_node->p_next;
             continue;
         }
@@ -175,12 +160,12 @@ static void new_store(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_instr p_i
 
 static void new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_instr p_instr, p_ir_bb_phi_list p_live_in, p_symbol_func p_func) {
     if (p_operand->kind != reg) return;
-    if (p_operand->p_vreg->id == -1) return;
-    p_origin_graph_node p_o_node = p_graph->p_nodes + p_graph->map[p_operand->p_vreg->id];
+    p_graph_node p_vreg_g_node = (p_graph_node) p_operand->p_vreg->p_info;
+    if (p_vreg_g_node->node_id >= p_graph->origin_node_num) return;
+    p_origin_graph_node p_o_node = p_graph->p_nodes + p_vreg_g_node->node_id;
     if (!p_o_node->if_need_spill) return;
     assert(p_o_node->p_vmem);
     p_ir_vreg p_new_src = ir_vreg_copy(p_operand->p_vreg);
-    p_new_src->id = -1; // 标记为已溢出
     symbol_func_vreg_add(p_func, p_new_src);
     p_graph_node p_g_node = graph_node_gen(p_new_src, p_graph->reg_num, p_graph->node_num);
     p_graph->node_num++;
@@ -196,7 +181,7 @@ static void new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_inst
     p_list_head p_node;
     list_for_each(p_node, &p_load->p_live_in->bb_phi) {
         p_ir_vreg p_live_vreg = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
-        add_graph_edge(p_g_node, (p_graph->p_nodes + p_live_vreg->id)->p_def_node);
+        add_graph_edge(p_g_node, (p_graph_node) p_live_vreg->p_info);
     }
 }
 
@@ -295,13 +280,14 @@ static inline void deal_live_set(p_graph_alloca_info p_info, p_ir_bb_phi_list p_
     p_list_head p_node, p_next;
     list_for_each_safe(p_node, p_next, &p_live->bb_phi) {
         p_ir_bb_phi p_phi = list_entry(p_node, ir_bb_phi, node);
-        if (p_phi->p_bb_phi->id == -1) continue;
+        p_graph_node p_g_node = (p_graph_node) p_phi->p_bb_phi->p_info;
         if (p_phi->p_bb_phi == p_not_del) continue;
         if (p_phi->p_bb_phi->if_float)
             p_graph = p_info->p_s_graph;
         else
             p_graph = p_info->p_r_graph;
-        if ((p_graph->p_nodes + p_graph->map[p_phi->p_bb_phi->id])->p_vmem) {
+        if (p_g_node->node_id >= p_graph->origin_node_num) continue;
+        if ((p_graph->p_nodes + p_g_node->node_id)->p_vmem) {
             list_del(p_node);
             free(p_phi);
         }
