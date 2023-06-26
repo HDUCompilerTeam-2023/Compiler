@@ -126,25 +126,15 @@ static void new_store(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_instr p_i
     list_add_next(&p_store->node, &p_instr->node);
     // 改变活跃集合
     copy_live(p_store->p_live_out, p_live_out);
-    if (!if_in_live_set(p_live_out, p_vreg))
-        ir_bb_phi_list_add(p_live_out, p_vreg);
-    else
-        live_set_del(p_store->p_live_out, p_vreg); // store 后不再是出口活跃
+    ir_bb_phi_list_add(p_live_out, p_vreg);
     copy_live(p_store->p_live_in, p_live_out);
     // 改变干涉图, 活跃集合和邻居节点都是从小到大编号
     p_list_head p_live_node = p_store->p_live_out->bb_phi.p_next;
     p_list_head p_neigh_node = p_o_node->p_def_node->neighbors.p_next;
-    while (p_live_node != &p_store->p_live_out->bb_phi
-        && p_neigh_node != &p_o_node->p_def_node->neighbors) {
+    while (p_live_node != &p_store->p_live_out->bb_phi) {
         p_ir_vreg p_live_vreg = list_entry(p_live_node, ir_bb_phi, node)->p_bb_phi;
-        p_graph_node p_g_node = (p_graph_node) p_live_vreg->p_info;
-        assert(p_g_node->node_id < p_graph->origin_node_num);
-        if ((p_graph->p_nodes + p_g_node->node_id)->p_vmem) { // 已经溢出干涉图已经改变
-            p_live_node = p_live_node->p_next;
-            continue;
-        }
         p_neighbor_node p_neighbor = list_entry(p_neigh_node, neighbor_node, node);
-        if (p_live_vreg->id == p_neighbor->p_neighbor->p_vreg->id) {
+        if (p_live_vreg == p_neighbor->p_neighbor->p_vreg) {
             p_live_node = p_live_node->p_next;
             p_neigh_node = p_neigh_node->p_next;
             continue;
@@ -155,7 +145,13 @@ static void new_store(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_instr p_i
         list_del(&p_neighbor->node);
         free(p_neighbor);
     }
-    assert(p_live_node == &p_store->p_live_out->bb_phi);
+    while (p_neigh_node != &p_o_node->p_def_node->neighbors) {
+        p_neighbor_node p_neighbor = list_entry(p_neigh_node, neighbor_node, node);
+        node_neighbor_del(p_neighbor->p_neighbor, p_o_node->p_def_node);
+        p_neigh_node = p_neigh_node->p_next;
+        list_del(&p_neighbor->node);
+        free(p_neighbor);
+    }
 }
 
 static void new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_instr p_instr, p_ir_bb_phi_list p_live_in, p_symbol_func p_func) {
@@ -185,6 +181,19 @@ static void new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_inst
     }
 }
 
+static inline void deal_live_set(p_conflict_graph p_graph, p_ir_bb_phi_list p_live) {
+    p_list_head p_node, p_next;
+    list_for_each_safe(p_node, p_next, &p_live->bb_phi) {
+        p_ir_bb_phi p_phi = list_entry(p_node, ir_bb_phi, node);
+        p_graph_node p_g_node = (p_graph_node) p_phi->p_bb_phi->p_info;
+        if (p_g_node->node_id >= p_graph->origin_node_num) continue;
+        if ((p_graph->p_nodes + p_g_node->node_id)->if_need_spill) {
+            list_del(p_node);
+            free(p_phi);
+        }
+    }
+}
+
 void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
     p_list_head p_instr_node = NULL;
     p_list_head p_node;
@@ -198,6 +207,8 @@ void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
     p_list_head p_block_node;
     list_for_each(p_block_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
+        deal_live_set(p_graph, p_basic_block->p_live_in);
+        deal_live_set(p_graph, p_basic_block->p_live_out);
         p_ir_instr p_head_instr = list_entry(&p_basic_block->instr_list, ir_instr, node);
         if (!p_instr_node)
             p_instr_node = p_basic_block->instr_list.p_next;
@@ -210,6 +221,8 @@ void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
         while (p_instr_node != &p_basic_block->instr_list) {
             p_instr_node_next = p_instr_node->p_next;
             p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            deal_live_set(p_graph, p_instr->p_live_in);
+            deal_live_set(p_graph, p_instr->p_live_out);
             switch (p_instr->irkind) {
             case ir_binary:
                 new_load(p_graph, p_instr->ir_binary.p_src1, p_instr, p_instr->p_live_in, p_func);
@@ -275,43 +288,6 @@ void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
     }
 }
 
-static inline void deal_live_set(p_graph_alloca_info p_info, p_ir_bb_phi_list p_live, p_ir_vreg p_not_del) {
-    p_conflict_graph p_graph;
-    p_list_head p_node, p_next;
-    list_for_each_safe(p_node, p_next, &p_live->bb_phi) {
-        p_ir_bb_phi p_phi = list_entry(p_node, ir_bb_phi, node);
-        p_graph_node p_g_node = (p_graph_node) p_phi->p_bb_phi->p_info;
-        if (p_phi->p_bb_phi == p_not_del) continue;
-        if (p_phi->p_bb_phi->if_float)
-            p_graph = p_info->p_s_graph;
-        else
-            p_graph = p_info->p_r_graph;
-        if (p_g_node->node_id >= p_graph->origin_node_num) continue;
-        if ((p_graph->p_nodes + p_g_node->node_id)->p_vmem) {
-            list_del(p_node);
-            free(p_phi);
-        }
-    }
-}
-static void update_liveness(p_graph_alloca_info p_info, p_symbol_func p_func) {
-    p_list_head p_block_node;
-    list_for_each(p_block_node, &p_func->block) {
-        p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
-        deal_live_set(p_info, p_basic_block->p_live_in, NULL);
-        deal_live_set(p_info, p_basic_block->p_live_out, NULL);
-        p_list_head p_instr_node;
-        list_for_each(p_instr_node, &p_basic_block->instr_list) {
-            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
-            p_ir_vreg p_in_not_del = ir_instr_get_des(p_instr);
-            p_ir_vreg p_out_not_del = NULL;
-            if (p_instr->irkind == ir_store && p_instr->ir_store.p_src->kind == reg)
-                p_out_not_del = p_instr->ir_store.p_src->p_vreg;
-            deal_live_set(p_info, p_instr->p_live_in, p_in_not_del);
-            deal_live_set(p_info, p_instr->p_live_out, p_out_not_del);
-        }
-    }
-}
-
 void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     p_graph_alloca_info p_info = graph_alloca_info_gen(reg_num_r, reg_num_s, p_func);
     liveness_analysis(p_info, p_func);
@@ -330,7 +306,6 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     set_graph_color(p_info->p_s_graph);
     check_chordal(p_info->p_s_graph);
 
-    update_liveness(p_info, p_func);
     check_liveness(p_func);
     graph_alloca_info_drop(p_info);
 }
