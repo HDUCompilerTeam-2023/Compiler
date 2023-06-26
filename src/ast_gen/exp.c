@@ -320,20 +320,20 @@ p_ast_exp ast_exp_unary_gen(ast_exp_unary_op u_op, p_ast_exp p_src) {
     return p_exp;
 }
 
-static inline bool param_arr_check(p_symbol_type p_type_1, p_symbol_type p_type_2) {
-    if (p_type_1->ref_level != p_type_2->ref_level) return false;
-    if (p_type_1->basic != p_type_2->basic) return false;
-    p_list_head p_node_1, p_node_2 = p_type_2->array.p_next;
-    list_for_each(p_node_1, &p_type_1->array) {
-        if (p_node_2 == &p_type_2->array) return false;
-        p_symbol_type_array p_array_1, p_array_2;
-        p_array_1 = list_entry(p_node_1, symbol_type_array, node);
-        p_array_2 = list_entry(p_node_2, symbol_type_array, node);
-        p_node_2 = p_node_2->p_next;
-        if (symbol_type_array_get_size(p_array_1) == 0 || symbol_type_array_get_size(p_array_2) == 0) continue;
-        if (symbol_type_array_get_size(p_array_1) != symbol_type_array_get_size(p_array_2)) return false;
+static inline bool param_arr_check(p_symbol_type p_type_f, p_symbol_type p_type_r) {
+    if (p_type_f->ref_level != p_type_r->ref_level) return false;
+    if (p_type_f->basic != p_type_r->basic) return false;
+    p_list_head p_node_f, p_node_r = p_type_r->array.p_prev;
+    list_for_each_tail(p_node_f, &p_type_f->array) {
+        if (p_node_r == &p_type_r->array) return false;
+        p_symbol_type_array p_array_f, p_array_r;
+        p_array_f = list_entry(p_node_f, symbol_type_array, node);
+        p_array_r = list_entry(p_node_r, symbol_type_array, node);
+        p_node_r = p_node_r->p_prev;
+        if (symbol_type_array_get_size(p_array_f) == 0 || symbol_type_array_get_size(p_array_r) == 0) continue;
+        if (symbol_type_array_get_size(p_array_f) != symbol_type_array_get_size(p_array_r)) return false;
     }
-    return (p_node_2 == &p_type_2->array);
+    return true;
 }
 
 p_ast_exp ast_exp_call_gen(p_symbol_func p_func, p_ast_param_list p_param_list) {
