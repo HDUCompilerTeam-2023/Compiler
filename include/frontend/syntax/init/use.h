@@ -6,9 +6,6 @@
 
 typedef struct syntax_init syntax_init, *p_syntax_init;
 
-typedef struct syntax_init_mem syntax_init_mem, *p_syntax_init_mem;
-
-p_ast_exp syntax_init_mem_get_exp(p_syntax_init_mem p_init_mem, size_t offset);
-void syntax_init_mem_clear_exp(p_syntax_init_mem p_init_mem, size_t offset);
+p_ast_exp syntax_init_get_exp(p_syntax_init p_init, p_symbol_type p_type, size_t offset);
 
 #endif

@@ -13,9 +13,5 @@ struct syntax_init {
 
     list_head node;
 };
-struct syntax_init_mem {
-    size_t size;
-    p_ast_exp *memory;
-};
 
 #endif
