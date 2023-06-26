@@ -30,66 +30,79 @@ p_syntax_init syntax_init_list_add(p_syntax_init p_list, p_syntax_init p_init) {
     return p_list;
 }
 
-
-static inline void syntax_init_list_trans(p_symbol_type p_type, basic_type basic, p_syntax_init p_srcs, p_ast_exp *memory) {
-    assert(!p_srcs->is_exp);
-
-    size_t offset = 0;
-    while (!list_head_alone(&p_srcs->list)) {
-        p_syntax_init p_init = list_entry(p_srcs->list.p_next, syntax_init, node);
-        list_del(&p_init->node);
-
-        if (p_init->is_exp) {
-            assert(offset < symbol_type_get_size(p_type));
-            p_init->p_exp = ast_exp_ptr_to_val_check_basic(p_init->p_exp);
-            memory[offset++] = ast_exp_cov_gen(p_init->p_exp, basic);
-        }
-        else {
-            assert(!list_head_alone(&p_type->array));
-            p_symbol_type_array p_pop = symbol_type_pop_array(p_type);
-            assert(offset % symbol_type_get_size(p_type) == 0);
-            syntax_init_list_trans(p_type, basic, p_init, memory + offset);
-            offset += symbol_type_get_size(p_type);
-            symbol_type_push_array(p_type, p_pop);
-        }
-        free(p_init);
+static inline p_list_head syntax_init_list_regular(p_list_head p_list, p_list_head p_node, p_symbol_type p_type) {
+    if (!p_node) {
+        p_node = p_list->p_next;
     }
-    for (; offset < symbol_type_get_size(p_type); ++offset) {
-        if (basic == type_int) memory[offset] = ast_exp_int_gen(0);
-        else
-            memory[offset] = ast_exp_float_gen(0);
+
+    assert(!list_head_alone(&p_type->array));
+    p_symbol_type_array p_pop = symbol_type_pop_array(p_type);
+    size_t cnt = symbol_type_array_get_size(p_pop);
+    bool is_basic = list_head_alone(&p_type->array);
+
+    for (size_t i = 0; i < cnt; ++i) {
+        if (p_node == p_list) break;
+        p_syntax_init p_init = list_entry(p_node, syntax_init, node);
+
+        if (is_basic) {
+            assert(p_init->is_exp);
+            p_ast_exp p_init_exp = ast_exp_ptr_to_val_check_basic(p_init->p_exp);
+            p_init->p_exp = ast_exp_cov_gen(p_init_exp, p_type->basic);
+            p_node = p_node->p_next;
+            continue;
+        }
+
+        if (!p_init->is_exp) {
+            syntax_init_list_regular(&p_init->list, NULL, p_type);
+            p_node = p_node->p_next;
+            continue;
+        }
+
+        p_syntax_init p_ins = syntax_init_list_gen();
+        list_add_prev(&p_ins->node, p_node);
+        p_list_head p_end = syntax_init_list_regular(p_list, p_node, p_type);
+        p_list_head p_next;
+        for (p_node = p_ins->node.p_next, p_next = p_node->p_next; p_node != p_end; p_node = p_next, p_next = p_node->p_next) {
+            list_del(p_node);
+            list_add_prev(p_node, &p_ins->list);
+        }
     }
+
+    symbol_type_push_array(p_type, p_pop);
+    return p_node;
 }
-p_syntax_init_mem syntax_init_mem_gen(p_syntax_init p_init, p_symbol_type p_type) {
+
+p_syntax_init syntax_init_regular(p_syntax_init p_init, p_symbol_type p_type) {
     if (!p_init)
         return NULL;
 
-    size_t size = symbol_type_get_size(p_type);
-    p_syntax_init_mem p_init_mem = malloc(sizeof(*p_init_mem));
-    *p_init_mem = (syntax_init_mem) {
-        .size = size,
-        .memory = malloc(sizeof(**p_init_mem->memory) * size)
-    };
-    memset(p_init_mem->memory, 0, sizeof(**p_init_mem->memory) * size);
-
-    if (p_init->is_exp) {
-        assert(list_head_alone(&p_type->array));
-        p_init->p_exp = ast_exp_ptr_to_val_check_basic(p_init->p_exp);
-        p_init_mem->memory[0] = ast_exp_cov_gen(p_init->p_exp, p_type->basic);
+    if (!p_init->is_exp) {
+        syntax_init_list_regular(&p_init->list, NULL, p_type);
     }
     else {
-        assert(!list_head_alone(&p_type->array));
-        syntax_init_list_trans(p_type, p_type->basic, p_init, p_init_mem->memory);
+        assert(list_head_alone(&p_type->array));
+        p_ast_exp p_init_exp = ast_exp_ptr_to_val_check_basic(p_init->p_exp);
+        p_init->p_exp = ast_exp_cov_gen(p_init_exp, p_type->basic);
     }
-    free(p_init);
-    return p_init_mem;
+
+    return p_init;
 }
-void syntax_init_mem_drop(p_syntax_init_mem p_init) {
+void syntax_init_drop(p_syntax_init p_init) {
     if (!p_init)
         return;
-    for (size_t i = 0; i < p_init->size; ++i) {
-        if (p_init->memory[i]) ast_exp_drop(p_init->memory[i]);
+
+    if (p_init->is_exp) {
+        // ast_exp_drop(p_init->p_exp);
+        free(p_init);
+        return;
     }
-    free(p_init->memory);
+
+    p_list_head p_node, p_next;
+    list_for_each_safe(p_node, p_next, &p_init->list) {
+        p_syntax_init p_del = list_entry(p_node, syntax_init, node);
+        list_del(p_node);
+        syntax_init_drop(p_del);
+    }
+
     free(p_init);
 }
