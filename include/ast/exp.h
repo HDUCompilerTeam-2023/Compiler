@@ -79,8 +79,8 @@ struct ast_exp {
         }; // gep
         p_ast_exp p_ptr; // load
         union {
-            INTCONST_t intconst; // int
-            FLOATCONST_t floatconst; // float
+            I32CONST_t i32const; // int
+            F32CONST_t f32const; // float
             p_symbol_str p_str; // str
         }; // null
     };

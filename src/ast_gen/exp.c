@@ -41,16 +41,16 @@ static inline p_ast_exp exp_val_const(p_ast_exp p_exp) {
     while (p_exp->kind == ast_exp_gep) {
         if (p_exp->p_offset->kind != ast_exp_num)
             break;
-        if (p_exp->p_offset->p_type->basic != type_int)
+        if (p_exp->p_offset->p_type->basic != type_i32)
             break;
         length *= symbol_type_get_size(p_exp->p_type);
-        offset += length * p_exp->p_offset->intconst;
+        offset += length * p_exp->p_offset->i32const;
         p_exp = p_exp->p_addr;
     }
     if (p_exp->kind == ast_exp_ptr && p_exp->p_var->is_const) {
         assert(offset < symbol_type_get_size(p_exp->p_var->p_type));
         p_ast_exp p_val;
-        if (p_exp->p_type->basic == type_int) {
+        if (p_exp->p_type->basic == type_i32) {
             p_val = ast_exp_int_gen(p_exp->p_var->p_init->memory[offset].i);
         }
         else {
@@ -84,11 +84,11 @@ p_ast_exp ast_exp_ptr_to_val(p_ast_exp p_exp) {
 static inline p_ast_exp ast_exp_i2f_gen(p_ast_exp p_i32) {
     assert(p_i32);
     p_i32 = exp_ptr_to_val_check_basic(p_i32);
-    assert(p_i32->p_type->basic == type_int);
+    assert(p_i32->p_type->basic == type_i32);
 
     if (p_i32->kind == ast_exp_num) {
-        p_i32->p_type->basic = type_float;
-        p_i32->floatconst = p_i32->intconst;
+        p_i32->p_type->basic = type_f32;
+        p_i32->f32const = p_i32->i32const;
         return p_i32;
     }
 
@@ -97,7 +97,7 @@ static inline p_ast_exp ast_exp_i2f_gen(p_ast_exp p_i32) {
         .kind = ast_exp_unary,
         .u_op = ast_exp_op_i2f,
         .p_src = p_i32,
-        .p_type = symbol_type_var_gen(type_float),
+        .p_type = symbol_type_var_gen(type_f32),
         .p_des = NULL,
     };
     return p_exp;
@@ -106,11 +106,11 @@ static inline p_ast_exp ast_exp_i2f_gen(p_ast_exp p_i32) {
 static inline p_ast_exp ast_exp_f2i_gen(p_ast_exp p_f32) {
     assert(p_f32);
     p_f32 = exp_ptr_to_val_check_basic(p_f32);
-    assert(p_f32->p_type->basic == type_float);
+    assert(p_f32->p_type->basic == type_f32);
 
     if (p_f32->kind == ast_exp_num) {
-        p_f32->p_type->basic = type_int;
-        p_f32->intconst = p_f32->floatconst;
+        p_f32->p_type->basic = type_i32;
+        p_f32->i32const = p_f32->f32const;
         return p_f32;
     }
 
@@ -119,7 +119,7 @@ static inline p_ast_exp ast_exp_f2i_gen(p_ast_exp p_f32) {
         .kind = ast_exp_unary,
         .u_op = ast_exp_op_f2i,
         .p_src = p_f32,
-        .p_type = symbol_type_var_gen(type_int),
+        .p_type = symbol_type_var_gen(type_i32),
         .p_des = NULL,
     };
     return p_exp;
@@ -128,10 +128,10 @@ static inline p_ast_exp ast_exp_f2i_gen(p_ast_exp p_f32) {
 p_ast_exp ast_exp_cov_gen(p_ast_exp p_exp, basic_type b_type) {
     exp_check_basic(p_exp);
     if (p_exp->p_type->basic != b_type) {
-        if (p_exp->p_type->basic == type_int) {
+        if (p_exp->p_type->basic == type_i32) {
             return ast_exp_i2f_gen(p_exp);
         }
-        else if (p_exp->p_type->basic == type_float) {
+        else if (p_exp->p_type->basic == type_f32) {
             return ast_exp_f2i_gen(p_exp);
         }
     }
@@ -164,52 +164,52 @@ p_ast_exp ast_exp_binary_gen(ast_exp_binary_op b_op, p_ast_exp p_src_1, p_ast_ex
     assert(p_src_1 && p_src_2);
     p_src_1 = exp_ptr_to_val_check_basic(p_src_1);
     p_src_2 = exp_ptr_to_val_check_basic(p_src_2);
-    if (b_op == ast_exp_op_mod) assert(p_src_1->p_type->basic == type_int && p_src_2->p_type->basic == type_int);
+    if (b_op == ast_exp_op_mod) assert(p_src_1->p_type->basic == type_i32 && p_src_2->p_type->basic == type_i32);
 
-    if (p_src_1->p_type->basic == type_float) {
-        p_src_2 = ast_exp_cov_gen(p_src_2, type_float);
+    if (p_src_1->p_type->basic == type_f32) {
+        p_src_2 = ast_exp_cov_gen(p_src_2, type_f32);
     }
-    else if (p_src_2->p_type->basic == type_float) {
-        p_src_1 = ast_exp_cov_gen(p_src_1, type_float);
+    else if (p_src_2->p_type->basic == type_f32) {
+        p_src_1 = ast_exp_cov_gen(p_src_1, type_f32);
     }
     basic_type type = p_src_1->p_type->basic;
 
     if (p_src_1->kind == ast_exp_num && p_src_2->kind == ast_exp_num) {
         switch (b_op) {
         case ast_exp_op_add:
-            if (type == type_int) {
-                p_src_1->intconst = p_src_1->intconst + p_src_2->intconst;
+            if (type == type_i32) {
+                p_src_1->i32const = p_src_1->i32const + p_src_2->i32const;
             }
-            else if (type == type_float) {
-                p_src_1->floatconst = p_src_1->floatconst + p_src_2->floatconst;
+            else if (type == type_f32) {
+                p_src_1->f32const = p_src_1->f32const + p_src_2->f32const;
             }
             break;
         case ast_exp_op_sub:
-            if (type == type_int) {
-                p_src_1->intconst = p_src_1->intconst - p_src_2->intconst;
+            if (type == type_i32) {
+                p_src_1->i32const = p_src_1->i32const - p_src_2->i32const;
             }
-            else if (type == type_float) {
-                p_src_1->floatconst = p_src_1->floatconst - p_src_2->floatconst;
+            else if (type == type_f32) {
+                p_src_1->f32const = p_src_1->f32const - p_src_2->f32const;
             }
             break;
         case ast_exp_op_mul:
-            if (type == type_int) {
-                p_src_1->intconst = p_src_1->intconst * p_src_2->intconst;
+            if (type == type_i32) {
+                p_src_1->i32const = p_src_1->i32const * p_src_2->i32const;
             }
-            else if (type == type_float) {
-                p_src_1->floatconst = p_src_1->floatconst * p_src_2->floatconst;
+            else if (type == type_f32) {
+                p_src_1->f32const = p_src_1->f32const * p_src_2->f32const;
             }
             break;
         case ast_exp_op_div:
-            if (type == type_int) {
-                p_src_1->intconst = p_src_1->intconst / p_src_2->intconst;
+            if (type == type_i32) {
+                p_src_1->i32const = p_src_1->i32const / p_src_2->i32const;
             }
-            else if (type == type_float) {
-                p_src_1->floatconst = p_src_1->floatconst / p_src_2->floatconst;
+            else if (type == type_f32) {
+                p_src_1->f32const = p_src_1->f32const / p_src_2->f32const;
             }
             break;
         case ast_exp_op_mod:
-            p_src_1->intconst = p_src_1->intconst % p_src_2->intconst;
+            p_src_1->i32const = p_src_1->i32const % p_src_2->i32const;
             break;
         default:
             assert(1);
@@ -234,11 +234,11 @@ p_ast_exp ast_exp_relational_gen(ast_exp_relational_op r_op, p_ast_exp p_rsrc_1,
     p_rsrc_1 = exp_ptr_to_val_check_basic(p_rsrc_1);
     p_rsrc_2 = exp_ptr_to_val_check_basic(p_rsrc_2);
 
-    if (p_rsrc_1->p_type->basic == type_float) {
-        p_rsrc_2 = ast_exp_cov_gen(p_rsrc_2, type_float);
+    if (p_rsrc_1->p_type->basic == type_f32) {
+        p_rsrc_2 = ast_exp_cov_gen(p_rsrc_2, type_f32);
     }
-    else if (p_rsrc_2->p_type->basic == type_float) {
-        p_rsrc_1 = ast_exp_cov_gen(p_rsrc_1, type_float);
+    else if (p_rsrc_2->p_type->basic == type_f32) {
+        p_rsrc_1 = ast_exp_cov_gen(p_rsrc_1, type_f32);
     }
 
     p_ast_exp p_exp = malloc(sizeof(*p_exp));
@@ -247,7 +247,7 @@ p_ast_exp ast_exp_relational_gen(ast_exp_relational_op r_op, p_ast_exp p_rsrc_1,
         .r_op = r_op,
         .p_rsrc_1 = p_rsrc_1,
         .p_rsrc_2 = p_rsrc_2,
-        .p_type = symbol_type_var_gen(type_int),
+        .p_type = symbol_type_var_gen(type_i32),
         .p_des = NULL,
     };
     return p_exp;
@@ -266,7 +266,7 @@ p_ast_exp ast_exp_logic_gen(ast_exp_logic_op l_op, p_ast_exp p_bool_1, p_ast_exp
         .l_op = l_op,
         .p_bool_1 = p_bool_1,
         .p_bool_2 = p_bool_2,
-        .p_type = symbol_type_var_gen(type_int),
+        .p_type = symbol_type_var_gen(type_i32),
         .p_des = NULL,
     };
     return p_exp;
@@ -282,7 +282,7 @@ p_ast_exp ast_exp_ulogic_gen(ast_exp_ulogic_op ul_op, p_ast_exp p_bool) {
         .kind = ast_exp_ulogic,
         .ul_op = ul_op,
         .p_bool = p_bool,
-        .p_type = symbol_type_var_gen(type_int),
+        .p_type = symbol_type_var_gen(type_i32),
         .p_des = NULL,
     };
     return p_exp;
@@ -293,15 +293,15 @@ p_ast_exp ast_exp_unary_gen(ast_exp_unary_op u_op, p_ast_exp p_src) {
 
     basic_type type = p_src->p_type->basic;
     if (u_op == ast_exp_op_bool_not) {
-        type = type_int;
+        type = type_i32;
     }
 
     if (p_src->kind == ast_exp_num) {
         switch (u_op) {
         case ast_exp_op_minus:
-            if (p_src->p_type->basic == type_int) p_src->intconst = -p_src->intconst;
-            else if (p_src->p_type->basic == type_float)
-                p_src->floatconst = -p_src->floatconst;
+            if (p_src->p_type->basic == type_i32) p_src->i32const = -p_src->i32const;
+            else if (p_src->p_type->basic == type_f32)
+                p_src->f32const = -p_src->f32const;
             break;
         default:
             assert(1);
@@ -418,22 +418,22 @@ p_ast_exp ast_exp_load_gen(p_ast_exp p_ptr) {
     return exp_val_const(p_exp);
 }
 
-p_ast_exp ast_exp_int_gen(INTCONST_t num) {
+p_ast_exp ast_exp_int_gen(I32CONST_t num) {
     p_ast_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (ast_exp) {
         .kind = ast_exp_num,
-        .intconst = num,
-        .p_type = symbol_type_var_gen(type_int),
+        .i32const = num,
+        .p_type = symbol_type_var_gen(type_i32),
         .p_des = NULL,
     };
     return p_exp;
 }
-p_ast_exp ast_exp_float_gen(FLOATCONST_t num) {
+p_ast_exp ast_exp_float_gen(F32CONST_t num) {
     p_ast_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (ast_exp) {
         .kind = ast_exp_num,
-        .floatconst = num,
-        .p_type = symbol_type_var_gen(type_float),
+        .f32const = num,
+        .p_type = symbol_type_var_gen(type_f32),
         .p_des = NULL,
     };
     return p_exp;

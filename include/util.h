@@ -2,8 +2,8 @@
 #define __UTIL__
 
 #include <stdint.h>
-typedef int64_t INTCONST_t;
-typedef double FLOATCONST_t;
+typedef int32_t I32CONST_t;
+typedef float F32CONST_t;
 
 #include <assert.h>
 #include <stdbool.h>

@@ -2,8 +2,8 @@
 #define __IR_GEN_OPERAND__
 
 #include <ir/operand.h>
-p_ir_operand ir_operand_int_gen(INTCONST_t intconst);
-p_ir_operand ir_operand_float_gen(FLOATCONST_t floatconst);
+p_ir_operand ir_operand_int_gen(I32CONST_t intconst);
+p_ir_operand ir_operand_float_gen(F32CONST_t floatconst);
 p_ir_operand ir_operand_str_gen(p_symbol_str strconst);
 p_ir_operand ir_operand_void_gen(void);
 

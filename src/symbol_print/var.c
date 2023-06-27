@@ -31,10 +31,10 @@ void symbol_init_print(p_symbol_var p_var) {
     printf(" = {");
     for (size_t i = 0; i < p_var->p_init->size; ++i) {
         if (i > 0) printf(", ");
-        if (p_var->p_init->basic == type_int)
-            printf("%ld", p_var->p_init->memory[i].i);
+        if (p_var->p_init->basic == type_i32)
+            printf("%d", p_var->p_init->memory[i].i);
         else
-            printf("%lf", p_var->p_init->memory[i].f);
+            printf("%f", p_var->p_init->memory[i].f);
     }
     printf("}\n");
 }

@@ -20,22 +20,22 @@ p_ir_operand ir_operand_str_gen(p_symbol_str strconst) {
     return p_ir_int;
 }
 
-p_ir_operand ir_operand_int_gen(INTCONST_t intconst) {
+p_ir_operand ir_operand_int_gen(I32CONST_t intconst) {
     p_ir_operand p_ir_int = malloc(sizeof(*p_ir_int));
     *p_ir_int = (ir_operand) {
-        .intconst = intconst,
+        .i32const = intconst,
         .kind = imme,
-        .p_type = symbol_type_var_gen(type_int),
+        .p_type = symbol_type_var_gen(type_i32),
     };
     return p_ir_int;
 }
 
-p_ir_operand ir_operand_float_gen(FLOATCONST_t floatconst) {
+p_ir_operand ir_operand_float_gen(F32CONST_t floatconst) {
     p_ir_operand p_ir_float = malloc(sizeof(*p_ir_float));
     *p_ir_float = (ir_operand) {
-        .floatconst = floatconst,
+        .f32const = floatconst,
         .kind = imme,
-        .p_type = symbol_type_var_gen(type_float),
+        .p_type = symbol_type_var_gen(type_f32),
     };
     return p_ir_float;
 }

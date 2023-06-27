@@ -105,27 +105,27 @@ static inline void syntax_rtlib_decl(p_syntax_info p_info, basic_type type, char
     p_info->p_func = NULL;
 }
 void syntax_rtlib_func_init(p_syntax_info p_info) {
-    syntax_rtlib_decl(p_info, type_int, "getint", NULL, NULL, false);
-    syntax_rtlib_decl(p_info, type_int, "getch", NULL, NULL, false);
-    syntax_rtlib_decl(p_info, type_float, "getfloat", NULL, NULL, false);
+    syntax_rtlib_decl(p_info, type_i32, "getint", NULL, NULL, false);
+    syntax_rtlib_decl(p_info, type_i32, "getch", NULL, NULL, false);
+    syntax_rtlib_decl(p_info, type_f32, "getfloat", NULL, NULL, false);
 
-    p_symbol_type p_type = symbol_type_var_gen(type_int);
+    p_symbol_type p_type = symbol_type_var_gen(type_i32);
     symbol_type_push_ptr(p_type);
-    syntax_rtlib_decl(p_info, type_int, "getarray", p_type, NULL, false);
-    p_type = symbol_type_var_gen(type_float);
+    syntax_rtlib_decl(p_info, type_i32, "getarray", p_type, NULL, false);
+    p_type = symbol_type_var_gen(type_f32);
     symbol_type_push_ptr(p_type);
-    syntax_rtlib_decl(p_info, type_int, "getfarray", p_type, NULL, false);
+    syntax_rtlib_decl(p_info, type_i32, "getfarray", p_type, NULL, false);
 
-    syntax_rtlib_decl(p_info, type_void, "putint", symbol_type_var_gen(type_int), NULL, false);
-    syntax_rtlib_decl(p_info, type_void, "putch", symbol_type_var_gen(type_int), NULL, false);
-    syntax_rtlib_decl(p_info, type_void, "putfloat", symbol_type_var_gen(type_float), NULL, false);
+    syntax_rtlib_decl(p_info, type_void, "putint", symbol_type_var_gen(type_i32), NULL, false);
+    syntax_rtlib_decl(p_info, type_void, "putch", symbol_type_var_gen(type_i32), NULL, false);
+    syntax_rtlib_decl(p_info, type_void, "putfloat", symbol_type_var_gen(type_f32), NULL, false);
 
-    p_type = symbol_type_var_gen(type_int);
+    p_type = symbol_type_var_gen(type_i32);
     symbol_type_push_ptr(p_type);
-    syntax_rtlib_decl(p_info, type_void, "putarray", symbol_type_var_gen(type_int), p_type, false);
-    p_type = symbol_type_var_gen(type_float);
+    syntax_rtlib_decl(p_info, type_void, "putarray", symbol_type_var_gen(type_i32), p_type, false);
+    p_type = symbol_type_var_gen(type_f32);
     symbol_type_push_ptr(p_type);
-    syntax_rtlib_decl(p_info, type_void, "putfarray", symbol_type_var_gen(type_int), p_type, false);
+    syntax_rtlib_decl(p_info, type_void, "putfarray", symbol_type_var_gen(type_i32), p_type, false);
 
     syntax_rtlib_decl(p_info, type_void, "putf", symbol_type_var_gen(type_str), NULL, true);
 
@@ -165,11 +165,11 @@ p_syntax_decl_head syntax_declaration(p_syntax_info p_info, p_syntax_decl_head p
                 p_ast_exp p_rval = syntax_init_get_exp(p_s_init, p_type, i);
                 if (!p_rval) p_rval = ast_exp_int_gen(0);
                 else p_rval = ast_exp_ptr_check_const(p_rval);
-                if (p_init->basic == type_int) {
-                    init_val.i = p_rval->intconst;
+                if (p_init->basic == type_i32) {
+                    init_val.i = p_rval->i32const;
                 }
                 else {
-                    init_val.f = p_rval->floatconst;
+                    init_val.f = p_rval->f32const;
                 }
                 ast_exp_drop(p_rval);
                 symbol_init_add(p_init, i, init_val);
@@ -199,11 +199,11 @@ p_syntax_decl_head syntax_declaration(p_syntax_info p_info, p_syntax_decl_head p
             p_ast_exp p_rval = syntax_init_get_exp(p_s_init, p_type, i);
             if (!p_rval) p_rval = ast_exp_int_gen(0);
             else p_rval = ast_exp_ptr_check_const(p_rval);
-            if (p_init->basic == type_int) {
-                init_val.i = p_rval->intconst;
+            if (p_init->basic == type_i32) {
+                init_val.i = p_rval->i32const;
             }
             else {
-                init_val.f = p_rval->floatconst;
+                init_val.f = p_rval->f32const;
             }
             ast_exp_drop(p_rval);
             symbol_init_add(p_init, i, init_val);

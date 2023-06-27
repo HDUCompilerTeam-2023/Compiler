@@ -6,8 +6,8 @@
 
 struct symbol_init_val {
     union {
-        INTCONST_t i;
-        FLOATCONST_t f;
+        I32CONST_t i;
+        F32CONST_t f;
     };
 };
 
