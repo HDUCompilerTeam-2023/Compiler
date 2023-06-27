@@ -9,6 +9,7 @@ struct graph_alloca_info {
     p_conflict_graph p_s_graph;
     p_bitmap *block_live_in;
     p_bitmap *block_live_out;
+    p_bitmap *block_branch_live_in;
     p_bitmap *instr_live_in;
     p_bitmap *instr_live_out;
     p_ir_vreg *p_vregs;

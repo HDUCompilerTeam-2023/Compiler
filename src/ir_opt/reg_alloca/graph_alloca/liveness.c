@@ -6,6 +6,8 @@
 static void p_live_in_statments(p_graph_alloca_info p_info, p_ir_instr p_instr, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
 static void p_live_out_statments(p_graph_alloca_info p_info, p_ir_instr p_instr, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
 static void p_live_out_block(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
+static void p_live_in_block(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
+static void p_live_in_branch(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
 
 static inline void add_graph_edge_(p_graph_alloca_info p_info, p_ir_vreg r1, p_ir_vreg r2) {
     assert(r1 != r2);
@@ -15,22 +17,23 @@ static inline void add_graph_edge_(p_graph_alloca_info p_info, p_ir_vreg r1, p_i
         add_graph_edge(p_node1, p_node2);
 }
 
-void p_live_in_statments(p_graph_alloca_info p_info, p_ir_instr p_instr, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
+static inline bool in_bb_phi_list(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
+        p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
+        if (p_phi == p_vreg)
+            return true;
+        add_graph_edge_(p_info, p_phi, p_vreg);
+    }
+    return false;
+}
+
+static void p_live_in_statments(p_graph_alloca_info p_info, p_ir_instr p_instr, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
     bitmap_add_element(p_info->instr_live_in[p_instr->instr_id], p_vreg->id);
     if (&p_instr->node == p_basic_block->instr_list.p_next) {
-        p_list_head p_node;
-        list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
-            p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
-            if (p_phi == p_vreg)
-                return;
-            add_graph_edge_(p_info, p_phi, p_vreg);
-        }
-
-        bitmap_add_element(p_info->block_live_in[p_basic_block->block_id], p_vreg->id);
-        list_for_each(p_node, &p_basic_block->prev_basic_block_list) {
-            p_ir_basic_block p_prev_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
-            p_live_out_block(p_info, p_prev_block, p_vreg);
-        }
+        if (in_bb_phi_list(p_info, p_basic_block, p_vreg))
+            return;
+        p_live_in_block(p_info, p_basic_block, p_vreg);
     }
     else {
         p_ir_instr p_last_instr = list_entry(p_instr->node.p_prev, ir_instr, node);
@@ -44,7 +47,7 @@ static inline void p_live_in_statments_(p_graph_alloca_info p_info, p_ir_instr p
     }
 }
 
-void p_live_out_statments(p_graph_alloca_info p_info, p_ir_instr p_instr, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
+static void p_live_out_statments(p_graph_alloca_info p_info, p_ir_instr p_instr, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
     bitmap_add_element(p_info->instr_live_out[p_instr->instr_id], p_vreg->id);
     p_ir_vreg p_des = ir_instr_get_des(p_instr);
     if (p_des) {
@@ -56,20 +59,42 @@ void p_live_out_statments(p_graph_alloca_info p_info, p_ir_instr p_instr, p_ir_b
     else
         p_live_in_statments(p_info, p_instr, p_basic_block, p_vreg);
 }
-static inline void p_live_out_statments_(p_graph_alloca_info p_info, p_ir_instr p_instr, p_ir_basic_block p_basic_block, p_ir_operand p_operand) {
-    if (p_operand->kind == reg) {
-        symbol_func_basic_block_init_visited(p_info->p_func);
-        p_live_out_statments(p_info, p_instr, p_basic_block, p_operand->p_vreg);
+
+static void p_live_in_branch(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
+    bitmap_add_element(p_info->block_branch_live_in[p_basic_block->block_id], p_vreg->id);
+    if (list_head_alone(&p_basic_block->instr_list)) {
+        if (in_bb_phi_list(p_info, p_basic_block, p_vreg))
+            return;
+        p_live_in_block(p_info, p_basic_block, p_vreg);
+    }
+    else {
+        p_ir_instr p_last_instr = list_entry(p_basic_block->instr_list.p_prev, ir_instr, node);
+        p_live_out_statments(p_info, p_last_instr, p_basic_block, p_vreg);
     }
 }
 
-void p_live_out_block(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
+static void p_live_in_branch_(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_operand p_operand) {
+    if (p_operand->kind == reg) {
+        symbol_func_basic_block_init_visited(p_info->p_func);
+        p_live_in_branch(p_info, p_basic_block, p_operand->p_vreg);
+    }
+}
+
+static void p_live_out_block(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
     if (p_basic_block->if_visited)
         return;
     p_basic_block->if_visited = true;
     bitmap_add_element(p_info->block_live_out[p_basic_block->block_id], p_vreg->id);
-    p_ir_instr p_last_instr = list_entry(p_basic_block->instr_list.p_prev, ir_instr, node);
-    p_live_out_statments(p_info, p_last_instr, p_basic_block, p_vreg);
+    p_live_in_branch(p_info, p_basic_block, p_vreg);
+}
+
+void p_live_in_block(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
+    bitmap_add_element(p_info->block_live_in[p_basic_block->block_id], p_vreg->id);
+    p_list_head p_node;
+    list_for_each(p_node, &p_basic_block->prev_basic_block_list) {
+        p_ir_basic_block p_prev_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
+        p_live_out_block(p_info, p_prev_block, p_vreg);
+    }
 }
 
 static inline void set_live(p_graph_alloca_info p_info, p_ir_bb_phi_list p_list, p_bitmap p_b) {
@@ -129,6 +154,7 @@ void set_func_live(p_graph_alloca_info p_info, p_symbol_func p_func) {
         p_ir_basic_block p_block = list_entry(p_block_node, ir_basic_block, node);
         set_live(p_info, p_block->p_live_in, p_info->block_live_in[p_block->block_id]);
         set_live(p_info, p_block->p_live_out, p_info->block_live_out[p_block->block_id]);
+        set_live(p_info, p_block->p_branch->p_live_in, p_info->block_branch_live_in[p_block->block_id]);
         p_list_head p_instr_node;
         list_for_each(p_instr_node, &p_block->instr_list) {
             p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
@@ -176,12 +202,11 @@ void liveness_analysis(p_graph_alloca_info p_info, p_symbol_func p_func) {
                 assert(0);
             }
         }
-        p_ir_instr p_last_instr = list_entry(p_basic_block->instr_list.p_prev, ir_instr, node);
         switch (p_basic_block->p_branch->kind) {
         case ir_br_branch:
             list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                p_live_out_statments_(p_info, p_last_instr, p_basic_block, p_param);
+                p_live_in_branch_(p_info, p_basic_block, p_param);
             }
             break;
         case ir_cond_branch:
@@ -189,16 +214,16 @@ void liveness_analysis(p_graph_alloca_info p_info, p_symbol_func p_func) {
             // p_live_out_statments_(p_info, p_last_instr, p_basic_block, p_basic_block->p_branch->p_exp);
             list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                p_live_out_statments_(p_info, p_last_instr, p_basic_block, p_param);
+                p_live_in_branch_(p_info, p_basic_block, p_param);
             }
             list_for_each(p_node, &p_basic_block->p_branch->p_target_2->p_block_param->bb_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                p_live_out_statments_(p_info, p_last_instr, p_basic_block, p_param);
+                p_live_in_branch_(p_info, p_basic_block, p_param);
             }
             break;
         case ir_ret_branch:
             if (p_basic_block->p_branch->p_exp)
-                p_live_out_statments_(p_info, p_last_instr, p_basic_block, p_basic_block->p_branch->p_exp);
+                p_live_in_branch_(p_info, p_basic_block, p_basic_block->p_branch->p_exp);
             break;
         case ir_abort_branch:
             break;

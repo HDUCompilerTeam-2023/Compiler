@@ -14,6 +14,7 @@ struct ir_basic_block_branch {
     ir_basic_block_branch_kind kind;
     p_ir_basic_block_branch_target p_target_1, p_target_2;
     p_ir_operand p_exp;
+    p_ir_bb_phi_list p_live_in;
 };
 
 struct ir_basic_block {
