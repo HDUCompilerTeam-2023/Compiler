@@ -119,9 +119,8 @@ void pre_color(p_graph_alloca_info p_info, p_symbol_func p_func) {
     }
 }
 
-static inline p_conflict_graph get_graph(p_graph_alloca_info p_info, p_ir_vreg p_vreg)
-{
-    if(p_vreg->if_float)
+static inline p_conflict_graph get_graph(p_graph_alloca_info p_info, p_ir_vreg p_vreg) {
+    if (p_vreg->if_float)
         return p_info->p_s_graph;
     return p_info->p_r_graph;
 }
@@ -169,6 +168,38 @@ static inline bool check_spill(p_conflict_graph p_graph, p_graph_node p_g_node, 
     return true;
 }
 
+static inline void live_list_add(p_ir_bb_phi_list p_live, p_ir_vreg p_vreg) {
+    p_list_head p_head = p_live->bb_phi.p_next;
+    p_list_head p_tail = p_live->bb_phi.p_prev;
+    while (p_head != &p_live->bb_phi) {
+        p_ir_vreg p_live_vreg_head = list_entry(p_head, ir_bb_phi, node)->p_bb_phi;
+        p_ir_vreg p_live_vreg_tail = list_entry(p_tail, ir_bb_phi, node)->p_bb_phi;
+        if (p_live_vreg_head == p_vreg) return;
+        if (p_live_vreg_tail == p_vreg) return;
+        if (p_live_vreg_head->id >= p_vreg->id) {
+            p_ir_bb_phi p_live_vreg = malloc(sizeof(*p_live_vreg));
+            p_live_vreg->node = list_head_init(&p_live_vreg->node);
+            p_live_vreg->p_bb_phi = p_vreg;
+            list_add_prev(&p_live_vreg->node, p_head);
+            return;
+        }
+        if (p_live_vreg_tail->id <= p_vreg->id) {
+            p_ir_bb_phi p_live_vreg = malloc(sizeof(*p_live_vreg));
+            p_live_vreg->node = list_head_init(&p_live_vreg->node);
+            p_live_vreg->p_bb_phi = p_vreg;
+            list_add_next(&p_live_vreg->node, p_tail);
+            return;
+        }
+        p_head = p_head->p_next;
+        p_tail = p_tail->p_prev;
+    }
+    // 活跃集为空
+    p_ir_bb_phi p_live_vreg = malloc(sizeof(*p_live_vreg));
+    p_live_vreg->node = list_head_init(&p_live_vreg->node);
+    p_live_vreg->p_bb_phi = p_vreg;
+    list_add_next(&p_live_vreg->node, p_head);
+}
+
 static void new_store_front(p_graph_alloca_info p_info, p_ir_vreg p_vreg, p_ir_basic_block p_basic_block, p_symbol_func p_func) {
     p_conflict_graph p_graph = get_graph(p_info, p_vreg);
     p_graph_node p_g_node = (p_graph_node) p_vreg->p_info;
@@ -185,7 +216,7 @@ static void new_store_front(p_graph_alloca_info p_info, p_ir_vreg p_vreg, p_ir_b
     list_add_next(&p_store->node, &p_basic_block->instr_list);
     copy_live(p_store->p_live_out, p_live_in);
     copy_live(p_store->p_live_in, p_live_in);
-    ir_bb_phi_list_add(p_store->p_live_in, p_vreg);
+    live_list_add(p_store->p_live_in, p_vreg);
 }
 
 static void new_store_middle(p_graph_alloca_info p_info, p_ir_vreg p_vreg, p_ir_instr p_instr, p_symbol_func p_func) {
@@ -197,7 +228,7 @@ static void new_store_middle(p_graph_alloca_info p_info, p_ir_vreg p_vreg, p_ir_
     list_add_next(&p_store->node, &p_instr->node);
     // 改变活跃集合
     copy_live(p_store->p_live_out, p_instr->p_live_out);
-    ir_bb_phi_list_add(p_instr->p_live_out, p_vreg);
+    live_list_add(p_instr->p_live_out, p_vreg);
     copy_live(p_store->p_live_in, p_instr->p_live_out);
     update_graph(p_info, p_store->p_live_out, p_o_node->p_def_node);
 }
@@ -219,7 +250,7 @@ static void new_load(p_graph_alloca_info p_info, p_ir_operand p_operand, p_ir_in
     p_operand->p_vreg = p_new_src;
     // 改变活跃集合和冲突图
     copy_live(p_load->p_live_in, p_live_in);
-    ir_bb_phi_list_add(p_live_in, p_new_src);
+    live_list_add(p_live_in, p_new_src);
     copy_live(p_load->p_live_out, p_live_in);
     p_list_head p_node;
     list_for_each(p_node, &p_load->p_live_in->bb_phi) {
