@@ -8,6 +8,7 @@ static inline p_ir_basic_block_branch ir_basic_block_branch_gen() {
         .p_exp = NULL,
         .p_target_1 = NULL,
         .p_target_2 = NULL,
+        .p_live_in = ir_bb_phi_list_init(),
     };
     return p_branch;
 }
@@ -22,6 +23,7 @@ static inline void ir_basic_block_branch_drop(p_ir_basic_block_branch p_branch) 
         ir_basic_block_branch_target_drop(p_branch->p_target_1);
         ir_basic_block_branch_target_drop(p_branch->p_target_2);
     }
+    ir_bb_phi_list_drop(p_branch->p_live_in);
     free(p_branch);
 }
 

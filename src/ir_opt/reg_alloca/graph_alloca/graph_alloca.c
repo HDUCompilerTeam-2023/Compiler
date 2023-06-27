@@ -42,11 +42,14 @@ p_graph_alloca_info graph_alloca_info_gen(size_t reg_num_r, size_t reg_num_s, p_
     p_info->p_s_graph = conflict_graph_gen(nums, p_nodes_s, reg_num_s);
     p_info->block_live_in = malloc(sizeof(void *) * p_func->block_cnt);
     p_info->block_live_out = malloc(sizeof(void *) * p_func->block_cnt);
+    p_info->block_branch_live_in = malloc(sizeof(void *) * p_func->block_cnt);
     for (size_t i = 0; i < p_func->block_cnt; i++) {
         p_info->block_live_in[i] = bitmap_gen(vreg_num);
         bitmap_set_empty(p_info->block_live_in[i]);
-        *(p_info->block_live_out + i) = bitmap_gen(vreg_num);
+        p_info->block_live_out[i] = bitmap_gen(vreg_num);
         bitmap_set_empty(p_info->block_live_out[i]);
+        p_info->block_branch_live_in[i] = bitmap_gen(vreg_num);
+        bitmap_set_empty(p_info->block_branch_live_in[i]);
     }
     p_ir_basic_block p_last_block = list_entry(p_func->block.p_prev, ir_basic_block, node);
     while (list_head_alone(&p_last_block->instr_list))
@@ -78,6 +81,7 @@ void graph_alloca_info_drop(p_graph_alloca_info p_info) {
     for (size_t i = 0; i < p_info->p_func->block_cnt; i++) {
         bitmap_drop(p_info->block_live_in[i]);
         bitmap_drop(p_info->block_live_out[i]);
+        bitmap_drop(p_info->block_branch_live_in[i]);
     }
     p_ir_basic_block p_last_block = list_entry(p_info->p_func->block.p_prev, ir_basic_block, node);
     while (list_head_alone(&p_last_block->instr_list))
@@ -89,6 +93,7 @@ void graph_alloca_info_drop(p_graph_alloca_info p_info) {
     }
     free(p_info->block_live_in);
     free(p_info->block_live_out);
+    free(p_info->block_branch_live_in);
     free(p_info->instr_live_in);
     free(p_info->instr_live_out);
     free(p_info->p_vregs);
@@ -259,6 +264,7 @@ void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
             p_instr_node = p_instr_node_next;
         }
 
+        deal_live_set(p_graph, p_basic_block->p_branch->p_live_in);
         switch (p_basic_block->p_branch->kind) {
         case ir_br_branch:
             list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
