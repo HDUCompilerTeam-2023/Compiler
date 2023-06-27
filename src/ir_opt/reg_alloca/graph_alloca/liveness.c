@@ -9,21 +9,13 @@ static void p_live_out_block(p_graph_alloca_info p_info, p_ir_basic_block p_basi
 static void p_live_in_block(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
 static void p_live_in_branch(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
 
-static inline void add_graph_edge_(p_graph_alloca_info p_info, p_ir_vreg r1, p_ir_vreg r2) {
-    assert(r1 != r2);
-    p_graph_node p_node1 = (p_graph_node) r1->p_info;
-    p_graph_node p_node2 = (p_graph_node) r2->p_info;
-    if (r1->if_float == r2->if_float)
-        add_graph_edge(p_node1, p_node2);
-}
-
 static inline bool in_bb_phi_list(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
     p_list_head p_node;
     list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
         p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
         if (p_phi == p_vreg)
             return true;
-        add_graph_edge_(p_info, p_phi, p_vreg);
+        add_reg_graph_edge(p_phi, p_vreg);
     }
     return false;
 }
@@ -52,7 +44,7 @@ static void p_live_out_statments(p_graph_alloca_info p_info, p_ir_instr p_instr,
     p_ir_vreg p_des = ir_instr_get_des(p_instr);
     if (p_des) {
         if (p_des != p_vreg) {
-            add_graph_edge_(p_info, p_vreg, p_des);
+            add_reg_graph_edge(p_vreg, p_des);
             p_live_in_statments(p_info, p_instr, p_basic_block, p_vreg);
         }
     }

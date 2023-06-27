@@ -97,6 +97,14 @@ void add_graph_edge(p_graph_node r1, p_graph_node r2) {
     }
 }
 
+void add_reg_graph_edge(p_ir_vreg r1, p_ir_vreg r2) {
+    assert(r1 != r2);
+    p_graph_node p_node1 = (p_graph_node) r1->p_info;
+    p_graph_node p_node2 = (p_graph_node) r2->p_info;
+    if (r1->if_float == r2->if_float)
+        add_graph_edge(p_node1, p_node2);
+}
+
 bool if_in_neighbors(p_graph_node p_g_node, p_graph_node p_n_node) {
     p_list_head p_node;
     list_for_each(p_node, &p_g_node->neighbors) {
