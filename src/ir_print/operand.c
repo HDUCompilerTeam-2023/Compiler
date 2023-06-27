@@ -17,10 +17,10 @@ void ir_operand_print(p_ir_operand p_operand) {
             symbol_name_print(p_operand->p_vmem);
             printf(")");
         }
-        else if (p_operand->p_type->basic == type_int)
-            printf(" %ld", p_operand->intconst);
-        else if (p_operand->p_type->basic == type_float)
-            printf(" %f", p_operand->floatconst);
+        else if (p_operand->p_type->basic == type_i32)
+            printf(" %d", p_operand->i32const);
+        else if (p_operand->p_type->basic == type_f32)
+            printf(" %f", p_operand->f32const);
         else if (p_operand->p_type->basic == type_str)
             symbol_str_print(p_operand->strconst);
         break;

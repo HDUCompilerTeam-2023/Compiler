@@ -6,9 +6,9 @@
 void symbol_basic_type_print(basic_type b_type) {
     if (b_type == type_void)
         printf("void");
-    else if (b_type == type_int)
+    else if (b_type == type_i32)
         printf("i32");
-    else if (b_type == type_float)
+    else if (b_type == type_f32)
         printf("f32");
     else if (b_type == type_str)
         printf("str");

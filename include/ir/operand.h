@@ -16,8 +16,8 @@ struct ir_operand {
         };
         struct {
             union {
-                INTCONST_t intconst;
-                FLOATCONST_t floatconst;
+                I32CONST_t i32const;
+                F32CONST_t f32const;
                 p_symbol_str strconst;
                 p_symbol_var p_vmem;
             };

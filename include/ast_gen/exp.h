@@ -20,8 +20,8 @@ p_ast_exp ast_exp_call_gen(p_symbol_func p_func, p_ast_param_list p_param_list);
 p_ast_exp ast_exp_ptr_gen(p_symbol_var p_var);
 p_ast_exp ast_exp_gep_gen(p_ast_exp p_val, p_ast_exp p_offset, bool is_element);
 p_ast_exp ast_exp_load_gen(p_ast_exp p_ptr);
-p_ast_exp ast_exp_int_gen(INTCONST_t num);
-p_ast_exp ast_exp_float_gen(FLOATCONST_t num);
+p_ast_exp ast_exp_int_gen(I32CONST_t num);
+p_ast_exp ast_exp_float_gen(F32CONST_t num);
 p_ast_exp ast_exp_str_gen(p_symbol_str p_str);
 void ast_exp_drop(p_ast_exp p_exp);
 

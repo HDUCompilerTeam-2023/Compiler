@@ -16,9 +16,9 @@ p_syntax_decl syntax_decl_arr(p_syntax_decl p_decl, p_ast_exp p_exp) {
     size_t size = 0;
     if (p_exp) { // TODO
         p_exp = ast_exp_ptr_to_val_check_basic(p_exp);
-        assert(p_exp->p_type->basic == type_int);
-        assert(p_exp->intconst > 0);
-        size = p_exp->intconst;
+        assert(p_exp->p_type->basic == type_i32);
+        assert(p_exp->i32const > 0);
+        size = p_exp->i32const;
         ast_exp_drop(p_exp);
     }
     p_syntax_type_array p_arrary = syntax_type_array_gen(size);

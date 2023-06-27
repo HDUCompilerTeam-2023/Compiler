@@ -8,8 +8,8 @@
 
 #include <limits.h>
 
-INTCONST_t str2int(const char *text, int base, YYLTYPE *loc, yyscan_t scanner);
-FLOATCONST_t str2float(const char *text, YYLTYPE *loc, yyscan_t scanner);
+I32CONST_t str2int(const char *text, int base, YYLTYPE *loc, yyscan_t scanner);
+F32CONST_t str2float(const char *text, YYLTYPE *loc, yyscan_t scanner);
 %}
 
 %option reentrant bison-bridge bison-locations
@@ -46,9 +46,9 @@ NEWLINE   ([\n])
 
 ID        ([_a-zA-Z][_a-zA-Z0-9]*)
 
-HEXINTCONST  (0[xX][0-9a-fA-F]+)
-OCTINTCONST  (0[0-7]*)
-DECINTCONST  ([1-9][0-9]*)
+HEXI32CONST  (0[xX][0-9a-fA-F]+)
+OCTI32CONST  (0[0-7]*)
+DECI32CONST  ([1-9][0-9]*)
 
 HEXFLOATCONST  ((0[xX])(([0-9a-fA-F]*\.?[0-9a-fA-F]+)|([0-9a-fA-F]+\.))([pP][-+]?[0-9]+))
 DECFLOATCONST  (([0-9]+[eE][-+]?[0-9]+)|((([0-9]+\.)|([0-9]*\.[0-9]+))([eE][-+]?[0-9]+)?))
@@ -88,34 +88,34 @@ STRING (["][^"\n]*["])
     return ID;
 }
 
-{DECINTCONST} {
-    INTCONST_t val = str2int(yytext, 10, yylloc, yyscanner);
+{DECI32CONST} {
+    I32CONST_t val = str2int(yytext, 10, yylloc, yyscanner);
 
-    yylval->INTCONST = val;
-    return INTCONST;
+    yylval->I32CONST = val;
+    return I32CONST;
 }
-{OCTINTCONST} {
-    INTCONST_t val = str2int(yytext, 8, yylloc, yyscanner);
+{OCTI32CONST} {
+    I32CONST_t val = str2int(yytext, 8, yylloc, yyscanner);
 
-    yylval->INTCONST = val;
-    return INTCONST;
+    yylval->I32CONST = val;
+    return I32CONST;
 }
-{HEXINTCONST} {
-    INTCONST_t val = str2int(yytext, 16, yylloc, yyscanner);
+{HEXI32CONST} {
+    I32CONST_t val = str2int(yytext, 16, yylloc, yyscanner);
 
-    yylval->INTCONST = val;
-    return INTCONST;
+    yylval->I32CONST = val;
+    return I32CONST;
 }
 
 {DECFLOATCONST} {
-    FLOATCONST_t val = str2float(yytext, yylloc, yyscanner);
-    yylval->FLOATCONST = val;
-    return FLOATCONST;
+    F32CONST_t val = str2float(yytext, yylloc, yyscanner);
+    yylval->F32CONST = val;
+    return F32CONST;
 }
 {HEXFLOATCONST} {
-    FLOATCONST_t val = str2float(yytext, yylloc, yyscanner);
-    yylval->FLOATCONST = val;
-    return FLOATCONST;
+    F32CONST_t val = str2float(yytext, yylloc, yyscanner);
+    yylval->F32CONST = val;
+    return F32CONST;
 }
 
 {STRING} {
@@ -143,24 +143,25 @@ STRING (["][^"\n]*["])
 
 . { yyerror(yylloc, yyscanner, "lexical error, unexpected \"%s\"", yytext); }
 %%
-INTCONST_t str2int(const char *text, int base, YYLTYPE *loc, yyscan_t scanner) {
+I32CONST_t str2int(const char *text, int base, YYLTYPE *loc, yyscan_t scanner) {
     char *endptr;
     errno = 0;
-    INTCONST_t tmp = strtoll(text, &endptr, base);
+    long long tmp = strtoll(text, &endptr, base);
     if ((errno == ERANGE && tmp == LLONG_MAX)) {
         yyerror(loc, scanner, "lexical error, integer constant too big\"%s\": %m", text);
         tmp = 0;
         errno = 0;
     }
+    I32CONST_t ret = tmp;
     if (*endptr != '\0') {
         yyerror(loc, scanner, "integer constant suffix \"%s\"", endptr);
     }
-    return tmp;
+    return ret;
 }
-FLOATCONST_t str2float(const char *text, YYLTYPE *loc, yyscan_t scanner) {
+F32CONST_t str2float(const char *text, YYLTYPE *loc, yyscan_t scanner) {
     char *endptr;
     errno = 0;
-    FLOATCONST_t tmp = strtod(text, &endptr);
+    F32CONST_t tmp = strtod(text, &endptr);
     if (errno == ERANGE) {
         yyerror(loc, scanner, "lexical error, wrong float constant \"%s\": %m", text);
         tmp = 0;

@@ -43,8 +43,8 @@
 
        char *ID;
        char *STRING;
-       INTCONST_t INTCONST;
-       FLOATCONST_t FLOATCONST;
+       I32CONST_t I32CONST;
+       F32CONST_t F32CONST;
 }
 %type <p_exp> Cond
 %type <p_exp> LOrExp
@@ -101,8 +101,8 @@
 %token AND OR LE GE EQ NEQ
 %token SELFADD SELFSUB
 
-%token <INTCONST> INTCONST
-%token <FLOATCONST> FLOATCONST
+%token <I32CONST> I32CONST
+%token <F32CONST> F32CONST
 %token <ID> ID
 %destructor { free($$); } ID
 %token <STRING> STRING
@@ -121,8 +121,8 @@ CompUnit : CompUnit Declaration
          | /* *empty */             { syntax_rtlib_func_init(extra); }
          ;
 
-Type : INT   { $$ = type_int; }
-     | FLOAT { $$ = type_float; }
+Type : INT   { $$ = type_i32; }
+     | FLOAT { $$ = type_f32; }
      ;
 
 Declaration : ConstDeclaration
@@ -243,8 +243,8 @@ UnaryExp : '-' UnaryExp     { $$ = ast_exp_unary_gen(ast_exp_op_minus, $2); }
          ;
 
 PrimaryExp : '(' Exp ')' { $$ = $2; }
-           | INTCONST    { $$ = ast_exp_int_gen($1); }
-           | FLOATCONST  { $$ = ast_exp_float_gen($1); }
+           | I32CONST    { $$ = ast_exp_int_gen($1); }
+           | F32CONST    { $$ = ast_exp_float_gen($1); }
            | Val         { $$ = $1; }
            | Call        { $$ = $1; }
            | Str         { $$ = $1; }

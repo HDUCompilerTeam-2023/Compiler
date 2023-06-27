@@ -146,11 +146,11 @@ static inline p_ir_instr ast2ir_exp_ulogic_gen(p_ast2ir_info p_info, p_ast_exp p
     return p_instr;
 }
 static inline p_ir_operand ast2ir_exp_num_gen(p_ast2ir_info p_info, p_ast_exp p_exp) {
-    if (p_exp->p_type->basic == type_int) {
-        return ir_operand_int_gen(p_exp->intconst);
+    if (p_exp->p_type->basic == type_i32) {
+        return ir_operand_int_gen(p_exp->i32const);
     }
-    if (p_exp->p_type->basic == type_float) {
-        return ir_operand_float_gen(p_exp->floatconst);
+    if (p_exp->p_type->basic == type_f32) {
+        return ir_operand_float_gen(p_exp->f32const);
     }
     if (p_exp->p_type->basic == type_str) {
         return ir_operand_str_gen(p_exp->p_str);

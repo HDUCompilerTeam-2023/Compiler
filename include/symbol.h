@@ -12,8 +12,8 @@ typedef struct symbol_str symbol_str, *p_symbol_str;
 typedef enum {
     type_void,
     type_str,
-    type_int,
-    type_float,
+    type_i32,
+    type_f32,
 } basic_type;
 typedef struct symbol_type symbol_type, *p_symbol_type;
 typedef struct symbol_type_array symbol_type_array, *p_symbol_type_array;
