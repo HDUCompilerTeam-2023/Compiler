@@ -203,8 +203,6 @@ static void new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_inst
     p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem), NULL, p_new_src);
     list_add_prev(&p_load->node, &p_instr->node);
     p_operand->p_vreg = p_new_src;
-    if (!p_live_in)
-        p_live_in = p_instr->p_live_in;
     // 改变活跃集合和冲突图
     copy_live(p_load->p_live_in, p_live_in);
     ir_bb_phi_list_add(p_live_in, p_new_src);
@@ -274,33 +272,33 @@ void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
             deal_live_set(p_graph, p_instr->p_live_out);
             switch (p_instr->irkind) {
             case ir_binary:
-                new_load(p_graph, p_instr->ir_binary.p_src1, p_instr, NULL, p_func);
-                new_load(p_graph, p_instr->ir_binary.p_src2, p_instr, NULL, p_func);
+                new_load(p_graph, p_instr->ir_binary.p_src1, p_instr, p_instr->p_live_in, p_func);
+                new_load(p_graph, p_instr->ir_binary.p_src2, p_instr, p_instr->p_live_in, p_func);
                 new_store_middle(p_graph, p_instr->ir_binary.p_des, p_instr, p_func);
                 break;
             case ir_unary:
-                new_load(p_graph, p_instr->ir_unary.p_src, p_instr, NULL, p_func);
+                new_load(p_graph, p_instr->ir_unary.p_src, p_instr, p_instr->p_live_in, p_func);
                 new_store_middle(p_graph, p_instr->ir_unary.p_des, p_instr, p_func);
                 break;
             case ir_call:
                 list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
                     p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
-                    new_load(p_graph, p_param, p_instr, NULL, p_func);
+                    new_load(p_graph, p_param, p_instr, p_instr->p_live_in, p_func);
                 }
                 if (p_instr->ir_call.p_des)
                     new_store_middle(p_graph, p_instr->ir_call.p_des, p_instr, p_func);
                 break;
             case ir_load:
-                new_load(p_graph, p_instr->ir_load.p_addr, p_instr, NULL, p_func);
+                new_load(p_graph, p_instr->ir_load.p_addr, p_instr, p_instr->p_live_in, p_func);
                 if (p_instr->ir_load.p_offset)
-                    new_load(p_graph, p_instr->ir_load.p_offset, p_instr, NULL, p_func);
+                    new_load(p_graph, p_instr->ir_load.p_offset, p_instr, p_instr->p_live_in, p_func);
                 new_store_middle(p_graph, p_instr->ir_load.p_des, p_instr, p_func);
                 break;
             case ir_store:
-                new_load(p_graph, p_instr->ir_store.p_src, p_instr, NULL, p_func);
-                new_load(p_graph, p_instr->ir_store.p_addr, p_instr, NULL, p_func);
+                new_load(p_graph, p_instr->ir_store.p_src, p_instr, p_instr->p_live_in, p_func);
+                new_load(p_graph, p_instr->ir_store.p_addr, p_instr, p_instr->p_live_in, p_func);
                 if (p_instr->ir_store.p_offset)
-                    new_load(p_graph, p_instr->ir_store.p_offset, p_instr, NULL, p_func);
+                    new_load(p_graph, p_instr->ir_store.p_offset, p_instr, p_instr->p_live_in, p_func);
                 break;
             case ir_gep:
                 assert(0);
