@@ -57,6 +57,7 @@ p_graph_alloca_info graph_alloca_info_gen(size_t reg_num_r, size_t reg_num_s, p_
     size_t instr_num = list_entry(p_last_block->instr_list.p_prev, ir_instr, node)->instr_id + 1;
     p_info->instr_live_in = malloc(sizeof(void *) * instr_num);
     p_info->instr_live_out = malloc(sizeof(void *) * instr_num);
+    p_info->instr_num = instr_num;
     for (size_t i = 0; i < instr_num; i++) {
         p_info->instr_live_in[i] = bitmap_gen(vreg_num);
         bitmap_set_empty(p_info->instr_live_in[i]);
@@ -83,11 +84,8 @@ void graph_alloca_info_drop(p_graph_alloca_info p_info) {
         bitmap_drop(p_info->block_live_out[i]);
         bitmap_drop(p_info->block_branch_live_in[i]);
     }
-    p_ir_basic_block p_last_block = list_entry(p_info->p_func->block.p_prev, ir_basic_block, node);
-    while (list_head_alone(&p_last_block->instr_list))
-        p_last_block = list_entry(p_last_block->node.p_prev, ir_basic_block, node);
-    size_t instr_num = list_entry(p_last_block->instr_list.p_prev, ir_instr, node)->instr_id + 1;
-    for (size_t i = 0; i < instr_num; i++) {
+
+    for (size_t i = 0; i < p_info->instr_num; i++) {
         bitmap_drop(p_info->instr_live_in[i]);
         bitmap_drop(p_info->instr_live_out[i]);
     }
@@ -383,6 +381,143 @@ void graph_spill(p_graph_alloca_info p_info, p_symbol_func p_func) {
     new_store_param_front(p_info, p_func);
 }
 
+static inline void combine_remap_operand(p_ir_operand p_operand, p_ir_vreg *p_map) {
+    if (p_operand->kind == reg) {
+        p_operand->p_vreg = p_map[p_operand->p_vreg->id];
+    }
+}
+
+static inline void combine_map_self(p_ir_vreg p_vreg, p_ir_vreg *p_map) {
+    p_map[p_vreg->id] = p_vreg;
+}
+
+static inline void live_set_swap(p_ir_bb_phi_list p_live, p_ir_vreg *p_map, size_t num) {
+    p_list_head p_node, p_node_next;
+    bool *if_have = malloc(sizeof(*if_have) * num);
+    memset(if_have, false, sizeof(*if_have) * num);
+    list_for_each_safe(p_node, p_node_next, &p_live->bb_phi) {
+        p_ir_bb_phi p_live = list_entry(p_node, ir_bb_phi, node);
+        p_ir_vreg p_new_vreg = p_map[p_live->p_bb_phi->id];
+        if (if_have[p_new_vreg->id]) {
+            list_del(p_node);
+            free(p_live);
+            continue;
+        }
+        if_have[p_new_vreg->id] = true;
+        p_live->p_bb_phi = p_new_vreg;
+    }
+    free(if_have);
+}
+
+static void combine_mov(p_symbol_func p_func) {
+    symbol_func_set_vreg_id(p_func);
+    size_t reg_num = p_func->vreg_cnt + p_func->param_reg_cnt;
+    p_ir_vreg *p_map = malloc(sizeof(void *) * reg_num);
+    p_ir_vreg *p_need_del = malloc(sizeof(void *) * reg_num);
+    size_t need_del_num = 0;
+
+    p_list_head p_node;
+    list_for_each(p_node, &p_func->param_reg_list) {
+        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
+        combine_map_self(p_vreg, p_map);
+    }
+
+    p_list_head p_block_node;
+    list_for_each(p_block_node, &p_func->block) {
+        p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
+        live_set_swap(p_basic_block->p_live_in, p_map, reg_num);
+        list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
+            p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
+            combine_map_self(p_phi, p_map);
+        }
+
+        p_list_head p_instr_node, p_instr_node_next;
+        list_for_each_safe(p_instr_node, p_instr_node_next, &p_basic_block->instr_list) {
+            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            live_set_swap(p_instr->p_live_in, p_map, reg_num);
+            switch (p_instr->irkind) {
+            case ir_binary:
+                combine_remap_operand(p_instr->ir_binary.p_src1, p_map);
+                combine_remap_operand(p_instr->ir_binary.p_src2, p_map);
+                combine_map_self(p_instr->ir_binary.p_des, p_map);
+                break;
+            case ir_unary:
+                combine_remap_operand(p_instr->ir_unary.p_src, p_map);
+                if (p_instr->ir_unary.op == ir_val_assign && p_instr->ir_unary.p_src->kind == reg) {
+                    if (p_instr->ir_unary.p_src->p_vreg->if_float == p_instr->ir_unary.p_des->if_float
+                        && p_instr->ir_unary.p_src->p_vreg->reg_id == p_instr->ir_unary.p_des->reg_id) {
+                        p_map[p_instr->ir_unary.p_des->id] = p_instr->ir_unary.p_src->p_vreg;
+                        p_need_del[need_del_num++] = p_instr->ir_unary.p_des;
+                        ir_instr_drop(p_instr);
+                        continue;
+                    }
+                }
+                combine_map_self(p_instr->ir_unary.p_des, p_map);
+                break;
+            case ir_call:
+                list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
+                    p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
+                    combine_remap_operand(p_param, p_map);
+                }
+                if (p_instr->ir_call.p_des)
+                    combine_map_self(p_instr->ir_call.p_des, p_map);
+                break;
+            case ir_load:
+                combine_remap_operand(p_instr->ir_load.p_addr, p_map);
+                if (p_instr->ir_load.p_offset)
+                    combine_remap_operand(p_instr->ir_load.p_offset, p_map);
+                combine_map_self(p_instr->ir_load.p_des, p_map);
+                break;
+            case ir_store:
+                combine_remap_operand(p_instr->ir_store.p_addr, p_map);
+                combine_remap_operand(p_instr->ir_store.p_src, p_map);
+                if (p_instr->ir_store.p_offset)
+                    combine_remap_operand(p_instr->ir_store.p_offset, p_map);
+                break;
+            case ir_gep:
+                assert(0);
+                break;
+            }
+            live_set_swap(p_instr->p_live_out, p_map, reg_num);
+        }
+
+        live_set_swap(p_basic_block->p_branch->p_live_in, p_map, reg_num);
+        switch (p_basic_block->p_branch->kind) {
+        case ir_br_branch:
+            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
+                p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
+                combine_remap_operand(p_param, p_map);
+            }
+            break;
+        case ir_cond_branch:
+            combine_remap_operand(p_basic_block->p_branch->p_exp, p_map);
+            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
+                p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
+                combine_remap_operand(p_param, p_map);
+            }
+            list_for_each(p_node, &p_basic_block->p_branch->p_target_2->p_block_param->bb_param) {
+                p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
+                combine_remap_operand(p_param, p_map);
+            }
+            break;
+        case ir_ret_branch:
+            if (p_basic_block->p_branch->p_exp)
+                combine_remap_operand(p_basic_block->p_branch->p_exp, p_map);
+            break;
+        case ir_abort_branch:
+            assert(0);
+            break;
+        }
+        live_set_swap(p_basic_block->p_live_out, p_map, reg_num);
+    }
+
+    for (size_t i = 0; i < need_del_num; i++) {
+        symbol_func_vreg_del(p_func, p_need_del[i]);
+    }
+    free(p_map);
+    free(p_need_del);
+}
+
 void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     p_graph_alloca_info p_info = graph_alloca_info_gen(reg_num_r, reg_num_s, p_func);
     liveness_analysis(p_info, p_func);
@@ -435,6 +570,7 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     set_graph_color(p_info->p_r_graph);
     set_graph_color(p_info->p_s_graph);
 
+    combine_mov(p_func);
     check_liveness(p_func);
     graph_alloca_info_drop(p_info);
     symbol_func_set_block_id(p_func);
