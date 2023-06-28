@@ -39,9 +39,46 @@ static inline void p_live_in_statments_(p_graph_alloca_info p_info, p_ir_instr p
     }
 }
 
+static inline p_ir_vreg add_edge_with(p_ir_instr p_instr) {
+    switch (p_instr->irkind) {
+    case ir_binary:
+        switch (p_instr->ir_binary.op) {
+        case ir_add_op:
+        case ir_sub_op:
+        case ir_mul_op:
+        case ir_div_op:
+            return p_instr->ir_binary.p_des;
+        case ir_eq_op:
+        case ir_neq_op:
+        case ir_g_op:
+        case ir_geq_op:
+        case ir_l_op:
+        case ir_leq_op:
+            if (p_instr->ir_binary.p_des->if_cond)
+                return NULL;
+            return p_instr->ir_binary.p_des;
+        case ir_and_op:
+        case ir_or_op:
+        case ir_mod_op:
+            assert(0);
+            break;
+        }
+    case ir_call:
+        return p_instr->ir_call.p_des;
+    case ir_unary:
+        return p_instr->ir_unary.p_des;
+    case ir_load:
+        return p_instr->ir_load.p_des;
+    case ir_store:
+        return NULL;
+    case ir_gep:
+        assert(0);
+    }
+}
+
 static void p_live_out_statments(p_graph_alloca_info p_info, p_ir_instr p_instr, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
     bitmap_add_element(p_info->instr_live_out[p_instr->instr_id], p_vreg->id);
-    p_ir_vreg p_des = ir_instr_get_des(p_instr);
+    p_ir_vreg p_des = add_edge_with(p_instr);
     if (p_des) {
         if (p_des != p_vreg) {
             add_reg_graph_edge(p_vreg, p_des);
@@ -83,10 +120,10 @@ static void p_live_out_block(p_graph_alloca_info p_info, p_ir_basic_block p_basi
 void p_live_in_block(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
     bitmap_add_element(p_info->block_live_in[p_basic_block->block_id], p_vreg->id);
     p_list_head p_node;
-    if(p_info->p_func->block.p_next == &p_basic_block->node){
-        list_for_each(p_node, &p_info->p_func->param_reg_list){
+    if (p_info->p_func->block.p_next == &p_basic_block->node) {
+        list_for_each(p_node, &p_info->p_func->param_reg_list) {
             p_ir_vreg p_param = list_entry(p_node, ir_vreg, node);
-            if(p_param == p_vreg)
+            if (p_param == p_vreg)
                 return;
             add_reg_graph_edge(p_param, p_vreg);
         }
