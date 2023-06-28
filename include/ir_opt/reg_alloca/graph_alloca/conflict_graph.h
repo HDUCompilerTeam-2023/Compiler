@@ -21,6 +21,7 @@ struct spill_node {
 struct origin_graph_node {
     bool if_pre_color;
     bool if_need_spill;
+    size_t in_clique_num;
     p_graph_node p_def_node;
     p_symbol_var p_vmem;
     list_head use_spill_list;
@@ -30,6 +31,7 @@ struct graph_node {
     p_ir_vreg p_vreg;
     size_t color;
     size_t node_id;
+    size_t seq_id;
     list_head neighbors;
     bool *used_color;
 };
@@ -62,4 +64,5 @@ void set_graph_color(p_conflict_graph p_graph);
 void set_node_color(p_conflict_graph p_graph, p_graph_node p_node, size_t color);
 void check_chordal(p_conflict_graph p_graph);
 
+void maximum_clique_spill(p_conflict_graph p_graph);
 #endif
