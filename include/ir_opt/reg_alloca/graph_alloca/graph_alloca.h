@@ -12,6 +12,7 @@ struct graph_alloca_info {
     p_bitmap *block_branch_live_in;
     p_bitmap *instr_live_in;
     p_bitmap *instr_live_out;
+    size_t instr_num;
     p_ir_vreg *p_vregs;
 };
 
