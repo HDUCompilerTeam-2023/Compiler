@@ -128,11 +128,6 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
             if (current_work_r1 == -1)
                 break;
         }
-        // 已经在对应位置上不需要操作
-        if (current_work_r1 == current_work_r2) {
-            use_reg_count[current_work_r1]--;
-            if_deal[current_work_r2] = true;
-        }
     }
 
     // 现在变成了一一映射
@@ -145,6 +140,7 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
     }
     for (size_t i = 0; i < num; i++) {
         if (use_reg_count[r1[i]] == 0) continue;
+        if (current_val_in[r1[i]] == r2[i]) continue;
         arm_swap_gen(p_info->asm_code, current_val_in[r1[i]], r2[i]);
         // 交换完成后源寄存器放到了正确位置，目标寄存器的值（可能是其他交换的源寄存器）被放到了源寄存器
         current_val_in[r2[i]] = current_val_in[r1[i]];
@@ -561,7 +557,7 @@ static void arm_call_instr_codegen(p_arm_codegen_info p_info, p_ir_instr p_instr
     size_t *r_regs = malloc(sizeof(*r_regs) * R_NUM);
     size_t *s_regs = malloc(sizeof(*r_regs) * S_NUM);
     size_t rs = 0;
-    if(p_call_instr->p_des && p_call_instr->p_func->ret_type == type_f32)
+    if (p_call_instr->p_des && p_call_instr->p_func->ret_type == type_f32)
         rs = R_NUM;
     size_t rd = -1;
     p_list_head p_node;
