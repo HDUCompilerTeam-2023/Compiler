@@ -83,6 +83,15 @@ static void p_live_out_block(p_graph_alloca_info p_info, p_ir_basic_block p_basi
 void p_live_in_block(p_graph_alloca_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
     bitmap_add_element(p_info->block_live_in[p_basic_block->block_id], p_vreg->id);
     p_list_head p_node;
+    if(p_info->p_func->block.p_next == &p_basic_block->node){
+        list_for_each(p_node, &p_info->p_func->param_reg_list){
+            p_ir_vreg p_param = list_entry(p_node, ir_vreg, node);
+            if(p_param == p_vreg)
+                return;
+            add_reg_graph_edge(p_param, p_vreg);
+        }
+        return;
+    }
     list_for_each(p_node, &p_basic_block->prev_basic_block_list) {
         p_ir_basic_block p_prev_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
         p_live_out_block(p_info, p_prev_block, p_vreg);
