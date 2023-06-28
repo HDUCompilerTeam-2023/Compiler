@@ -392,15 +392,51 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     graph_nodes_init(p_info->p_s_graph);
     pre_color(p_info, p_func);
 
-    print_conflict_graph(p_info->p_r_graph);
     mcs_get_seqs(p_info->p_r_graph);
-    set_graph_color(p_info->p_r_graph);
     check_chordal(p_info->p_r_graph);
-    print_conflict_graph(p_info->p_s_graph);
+    print_conflict_graph(p_info->p_r_graph);
     mcs_get_seqs(p_info->p_s_graph);
-    set_graph_color(p_info->p_s_graph);
     check_chordal(p_info->p_s_graph);
+    print_conflict_graph(p_info->p_s_graph);
+
+    while (p_info->p_r_graph->color_num > p_info->p_r_graph->reg_num
+        && p_info->p_s_graph->color_num > p_info->p_s_graph->reg_num) {
+        maximum_clique_spill(p_info->p_r_graph);
+        maximum_clique_spill(p_info->p_s_graph);
+        graph_spill(p_info, p_func);
+        graph_nodes_init(p_info->p_r_graph);
+        print_conflict_graph(p_info->p_r_graph);
+        mcs_get_seqs(p_info->p_r_graph);
+        check_chordal(p_info->p_r_graph);
+
+        graph_nodes_init(p_info->p_s_graph);
+        print_conflict_graph(p_info->p_s_graph);
+        mcs_get_seqs(p_info->p_s_graph);
+        check_chordal(p_info->p_s_graph);
+    }
+
+    while (p_info->p_r_graph->color_num > p_info->p_r_graph->reg_num) {
+        maximum_clique_spill(p_info->p_r_graph);
+        graph_spill(p_info, p_func);
+        graph_nodes_init(p_info->p_r_graph);
+        print_conflict_graph(p_info->p_r_graph);
+        mcs_get_seqs(p_info->p_r_graph);
+        check_chordal(p_info->p_r_graph);
+    }
+
+    while (p_info->p_s_graph->color_num > p_info->p_s_graph->reg_num) {
+        maximum_clique_spill(p_info->p_s_graph);
+        graph_spill(p_info, p_func);
+        graph_nodes_init(p_info->p_s_graph);
+        print_conflict_graph(p_info->p_s_graph);
+        mcs_get_seqs(p_info->p_s_graph);
+        check_chordal(p_info->p_s_graph);
+    }
+    set_graph_color(p_info->p_r_graph);
+    set_graph_color(p_info->p_s_graph);
 
     check_liveness(p_func);
     graph_alloca_info_drop(p_info);
+    symbol_func_set_block_id(p_func);
+    symbol_func_set_vreg_id(p_func);
 }

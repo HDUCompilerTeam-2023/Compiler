@@ -12,6 +12,7 @@ p_graph_node graph_node_gen(p_ir_vreg p_vreg, size_t reg_num, size_t node_id) {
     p_node->neighbors = list_head_init(&p_node->neighbors);
     p_node->used_color = malloc(sizeof(*p_node->used_color) * reg_num);
     p_node->node_id = node_id;
+    p_node->seq_id = 0;
     return p_node;
 }
 
@@ -31,6 +32,7 @@ void graph_nodes_init(p_conflict_graph p_graph) {
             memset(p_g_node->used_color, false, sizeof(*p_g_node->used_color) * p_graph->reg_num);
         }
         (p_graph->p_nodes + i)->if_need_spill = false;
+        (p_graph->p_nodes + i)->in_clique_num = 0;
     }
     free(p_graph->seo_seq);
     p_graph->seo_seq = malloc(sizeof(*p_graph->seo_seq) * p_graph->node_num);
@@ -218,6 +220,7 @@ void mcs_get_seqs(p_conflict_graph p_graph) {
             max_label = current;
         p_node_info p_current_node_info = list_entry((seq_heads + current)->p_next, node_info, node);
         p_graph->seo_seq[i] = p_current_node_info->p_node;
+        p_current_node_info->p_node->seq_id = i;
         p_current_node_info->visited = true;
         list_del(&p_current_node_info->node);
         p_list_head p_node;
@@ -283,3 +286,84 @@ void set_graph_color(p_conflict_graph p_graph) {
     }
 }
 
+static inline bool if_spill_node(p_conflict_graph p_graph, p_graph_node p_node) {
+    return p_node->node_id >= p_graph->origin_node_num || (p_graph->p_nodes + p_node->node_id)->p_vmem;
+}
+
+void maximum_clique_spill(p_conflict_graph p_graph) {
+    p_graph_node **cliques = malloc(sizeof(*cliques) * p_graph->node_num);
+    size_t *clique_num = malloc(sizeof(*clique_num) * p_graph->node_num);
+    for (size_t i = 0; i < p_graph->node_num; i++) {
+        cliques[i] = malloc(sizeof(*cliques[i]) * p_graph->node_num); // 节点邻居且在左边（成团）的节点
+        clique_num[i] = 1; // 团的数量
+        p_graph_node p_g_node = p_graph->seo_seq[i];
+        cliques[i][0] = p_g_node;
+        cliques[i][1] = p_graph->seo_seq[0];
+        p_list_head p_node;
+        list_for_each(p_node, &p_g_node->neighbors) {
+            p_graph_node p_n_node = list_entry(p_node, neighbor_node, node)->p_neighbor;
+            if (p_n_node->seq_id < p_g_node->seq_id) {
+                cliques[i][clique_num[i]] = p_n_node;
+                // 第一个为最右边的节点
+                if (p_n_node->seq_id > cliques[i][1]->seq_id) {
+                    p_graph_node tmp = cliques[i][clique_num[i]];
+                    cliques[i][clique_num[i]] = cliques[i][1];
+                    cliques[i][1] = tmp;
+                }
+                clique_num[i]++;
+            }
+        }
+    }
+
+    size_t *need_spill_clique = malloc(sizeof(*need_spill_clique) * p_graph->node_num);
+    size_t need_spill_clique_num = 0;
+    bool *visited = malloc(sizeof(*visited) * p_graph->node_num);
+    memset(visited, false, sizeof(*visited) * p_graph->node_num);
+    for (size_t i = p_graph->node_num - 1; i < p_graph->node_num; i--) {
+        if (!visited[i]) {
+            if (clique_num[i] > p_graph->reg_num) {
+                for (size_t j = 0; j < clique_num[i]; j++) {
+                    if (!if_spill_node(p_graph, cliques[i][j]))
+                        (p_graph->p_nodes + cliques[i][j]->node_id)->in_clique_num++;
+                }
+                need_spill_clique[need_spill_clique_num++] = i;
+            }
+        }
+        if (clique_num[i] >= clique_num[cliques[i][1]->seq_id] + 1)
+            visited[cliques[i][1]->seq_id] = true;
+    }
+
+    // 选择溢出
+    for (size_t i = 0; i < need_spill_clique_num; i++) {
+        size_t current_clique = need_spill_clique[i];
+        size_t may_spill_num = 0;
+        size_t have_spilled_num = 0;
+        p_origin_graph_node *may_spill = malloc(sizeof(*may_spill) * (clique_num[current_clique] + 1));
+        for (size_t j = 0; j < clique_num[current_clique]; j++) {
+            if (if_spill_node(p_graph, cliques[current_clique][j])) {
+                have_spilled_num++;
+                continue;
+            }
+            p_origin_graph_node p_o_node = (p_graph->p_nodes + cliques[current_clique][j]->node_id);
+            if (p_o_node->if_need_spill) continue;
+            may_spill[may_spill_num++] = p_o_node;
+        }
+        if (have_spilled_num + may_spill_num <= p_graph->reg_num) {
+            free(may_spill);
+            continue;
+        }
+        assert(have_spilled_num <= p_graph->reg_num);
+        size_t need_spill_num = have_spilled_num + may_spill_num - p_graph->reg_num;
+        // TODO: sort spill costs
+        for (size_t j = 0; j < need_spill_num; j++) {
+            may_spill[j]->if_need_spill = true;
+        }
+        free(may_spill);
+    }
+    free(clique_num);
+    for (size_t i = 0; i < p_graph->node_num; i++)
+        free(cliques[i]);
+    free(cliques);
+    free(need_spill_clique);
+    free(visited);
+}
