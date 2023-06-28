@@ -11,6 +11,7 @@
 #include <ir_opt/mem2reg.h>
 #include <ir_opt/reg_alloca/reg_alloca.h>
 #include <ir_opt/simplify_cfg.h>
+#include <ir_opt/lir_gen/delete_cmp.h>
 
 #include <backend/arm/codegen.h>
 #include <stdio.h>
@@ -88,12 +89,16 @@ int main(int argc, char *argv[]) {
 
         critical_edge_cut_pass(p_program);
         program_ir_print(p_program);
-        reg_alloca_pass(alloca_color_graph, 13, 32, p_program);
-        program_ir_print(p_program);
-
         // set_cond
         set_cond_pass(p_program);
         program_ir_print(p_program);
+
+        reg_alloca_pass(alloca_color_graph, 13, 32, p_program);
+        program_ir_print(p_program);
+
+        delete_cmp_pass(p_program);
+        program_ir_print(p_program);
+
         arm_codegen_pass(p_program, asm_code);
         printf("%s", asm_code);
         // drop ir
