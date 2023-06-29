@@ -302,6 +302,18 @@ static inline void print_dom_frontier(p_convert_ssa_list p_convert_list) {
     printf("--- dom_frontier end---\n");
 }
 
+static inline void delete_vmem(p_symbol_func p_func) {
+    p_list_head p_node, p_next;
+    list_for_each_safe(p_node, p_next, &p_func->variable) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        if (!list_head_alone(&p_var->p_type->array) && p_var->p_type->ref_level == 0) continue;
+        if (p_var->is_const) continue;
+        if (p_var->is_global) continue;
+        symbol_func_delete_varible(p_func, p_var);
+    }
+    symbol_func_set_varible_id(p_func);
+}
+
 void mem2reg_func_pass(p_symbol_func p_func) {
     if (list_head_alone(&p_func->block)) return;
     size_t block_num = list_entry(p_func->block.p_prev, ir_basic_block, node)->block_id + 1;
@@ -329,6 +341,7 @@ void mem2reg_func_pass(p_symbol_func p_func) {
     convert_ssa_dfs_seq_drop(p_convert_list);
     ssa_var_list_info_drop(p_var_list);
 
+    delete_vmem(p_func);
     symbol_func_set_vreg_id(p_func);
 }
 
