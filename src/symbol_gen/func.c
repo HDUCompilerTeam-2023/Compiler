@@ -170,3 +170,18 @@ void symbol_func_drop(p_symbol_func p_func) {
     free(p_func->name);
     free(p_func);
 }
+
+void symbol_func_delete_varible(p_symbol_func p_func, p_symbol_var p_var) {
+    list_del(&p_var->node);
+    symbol_var_drop(p_var);
+    --p_func->var_cnt;
+}
+
+void symbol_func_set_varible_id(p_symbol_func p_func) {
+    p_list_head p_node;
+    size_t id = 0;
+    list_for_each(p_node, &p_func->variable) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        p_var->id = id++;
+    }
+}
