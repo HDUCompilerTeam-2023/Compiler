@@ -4,18 +4,18 @@
 #include <ir.h>
 typedef struct graph_node graph_node, *p_graph_node;
 typedef struct origin_graph_node origin_graph_node, *p_origin_graph_node;
-typedef struct spill_node spill_node, *p_spill_node;
-typedef struct neighbor_node neighbor_node, *p_neighbor_node;
+typedef struct graph_nodes graph_nodes, *p_graph_nodes;
+typedef struct graph_node_list graph_node_list, *p_graph_node_list;
 typedef struct conflict_graph conflict_graph, *p_conflict_graph;
 
-struct neighbor_node {
-    p_graph_node p_neighbor;
+struct graph_nodes {
+    p_graph_node p_node;
     list_head node;
 };
 
-struct spill_node {
+struct graph_node_list {
     list_head node;
-    p_graph_node p_spill;
+    size_t num;
 };
 
 struct origin_graph_node {
@@ -24,7 +24,7 @@ struct origin_graph_node {
     size_t in_clique_num;
     p_graph_node p_def_node;
     p_symbol_var p_vmem;
-    list_head use_spill_list;
+    p_graph_node_list p_use_spill_list;
 };
 
 struct graph_node {
@@ -32,7 +32,7 @@ struct graph_node {
     size_t color;
     size_t node_id;
     size_t seq_id;
-    list_head neighbors;
+    p_graph_node_list p_neighbors;
     bool *used_color;
 };
 
@@ -47,16 +47,17 @@ struct conflict_graph {
 
 void origin_graph_node_gen(p_origin_graph_node p_node, p_ir_vreg p_vreg, size_t reg_num, size_t node_id);
 p_graph_node graph_node_gen(p_ir_vreg p_vreg, size_t reg_num, size_t node_id);
+p_graph_node_list graph_node_list_gen();
 void graph_nodes_init(p_conflict_graph p_graph);
-p_neighbor_node graph_neighbor_node_gen(p_graph_node p_node);
-void spill_list_add(p_origin_graph_node p_s_node, p_graph_node p_g_node);
-void add_graph_edge_at(p_graph_node node, p_list_head p_next);
+void graph_node_list_add(p_graph_node_list p_list, p_graph_node p_g_node);
+void add_node_list_at(p_graph_node_list p_list, p_graph_node node, p_list_head p_next);
 void add_graph_edge(p_graph_node r1, p_graph_node r2);
 void add_reg_graph_edge(p_ir_vreg r1, p_ir_vreg r2);
 bool if_in_neighbors(p_graph_node p_g_node, p_graph_node p_n_node);
-void node_neighbor_del(p_graph_node p_g_node, p_graph_node p_del_node);
+void node_list_del(p_graph_node_list p_list, p_graph_node p_del_node);
 p_conflict_graph conflict_graph_gen(size_t node_num, p_origin_graph_node p_nodes, size_t reg_num);
 void print_conflict_graph(p_conflict_graph p_graph);
+void graph_node_list_drop(p_graph_node_list p_list);
 void conflict_graph_drop(p_conflict_graph p_graph);
 
 void mcs_get_seqs(p_conflict_graph p_graph);
