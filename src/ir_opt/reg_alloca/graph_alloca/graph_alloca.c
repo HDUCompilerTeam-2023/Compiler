@@ -126,28 +126,28 @@ static inline p_conflict_graph get_graph(p_graph_alloca_info p_info, p_ir_vreg p
 static inline void update_graph(p_graph_alloca_info p_info, p_ir_bb_phi_list p_store_live, p_graph_node p_g_node) {
     // 改变干涉图, 活跃集合和邻居节点都是从小到大编号
     p_list_head p_live_node = p_store_live->bb_phi.p_next;
-    p_list_head p_neigh_node = p_g_node->neighbors.p_next;
+    p_list_head p_neigh_node = p_g_node->p_neighbors->node.p_next;
     while (p_live_node != &p_store_live->bb_phi) {
         p_ir_vreg p_live_vreg = list_entry(p_live_node, ir_bb_phi, node)->p_bb_phi;
         if (p_live_vreg->if_float != p_g_node->p_vreg->if_float) {
             p_live_node = p_live_node->p_next;
             continue;
         }
-        p_neighbor_node p_neighbor = list_entry(p_neigh_node, neighbor_node, node);
-        if (p_live_vreg == p_neighbor->p_neighbor->p_vreg) {
+        p_graph_nodes p_neighbor = list_entry(p_neigh_node, graph_nodes, node);
+        if (p_live_vreg == p_neighbor->p_node->p_vreg) {
             p_live_node = p_live_node->p_next;
             p_neigh_node = p_neigh_node->p_next;
             continue;
         }
-        assert(p_live_vreg->id > p_neighbor->p_neighbor->p_vreg->id); // 若定义的变量出口活跃,活跃集必是邻居子集
-        node_neighbor_del(p_neighbor->p_neighbor, p_g_node);
+        assert(p_live_vreg->id > p_neighbor->p_node->p_vreg->id); // 若定义的变量出口活跃,活跃集必是邻居子集
+        node_list_del(p_neighbor->p_node->p_neighbors, p_g_node);
         p_neigh_node = p_neigh_node->p_next;
         list_del(&p_neighbor->node);
         free(p_neighbor);
     }
-    while (p_neigh_node != &p_g_node->neighbors) {
-        p_neighbor_node p_neighbor = list_entry(p_neigh_node, neighbor_node, node);
-        node_neighbor_del(p_neighbor->p_neighbor, p_g_node);
+    while (p_neigh_node != &p_g_node->p_neighbors->node) {
+        p_graph_nodes p_neighbor = list_entry(p_neigh_node, graph_nodes, node);
+        node_list_del(p_neighbor->p_node->p_neighbors, p_g_node);
         p_neigh_node = p_neigh_node->p_next;
         list_del(&p_neighbor->node);
         free(p_neighbor);
@@ -241,7 +241,7 @@ static void new_load(p_graph_alloca_info p_info, p_ir_operand p_operand, p_ir_in
     symbol_func_vreg_add(p_func, p_new_src);
     p_graph_node p_g_node = graph_node_gen(p_new_src, p_graph->reg_num, p_graph->node_num);
     p_graph->node_num++;
-    spill_list_add(p_o_node, p_g_node);
+    graph_node_list_add(p_o_node->p_use_spill_list, p_g_node);
     p_symbol_var p_vmem = p_o_node->p_vmem;
     p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem), NULL, p_new_src);
     list_add_prev(&p_load->node, &p_instr->node);
