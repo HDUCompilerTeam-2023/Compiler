@@ -40,7 +40,7 @@ struct conflict_graph {
     p_origin_graph_node p_nodes; // 节点列表
     size_t node_num; // 节点数量
     size_t origin_node_num; // 未溢出前的节点数量
-    p_graph_node *seo_seq; // 完美消除序列
+    p_graph_node_list seo_seq;  // 完美消除序列
     size_t color_num; // 冲突图的色数
     size_t reg_num; // 可用寄存器数量
 };

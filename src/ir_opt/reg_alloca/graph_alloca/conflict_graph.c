@@ -11,6 +11,7 @@ p_graph_node graph_node_gen(p_ir_vreg p_vreg, size_t reg_num, size_t node_id) {
     p_node->color = -1;
     p_node->p_neighbors = graph_node_list_gen();
     p_node->used_color = malloc(sizeof(*p_node->used_color) * reg_num);
+    memset(p_node->used_color, false, sizeof(*p_node->used_color) * reg_num);
     p_node->node_id = node_id;
     p_node->seq_id = 0;
     return p_node;
@@ -28,8 +29,8 @@ void graph_nodes_init(p_conflict_graph p_graph) {
         (p_graph->p_nodes + i)->if_need_spill = false;
         (p_graph->p_nodes + i)->in_clique_num = 0;
     }
-    free(p_graph->seo_seq);
-    p_graph->seo_seq = malloc(sizeof(*p_graph->seo_seq) * p_graph->node_num);
+    graph_node_list_drop(p_graph->seo_seq);
+    p_graph->seo_seq = graph_node_list_gen();
 }
 
 void graph_node_list_add(p_graph_node_list p_list, p_graph_node p_g_node) {
@@ -61,7 +62,7 @@ p_conflict_graph conflict_graph_gen(size_t node_num, p_origin_graph_node p_nodes
     p_graph->node_num = p_graph->origin_node_num = node_num;
     p_graph->reg_num = reg_num;
     p_graph->p_nodes = p_nodes;
-    p_graph->seo_seq = NULL;
+    p_graph->seo_seq = graph_node_list_gen();
     return p_graph;
 }
 
@@ -153,8 +154,8 @@ void print_conflict_graph(p_conflict_graph p_graph) {
 void graph_node_list_drop(p_graph_node_list p_list) {
     p_list_head p_node, p_next;
     list_for_each_safe(p_node, p_next, &p_list->node) {
-        list_del(p_node);
         p_graph_nodes p_nodes = list_entry(p_node, graph_nodes, node);
+        list_del(p_node);
         free(p_nodes);
     }
     free(p_list);
@@ -177,8 +178,8 @@ void conflict_graph_drop(p_conflict_graph p_graph) {
         }
         free((p_graph->p_nodes + i)->p_use_spill_list);
     }
+    graph_node_list_drop(p_graph->seo_seq);
     free(p_graph->p_nodes);
-    free(p_graph->seo_seq);
     free(p_graph);
 }
 
@@ -223,7 +224,7 @@ void mcs_get_seqs(p_conflict_graph p_graph) {
         if (max_label < current)
             max_label = current;
         p_node_info p_current_node_info = list_entry((seq_heads + current)->p_next, node_info, node);
-        p_graph->seo_seq[i] = p_current_node_info->p_node;
+        graph_node_list_add(p_graph->seo_seq, p_current_node_info->p_node);
         p_current_node_info->p_node->seq_id = i;
         p_current_node_info->visited = true;
         list_del(&p_current_node_info->node);
@@ -249,11 +250,13 @@ void mcs_get_seqs(p_conflict_graph p_graph) {
 void check_chordal(p_conflict_graph p_graph) {
     bool *visited = malloc(sizeof(*visited) * p_graph->node_num);
     memset(visited, false, sizeof(*visited) * p_graph->node_num);
-    for (size_t i = p_graph->node_num - 1; i < p_graph->node_num; i--) {
-        visited[p_graph->seo_seq[i]->node_id] = true;
+    p_list_head p_node;
+    list_for_each_tail(p_node, &p_graph->seo_seq->node) {
+        p_graph_node p_g_node = list_entry(p_node, graph_nodes, node)->p_node;
+        visited[p_g_node->node_id] = true;
         p_list_head p_node;
         p_graph_node p_min_node = NULL;
-        list_for_each(p_node, &p_graph->seo_seq[i]->p_neighbors->node) {
+        list_for_each(p_node, &p_g_node->p_neighbors->node) {
             p_graph_node p_neighbor = list_entry(p_node, graph_nodes, node)->p_node;
             if (!visited[p_neighbor->node_id]) {
                 if (!p_min_node)
@@ -280,13 +283,14 @@ void set_node_color(p_conflict_graph p_graph, p_graph_node p_node, size_t color)
 // 根据顺序进行着色
 void set_graph_color(p_conflict_graph p_graph) {
     assert(p_graph->color_num <= p_graph->reg_num);
-    for (size_t i = 0; i < p_graph->node_num; i++) {
-        p_graph_node p_node = p_graph->seo_seq[i];
-        if (p_node->color != -1) continue;
+    p_list_head p_node;
+    list_for_each(p_node, &p_graph->seo_seq->node) {
+        p_graph_node p_g_node = list_entry(p_node, graph_nodes, node)->p_node;
+        if (p_g_node->color != -1) continue;
         size_t lowest = 0;
-        while (p_node->used_color[lowest])
+        while (p_g_node->used_color[lowest])
             lowest++;
-        set_node_color(p_graph, p_node, lowest);
+        set_node_color(p_graph, p_g_node, lowest);
     }
 }
 
@@ -297,12 +301,14 @@ static inline bool if_spill_node(p_conflict_graph p_graph, p_graph_node p_node) 
 void maximum_clique_spill(p_conflict_graph p_graph) {
     p_graph_node **cliques = malloc(sizeof(*cliques) * p_graph->node_num);
     size_t *clique_num = malloc(sizeof(*clique_num) * p_graph->node_num);
-    for (size_t i = 0; i < p_graph->node_num; i++) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_graph->seo_seq->node) {
+        p_graph_node p_g_node = list_entry(p_node, graph_nodes, node)->p_node;
+        size_t i = p_g_node->seq_id;
         cliques[i] = malloc(sizeof(*cliques[i]) * p_graph->node_num); // 节点邻居且在左边（成团）的节点
         clique_num[i] = 1; // 团的数量
-        p_graph_node p_g_node = p_graph->seo_seq[i];
         cliques[i][0] = p_g_node;
-        cliques[i][1] = p_graph->seo_seq[0];
+        cliques[i][1] = list_entry(p_graph->seo_seq->node.p_next, graph_nodes, node)->p_node;
         p_list_head p_node;
         list_for_each(p_node, &p_g_node->p_neighbors->node) {
             p_graph_node p_n_node = list_entry(p_node, graph_nodes, node)->p_node;
