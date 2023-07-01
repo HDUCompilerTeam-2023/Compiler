@@ -15,31 +15,32 @@ p_graph_alloca_info graph_alloca_info_gen(size_t reg_num_r, size_t reg_num_s, p_
     p_origin_graph_node p_nodes_s = malloc(sizeof(*p_nodes_s) * vreg_num);
     size_t numr = 0;
     size_t nums = 0;
+    p_info->p_r_graph = conflict_graph_gen(reg_num_r);
+    p_info->p_s_graph = conflict_graph_gen(reg_num_s);
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
         if (p_vreg->if_float) {
-            origin_graph_node_gen(p_nodes_s + nums, p_vreg, reg_num_s, nums);
+            origin_graph_node_gen(p_nodes_s + nums, p_vreg, p_info->p_s_graph);
             nums++;
         }
         else {
-            origin_graph_node_gen(p_nodes_r + numr, p_vreg, reg_num_r, numr);
+            origin_graph_node_gen(p_nodes_r + numr, p_vreg, p_info->p_r_graph);
             numr++;
         }
     }
     list_for_each(p_node, &p_func->vreg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
         if (p_vreg->if_float) {
-            origin_graph_node_gen(p_nodes_s + nums, p_vreg, reg_num_s, nums);
+            origin_graph_node_gen(p_nodes_s + nums, p_vreg, p_info->p_s_graph);
             nums++;
         }
         else {
-            origin_graph_node_gen(p_nodes_r + numr, p_vreg, reg_num_r, numr);
+            origin_graph_node_gen(p_nodes_r + numr, p_vreg, p_info->p_r_graph);
             numr++;
         }
     }
-
-    p_info->p_r_graph = conflict_graph_gen(numr, p_nodes_r, reg_num_r);
-    p_info->p_s_graph = conflict_graph_gen(nums, p_nodes_s, reg_num_s);
+    conflict_graph_set_nodes(p_info->p_r_graph, p_nodes_r, numr);
+    conflict_graph_set_nodes(p_info->p_s_graph, p_nodes_s, nums);
     p_info->block_live_in = malloc(sizeof(void *) * p_func->block_cnt);
     p_info->block_live_out = malloc(sizeof(void *) * p_func->block_cnt);
     p_info->block_branch_live_in = malloc(sizeof(void *) * p_func->block_cnt);
@@ -239,8 +240,7 @@ static void new_load(p_graph_alloca_info p_info, p_ir_operand p_operand, p_ir_in
     p_origin_graph_node p_o_node = p_graph->p_nodes + p_vreg_g_node->node_id;
     p_ir_vreg p_new_src = ir_vreg_copy(p_operand->p_vreg);
     symbol_func_vreg_add(p_func, p_new_src);
-    p_graph_node p_g_node = graph_node_gen(p_new_src, p_graph->reg_num, p_graph->node_num);
-    p_graph->node_num++;
+    p_graph_node p_g_node = graph_node_gen(p_new_src, p_graph);
     graph_node_list_add(p_o_node->p_use_spill_list, p_g_node);
     p_symbol_var p_vmem = p_o_node->p_vmem;
     p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem), NULL, p_new_src);

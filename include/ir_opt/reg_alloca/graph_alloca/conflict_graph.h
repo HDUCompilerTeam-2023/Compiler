@@ -64,8 +64,8 @@ struct conflict_graph {
     list_head cliques;
 };
 
-void origin_graph_node_gen(p_origin_graph_node p_node, p_ir_vreg p_vreg, size_t reg_num, size_t node_id);
-p_graph_node graph_node_gen(p_ir_vreg p_vreg, size_t reg_num, size_t node_id);
+void origin_graph_node_gen(p_origin_graph_node p_node, p_ir_vreg p_vreg, p_conflict_graph p_graph);
+p_graph_node graph_node_gen(p_ir_vreg p_vreg, p_conflict_graph p_graph);
 p_graph_node_list graph_node_list_gen();
 void graph_nodes_init(p_conflict_graph p_graph);
 void graph_node_list_add(p_graph_node_list p_list, p_graph_node p_g_node);
@@ -74,7 +74,8 @@ void add_graph_edge(p_graph_node r1, p_graph_node r2);
 void add_reg_graph_edge(p_ir_vreg r1, p_ir_vreg r2);
 bool if_in_neighbors(p_graph_node p_g_node, p_graph_node p_n_node);
 void node_list_del(p_graph_node_list p_list, p_graph_node p_del_node);
-p_conflict_graph conflict_graph_gen(size_t node_num, p_origin_graph_node p_nodes, size_t reg_num);
+p_conflict_graph conflict_graph_gen(size_t reg_num);
+void conflict_graph_set_nodes(p_conflict_graph p_graph, p_origin_graph_node p_nodes, size_t num);
 void print_conflict_graph(p_conflict_graph p_graph);
 void graph_node_list_drop(p_graph_node_list p_list);
 void conflict_graph_drop(p_conflict_graph p_graph);

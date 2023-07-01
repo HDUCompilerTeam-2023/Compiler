@@ -4,21 +4,21 @@
 
 #include <stdio.h>
 
-p_graph_node graph_node_gen(p_ir_vreg p_vreg, size_t reg_num, size_t node_id) {
+p_graph_node graph_node_gen(p_ir_vreg p_vreg, p_conflict_graph p_graph) {
     p_graph_node p_node = malloc(sizeof(*p_node));
     p_node->p_vreg = p_vreg;
     p_vreg->p_info = p_node;
     p_node->color = -1;
     p_node->p_neighbors = graph_node_list_gen();
-    p_node->used_color = malloc(sizeof(*p_node->used_color) * reg_num);
-    memset(p_node->used_color, false, sizeof(*p_node->used_color) * reg_num);
-    p_node->node_id = node_id;
+    p_node->used_color = malloc(sizeof(*p_node->used_color) * p_graph->reg_num);
+    memset(p_node->used_color, false, sizeof(*p_node->used_color) * p_graph->reg_num);
+    p_node->node_id = p_graph->node_num++;
     p_node->seq_id = 0;
     return p_node;
 }
 
-void origin_graph_node_gen(p_origin_graph_node p_node, p_ir_vreg p_vreg, size_t reg_num, size_t node_id) {
-    p_node->p_def_node = graph_node_gen(p_vreg, reg_num, node_id);
+void origin_graph_node_gen(p_origin_graph_node p_node, p_ir_vreg p_vreg, p_conflict_graph p_graph) {
+    p_node->p_def_node = graph_node_gen(p_vreg, p_graph);
     p_node->p_vmem = NULL;
     p_node->p_use_spill_list = graph_node_list_gen();
     p_node->if_pre_color = false;
@@ -70,16 +70,19 @@ p_list_head get_node_pos(p_graph_node_list p_list, p_graph_node p_g_node) {
     return NULL;
 }
 
-p_conflict_graph conflict_graph_gen(size_t node_num, p_origin_graph_node p_nodes, size_t reg_num) {
+p_conflict_graph conflict_graph_gen(size_t reg_num) {
     p_conflict_graph p_graph = malloc(sizeof(*p_graph));
-    p_graph->node_num = p_graph->origin_node_num = node_num;
+    p_graph->node_num = p_graph->origin_node_num = 0;
     p_graph->reg_num = reg_num;
-    p_graph->p_nodes = p_nodes;
+    p_graph->p_nodes = NULL;
     p_graph->seo_seq = graph_node_list_gen();
     p_graph->cliques = list_head_init(&p_graph->cliques);
     return p_graph;
 }
-
+void conflict_graph_set_nodes(p_conflict_graph p_graph, p_origin_graph_node p_nodes, size_t num) {
+    p_graph->p_nodes = p_nodes;
+    p_graph->origin_node_num = num;
+}
 p_graph_node_list graph_node_list_gen() {
     p_graph_node_list p_list = malloc(sizeof(*p_list));
     p_list->num = 0;
