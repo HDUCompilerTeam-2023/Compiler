@@ -8,6 +8,9 @@ typedef struct graph_nodes graph_nodes, *p_graph_nodes;
 typedef struct graph_node_list graph_node_list, *p_graph_node_list;
 typedef struct conflict_graph conflict_graph, *p_conflict_graph;
 
+typedef struct clique_node clique_node, *p_clique_node;
+typedef struct pclique_node pclique_node, *p_pclique_node;
+typedef struct pclique_list pclique_list, *p_pclique_list;
 struct graph_nodes {
     p_graph_node p_node;
     list_head node;
@@ -18,10 +21,24 @@ struct graph_node_list {
     size_t num;
 };
 
+struct clique_node {
+    list_head node;
+    size_t have_spilled_num;
+    p_graph_node_list may_spilled_list;
+};
+
+struct pclique_node {
+    p_clique_node p_c_node;
+    list_head node;
+};
+
 struct origin_graph_node {
     bool if_pre_color;
     bool if_need_spill;
+
     size_t in_clique_num;
+    list_head pcliques;
+
     p_graph_node p_def_node;
     p_symbol_var p_vmem;
     p_graph_node_list p_use_spill_list;
@@ -40,9 +57,11 @@ struct conflict_graph {
     p_origin_graph_node p_nodes; // 节点列表
     size_t node_num; // 节点数量
     size_t origin_node_num; // 未溢出前的节点数量
-    p_graph_node_list seo_seq;  // 完美消除序列
+    p_graph_node_list seo_seq; // 完美消除序列
     size_t color_num; // 冲突图的色数
     size_t reg_num; // 可用寄存器数量
+
+    list_head cliques;
 };
 
 void origin_graph_node_gen(p_origin_graph_node p_node, p_ir_vreg p_vreg, size_t reg_num, size_t node_id);
@@ -65,5 +84,9 @@ void set_graph_color(p_conflict_graph p_graph);
 void set_node_color(p_conflict_graph p_graph, p_graph_node p_node, size_t color);
 void check_chordal(p_conflict_graph p_graph);
 
-void maximum_clique_spill(p_conflict_graph p_graph);
+p_clique_node clique_node_gen();
+void origin_node_add_pclique(p_origin_graph_node p_o_node, p_clique_node p_c_node);
+void graph_clique_add(p_conflict_graph p_graph, p_clique_node p_c_node);
+void maximum_clique(p_conflict_graph p_graph);
+void choose_spill(p_conflict_graph p_graph);
 #endif
