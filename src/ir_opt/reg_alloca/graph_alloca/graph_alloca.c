@@ -536,8 +536,10 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
 
     while (p_info->p_r_graph->color_num > p_info->p_r_graph->reg_num
         && p_info->p_s_graph->color_num > p_info->p_s_graph->reg_num) {
-        maximum_clique_spill(p_info->p_r_graph);
-        maximum_clique_spill(p_info->p_s_graph);
+        maximum_clique(p_info->p_r_graph);
+        choose_spill(p_info->p_r_graph);
+        maximum_clique(p_info->p_s_graph);
+        choose_spill(p_info->p_s_graph);
         graph_spill(p_info, p_func);
         graph_nodes_init(p_info->p_r_graph);
         print_conflict_graph(p_info->p_r_graph);
@@ -551,7 +553,8 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     }
 
     while (p_info->p_r_graph->color_num > p_info->p_r_graph->reg_num) {
-        maximum_clique_spill(p_info->p_r_graph);
+        maximum_clique(p_info->p_r_graph);
+        choose_spill(p_info->p_r_graph);
         graph_spill(p_info, p_func);
         graph_nodes_init(p_info->p_r_graph);
         print_conflict_graph(p_info->p_r_graph);
@@ -560,7 +563,8 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     }
 
     while (p_info->p_s_graph->color_num > p_info->p_s_graph->reg_num) {
-        maximum_clique_spill(p_info->p_s_graph);
+        maximum_clique(p_info->p_s_graph);
+        choose_spill(p_info->p_s_graph);
         graph_spill(p_info, p_func);
         graph_nodes_init(p_info->p_s_graph);
         print_conflict_graph(p_info->p_s_graph);
