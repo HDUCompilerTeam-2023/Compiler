@@ -1,8 +1,8 @@
 #include <ir_opt/reg_alloca/graph_alloca/conflict_graph.h>
 
 #include <ir/vreg.h>
-#include <symbol_gen.h>
 #include <stdio.h>
+#include <symbol_gen.h>
 
 p_graph_node graph_node_gen(p_ir_vreg p_vreg, p_conflict_graph p_graph) {
     p_graph_node p_node = malloc(sizeof(*p_node));
@@ -228,37 +228,36 @@ void conflict_graph_drop(p_conflict_graph p_graph) {
     free(p_graph);
 }
 
+typedef struct node_info {
+    p_graph_node p_node;
+    size_t label;
+    bool visited;
+    list_head node;
+} node_info, *p_node_info;
+static inline void node_info_init(p_node_info seqs_info, p_list_head seq_heads, p_graph_node p_g_node) {
+    p_node_info p_info = seqs_info + p_g_node->node_id;
+    list_head_init(seq_heads + p_g_node->node_id);
+    p_info->p_node = p_g_node;
+    p_info->label = 0;
+    p_info->visited = false;
+    p_info->node = list_head_init(&p_info->node);
+    list_add_prev(&p_info->node, seq_heads + 0);
+}
 // 获得完美消除序列的逆序，也就是着色顺序以及图的色数，可优化
 void mcs_get_seqs(p_conflict_graph p_graph) {
     if (p_graph->node_num == 0) {
         p_graph->color_num = 0;
         return;
     }
-    typedef struct node_info {
-        p_graph_node p_node;
-        size_t label;
-        bool visited;
-        list_head node;
-    } node_info, *p_node_info;
     p_list_head seq_heads = malloc(sizeof(*seq_heads) * p_graph->node_num);
     p_node_info seqs_info = malloc(sizeof(*seqs_info) * p_graph->node_num);
     for (size_t i = 0; i < p_graph->origin_node_num; i++) {
         p_graph_node p_g_node = (p_graph->p_nodes + i)->p_def_node;
-        list_head_init(seq_heads + p_g_node->node_id);
-        (seqs_info + p_g_node->node_id)->p_node = p_g_node;
-        (seqs_info + p_g_node->node_id)->label = 0;
-        (seqs_info + p_g_node->node_id)->visited = false;
-        (seqs_info + p_g_node->node_id)->node = list_head_init(&(seqs_info + p_g_node->node_id)->node);
-        list_add_prev(&(seqs_info + p_g_node->node_id)->node, seq_heads + 0);
+        node_info_init(seqs_info, seq_heads, p_g_node);
         p_list_head p_node;
         list_for_each(p_node, &(p_graph->p_nodes + i)->p_use_spill_list->node) {
             p_g_node = list_entry(p_node, graph_nodes, node)->p_node;
-            list_head_init(seq_heads + p_g_node->node_id);
-            (seqs_info + p_g_node->node_id)->p_node = p_g_node;
-            (seqs_info + p_g_node->node_id)->label = 0;
-            (seqs_info + p_g_node->node_id)->visited = false;
-            (seqs_info + p_g_node->node_id)->node = list_head_init(&(seqs_info + p_g_node->node_id)->node);
-            list_add_prev(&(seqs_info + p_g_node->node_id)->node, seq_heads + 0);
+            node_info_init(seqs_info, seq_heads, p_g_node);
         }
     }
     size_t max_label = 0;
