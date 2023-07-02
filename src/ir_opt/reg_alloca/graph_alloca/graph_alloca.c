@@ -15,8 +15,8 @@ p_graph_alloca_info graph_alloca_info_gen(size_t reg_num_r, size_t reg_num_s, p_
     p_origin_graph_node p_nodes_s = malloc(sizeof(*p_nodes_s) * vreg_num);
     size_t numr = 0;
     size_t nums = 0;
-    p_info->p_r_graph = conflict_graph_gen(reg_num_r);
-    p_info->p_s_graph = conflict_graph_gen(reg_num_s);
+    p_info->p_r_graph = conflict_graph_gen(reg_num_r, p_func);
+    p_info->p_s_graph = conflict_graph_gen(reg_num_s, p_func);
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
         if (p_vreg->if_float) {
@@ -159,11 +159,7 @@ static inline bool check_spill(p_conflict_graph p_graph, p_graph_node p_g_node, 
     if (p_g_node->node_id >= p_graph->origin_node_num) return false;
     p_origin_graph_node p_o_node = p_graph->p_nodes + p_g_node->node_id;
     if (!p_o_node->if_need_spill) return false;
-    if (!p_o_node->p_vmem) {
-        p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_g_node->p_vreg->p_type));
-        symbol_func_add_variable(p_func, p_vmem);
-        p_o_node->p_vmem = p_vmem;
-    }
+    assert(p_o_node->p_vmem);
     return true;
 }
 

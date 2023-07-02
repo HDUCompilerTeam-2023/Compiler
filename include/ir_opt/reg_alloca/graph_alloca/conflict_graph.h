@@ -61,6 +61,7 @@ struct conflict_graph {
     size_t color_num; // 冲突图的色数
     size_t reg_num; // 可用寄存器数量
 
+    p_symbol_func p_func;
     list_head cliques;
 };
 
@@ -74,7 +75,7 @@ void add_graph_edge(p_graph_node r1, p_graph_node r2);
 void add_reg_graph_edge(p_ir_vreg r1, p_ir_vreg r2);
 bool if_in_neighbors(p_graph_node p_g_node, p_graph_node p_n_node);
 void node_list_del(p_graph_node_list p_list, p_graph_node p_del_node);
-p_conflict_graph conflict_graph_gen(size_t reg_num);
+p_conflict_graph conflict_graph_gen(size_t reg_num, p_symbol_func p_func);
 void conflict_graph_set_nodes(p_conflict_graph p_graph, p_origin_graph_node p_nodes, size_t num);
 void print_conflict_graph(p_conflict_graph p_graph);
 void graph_node_list_drop(p_graph_node_list p_list);

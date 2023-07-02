@@ -1,7 +1,7 @@
 #include <ir_opt/reg_alloca/graph_alloca/conflict_graph.h>
 
 #include <ir/vreg.h>
-
+#include <symbol_gen.h>
 #include <stdio.h>
 
 p_graph_node graph_node_gen(p_ir_vreg p_vreg, p_conflict_graph p_graph) {
@@ -70,13 +70,14 @@ p_list_head get_node_pos(p_graph_node_list p_list, p_graph_node p_g_node) {
     return NULL;
 }
 
-p_conflict_graph conflict_graph_gen(size_t reg_num) {
+p_conflict_graph conflict_graph_gen(size_t reg_num, p_symbol_func p_func) {
     p_conflict_graph p_graph = malloc(sizeof(*p_graph));
     p_graph->node_num = p_graph->origin_node_num = 0;
     p_graph->reg_num = reg_num;
     p_graph->p_nodes = NULL;
     p_graph->seo_seq = graph_node_list_gen();
     p_graph->cliques = list_head_init(&p_graph->cliques);
+    p_graph->p_func = p_func;
     return p_graph;
 }
 void conflict_graph_set_nodes(p_conflict_graph p_graph, p_origin_graph_node p_nodes, size_t num) {
@@ -413,6 +414,13 @@ static inline void print_cliques(p_conflict_graph p_graph) {
         print_node_list(p_c_node->may_spilled_list);
     }
 }
+
+static inline void set_mem(p_conflict_graph p_graph, p_origin_graph_node p_o_node){
+    p_o_node->if_need_spill = true;
+    p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_o_node->p_def_node->p_vreg->p_type));
+    symbol_func_add_variable(p_graph->p_func, p_vmem);
+    p_o_node->p_vmem = p_vmem;
+}
 void choose_spill(p_conflict_graph p_graph) {
     print_cliques(p_graph);
     p_list_head p_node;
@@ -434,13 +442,13 @@ void choose_spill(p_conflict_graph p_graph) {
         size_t need_spill_num = p_c_node->have_spilled_num + p_c_node->may_spilled_list->num - p_graph->reg_num;
 
         for (size_t i = 0; i < need_spill_num; i++) {
-            may_spilled_list[i]->if_need_spill = true;
             // 溢出后更新该节点对应得所有极大团的 may_spill
             p_list_head p_pc_node_;
             list_for_each(p_pc_node_, &may_spilled_list[i]->pcliques) {
                 p_clique_node p_c = list_entry(p_pc_node_, pclique_node, node)->p_c_node;
                 node_list_del(p_c->may_spilled_list, may_spilled_list[i]->p_def_node);
             }
+            set_mem(p_graph, may_spilled_list[i]);
         }
         free(may_spilled_list);
     }
