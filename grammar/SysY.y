@@ -26,6 +26,7 @@
 }
 
 %define api.pure full
+%locations
 
 %union {
        p_ast_block p_block;

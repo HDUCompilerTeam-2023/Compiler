@@ -129,8 +129,8 @@ void syntax_rtlib_func_init(p_syntax_info p_info) {
 
     syntax_rtlib_decl(p_info, type_void, "putf", symbol_type_var_gen(type_str), NULL, true);
 
-    syntax_rtlib_decl(p_info, type_void, "starttime", NULL, NULL, false);
-    syntax_rtlib_decl(p_info, type_void, "stoptime", NULL, NULL, false);
+    syntax_rtlib_decl(p_info, type_void, "_sysy_starttime", symbol_type_var_gen(type_i32), NULL, false);
+    syntax_rtlib_decl(p_info, type_void, "_sysy_stoptime", symbol_type_var_gen(type_i32), NULL, false);
 }
 
 static inline size_t syntax_init_by_assign_gen(p_symbol_type p_type, p_syntax_init p_init, size_t index, p_ast_exp p_addr, p_ast_block p_block) {
