@@ -56,6 +56,11 @@ static inline bool if_legal_direct_imme8(I32CONST_t i32const) {
     return !(i32const > imm_8_max || i32const < -imm_8_max);
 }
 
+// 对齐到Align的整数倍
+static size_t alignTo(size_t N, size_t Align) {
+    // (0,Align]返回Align
+    return (N + Align - 1) / Align * Align;
+}
 static inline void stack_alloc(p_arm_codegen_info p_info, p_symbol_func p_func) {
     p_list_head p_node;
     size_t stack_size = 0;
@@ -65,7 +70,7 @@ static inline void stack_alloc(p_arm_codegen_info p_info, p_symbol_func p_func) 
         printf("vmem %%%ld stack_offset : %ld \n", p_vmem->id, stack_size);
         stack_size += p_vmem->p_type->size;
     }
-    p_info->stack_size = stack_size;
+    p_info->stack_size = alignTo(stack_size, 8);
 }
 
 static inline void remap_reg_id(p_symbol_func p_func) {
