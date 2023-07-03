@@ -29,6 +29,7 @@ void origin_graph_node_gen(p_origin_graph_node p_node, p_ir_vreg p_vreg, p_confl
     p_node->p_spill_node = NULL;
     p_node->p_use_spill_list = graph_node_list_gen();
     p_node->if_pre_color = false;
+    p_node->spl_type = none;
     p_node->pcliques = list_head_init(&p_node->pcliques);
 }
 
@@ -80,19 +81,30 @@ p_list_head get_node_pos(p_graph_node_list p_list, p_graph_node p_g_node) {
 
 p_conflict_graph conflict_graph_gen(size_t reg_num_r, size_t reg_num_s, p_symbol_func p_func) {
     p_conflict_graph p_graph = malloc(sizeof(*p_graph));
-    p_graph->node_num = p_graph->origin_node_num = 0;
     p_graph->reg_num_r = reg_num_r;
     p_graph->reg_num_s = reg_num_s;
     p_graph->p_nodes = NULL;
     p_graph->seo_seq = graph_node_list_gen();
     p_graph->cliques = list_head_init(&p_graph->cliques);
     p_graph->p_func = p_func;
+    p_graph->node_num = 0;
+    p_list_head p_node;
+
+    size_t vreg_num = p_func->vreg_cnt + p_func->param_reg_cnt;
+
+    p_graph->p_nodes = malloc(sizeof(*p_graph->p_nodes) * vreg_num);
+    list_for_each(p_node, &p_func->param_reg_list) {
+        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
+        origin_graph_node_gen(p_graph->p_nodes + p_vreg->id, p_vreg, p_graph);
+    }
+    list_for_each(p_node, &p_func->vreg_list) {
+        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
+        origin_graph_node_gen(p_graph->p_nodes + p_vreg->id, p_vreg, p_graph);
+    }
+    p_graph->origin_node_num = vreg_num;
     return p_graph;
 }
-void conflict_graph_set_nodes(p_conflict_graph p_graph, p_origin_graph_node p_nodes, size_t num) {
-    p_graph->p_nodes = p_nodes;
-    p_graph->origin_node_num = num;
-}
+
 p_graph_node_list graph_node_list_gen() {
     p_graph_node_list p_list = malloc(sizeof(*p_list));
     p_list->num = 0;
