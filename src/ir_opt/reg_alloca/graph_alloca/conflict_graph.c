@@ -112,22 +112,9 @@ p_graph_node_list graph_node_list_gen() {
     return p_list;
 }
 
-void add_node_list_at(p_graph_node_list p_list, p_graph_node node, p_list_head p_next) {
-    p_graph_nodes p_neighbor = malloc(sizeof(*p_neighbor));
-    p_neighbor->node = list_head_init(&p_neighbor->node);
-    p_neighbor->p_node = node;
-    list_add_prev(&p_neighbor->node, p_next);
-    p_list->num++;
-}
-
 void add_graph_edge(p_graph_node r1, p_graph_node r2) {
-    p_list_head p_pos1 = get_node_pos(r1->p_neighbors, r2);
-    if (p_pos1)
-        add_node_list_at(r1->p_neighbors, r2, p_pos1);
-
-    p_list_head p_pos2 = get_node_pos(r2->p_neighbors, r1);
-    if (p_pos2)
-        add_node_list_at(r2->p_neighbors, r1, p_pos2);
+    graph_node_list_add(r1->p_neighbors, r2);
+    graph_node_list_add(r2->p_neighbors, r1);
 }
 
 void add_reg_graph_edge(p_ir_vreg r1, p_ir_vreg r2) {
