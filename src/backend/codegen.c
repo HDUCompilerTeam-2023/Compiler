@@ -193,14 +193,8 @@ static void mov_int2reg(char *asm_code, size_t rd, I32CONST_t i32const, bool s) 
 
 static void mov_float2reg(p_arm_codegen_info p_info, size_t rd, F32CONST_t floatconst) {
     // 浮点数放到标量寄存器
-    if (rd < R_NUM)
-        mov_imm32_gen(p_info->asm_code, rd, *(uint32_t *) (&floatconst), false);
-    else {
-        // 浮点数放到浮点寄存器
-        arm_word_gen(p_info->extra_code, *(uint32_t *) (&floatconst));
-        arm_get_float_label_val(p_info->asm_code, rd, p_info->p_func->name, p_info->extra_len);
-        p_info->extra_len++;
-    }
+    assert(rd < R_NUM);
+    mov_imm32_gen(p_info->asm_code, rd, *(uint32_t *) (&floatconst), false);
 }
 
 static void mov_imme2reg(p_arm_codegen_info p_info, size_t rd, p_ir_operand p_operand, bool s) {
@@ -278,8 +272,6 @@ static void arm_out_func_gen(p_arm_codegen_info p_info, size_t stack_size) {
     size_t r[2] = { FP, PC };
     arm_pop_gen(p_info->asm_code, r, 2);
     arm_jump_reg_gen(p_info->asm_code, arm_bx, arm_al, LR);
-    if (p_info->extra_len)
-        arm_float_code_gen(p_info->asm_code, p_info->p_func->name, p_info->extra_code);
 }
 
 static inline char *get_block_label(char *func_name, size_t block_id) {
@@ -810,9 +802,7 @@ static p_arm_codegen_info arm_codegen_info_gen(p_symbol_func p_func, char *asm_c
     p_arm_codegen_info p_info = malloc(sizeof(*p_info));
     p_info->mem_stack_offset = malloc(p_func->var_cnt * sizeof(*p_info->mem_stack_offset));
     p_info->asm_code = asm_code;
-    p_info->extra_len = 0;
     p_info->p_func = p_func;
-    strcpy(p_info->extra_code, "");
     return p_info;
 }
 static void arm_codegen_info_drop(p_arm_codegen_info p_info) {
