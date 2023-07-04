@@ -160,6 +160,15 @@ static void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         }
         break;
     case ir_val_assign:
+        if (p_unary_instr->p_src->kind == imme && p_unary_instr->p_src->p_type->ref_level == 0 && p_unary_instr->p_src->p_type->basic == type_f32)
+            if (p_unary_instr->p_des->if_float) {
+                p_ir_vreg p_new_des = ir_vreg_copy(p_unary_instr->p_des);
+                p_new_des->if_float = false;
+                symbol_func_vreg_add(p_func, p_new_des);
+                p_ir_instr p_new_assign = ir_unary_instr_gen(ir_val_assign, p_unary_instr->p_src, p_new_des);
+                list_add_prev(&p_new_assign->node, &p_instr->node);
+                p_unary_instr->p_src = ir_operand_vreg_gen(p_new_des);
+            }
         break;
     case ir_i2f_op:
         assert(p_unary_instr->p_src->kind == reg);
@@ -224,6 +233,7 @@ static void deal_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         // 调用时浮点数放浮点寄存器
         list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
             p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
+            check_imme2reg(p_param, p_instr, p_func);
             if (p_param->kind == reg && if_need_float(p_param->p_vreg))
                 set_float_reg(p_param->p_vreg);
         }
@@ -242,30 +252,22 @@ static void deal_instr(p_ir_instr p_instr, p_symbol_func p_func) {
 
 void arm_lir_func_trans(p_symbol_func p_func) {
     p_list_head p_node;
-    list_for_each(p_node, &p_func->param_reg_list){
+    list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        if(if_need_float(p_vreg))
+        if (if_need_float(p_vreg))
             set_float_reg(p_vreg);
     }
     p_list_head p_block_node;
-    list_for_each(p_block_node, &p_func->block) {
+    list_for_each_tail(p_block_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
         p_list_head p_node;
-        list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
-            p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
-            if (if_need_float(p_phi))
-                set_float_reg(p_phi);
-        }
-        p_list_head p_instr_node;
-        list_for_each(p_instr_node, &p_basic_block->instr_list) {
-            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
-            deal_instr(p_instr, p_func);
-        }
+        p_ir_instr p_head_instr = list_entry(&p_basic_block->instr_list, ir_instr, node);
         switch (p_basic_block->p_branch->kind) {
         case ir_br_branch:
             // 为避免浮点寄存器与标量寄存器之间 的交换行为，基本块参数的浮点数放浮点寄存器
             list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
+                check_imme2reg(p_param, p_head_instr, p_func);
                 if (p_param->kind == reg && if_need_float(p_param->p_vreg))
                     set_float_reg(p_param->p_vreg);
             }
@@ -273,11 +275,13 @@ void arm_lir_func_trans(p_symbol_func p_func) {
         case ir_cond_branch:
             list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
+                check_imme2reg(p_param, p_head_instr, p_func);
                 if (p_param->kind == reg && if_need_float(p_param->p_vreg))
                     set_float_reg(p_param->p_vreg);
             }
             list_for_each(p_node, &p_basic_block->p_branch->p_target_2->p_block_param->bb_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
+                check_imme2reg(p_param, p_head_instr, p_func);
                 if (p_param->kind == reg && if_need_float(p_param->p_vreg))
                     set_float_reg(p_param->p_vreg);
             }
@@ -290,6 +294,16 @@ void arm_lir_func_trans(p_symbol_func p_func) {
             break;
         case ir_abort_branch:
             break;
+        }
+        p_list_head p_instr_node;
+        list_for_each_tail(p_instr_node, &p_basic_block->instr_list) {
+            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            deal_instr(p_instr, p_func);
+        }
+        list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
+            p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
+            if (if_need_float(p_phi))
+                set_float_reg(p_phi);
         }
     }
     symbol_func_set_block_id(p_func);
