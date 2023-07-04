@@ -11,7 +11,6 @@ typedef struct sym_stack_node sym_stack_node, *p_sym_stack_node;
 typedef struct convert_ssa_list convert_ssa_list, *p_convert_ssa_list;
 
 struct convert_ssa {
-    p_ir_basic_block p_basic_block;
     p_bitmap dom_frontier; // 支配边界
 
     p_bitmap p_phi_var; // phi 函数变量集合
@@ -34,8 +33,7 @@ struct sym_stack_node {
 
 struct convert_ssa_list {
     p_convert_ssa p_base;
-    size_t block_num;
-    p_convert_ssa p_top;
+    p_symbol_func p_func;
 };
 
 struct ssa_var_list_info {
@@ -44,8 +42,7 @@ struct ssa_var_list_info {
     p_symbol_func p_func;
 };
 
-void mem2reg_info_gen(p_convert_ssa_list p_convert_list, size_t var_num, p_ir_basic_block p_basic_block);
-void mem2reg_init_dfs_sequence(p_convert_ssa_list p_convert_list, size_t var_num, p_ir_basic_block p_entry);
+p_convert_ssa_list mem2reg_info_gen(p_symbol_func p_func);
 p_ssa_var_list_info mem2reg_init_var_list(p_symbol_func p_func);
 
 void mem2reg_compute_dom_frontier(p_convert_ssa_list p_convert_list);
