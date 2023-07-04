@@ -391,9 +391,14 @@ void arm_pop_gen(char *asm_code, size_t *reg_id, size_t num) {
 
 void arm_get_global_addr(char *asm_code, size_t rd, char *name) {
     assert(rd < R_NUM);
-    strcat(asm_code, "   ldr ");
+    strcat(asm_code, "   movw ");
     strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", =");
+    strcat(asm_code, ", #:lower16:");
+    strcat(asm_code, name);
+    strcat(asm_code, "\n");
+    strcat(asm_code, "   movt ");
+    strcat(asm_code, regs[rd]);
+    strcat(asm_code, ", #:upper16:");
     strcat(asm_code, name);
     strcat(asm_code, "\n");
 }
