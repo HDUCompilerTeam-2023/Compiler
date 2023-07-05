@@ -229,18 +229,16 @@ p_syntax_decl_head syntax_declaration(p_syntax_info p_info, p_syntax_decl_head p
     else {
         p_symbol_var p_var = symbol_var_gen(name, p_type, false, false, NULL);
         syntax_func_add_variable(p_info, p_var);
-        if (p_s_init) {
-            if (list_head_alone(&p_var->p_type->array)) {
-                p_ast_exp p_lval = ast_exp_ptr_gen(p_var);
-                p_ast_exp p_rval = syntax_init_get_exp(p_s_init, p_type, 0);
-                if (!p_rval) p_rval = ast_exp_int_gen(0);
-                p_ast_stmt p_assign = ast_stmt_assign_gen(p_lval, p_rval);
-                ast_block_add(p_info->p_block, p_assign);
-            }
-            else {
-                    p_ast_exp p_lval = ast_exp_ptr_gen(p_var);
-                syntax_init_by_assign_gen(p_type, p_s_init, 0, p_lval, p_info->p_block);
-            }
+        if (list_head_alone(&p_var->p_type->array)) {
+            p_ast_exp p_lval = ast_exp_ptr_gen(p_var);
+            p_ast_exp p_rval = syntax_init_get_exp(p_s_init, p_type, 0);
+            if (!p_rval) p_rval = ast_exp_int_gen(0);
+            p_ast_stmt p_assign = ast_stmt_assign_gen(p_lval, p_rval);
+            ast_block_add(p_info->p_block, p_assign);
+        }
+        else if (p_s_init) {
+            p_ast_exp p_lval = ast_exp_ptr_gen(p_var);
+            syntax_init_by_assign_gen(p_type, p_s_init, 0, p_lval, p_info->p_block);
         }
     }
     syntax_init_drop(p_s_init);
