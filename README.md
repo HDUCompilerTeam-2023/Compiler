@@ -97,7 +97,7 @@
 - [ ] ~~32. 输出成 llvm 格式，采用 llvm 做检验~~
 - [x] 33. 合并 symbol 与 mir 的 func
 - [ ] 34. 输入输出格式
-- [ ] 35. `arm_lir_trans`常数加常数不放入寄存器
+- [x] 35. `arm_lir_trans`常数加常数不放入寄存器
 - [x] 36. 变量初始化
 - [ ] 37. load store 指令的 sp 支持
 - [ ] 38. 删掉 `add_at`
