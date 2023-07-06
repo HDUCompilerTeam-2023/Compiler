@@ -66,8 +66,6 @@ static void deal_binary_instr(p_inmem_alloca_info p_info, p_ir_instr p_instr) {
         new_store_vreg(p_info, p_instr, p_binary_instr->p_des);
         break;
     case ir_mod_op:
-    case ir_and_op:
-    case ir_or_op:
         assert(0);
         break;
     }

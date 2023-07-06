@@ -60,8 +60,6 @@ static inline p_ir_vreg add_edge_with(p_ir_instr p_instr) {
             if (p_instr->ir_binary.p_des->if_cond)
                 return NULL;
             return p_instr->ir_binary.p_des;
-        case ir_and_op:
-        case ir_or_op:
         case ir_mod_op:
             assert(0);
             break;

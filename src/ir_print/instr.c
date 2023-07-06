@@ -51,12 +51,6 @@ void ir_binary_instr_print(p_ir_binary_instr p_instr) {
     case ir_mod_op:
         printf(" %% ");
         break;
-    case ir_and_op:
-        printf(" && ");
-        break;
-    case ir_or_op:
-        printf(" || ");
-        break;
     case ir_eq_op:
         printf(" == ");
         break;

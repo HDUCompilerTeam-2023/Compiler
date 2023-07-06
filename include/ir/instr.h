@@ -8,8 +8,6 @@ enum ir_binary_op {
     ir_mul_op,
     ir_div_op,
     ir_mod_op,
-    ir_and_op,
-    ir_or_op,
     ir_eq_op,
     ir_neq_op,
     ir_l_op,

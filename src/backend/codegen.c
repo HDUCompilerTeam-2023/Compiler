@@ -538,8 +538,6 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
             arm_movcond_gen(asm_code, get_opposite_type(type), rd, 0, 0, true);
         }
         break;
-    case ir_and_op:
-    case ir_or_op:
     case ir_mod_op:
         assert(0);
     }
