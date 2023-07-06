@@ -71,6 +71,5 @@ void delete_cmp_pass(p_program p_ir){
             }
         }
         symbol_func_set_block_id(p_func);
-        symbol_func_set_vreg_id(p_func);
     }
 }

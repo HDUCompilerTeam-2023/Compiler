@@ -213,7 +213,6 @@ bool ir_simplify_cfg_pass(p_program p_program) {
         if_del |= ir_simplify_cfg_func_pass(p_func);
 
         symbol_func_set_block_id(p_func);
-        symbol_func_set_vreg_id(p_func);
     }
     return if_del;
 }

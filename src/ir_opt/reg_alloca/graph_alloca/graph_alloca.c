@@ -282,7 +282,7 @@ static inline void live_set_swap(p_ir_bb_phi_list p_live, p_ir_vreg *p_map, size
 }
 
 static void combine_mov(p_symbol_func p_func) {
-    symbol_func_set_vreg_id(p_func);
+    symbol_func_set_block_id(p_func);
     size_t reg_num = p_func->vreg_cnt + p_func->param_reg_cnt;
     p_ir_vreg *p_map = malloc(sizeof(void *) * reg_num);
     p_ir_vreg *p_need_del = malloc(sizeof(void *) * reg_num);
@@ -429,5 +429,4 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     liveness_info_drop(p_live_info);
     conflict_graph_drop(p_graph);
     symbol_func_set_block_id(p_func);
-    symbol_func_set_vreg_id(p_func);
 }

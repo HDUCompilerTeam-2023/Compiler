@@ -183,7 +183,7 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
                 symbol_func_vreg_del(p_func, (reg_info_table + j)->p_vreg);
             }
         }
-        symbol_func_set_vreg_id(p_func);
+        symbol_func_set_block_id(p_func);
         free(reg_info_table);
     }
 }
