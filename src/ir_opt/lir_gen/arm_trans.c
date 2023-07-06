@@ -62,8 +62,6 @@ static void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             set_float_reg(p_binary_instr->p_des);
         }
         break;
-    case ir_and_op:
-    case ir_or_op:
     case ir_eq_op:
     case ir_neq_op:
     case ir_l_op:

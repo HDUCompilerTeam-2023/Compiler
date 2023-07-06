@@ -55,9 +55,6 @@ static void binary_trans(p_ir_instr p_instr, p_symbol_func p_func) {
     case ir_eq_op:
     case ir_neq_op:
         break;
-    case ir_and_op:
-    case ir_or_op:
-        assert(0);
     }
 }
 
