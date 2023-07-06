@@ -102,16 +102,17 @@ p_conflict_graph conflict_graph_gen(size_t reg_num_r, size_t reg_num_s, p_symbol
 
     size_t vreg_num = p_func->vreg_cnt + p_func->param_reg_cnt;
 
+    size_t node_cnt = 0;
     p_graph->p_nodes = malloc(sizeof(*p_graph->p_nodes) * vreg_num);
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        origin_graph_node_gen(p_graph->p_nodes + p_vreg->id, p_vreg, p_graph);
+        origin_graph_node_gen(p_graph->p_nodes + node_cnt++, p_vreg, p_graph);
     }
     list_for_each(p_node, &p_func->vreg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        origin_graph_node_gen(p_graph->p_nodes + p_vreg->id, p_vreg, p_graph);
+        origin_graph_node_gen(p_graph->p_nodes + node_cnt++, p_vreg, p_graph);
     }
-    p_graph->origin_node_num = vreg_num;
+    p_graph->origin_node_num = node_cnt;
     return p_graph;
 }
 
