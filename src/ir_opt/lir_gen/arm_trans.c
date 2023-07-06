@@ -1,28 +1,8 @@
 #include <ir_opt/lir_gen/arm_trans.h>
-
+#include <ir_opt/lir_gen/arm_standard.h>
 #include <ir_gen.h>
 #include <program/def.h>
 #include <symbol_gen.h>
-
-// value循环右移bits位
-#define ror(value, bits) ((value >> bits) | (value << (sizeof(value) * 8 - bits)))
-
-static const I32CONST_t imm_8_max = 255;
-
-// 是否由八位循环右移偶数位得到
-static inline bool if_legal_rotate_imme12(I32CONST_t i32const) {
-    if (i32const == 0) return true;
-    if (i32const < 0) // 负数
-        i32const = -i32const;
-    uint32_t trans = i32const;
-    uint32_t window = ~imm_8_max;
-    for (size_t i = 0; i < 16; i++) {
-        if (!(window & trans))
-            return true;
-        window = ror(window, 2);
-    }
-    return false;
-}
 
 static inline void imme2reg(p_ir_operand p_operand, p_ir_instr p_instr, p_symbol_func p_func) {
     if (p_operand->kind != imme) return;
