@@ -3,17 +3,17 @@
 #include <program/gen.h>
 #include <program/print.h>
 
+#include <backend/arm/codegen.h>
 #include <ir_opt/deadcode_elimate.h>
 #include <ir_opt/lir_gen/arm_trans.h>
 #include <ir_opt/lir_gen/critical_edge_cut.h>
+#include <ir_opt/lir_gen/delete_cmp.h>
 #include <ir_opt/lir_gen/set_cond.h>
 #include <ir_opt/lir_gen/share_trans.h>
+#include <ir_opt/lir_gen/arm_trans_after.h>
 #include <ir_opt/mem2reg.h>
 #include <ir_opt/reg_alloca/reg_alloca.h>
 #include <ir_opt/simplify_cfg.h>
-#include <ir_opt/lir_gen/delete_cmp.h>
-#include <ir_opt/lir_gen/update_call_live.h>
-#include <backend/arm/codegen.h>
 #include <stdio.h>
 
 static inline char *get_prefix(char *file) {
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
         delete_cmp_pass(p_program);
         program_ir_print(p_program);
 
-        update_call_live_pass(p_program);
+        arm_trans_after_pass(p_program);
         program_ir_print(p_program);
 
         arm_codegen_pass(p_program, asm_code);
