@@ -196,7 +196,7 @@ static inline void set_block_param_ssa_id(p_ir_basic_block p_basic_block, p_conv
     for (size_t i = 0; i < var_num; i++) {
         if (bitmap_if_in(p_phi_var, i)) {
             p_ir_vreg p_vreg = ir_vreg_gen(symbol_type_copy((p_var_list->p_base + i)->p_vmem->p_type));
-            symbol_func_vreg_add_at(p_var_list->p_func, p_vreg, p_basic_block, list_entry(&p_basic_block->instr_list, ir_instr, node));
+            symbol_func_vreg_add(p_var_list->p_func, p_vreg);
             (p_var_list->p_base + i)->p_current_vreg = p_vreg;
             ir_basic_block_add_param(p_basic_block, p_vreg);
         }
@@ -262,7 +262,7 @@ void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa_list p_con
 
             p_ir_vreg p_vreg = ir_vreg_gen(symbol_type_copy(p_var_list->p_base[var_index].p_vmem->p_type));
             ir_vreg_set_instr_def(p_vreg, p_instr);
-            symbol_func_vreg_add_at(p_var_list->p_func, p_vreg, p_entry, p_instr);
+            symbol_func_vreg_add(p_var_list->p_func, p_vreg);
             p_var_list->p_base[var_index].p_current_vreg = p_vreg;
 
             ir_operand_drop(p_instr->ir_store.p_addr);
@@ -336,7 +336,7 @@ void mem2reg_func_pass(p_symbol_func p_func) {
     ssa_var_list_info_drop(p_var_list);
 
     delete_vmem(p_func);
-    symbol_func_set_vreg_id(p_func);
+    symbol_func_set_block_id(p_func);
 }
 
 void mem2reg_program_pass(p_program p_program) {

@@ -56,52 +56,28 @@ void symbol_func_vreg_del(p_symbol_func p_func, p_ir_vreg p_vreg) {
     --p_func->vreg_cnt;
 }
 
-void symbol_func_vreg_add_at(p_symbol_func p_func, p_ir_vreg p_new_sym, p_ir_basic_block p_current_block, p_ir_instr p_instr) {
-    ++p_func->vreg_cnt;
-    p_list_head p_instr_node = p_instr->node.p_next;
-    while (p_instr_node != &p_current_block->instr_list) {
-        p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
-        p_ir_vreg p_des = ir_instr_get_des(p_instr);
-        if (p_des) {
-            list_add_prev(&p_new_sym->node, &p_des->node);
-            return;
-        }
-        p_instr_node = p_instr_node->p_next;
-    }
-    p_list_head p_block_node = p_current_block->node.p_next;
-    while (p_block_node != &p_func->block) {
-        p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
-        p_list_head p_node;
-        list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
-            p_ir_vreg p_vreg = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
-            list_add_prev(&p_new_sym->node, &p_vreg->node);
-            return;
-        }
-        p_instr_node = p_basic_block->instr_list.p_next;
-        while (p_instr_node != &p_basic_block->instr_list) {
-            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
-            p_ir_vreg p_des = ir_instr_get_des(p_instr);
-            if (p_des) {
-                list_add_prev(&p_new_sym->node, &p_des->node);
-                return;
-            }
-            p_instr_node = p_instr_node->p_next;
-        }
-        p_block_node = p_block_node->p_next;
-    }
-    list_add_prev(&p_new_sym->node, &p_func->vreg_list);
-}
-
 void symbol_func_set_block_id(p_symbol_func p_func) {
     size_t block_id = 0;
     size_t instr_id = 0;
+    size_t vreg_id = 0;
     p_list_head p_node;
+    list_for_each(p_node, &p_func->param_reg_list) {
+        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
+        p_vreg->id = vreg_id++;
+    }
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
+        p_list_head p_param_node;
+        list_for_each(p_param_node, &p_basic_block->basic_block_phis->bb_phi) {
+            p_ir_bb_phi p_bb_phi = list_entry(p_param_node, ir_bb_phi, node);
+            p_bb_phi->p_bb_phi->id = vreg_id++;
+        }
         p_list_head p_instr_node;
         list_for_each(p_instr_node, &p_basic_block->instr_list) {
             p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
             p_instr->instr_id = instr_id++;
+            p_ir_vreg p_des = ir_instr_get_des(p_instr);
+            if (p_des) p_des->id = vreg_id++;
         }
         p_basic_block->block_id = block_id++;
     }
@@ -113,19 +89,6 @@ void symbol_func_basic_block_init_visited(p_symbol_func p_func) {
         list_entry(p_node, ir_basic_block, node)
             ->if_visited
         = false;
-}
-
-void symbol_func_set_vreg_id(p_symbol_func p_func) {
-    p_list_head p_node;
-    size_t id = 0;
-    list_for_each(p_node, &p_func->param_reg_list) {
-        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        p_vreg->id = id++;
-    }
-    list_for_each(p_node, &p_func->vreg_list) {
-        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        p_vreg->id = id++;
-    }
 }
 
 void symbol_func_add_constant(p_symbol_func p_func, p_symbol_var p_var) {

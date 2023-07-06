@@ -213,5 +213,5 @@ void whole_in_mem_alloca(p_symbol_func p_func, size_t reg_r_num, size_t reg_s_nu
         p_info->current_reg_s = current_reg_s;
     }
     inmem_alloca_info_drop(p_info);
-    symbol_func_set_vreg_id(p_func);
+    symbol_func_set_block_id(p_func);
 }

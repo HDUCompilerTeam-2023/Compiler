@@ -45,6 +45,5 @@ void ast2ir_symbol_func_gen(p_ast_block p_h_block, p_symbol_func p_m_func, p_pro
     }
 
     symbol_func_set_block_id(p_m_func);
-    symbol_func_set_vreg_id(p_m_func);
     ast2ir_info_drop(p_info);
 }
