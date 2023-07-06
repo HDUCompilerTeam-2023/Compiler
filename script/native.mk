@@ -20,7 +20,7 @@ $(OUTPUT_DIR)/%.compiler_out: %.sy $(BINARY) ALWAYS
 	@cat $<       >> $@
 	@echo ''      >> $@
 	@echo '=====' >> $@
-	@$(BINARY) $< >> $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
+	@$(BINARY) $< -o $(<:%.sy=%.s) >> $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
 
 LINK_DIR = lib
 LINK_FILE = sysy
