@@ -18,43 +18,8 @@
 
 #include <backend/arm/arm_instr_gen.h>
 #include <backend/arm/codegen.h>
+#include <ir_opt/lir_gen/arm_standard.h>
 #include <stdio.h>
-static const size_t R_NUM = 16;
-// static const size_t S_NUM = 32;
-static const size_t REG_NUM = 48;
-static const size_t FP = 11;
-static const size_t SP = 13;
-static const size_t LR = 14;
-static const size_t PC = 15;
-static const size_t TMP = 14;
-// value循环右移bits位
-#define ror(value, bits) ((value >> bits) | (value << (sizeof(value) * 8 - bits)))
-
-static const I32CONST_t imm_8_max = 255;
-static const I32CONST_t imm_12_max = 4095;
-static const I32CONST_t imm_16_max = 65535;
-
-// 是否由八位循环右移偶数位得到
-static inline bool if_legal_rotate_imme12(I32CONST_t i32const) {
-    if (i32const == 0) return true;
-    if (i32const < 0) // 负数
-        i32const = -i32const;
-    u_int32_t window = ~imm_8_max;
-    for (size_t i = 0; i < 16; i++) {
-        if (!(window & i32const))
-            return true;
-        window = ror(window, 2);
-    }
-    return false;
-}
-
-static inline bool if_legal_direct_imme12(I32CONST_t i32const) {
-    return !(i32const > imm_12_max || i32const < -imm_12_max);
-}
-
-static inline bool if_legal_direct_imme8(I32CONST_t i32const) {
-    return !(i32const > imm_8_max || i32const < -imm_8_max);
-}
 
 // 对齐到Align的整数倍
 static size_t alignTo(size_t N, size_t Align) {
