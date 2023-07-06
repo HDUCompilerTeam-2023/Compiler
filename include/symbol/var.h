@@ -28,6 +28,7 @@ struct symbol_var {
     bool is_global;
     bool is_const;
 
+    size_t stack_offset;
     list_head node;
 };
 

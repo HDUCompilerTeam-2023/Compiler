@@ -25,6 +25,7 @@ struct symbol_func {
     size_t block_cnt;
     list_head block;
 
+    size_t stack_size;
     list_head node;
 };
 

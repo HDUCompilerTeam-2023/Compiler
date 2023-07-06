@@ -21,48 +21,6 @@
 #include <ir_opt/lir_gen/arm_standard.h>
 #include <stdio.h>
 
-// 对齐到Align的整数倍
-static size_t alignTo(size_t N, size_t Align) {
-    // (0,Align]返回Align
-    return (N + Align - 1) / Align * Align;
-}
-static inline void stack_alloc(p_arm_codegen_info p_info, p_symbol_func p_func) {
-    p_list_head p_node;
-    size_t stack_size = 0;
-    list_for_each(p_node, &p_func->variable) {
-        p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
-        p_info->mem_stack_offset[p_vmem->id] = stack_size;
-        printf("vmem %%%ld stack_offset : %ld \n", p_vmem->id, stack_size);
-        stack_size += p_vmem->p_type->size;
-    }
-    p_info->stack_size = alignTo(stack_size, 8);
-}
-
-static inline void remap_reg_id(p_symbol_func p_func) {
-    size_t r_map[13] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-        12, 14 };
-    size_t s_map[32] = { 16, 17, 18, 19, 20, 21, 22, 23, 24,
-        25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37,
-        38, 39, 40, 41, 42, 43, 44, 45, 46, 47 };
-    p_list_head p_node;
-    list_for_each(p_node, &p_func->param_reg_list) {
-        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        if (p_vreg->if_float)
-            p_vreg->reg_id = s_map[p_vreg->reg_id];
-        else
-            p_vreg->reg_id = r_map[p_vreg->reg_id];
-    }
-    list_for_each(p_node, &p_func->vreg_list) {
-        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        if (p_vreg->reg_id != -1) {
-            if (p_vreg->if_float)
-                p_vreg->reg_id = s_map[p_vreg->reg_id];
-            else
-                p_vreg->reg_id = r_map[p_vreg->reg_id];
-        }
-    }
-}
-
 static inline void mov_reg2reg(char *asm_code, size_t rd, size_t rs, bool s) {
     if (rd < R_NUM && rs < R_NUM)
         arm_mov_gen(asm_code, arm_mov, rd, rs, s, 0, false);
@@ -184,7 +142,7 @@ static void mov_imme2reg(p_arm_codegen_info p_info, size_t rd, p_ir_operand p_op
         if (p_operand->p_vmem->is_global)
             arm_get_global_addr(p_info->asm_code, rd, p_operand->p_vmem->name);
         else
-            arm_data_process_gen(p_info->asm_code, arm_add, rd, FP, p_info->mem_stack_offset[p_operand->p_vmem->id], s, 2, true);
+            arm_data_process_gen(p_info->asm_code, arm_add, rd, FP, p_operand->p_vmem->stack_offset, s, 2, true);
         return;
     }
     switch (p_operand->p_type->basic) {
@@ -386,7 +344,7 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
     switch (p_binary_instr->op) {
     case ir_add_op:
         if (p_binary_instr->p_src1->kind == imme && p_binary_instr->p_src2->kind == imme) {
-            size_t stack_offset = p_info->mem_stack_offset[p_binary_instr->p_src1->p_vmem->id];
+            size_t stack_offset = p_binary_instr->p_src1->p_vmem->stack_offset;
             if (p_binary_instr->p_src2->p_type->ref_level > 0)
                 stack_offset += (p_binary_instr->p_src1->i32const);
             else
@@ -402,7 +360,7 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
         // a pointer in reg, need lsl
         if (p_binary_instr->p_src1->kind == imme) {
             if (p_binary_instr->p_src1->p_type->ref_level > 0) {
-                size_t offset = p_info->mem_stack_offset[p_binary_instr->p_src1->p_vmem->id];
+                size_t offset = p_binary_instr->p_src1->p_vmem->stack_offset;
                 arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src2->p_vreg->reg_id, offset, false, 0, true);
                 arm_data_process_gen(asm_code, arm_add, rd, FP, rd, s, 2, false);
                 break;
@@ -415,7 +373,7 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
         }
         if (p_binary_instr->p_src2->kind == imme) {
             if (p_binary_instr->p_src2->p_type->ref_level > 0) {
-                size_t offset = p_info->mem_stack_offset[p_binary_instr->p_src2->p_vmem->id];
+                size_t offset = p_binary_instr->p_src2->p_vmem->stack_offset;
                 arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src1->p_vreg->reg_id, offset, false, 0, true);
                 arm_data_process_gen(asm_code, arm_add, rd, FP, rd, s, 2, false);
                 break;
@@ -442,7 +400,7 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
     case ir_sub_op:
         if (p_binary_instr->p_src1->kind == imme && p_binary_instr->p_src2->kind == imme) {
             assert(p_binary_instr->p_src1->p_type->ref_level > 0);
-            size_t stack_offset = p_info->mem_stack_offset[p_binary_instr->p_src1->p_vmem->id] - p_binary_instr->p_src2->i32const;
+            size_t stack_offset = p_binary_instr->p_src1->p_vmem->stack_offset - p_binary_instr->p_src2->i32const;
             if (!if_legal_rotate_imme12(stack_offset)) {
                 mov_int2reg(asm_code, rd, stack_offset << 2, false);
                 arm_data_process_gen(asm_code, arm_add, rd, FP, rd, s, 0, false);
@@ -455,7 +413,7 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
         assert(p_binary_instr->p_src2->p_type->ref_level == 0);
         if (p_binary_instr->p_src1->kind == imme) {
             if (p_binary_instr->p_src1->p_type->ref_level > 0) {
-                size_t offset = p_info->mem_stack_offset[p_binary_instr->p_src1->p_vmem->id];
+                size_t offset = p_binary_instr->p_src1->p_vmem->stack_offset;
                 arm_data_process_gen(asm_code, arm_rsb, rd, p_binary_instr->p_src2->p_vreg->reg_id, offset, false, 0, true);
                 arm_data_process_gen(asm_code, arm_add, rd, FP, rd, s, 2, false);
                 break;
@@ -547,7 +505,7 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
     char *asm_code = p_info->asm_code;
     if (p_store_instr->p_addr->kind == imme) {
         assert(p_store_instr->p_addr->p_type->ref_level);
-        size_t stack_offset = p_info->mem_stack_offset[p_store_instr->p_addr->p_vmem->id];
+        size_t stack_offset = p_store_instr->p_addr->p_vmem->stack_offset;
         if (p_store_instr->p_offset) {
             assert(p_store_instr->p_offset->kind == imme);
             stack_offset += p_store_instr->p_offset->i32const;
@@ -611,7 +569,7 @@ static void arm_load_instr_gen(p_arm_codegen_info p_info, p_ir_load_instr p_load
     char *asm_code = p_info->asm_code;
     if (p_load_instr->p_addr->kind == imme) {
         assert(p_load_instr->p_addr->p_type->ref_level);
-        size_t stack_offset = p_info->mem_stack_offset[p_load_instr->p_addr->p_vmem->id];
+        size_t stack_offset = p_load_instr->p_addr->p_vmem->stack_offset;
         if (p_load_instr->p_offset) {
             assert(p_load_instr->p_offset->kind == imme);
             stack_offset += p_load_instr->p_offset->i32const;
@@ -741,7 +699,7 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
         break;
     case ir_ret_branch:
         if (!p_block->p_branch->p_exp) {
-            arm_out_func_gen(p_info, p_info->stack_size);
+            arm_out_func_gen(p_info, p_func->stack_size);
             break;
         }
         size_t rd = 0;
@@ -751,7 +709,7 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
             mov_imme2reg(p_info, rd, p_block->p_branch->p_exp, false);
         else if (rd != p_block->p_branch->p_exp->p_vreg->reg_id)
             mov_reg2reg(p_info->asm_code, rd, p_block->p_branch->p_exp->p_vreg->reg_id, false);
-        arm_out_func_gen(p_info, p_info->stack_size);
+        arm_out_func_gen(p_info, p_func->stack_size);
         break;
     case ir_abort_branch:
         break;
@@ -760,13 +718,11 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
 
 static p_arm_codegen_info arm_codegen_info_gen(p_symbol_func p_func, char *asm_code) {
     p_arm_codegen_info p_info = malloc(sizeof(*p_info));
-    p_info->mem_stack_offset = malloc(p_func->var_cnt * sizeof(*p_info->mem_stack_offset));
     p_info->asm_code = asm_code;
     p_info->p_func = p_func;
     return p_info;
 }
 static void arm_codegen_info_drop(p_arm_codegen_info p_info) {
-    free(p_info->mem_stack_offset);
     free(p_info);
 }
 
@@ -774,10 +730,7 @@ void arm_func_codegen(p_symbol_func p_func, char *asm_code) {
     if (list_head_alone(&p_func->block)) return;
     p_arm_codegen_info p_info = arm_codegen_info_gen(p_func, asm_code);
 
-    stack_alloc(p_info, p_func);
-    remap_reg_id(p_func);
-
-    arm_into_func_gen(p_info, p_func, p_info->stack_size);
+    arm_into_func_gen(p_info, p_func, p_func->stack_size);
 
     p_list_head p_block_node;
     list_for_each(p_block_node, &p_func->block) {
