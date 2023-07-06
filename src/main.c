@@ -12,7 +12,7 @@
 #include <ir_opt/reg_alloca/reg_alloca.h>
 #include <ir_opt/simplify_cfg.h>
 #include <ir_opt/lir_gen/delete_cmp.h>
-
+#include <ir_opt/lir_gen/update_call_live.h>
 #include <backend/arm/codegen.h>
 #include <stdio.h>
 
@@ -97,6 +97,9 @@ int main(int argc, char *argv[]) {
         program_ir_print(p_program);
 
         delete_cmp_pass(p_program);
+        program_ir_print(p_program);
+
+        update_call_live_pass(p_program);
         program_ir_print(p_program);
 
         arm_codegen_pass(p_program, asm_code);
