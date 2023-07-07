@@ -168,7 +168,7 @@ static inline p_ir_instr ast2ir_exp_gep_gen(p_ast2ir_info p_info, p_ast_exp p_ex
 static inline p_ir_instr ast2ir_exp_load_gen(p_ast2ir_info p_info, p_ast_exp p_exp) {
     p_ir_operand p_ptr = ast2ir_exp_gen(p_info, p_exp->p_ptr);
     p_ir_vreg p_des = ir_vreg_gen(symbol_type_copy(p_exp->p_type));
-    p_ir_instr p_load = ir_load_instr_gen(p_ptr, NULL, p_des);
+    p_ir_instr p_load = ir_load_instr_gen(p_ptr, p_des);
     p_exp->p_des = p_des;
     return p_load;
 }

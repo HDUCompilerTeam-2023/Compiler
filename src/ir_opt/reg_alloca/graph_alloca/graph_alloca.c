@@ -48,7 +48,7 @@ static void new_store_front(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_bas
     case none:
         return;
     case reg_mem:
-        p_store = ir_store_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), NULL, ir_operand_vreg_gen(p_vreg));
+        p_store = ir_store_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), ir_operand_vreg_gen(p_vreg));
         list_add_next(&p_store->node, &p_basic_block->instr_list);
         copy_live(p_store->p_live_out, p_live_in);
         copy_live(p_store->p_live_in, p_live_in);
@@ -78,7 +78,7 @@ static void new_store_middle(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_in
     case none:
         return;
     case reg_mem:
-        p_store = ir_store_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), NULL, ir_operand_vreg_gen(p_vreg));
+        p_store = ir_store_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), ir_operand_vreg_gen(p_vreg));
         list_add_next(&p_store->node, &p_instr->node);
         // 改变活跃集合
         copy_live(p_store->p_live_out, p_instr->p_live_out);
@@ -115,7 +115,7 @@ static void new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_inst
     case none:
         return;
     case reg_mem:
-        p_load = ir_load_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), NULL, p_new_src);
+        p_load = ir_load_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), p_new_src);
         list_add_prev(&p_load->node, &p_instr->node);
         p_operand->p_vreg = p_new_src;
         // 改变活跃集合和冲突图
@@ -206,15 +206,11 @@ void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
                 break;
             case ir_load:
                 new_load(p_graph, p_instr->ir_load.p_addr, p_instr, p_instr->p_live_in, p_func);
-                if (p_instr->ir_load.p_offset)
-                    new_load(p_graph, p_instr->ir_load.p_offset, p_instr, p_instr->p_live_in, p_func);
                 new_store_middle(p_graph, p_instr->ir_load.p_des, p_instr, p_func);
                 break;
             case ir_store:
                 new_load(p_graph, p_instr->ir_store.p_src, p_instr, p_instr->p_live_in, p_func);
                 new_load(p_graph, p_instr->ir_store.p_addr, p_instr, p_instr->p_live_in, p_func);
-                if (p_instr->ir_store.p_offset)
-                    new_load(p_graph, p_instr->ir_store.p_offset, p_instr, p_instr->p_live_in, p_func);
                 break;
             case ir_gep:
                 assert(0);
@@ -336,15 +332,11 @@ static void combine_mov(p_symbol_func p_func) {
                 break;
             case ir_load:
                 combine_remap_operand(p_instr->ir_load.p_addr, p_map);
-                if (p_instr->ir_load.p_offset)
-                    combine_remap_operand(p_instr->ir_load.p_offset, p_map);
                 combine_map_self(p_instr->ir_load.p_des, p_map);
                 break;
             case ir_store:
                 combine_remap_operand(p_instr->ir_store.p_addr, p_map);
                 combine_remap_operand(p_instr->ir_store.p_src, p_map);
-                if (p_instr->ir_store.p_offset)
-                    combine_remap_operand(p_instr->ir_store.p_offset, p_map);
                 break;
             case ir_gep:
                 assert(0);

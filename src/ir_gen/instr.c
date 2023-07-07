@@ -79,14 +79,13 @@ p_ir_instr ir_gep_instr_gen(p_ir_operand p_addr, p_ir_operand p_offset, p_ir_vre
     return p_instr;
 }
 
-p_ir_instr ir_load_instr_gen(p_ir_operand p_addr, p_ir_operand p_offset, p_ir_vreg p_des) {
+p_ir_instr ir_load_instr_gen(p_ir_operand p_addr, p_ir_vreg p_des) {
     p_ir_instr p_instr = malloc(sizeof(*p_instr));
     *p_instr = (ir_instr) {
         .irkind = ir_load,
         .ir_load = (ir_load_instr) {
             .p_addr = p_addr,
             .p_des = p_des,
-            .p_offset = p_offset,
         },
         .node = list_head_init(&p_instr->node),
         .instr_id = 0,
@@ -97,14 +96,13 @@ p_ir_instr ir_load_instr_gen(p_ir_operand p_addr, p_ir_operand p_offset, p_ir_vr
     return p_instr;
 }
 
-p_ir_instr ir_store_instr_gen(p_ir_operand p_addr, p_ir_operand p_offset, p_ir_operand p_src) {
+p_ir_instr ir_store_instr_gen(p_ir_operand p_addr, p_ir_operand p_src) {
     p_ir_instr p_instr = malloc(sizeof(*p_instr));
     *p_instr = (ir_instr) {
         .irkind = ir_store,
         .ir_store = (ir_store_instr) {
             .p_addr = p_addr,
             .p_src = p_src,
-            .p_offset = p_offset,
         },
         .node = list_head_init(&p_instr->node),
         .instr_id = 0,
@@ -132,8 +130,6 @@ p_ir_operand ir_instr_get_src2(p_ir_instr p_instr) {
     switch (p_instr->irkind) {
     case ir_binary:
         return p_instr->ir_binary.p_src2;
-    case ir_load:
-        return p_instr->ir_load.p_offset;
     case ir_gep:
         return p_instr->ir_gep.p_offset;
     default:
@@ -194,14 +190,10 @@ void ir_instr_drop(p_ir_instr p_instr) {
         break;
     case ir_store:
         ir_operand_drop(p_instr->ir_store.p_addr);
-        if (p_instr->ir_load.p_offset)
-            ir_operand_drop(p_instr->ir_store.p_offset);
         ir_operand_drop(p_instr->ir_store.p_src);
         break;
     case ir_load:
         ir_operand_drop(p_instr->ir_load.p_addr);
-        if (p_instr->ir_load.p_offset)
-            ir_operand_drop(p_instr->ir_load.p_offset);
         break;
     }
     ir_bb_phi_list_drop(p_instr->p_live_in);

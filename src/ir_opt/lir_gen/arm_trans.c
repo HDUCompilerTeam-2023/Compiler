@@ -187,14 +187,12 @@ static void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
 static void deal_load_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     p_ir_load_instr p_load_instr = &p_instr->ir_load;
     check_imme2reg(p_load_instr->p_addr, p_instr, p_func);
-    assert(!p_load_instr->p_offset);
 }
 
 static void deal_store_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     p_ir_store_instr p_store_instr = &p_instr->ir_store;
     imme2reg(p_store_instr->p_src, p_instr, p_func); // store 的源必须为寄存器
     check_imme2reg(p_store_instr->p_addr, p_instr, p_func);
-    assert(!p_store_instr->p_offset);
 }
 
 static void deal_instr(p_ir_instr p_instr, p_symbol_func p_func) {
