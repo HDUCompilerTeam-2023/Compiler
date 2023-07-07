@@ -65,12 +65,10 @@ struct ir_gep_instr {
 };
 struct ir_load_instr {
     p_ir_operand p_addr;
-    p_ir_operand p_offset;
     p_ir_vreg p_des;
 };
 struct ir_store_instr {
     p_ir_operand p_addr;
-    p_ir_operand p_offset;
     p_ir_operand p_src;
 };
 

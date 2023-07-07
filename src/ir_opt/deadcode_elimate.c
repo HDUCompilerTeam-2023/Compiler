@@ -47,7 +47,6 @@ static inline p_reg_info deal_instr_src(p_ir_instr p_instr, p_reg_info reg_info_
         break;
     case ir_store:
         p_top = deal_operand(p_instr->ir_store.p_addr, reg_info_table, p_top, p_func);
-        p_top = deal_operand(p_instr->ir_store.p_offset, reg_info_table, p_top, p_func);
         p_top = deal_operand(p_instr->ir_store.p_src, reg_info_table, p_top, p_func);
         break;
     default:

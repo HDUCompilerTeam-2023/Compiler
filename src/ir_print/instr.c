@@ -115,19 +115,11 @@ void ir_load_instr_print(p_ir_load_instr p_instr) {
     ir_vreg_print(p_instr->p_des);
     printf(" = load ");
     ir_operand_print(p_instr->p_addr);
-    if (p_instr->p_offset) {
-        printf(" ");
-        ir_operand_print(p_instr->p_offset);
-    }
 }
 
 void ir_store_instr_print(p_ir_store_instr p_instr) {
     printf("store ");
     ir_operand_print(p_instr->p_addr);
-    if (p_instr->p_offset) {
-        printf(" ");
-        ir_operand_print(p_instr->p_offset);
-    }
     printf(" = ");
     ir_operand_print(p_instr->p_src);
 }

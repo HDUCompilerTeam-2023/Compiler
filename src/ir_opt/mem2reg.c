@@ -240,7 +240,6 @@ void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa_list p_con
         if (p_instr->irkind == ir_load) {
             size_t var_index = get_var_index(p_instr->ir_load.p_addr, p_var_list);
             if (var_index == -1) continue;
-            assert(!p_instr->ir_store.p_offset);
 
             p_ir_operand p_top_operand = get_top_operand(p_var_list, var_index);
             if (!p_top_operand) {
@@ -258,7 +257,6 @@ void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa_list p_con
         if (p_instr->irkind == ir_store) {
             size_t var_index = get_var_index(p_instr->ir_store.p_addr, p_var_list);
             if (var_index == -1) continue;
-            assert(!p_instr->ir_store.p_offset);
 
             p_ir_vreg p_vreg = ir_vreg_gen(symbol_type_copy(p_var_list->p_base[var_index].p_vmem->p_type));
             ir_vreg_set_instr_def(p_vreg, p_instr);

@@ -23,7 +23,7 @@ static void new_load_operand(p_inmem_alloca_info p_info, p_ir_instr p_instr, p_i
         assert(p_info->pp_vmem[p_operand->p_vreg->id]);
         p_ir_vreg p_new_src = copy_vreg(p_info, p_operand->p_vreg);
         p_ir_operand p_vmem_operand = ir_operand_addr_gen(p_info->pp_vmem[p_operand->p_vreg->id]);
-        p_ir_instr p_load = ir_load_instr_gen(p_vmem_operand, NULL, p_new_src);
+        p_ir_instr p_load = ir_load_instr_gen(p_vmem_operand, p_new_src);
         set_reg_id(p_info, p_new_src);
         list_add_prev(&p_load->node, &p_instr->node);
         p_operand->p_vreg = p_new_src;
@@ -40,7 +40,7 @@ static inline p_symbol_var reg2mem(p_inmem_alloca_info p_info, p_ir_vreg p_vreg)
 static inline void new_store_vreg(p_inmem_alloca_info p_info, p_ir_instr p_instr, p_ir_vreg p_vreg) {
     p_symbol_var p_vmem = reg2mem(p_info, p_vreg);
     set_reg_id(p_info, p_vreg);
-    p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), NULL, ir_operand_vreg_gen(p_vreg));
+    p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), ir_operand_vreg_gen(p_vreg));
     list_add_next(&p_store->node, &p_instr->node);
 }
 static void deal_binary_instr(p_inmem_alloca_info p_info, p_ir_instr p_instr) {
@@ -109,14 +109,10 @@ static void deal_instr(p_inmem_alloca_info p_info, p_ir_instr p_instr) {
         }
         break;
     case ir_store:
-        if (p_instr->ir_store.p_offset)
-            new_load_operand(p_info, p_instr, p_instr->ir_store.p_offset);
         new_load_operand(p_info, p_instr, p_instr->ir_store.p_src);
         new_load_operand(p_info, p_instr, p_instr->ir_store.p_addr);
         break;
     case ir_load:
-        if (p_instr->ir_load.p_offset)
-            new_load_operand(p_info, p_instr, p_instr->ir_load.p_offset);
         new_store_vreg(p_info, p_instr, p_instr->ir_load.p_des);
         new_load_operand(p_info, p_instr, p_instr->ir_load.p_addr);
         break;

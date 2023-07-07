@@ -293,14 +293,10 @@ void liveness_analysis(p_liveness_info p_info) {
                 break;
             case ir_load:
                 p_live_in_statments_(p_info, p_instr, p_basic_block, p_instr->ir_load.p_addr);
-                if (p_instr->ir_load.p_offset)
-                    p_live_in_statments_(p_info, p_instr, p_basic_block, p_instr->ir_load.p_offset);
                 break;
             case ir_store:
                 p_live_in_statments_(p_info, p_instr, p_basic_block, p_instr->ir_store.p_addr);
                 p_live_in_statments_(p_info, p_instr, p_basic_block, p_instr->ir_store.p_src);
-                if (p_instr->ir_store.p_offset)
-                    p_live_in_statments_(p_info, p_instr, p_basic_block, p_instr->ir_store.p_offset);
                 break;
             case ir_call:
                 list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {

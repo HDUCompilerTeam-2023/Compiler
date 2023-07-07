@@ -61,9 +61,9 @@ static inline void arm_trans_after_func(p_symbol_func p_func) {
                         continue;
                     p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_vreg->p_type));
                     symbol_func_add_variable(p_func, p_vmem);
-                    p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), NULL, ir_operand_vreg_gen(p_vreg));
+                    p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), ir_operand_vreg_gen(p_vreg));
                     list_add_prev(&p_store->node, &p_instr->node);
-                    p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem), NULL, p_vreg);
+                    p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem), p_vreg);
                     list_add_next(&p_load->node, &p_instr->node);
                 }
             }
