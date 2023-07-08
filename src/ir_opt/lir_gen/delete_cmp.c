@@ -63,7 +63,7 @@ void delete_cmp_pass(p_program p_ir){
                     p_ir_vreg p_cmp_src = p_def_instr->ir_binary.p_src1->p_vreg;
                     if (can_update_tag(p_cmp_src, p_func)) {
                         p_cmp_src->if_cond = true;
-                        p_basic_block->p_branch->p_exp->p_vreg = p_cmp_src;
+                        ir_operand_reset_vreg(p_basic_block->p_branch->p_exp, p_cmp_src);
                         ir_instr_drop(p_def_instr);
                         symbol_func_vreg_del(p_func, p_cond);
                     }

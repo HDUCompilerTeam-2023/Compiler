@@ -26,7 +26,7 @@ static void new_load_operand(p_inmem_alloca_info p_info, p_ir_instr p_instr, p_i
         p_ir_instr p_load = ir_load_instr_gen(p_vmem_operand, p_new_src, true);
         set_reg_id(p_info, p_new_src);
         list_add_prev(&p_load->node, &p_instr->node);
-        p_operand->p_vreg = p_new_src;
+        ir_operand_reset_vreg(p_operand, p_new_src);
     }
 }
 

@@ -179,6 +179,10 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
                 else {
                     ir_instr_drop((reg_info_table + j)->p_vreg->p_instr_def);
                 }
+            }
+        }
+        for (size_t j = p_func->param_reg_cnt; j < vreg_num; j++) {
+            if (!(reg_info_table + j)->p_prev) {
                 symbol_func_vreg_del(p_func, (reg_info_table + j)->p_vreg);
             }
         }

@@ -22,6 +22,9 @@ static inline void ir_simplify_cfg_func_remove_no_predesessor_bb(p_symbol_func p
     symbol_func_basic_block_init_visited(p_func);
     p_ir_basic_block p_entry_bb = list_entry(p_func->block.p_next, ir_basic_block, node);
     ir_simplify_cfg_dfs_basic_block(p_entry_bb);
+
+    p_ir_vreg *need_del = (p_ir_vreg *) malloc(sizeof(p_ir_vreg) * p_func->vreg_cnt);
+    size_t del_reg_cnt = 0;
     p_list_head p_node;
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
@@ -50,7 +53,7 @@ static inline void ir_simplify_cfg_func_remove_no_predesessor_bb(p_symbol_func p
                 break;
             }
             if (p_des) {
-                symbol_func_vreg_del(p_func, p_des);
+                need_del[del_reg_cnt++] = p_des;
             }
         }
 
@@ -85,6 +88,10 @@ static inline void ir_simplify_cfg_func_remove_no_predesessor_bb(p_symbol_func p
 
         symbol_func_bb_del(p_func, p_bb);
     }
+    for (size_t i = 0; i < del_reg_cnt; ++i) {
+        symbol_func_vreg_del(p_func, need_del[i]);
+    }
+    free(need_del);
 }
 
 static inline void ir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_func p_func) {
