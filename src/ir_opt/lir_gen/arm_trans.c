@@ -80,10 +80,7 @@ static void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             p_binary_instr->p_src2 = temp;
             switch (p_binary_instr->op) {
             case ir_eq_op:
-                p_binary_instr->op = ir_neq_op;
-                break;
             case ir_neq_op:
-                p_binary_instr->op = ir_eq_op;
                 break;
             case ir_l_op:
                 p_binary_instr->op = ir_geq_op;
