@@ -158,6 +158,43 @@ static void mov_imme2reg(p_arm_codegen_info p_info, size_t rd, p_ir_operand p_op
     }
 }
 
+static inline arm_cond_type get_cond_type(ir_binary_op op) {
+    switch (op) {
+    case ir_eq_op:
+        return arm_eq;
+    case ir_neq_op:
+        return arm_ne;
+    case ir_l_op:
+        return arm_lt;
+    case ir_leq_op:
+        return arm_le;
+    case ir_g_op:
+        return arm_gt;
+    case ir_geq_op:
+        return arm_ge;
+    default:
+        return arm_ne;
+    }
+}
+
+static inline arm_cond_type get_opposite_type(arm_cond_type type) {
+    switch (type) {
+    case arm_eq:
+        return arm_ne;
+    case arm_ne:
+        return arm_eq;
+    case arm_ge:
+        return arm_lt;
+    case arm_gt:
+        return arm_le;
+    case arm_le:
+        return arm_gt;
+    case arm_lt:
+        return arm_ge;
+    case arm_al:
+        return arm_al;
+    }
+}
 static void arm_global_sym_gen(char *asm_code, p_symbol_var p_sym) {
     arm_global_sym_declare_gen(asm_code, p_sym->name, p_sym->p_type->size << 2);
     arm_label_gen(asm_code, p_sym->name);
@@ -474,8 +511,9 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
                 arm_compare_gen(asm_code, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, 0, false);
         }
         if (!s) {
-            arm_movcond_gen(asm_code, arm_eq, rd, 1, 0, true);
-            arm_movcond_gen(asm_code, arm_ne, rd, 0, 0, true);
+            arm_cond_type type = get_cond_type(p_binary_instr->op);
+            arm_movcond_gen(asm_code, type, rd, 1, 0, true);
+            arm_movcond_gen(asm_code, get_opposite_type(type), rd, 0, 0, true);
         }
         break;
     case ir_and_op:
@@ -655,22 +693,7 @@ static arm_cond_type get_jump_type(p_arm_codegen_info p_info, p_ir_vreg p_vreg) 
     assert(!p_vreg->is_bb_param);
     if (p_vreg->p_instr_def->irkind != ir_binary)
         return arm_ne;
-    switch (p_vreg->p_instr_def->ir_binary.op) {
-    case ir_eq_op:
-        return arm_eq;
-    case ir_neq_op:
-        return arm_ne;
-    case ir_l_op:
-        return arm_lt;
-    case ir_leq_op:
-        return arm_le;
-    case ir_g_op:
-        return arm_gt;
-    case ir_geq_op:
-        return arm_ge;
-    default:
-        return arm_ne;
-    }
+    return get_cond_type(p_vreg->p_instr_def->ir_binary.op);
 }
 
 static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block p_block, p_ir_basic_block p_next_block, p_symbol_func p_func) {
