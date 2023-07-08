@@ -58,47 +58,36 @@ int main(int argc, char *argv[]) {
     // gen ir
     p_program p_program = frontend_trans(is_shell ? NULL : in_file);
     program_variable_print(p_program);
-    program_ir_print(p_program);
 
     // simplify cfg
     ir_simplify_cfg_pass(p_program);
-    program_ir_print(p_program);
 
     // into ssa
     mem2reg_program_pass(p_program);
     program_ir_dom_info_print(p_program);
-    program_ir_print(p_program);
 
     // deadcode elimate
     ir_deadcode_elimate_pass(p_program, true);
-    program_ir_print(p_program);
 
     // shared lir trans
     share_lir_trans_pass(p_program);
-    program_ir_print(p_program);
 
     // arm lir trans
     arm_lir_trans_pass(p_program);
-    program_ir_print(p_program);
 
     // set_cond
     set_cond_pass(p_program);
-    program_ir_print(p_program);
 
     reg_alloca_pass(alloca_color_graph, 12, 32, p_program);
-    program_ir_print(p_program);
 
     critical_edge_cut_pass(p_program);
-    program_ir_print(p_program);
 
     delete_cmp_pass(p_program);
-    program_ir_print(p_program);
 
     arm_trans_after_pass(p_program);
     program_ir_print(p_program);
 
     arm_codegen_pass(p_program, asm_code);
-    printf("%s", asm_code);
     // drop ir
     program_drop(p_program);
     asm2file(out_file, asm_code);
