@@ -137,20 +137,36 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
 
     // 现在变成了一一映射
     size_t *current_val_in = malloc(sizeof(*current_val_in) * REG_NUM);
+    size_t *reg_val = malloc(sizeof(*reg_val) * REG_NUM);
     memset(current_val_in, 0, sizeof(*current_val_in) * REG_NUM);
+    memset(reg_val, 0, sizeof(*reg_val) * REG_NUM);
     for (size_t i = 0; i < num; i++) {
         if (use_reg_count[r1[i]] == 0) continue; // 之前已经被处理过, 处理完后原始reg的使用次数都为1或0
         assert(use_reg_count[r1[i]] == 1);
         current_val_in[r1[i]] = r1[i];
+        reg_val[r1[i]] = r1[i];
     }
     for (size_t i = 0; i < num; i++) {
         if (use_reg_count[r1[i]] == 0) continue;
-        if (current_val_in[r1[i]] == r2[i]) continue;
-        arm_swap_gen(p_info->asm_code, current_val_in[r1[i]], r2[i]);
+        if (current_val_in[r1[i]] == r2[i]) {
+            assert(reg_val[r2[i]] == r1[i]);
+            continue;
+        }
+        // if have tmp
+        // if r1[i] >= REG_NUM || r2[i] >= REG_NUM assert(have tmp);
+        mov_reg2reg(p_info->asm_code, TMP, r2[i], false);
+        mov_reg2reg(p_info->asm_code, r2[i], current_val_in[r1[i]], false);
+        mov_reg2reg(p_info->asm_code, current_val_in[r1[i]], TMP, false);
+        // else
+        // arm_swap_gen(p_info->asm_code, current_val_in[r1[i]], r2[i]);
         // 交换完成后源寄存器放到了正确位置，目标寄存器的值（可能是其他交换的源寄存器）被放到了源寄存器
-        current_val_in[r2[i]] = current_val_in[r1[i]];
+        current_val_in[reg_val[r2[i]]] = current_val_in[r1[i]];
+        reg_val[current_val_in[r1[i]]] = reg_val[r2[i]];
+        reg_val[r2[i]] = r1[i];
+        current_val_in[r1[i]] = r2[i];
     }
 
+    free(reg_val);
     free(use_reg_count);
     free(current_val_in);
     free(r2_r1);
