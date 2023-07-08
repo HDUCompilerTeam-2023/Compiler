@@ -7,6 +7,7 @@ p_ir_vreg ir_vreg_gen(p_symbol_type p_type) {
     *p_vreg = (ir_vreg) {
         .p_type = p_type,
         .id = 0,
+        .use_list = list_init_head(&p_vreg->use_list),
         .node = list_head_init(&p_vreg->node),
         .reg_id = -1,
         .if_float = false,
@@ -28,11 +29,13 @@ p_ir_vreg ir_vreg_copy(p_ir_vreg p_vreg) {
     p_ir_vreg p_copy = malloc(sizeof(*p_copy));
     *p_copy = *p_vreg;
     p_copy->node = list_head_init(&p_copy->node);
+    p_copy->use_list = list_head_init(&p_copy->use_list);
     p_copy->p_type = symbol_type_copy(p_vreg->p_type);
     return p_copy;
 }
 
 void ir_vreg_drop(p_ir_vreg p_vreg) {
     symbol_type_drop(p_vreg->p_type);
+    assert(list_head_alone(&p_vreg->use_list));
     free(p_vreg);
 }

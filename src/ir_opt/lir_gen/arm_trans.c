@@ -11,8 +11,7 @@ static inline void imme2reg(p_ir_operand p_operand, p_ir_instr p_instr, p_symbol
     p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_copy(p_operand), p_new_src);
     symbol_func_vreg_add(p_func, p_new_src);
     list_add_prev(&p_assign->node, &p_instr->node);
-    p_operand->kind = reg;
-    p_operand->p_vreg = p_new_src;
+    ir_operand_reset_vreg(p_operand, p_new_src);
 }
 
 static inline void check_imme2reg(p_ir_operand p_operand, p_ir_instr p_instr, p_symbol_func p_func) {

@@ -117,7 +117,7 @@ static void new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_inst
     case reg_mem:
         p_load = ir_load_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), p_new_src, true);
         list_add_prev(&p_load->node, &p_instr->node);
-        p_operand->p_vreg = p_new_src;
+        ir_operand_reset_vreg(p_operand, p_new_src);
         // 改变活跃集合和冲突图
         copy_live(p_load->p_live_in, p_live_in);
         ir_bb_phi_list_add(p_live_in, p_new_src);
@@ -127,7 +127,7 @@ static void new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_inst
     case reg_reg:
         p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_vreg_gen(p_o_node->p_spill_node->p_vreg), p_new_src);
         list_add_prev(&p_assign->node, &p_instr->node);
-        p_operand->p_vreg = p_new_src;
+        ir_operand_reset_vreg(p_operand, p_new_src);
         copy_live(p_assign->p_live_in, p_live_in);
         live_set_del(p_live_in, p_o_node->p_spill_node->p_vreg);
         ir_bb_phi_list_add(p_live_in, p_new_src);
@@ -251,7 +251,20 @@ void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
 
 static inline void combine_remap_operand(p_ir_operand p_operand, p_ir_vreg *p_map) {
     if (p_operand->kind == reg) {
-        p_operand->p_vreg = p_map[p_operand->p_vreg->id];
+        size_t new_vreg_id = p_operand->p_vreg->id;
+        size_t old_vreg_id = p_operand->p_vreg->id;
+
+        while (p_map[new_vreg_id]->id != new_vreg_id) {
+            new_vreg_id = p_map[new_vreg_id]->id;
+            assert(new_vreg_id != old_vreg_id);
+        }
+        while (old_vreg_id != new_vreg_id) {
+            size_t next_id = p_map[old_vreg_id]->id;
+            p_map[old_vreg_id] = p_map[new_vreg_id];
+            old_vreg_id = next_id;
+        }
+        assert(p_map[new_vreg_id]->id == new_vreg_id);
+        ir_operand_reset_vreg(p_operand, p_map[new_vreg_id]);
     }
 }
 
@@ -289,15 +302,36 @@ static void combine_mov(p_symbol_func p_func) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
         combine_map_self(p_vreg, p_map);
     }
+    list_for_each(p_node, &p_func->vreg_list) {
+        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
+        combine_map_self(p_vreg, p_map);
+    }
 
     p_list_head p_block_node;
     list_for_each(p_block_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
-        live_set_swap(p_basic_block->p_live_in, p_map, reg_num);
-        list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
-            p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
-            combine_map_self(p_phi, p_map);
+        p_list_head p_instr_node, p_instr_node_next;
+        list_for_each_safe(p_instr_node, p_instr_node_next, &p_basic_block->instr_list) {
+            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            if (p_instr->irkind != ir_unary)
+                continue;
+            if (p_instr->ir_unary.op != ir_val_assign)
+                continue;
+            if (p_instr->ir_unary.p_src->kind != reg)
+                continue;
+            if (p_instr->ir_unary.p_src->p_vreg->if_float != p_instr->ir_unary.p_des->if_float)
+                continue;
+            if (p_instr->ir_unary.p_src->p_vreg->reg_id != p_instr->ir_unary.p_des->reg_id)
+                continue;
+            p_map[p_instr->ir_unary.p_des->id] = p_map[p_instr->ir_unary.p_src->p_vreg->id];
+            p_need_del[need_del_num++] = p_instr->ir_unary.p_des;
+            ir_instr_drop(p_instr);
         }
+    }
+
+    list_for_each(p_block_node, &p_func->block) {
+        p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
+        live_set_swap(p_basic_block->p_live_in, p_map, reg_num);
 
         p_list_head p_instr_node, p_instr_node_next;
         list_for_each_safe(p_instr_node, p_instr_node_next, &p_basic_block->instr_list) {
@@ -307,32 +341,18 @@ static void combine_mov(p_symbol_func p_func) {
             case ir_binary:
                 combine_remap_operand(p_instr->ir_binary.p_src1, p_map);
                 combine_remap_operand(p_instr->ir_binary.p_src2, p_map);
-                combine_map_self(p_instr->ir_binary.p_des, p_map);
                 break;
             case ir_unary:
                 combine_remap_operand(p_instr->ir_unary.p_src, p_map);
-                if (p_instr->ir_unary.op == ir_val_assign && p_instr->ir_unary.p_src->kind == reg) {
-                    if (p_instr->ir_unary.p_src->p_vreg->if_float == p_instr->ir_unary.p_des->if_float
-                        && p_instr->ir_unary.p_src->p_vreg->reg_id == p_instr->ir_unary.p_des->reg_id) {
-                        p_map[p_instr->ir_unary.p_des->id] = p_instr->ir_unary.p_src->p_vreg;
-                        p_need_del[need_del_num++] = p_instr->ir_unary.p_des;
-                        ir_instr_drop(p_instr);
-                        continue;
-                    }
-                }
-                combine_map_self(p_instr->ir_unary.p_des, p_map);
                 break;
             case ir_call:
                 list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
                     p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
                     combine_remap_operand(p_param, p_map);
                 }
-                if (p_instr->ir_call.p_des)
-                    combine_map_self(p_instr->ir_call.p_des, p_map);
                 break;
             case ir_load:
                 combine_remap_operand(p_instr->ir_load.p_addr, p_map);
-                combine_map_self(p_instr->ir_load.p_des, p_map);
                 break;
             case ir_store:
                 combine_remap_operand(p_instr->ir_store.p_addr, p_map);
