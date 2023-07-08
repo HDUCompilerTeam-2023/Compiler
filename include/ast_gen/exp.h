@@ -8,6 +8,8 @@ p_ast_exp ast_exp_ptr_check_const(p_ast_exp p_exp);
 p_ast_exp ast_exp_ptr_to_val_check_basic(p_ast_exp p_exp);
 p_ast_exp ast_exp_ptr_to_val(p_ast_exp p_exp);
 
+bool ast_exp_ptr_is_stack(p_ast_exp p_exp);
+
 p_ast_exp ast_exp_cov_gen(p_ast_exp p_exp, basic_type b_type);
 p_ast_exp ast_exp_to_cond(p_ast_exp p_exp);
 p_ast_exp ast_exp_use_gen(p_ast_exp p_used_exp);

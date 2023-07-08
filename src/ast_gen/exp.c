@@ -37,7 +37,7 @@ static inline p_ast_exp exp_val_const(p_ast_exp p_exp) {
     p_ast_exp p_back = p_exp;
     size_t offset = 0;
     size_t length = 1;
-    p_exp = p_exp->p_src_1;
+    p_exp = p_exp->p_ptr;
     while (p_exp->kind == ast_exp_gep) {
         if (p_exp->p_offset->kind != ast_exp_num)
             break;
@@ -147,6 +147,22 @@ p_ast_exp ast_exp_to_cond(p_ast_exp p_exp) {
     if (p_exp->kind == ast_exp_ulogic)
         return p_exp;
     return ast_exp_relational_gen(ast_exp_op_neq, p_exp, ast_exp_int_gen(0));
+}
+
+bool ast_exp_ptr_is_stack(p_ast_exp p_exp) {
+    p_ast_exp p_tmp = p_exp;
+    while (p_tmp->kind == ast_exp_use) {
+        p_tmp = p_tmp->p_exp;
+    }
+    if (p_tmp->kind == ast_exp_gep) {
+        return p_tmp->is_stack_for_gep;
+    }
+    if (p_tmp->kind == ast_exp_load) {
+        return false;
+    }
+    assert(p_tmp->kind == ast_exp_ptr);
+    if (p_tmp->p_var->is_global) return false;
+    return true;
 }
 
 p_ast_exp ast_exp_use_gen(p_ast_exp p_used_exp) {
@@ -384,6 +400,7 @@ p_ast_exp ast_exp_gep_gen(p_ast_exp p_val, p_ast_exp p_offset, bool is_element) 
     p_ast_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (ast_exp) {
         .kind = ast_exp_gep,
+        .is_stack_for_gep = ast_exp_ptr_is_stack(p_val),
         .p_addr = p_val,
         .p_offset = p_offset,
         .is_element = is_element,
@@ -406,6 +423,7 @@ p_ast_exp ast_exp_load_gen(p_ast_exp p_ptr) {
     p_ast_exp p_exp = malloc(sizeof(*p_exp));
     *p_exp = (ast_exp) {
         .kind = ast_exp_load,
+        .is_stack = ast_exp_ptr_is_stack(p_ptr),
         .p_ptr = p_ptr,
         .p_type = symbol_type_copy(p_ptr->p_type),
         .p_des = NULL,

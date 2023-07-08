@@ -79,13 +79,14 @@ p_ir_instr ir_gep_instr_gen(p_ir_operand p_addr, p_ir_operand p_offset, p_ir_vre
     return p_instr;
 }
 
-p_ir_instr ir_load_instr_gen(p_ir_operand p_addr, p_ir_vreg p_des) {
+p_ir_instr ir_load_instr_gen(p_ir_operand p_addr, p_ir_vreg p_des, bool is_stack_ptr) {
     p_ir_instr p_instr = malloc(sizeof(*p_instr));
     *p_instr = (ir_instr) {
         .irkind = ir_load,
         .ir_load = (ir_load_instr) {
             .p_addr = p_addr,
             .p_des = p_des,
+            .is_stack_ptr = is_stack_ptr,
         },
         .node = list_head_init(&p_instr->node),
         .instr_id = 0,
@@ -96,13 +97,14 @@ p_ir_instr ir_load_instr_gen(p_ir_operand p_addr, p_ir_vreg p_des) {
     return p_instr;
 }
 
-p_ir_instr ir_store_instr_gen(p_ir_operand p_addr, p_ir_operand p_src) {
+p_ir_instr ir_store_instr_gen(p_ir_operand p_addr, p_ir_operand p_src, bool is_stack_ptr) {
     p_ir_instr p_instr = malloc(sizeof(*p_instr));
     *p_instr = (ir_instr) {
         .irkind = ir_store,
         .ir_store = (ir_store_instr) {
             .p_addr = p_addr,
             .p_src = p_src,
+            .is_stack_ptr = is_stack_ptr,
         },
         .node = list_head_init(&p_instr->node),
         .instr_id = 0,

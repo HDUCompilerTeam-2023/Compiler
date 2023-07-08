@@ -9,8 +9,8 @@ p_ir_instr ir_call_instr_gen(p_symbol_func p_func, p_ir_param_list p_param_list,
 
 p_ir_instr ir_alloca_instr_gen(p_symbol_var p_vmem, p_ir_vreg p_des);
 p_ir_instr ir_gep_instr_gen(p_ir_operand p_addr, p_ir_operand p_offset, p_ir_vreg p_des, bool is_element);
-p_ir_instr ir_load_instr_gen(p_ir_operand p_addr, p_ir_vreg p_des);
-p_ir_instr ir_store_instr_gen(p_ir_operand p_addr, p_ir_operand p_src);
+p_ir_instr ir_load_instr_gen(p_ir_operand p_addr, p_ir_vreg p_des, bool is_stack_ptr);
+p_ir_instr ir_store_instr_gen(p_ir_operand p_addr, p_ir_operand p_src, bool is_stack_ptr);
 
 p_ir_operand ir_instr_get_src1(p_ir_instr p_instr);
 p_ir_operand ir_instr_get_src2(p_ir_instr p_instr);

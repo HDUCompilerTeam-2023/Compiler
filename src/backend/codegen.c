@@ -143,7 +143,7 @@ static void mov_imme2reg(p_arm_codegen_info p_info, size_t rd, p_ir_operand p_op
         if (p_operand->p_vmem->is_global)
             arm_get_global_addr(p_info->asm_code, rd, p_operand->p_vmem->name);
         else
-            arm_data_process_gen(p_info->asm_code, arm_add, rd, FP, p_operand->p_vmem->stack_offset, s, 2, true);
+            mov_int2reg(p_info->asm_code, rd, p_operand->p_vmem->stack_offset << 2, s);
         return;
     }
     switch (p_operand->p_type->basic) {
@@ -276,7 +276,7 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
     p_list_head p_node;
     size_t *src_reg = malloc(sizeof(*src_reg) * REG_NUM);
     size_t *des_reg = malloc(sizeof(*des_reg) * REG_NUM);
-    p_ir_operand *src_immes = malloc(sizeof(void *) * REG_NUM);
+    p_ir_param *src_immes = malloc(sizeof(void *) * REG_NUM);
     size_t *des_imme_reg = malloc(sizeof(*des_imme_reg) * REG_NUM);
 
     size_t num = 0;
@@ -284,9 +284,10 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
     size_t r = 0;
     size_t s = R_NUM;
     list_for_each(p_node, &p_param_list->param) {
-        p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
+        p_ir_param p_param_node = list_entry(p_node, ir_param, node);
+        p_ir_operand p_param = p_param_node->p_param;
         if (p_param->kind == imme) {
-            src_immes[i] = p_param;
+            src_immes[i] = p_param_node;
             if (p_param->p_type->ref_level > 0 || p_param->p_type->basic == type_i32)
                 des_imme_reg[i] = r++;
             else if (p_param->p_type->basic == type_f32)
@@ -299,12 +300,20 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
             des_reg[num] = s++;
         else
             des_reg[num] = r++;
+        if (p_param_node->is_stack_ptr) {
+            arm_data_process_gen(p_info->asm_code, arm_add, src_reg[num], FP, src_reg[num], false, 0, false);
+        }
         num++;
     }
     // TO DO: param in stack
     swap_reg(p_info, src_reg, des_reg, num);
-    for (size_t j = 0; j < i; j++)
-        mov_imme2reg(p_info, des_imme_reg[j], src_immes[j], false);
+    for (size_t j = 0; j < i; j++) {
+        if (src_immes[j]->is_stack_ptr) {
+            arm_data_process_gen(p_info->asm_code, arm_add, des_imme_reg[j], FP, src_immes[j]->p_param->p_vmem->stack_offset << 2, false, 0, true);
+            continue;
+        }
+        mov_imme2reg(p_info, des_imme_reg[j], src_immes[j]->p_param, false);
+    }
     free(src_reg);
     free(des_reg);
     free(des_imme_reg);
@@ -403,52 +412,41 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
     switch (p_binary_instr->op) {
     case ir_add_op:
         if (p_binary_instr->p_src1->kind == imme && p_binary_instr->p_src2->kind == imme) {
-            size_t stack_offset = p_binary_instr->p_src1->p_vmem->stack_offset;
+            size_t stack_offset = p_binary_instr->p_src1->p_vmem->stack_offset << 2;
             if (p_binary_instr->p_src2->p_type->ref_level > 0)
                 stack_offset += (p_binary_instr->p_src1->i32const);
             else
                 stack_offset += (p_binary_instr->p_src2->i32const);
-            if (!if_legal_rotate_imme12(stack_offset)) {
-                mov_int2reg(asm_code, rd, stack_offset << 2, false);
-                arm_data_process_gen(asm_code, arm_add, rd, FP, rd, s, 0, false);
-            }
-            else
-                arm_data_process_gen(asm_code, arm_add, rd, FP, stack_offset, s, 2, true);
+            mov_int2reg(asm_code, rd, stack_offset, false);
             break;
         }
         // a pointer in reg, need lsl
         if (p_binary_instr->p_src1->kind == imme) {
             if (p_binary_instr->p_src1->p_type->ref_level > 0) {
-                size_t offset = p_binary_instr->p_src1->p_vmem->stack_offset;
+                size_t offset = p_binary_instr->p_src1->p_vmem->stack_offset << 2;
                 arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src2->p_vreg->reg_id, offset, false, 0, true);
-                arm_data_process_gen(asm_code, arm_add, rd, FP, rd, s, 2, false);
                 break;
             }
             assert(p_binary_instr->p_src1->p_type->basic == type_i32);
-            size_t lsl_imme = 0;
-            if (p_binary_instr->p_src2->p_type->ref_level) lsl_imme = 2;
-            arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src2->p_vreg->reg_id, p_binary_instr->p_src1->i32const, s, lsl_imme, true);
+            arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src2->p_vreg->reg_id, p_binary_instr->p_src1->i32const, s, 0, true);
             break;
         }
         if (p_binary_instr->p_src2->kind == imme) {
             if (p_binary_instr->p_src2->p_type->ref_level > 0) {
-                size_t offset = p_binary_instr->p_src2->p_vmem->stack_offset;
+                size_t offset = p_binary_instr->p_src2->p_vmem->stack_offset << 2;
                 arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src1->p_vreg->reg_id, offset, false, 0, true);
-                arm_data_process_gen(asm_code, arm_add, rd, FP, rd, s, 2, false);
                 break;
             }
             assert(p_binary_instr->p_src2->p_type->basic == type_i32);
-            size_t lsl_imme = 0;
-            if (p_binary_instr->p_src1->p_type->ref_level) lsl_imme = 2;
-            arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->i32const, s, lsl_imme, true);
+            arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->i32const, s, 0, true);
             break;
         }
         if (p_binary_instr->p_src1->p_type->ref_level) {
-            arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s, 2, false);
+            arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s, 0, false);
             break;
         }
         if (p_binary_instr->p_src2->p_type->ref_level) {
-            arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src2->p_vreg->reg_id, p_binary_instr->p_src1->p_vreg->reg_id, s, 2, false);
+            arm_data_process_gen(asm_code, arm_add, rd, p_binary_instr->p_src2->p_vreg->reg_id, p_binary_instr->p_src1->p_vreg->reg_id, s, 0, false);
             break;
         }
         if (rd >= R_NUM)
@@ -459,22 +457,16 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
     case ir_sub_op:
         if (p_binary_instr->p_src1->kind == imme && p_binary_instr->p_src2->kind == imme) {
             assert(p_binary_instr->p_src1->p_type->ref_level > 0);
-            size_t stack_offset = p_binary_instr->p_src1->p_vmem->stack_offset - p_binary_instr->p_src2->i32const;
-            if (!if_legal_rotate_imme12(stack_offset)) {
-                mov_int2reg(asm_code, rd, stack_offset << 2, false);
-                arm_data_process_gen(asm_code, arm_add, rd, FP, rd, s, 0, false);
-            }
-            else
-                arm_data_process_gen(asm_code, arm_add, rd, FP, stack_offset, s, 2, true);
+            size_t stack_offset = (p_binary_instr->p_src1->p_vmem->stack_offset << 2) - p_binary_instr->p_src2->i32const;
+            mov_int2reg(asm_code, rd, stack_offset, false);
             break;
         }
         // a pointer in reg, need lsl
         assert(p_binary_instr->p_src2->p_type->ref_level == 0);
         if (p_binary_instr->p_src1->kind == imme) {
             if (p_binary_instr->p_src1->p_type->ref_level > 0) {
-                size_t offset = p_binary_instr->p_src1->p_vmem->stack_offset;
+                size_t offset = p_binary_instr->p_src1->p_vmem->stack_offset << 2;
                 arm_data_process_gen(asm_code, arm_rsb, rd, p_binary_instr->p_src2->p_vreg->reg_id, offset, false, 0, true);
-                arm_data_process_gen(asm_code, arm_add, rd, FP, rd, s, 2, false);
                 break;
             }
             assert(p_binary_instr->p_src1->p_type->basic == type_i32);
@@ -484,13 +476,11 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
         if (p_binary_instr->p_src2->kind == imme) {
             assert(p_binary_instr->p_src1->p_type->ref_level == 0);
             assert(p_binary_instr->p_src2->p_type->basic == type_i32);
-            size_t lsl_imme = 0;
-            if (p_binary_instr->p_src1->p_type->ref_level) lsl_imme = 2;
-            arm_data_process_gen(asm_code, arm_sub, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->i32const, s, lsl_imme, true);
+            arm_data_process_gen(asm_code, arm_sub, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->i32const, s, 0, true);
             break;
         }
         if (p_binary_instr->p_src1->p_type->ref_level) {
-            arm_data_process_gen(asm_code, arm_sub, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s, 2, false);
+            arm_data_process_gen(asm_code, arm_sub, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s, 0, false);
             break;
         }
         if (rd >= R_NUM)
@@ -587,10 +577,16 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
     }
     size_t rn = p_store_instr->p_addr->p_vreg->reg_id;
     if (rd >= R_NUM) {
+        if (p_store_instr->is_stack_ptr) {
+            arm_data_process_gen(asm_code, arm_add, rn, FP, rn, false, 0, false);
+        }
         arm_vstore_gen(asm_code, rd, rn, 0, true);
         return;
     }
-    arm_store_gen(asm_code, arm_store, rd, rn, 0, 0, true);
+    if (p_store_instr->is_stack_ptr)
+        arm_store_gen(asm_code, arm_store, rd, FP, rn, 0, false);
+    else
+        arm_store_gen(asm_code, arm_store, rd, rn, 0, 0, true);
 }
 
 static void arm_load_instr_gen(p_arm_codegen_info p_info, p_ir_load_instr p_load_instr) {
@@ -622,10 +618,16 @@ static void arm_load_instr_gen(p_arm_codegen_info p_info, p_ir_load_instr p_load
     }
     size_t rn = p_load_instr->p_addr->p_vreg->reg_id;
     if (rd >= R_NUM) {
+        if (p_load_instr->is_stack_ptr) {
+            arm_data_process_gen(asm_code, arm_add, rn, FP, rn, false, 0, false);
+        }
         arm_vload_gen(asm_code, rd, rn, 0, true);
         return;
     }
-    arm_load_gen(asm_code, arm_load, rd, rn, 0, 0, true);
+    if (p_load_instr->is_stack_ptr)
+        arm_load_gen(asm_code, arm_load, rd, FP, rn, 0, false);
+    else
+        arm_load_gen(asm_code, arm_load, rd, rn, 0, 0, true);
 }
 static void arm_instr_codegen(p_arm_codegen_info p_info, p_ir_instr p_instr) {
     switch (p_instr->irkind) {

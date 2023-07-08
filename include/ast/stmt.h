@@ -22,6 +22,7 @@ struct ast_stmt {
             p_ast_stmt p_stmt_1, p_stmt_2;
         };
         struct {
+            bool is_stack;
             p_ast_exp p_lval, p_rval;
         };
         p_ast_block p_block;
