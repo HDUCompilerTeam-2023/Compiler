@@ -3,11 +3,26 @@
 #include <program/def.h>
 #include <symbol_gen.h>
 
+static inline bool if_need_cut(p_ir_basic_block_branch_target p_target) {
+    p_list_head p_node1 = p_target->p_block_param->bb_param.p_next;
+    p_list_head p_node2 = p_target->p_block->basic_block_phis->bb_phi.p_next;
+    while (p_node1 != &p_target->p_block_param->bb_param) {
+        p_ir_operand p_param = list_entry(p_node1, ir_bb_param, node)->p_bb_param;
+        if (p_param->kind == imme)
+            return true;
+        p_ir_vreg p_phi = list_entry(p_node2, ir_bb_phi, node)->p_bb_phi;
+        if (p_param->p_vreg->reg_id != p_phi->reg_id)
+            return true;
+        p_node1 = p_node1->p_next;
+        p_node2 = p_node2->p_next;
+    }
+    return false;
+}
 static inline p_ir_basic_block cut_edge(p_ir_basic_block p_basic_block, p_ir_basic_block_branch_target p_target, p_symbol_func p_func) {
     p_ir_basic_block p_new_basic_block = ir_basic_block_gen();
     list_add_next(&p_new_basic_block->node, &p_basic_block->node);
     ir_basic_block_add_prev(p_basic_block, p_new_basic_block);
-    p_func->block_cnt ++;
+    p_func->block_cnt++;
     p_new_basic_block->p_dom_parent = p_basic_block;
     p_new_basic_block->p_branch->kind = ir_br_branch;
     p_new_basic_block->p_branch->p_target_1 = p_target;
@@ -29,12 +44,12 @@ void critical_edge_cut_pass(p_program p_ir) {
         list_for_each(p_block_node, &p_func->block) {
             p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
             if (p_basic_block->p_branch->kind == ir_cond_branch) {
-                if (!list_head_alone(&p_basic_block->p_branch->p_target_1->p_block_param->bb_param)) {
+                if (if_need_cut(p_basic_block->p_branch->p_target_1)) {
                     // 新建块处理target2 的 block_param
                     p_ir_basic_block p_new_basic_block = cut_edge(p_basic_block, p_basic_block->p_branch->p_target_1, p_func);
                     p_basic_block->p_branch->p_target_1 = ir_basic_block_branch_target_gen(p_new_basic_block);
                 }
-                if (!list_head_alone(&p_basic_block->p_branch->p_target_2->p_block_param->bb_param)) {
+                if (if_need_cut(p_basic_block->p_branch->p_target_2)) {
                     // 新建块处理target2 的 block_param
                     p_ir_basic_block p_new_basic_block = cut_edge(p_basic_block, p_basic_block->p_branch->p_target_2, p_func);
                     p_basic_block->p_branch->p_target_2 = ir_basic_block_branch_target_gen(p_new_basic_block);

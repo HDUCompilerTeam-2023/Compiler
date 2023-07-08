@@ -688,12 +688,8 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
         break;
     case ir_cond_branch:
         assert(p_block->p_branch->p_exp->kind == reg);
-        assert(list_head_alone(&p_block->p_branch->p_target_1->p_block_param->bb_param));
-        assert(list_head_alone(&p_block->p_branch->p_target_2->p_block_param->bb_param));
         arm_cond_type type = get_jump_type(p_info, p_block->p_branch->p_exp->p_vreg);
-        swap_in_phi(p_info, p_block->p_branch->p_target_1->p_block->basic_block_phis, p_block->p_branch->p_target_1->p_block_param);
         arm_block_jump_label_gen(p_info->asm_code, arm_b, type, p_func->name, p_block->p_branch->p_target_1->p_block->block_id);
-        swap_in_phi(p_info, p_block->p_branch->p_target_2->p_block->basic_block_phis, p_block->p_branch->p_target_2->p_block_param);
         if (p_block->p_branch->p_target_2->p_block != p_next_block)
             arm_block_jump_label_gen(p_info->asm_code, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_2->p_block->block_id);
         break;
