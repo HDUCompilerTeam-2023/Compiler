@@ -64,10 +64,12 @@ struct ir_gep_instr {
     bool is_element;
 };
 struct ir_load_instr {
+    bool is_stack_ptr;
     p_ir_operand p_addr;
     p_ir_vreg p_des;
 };
 struct ir_store_instr {
+    bool is_stack_ptr;
     p_ir_operand p_addr;
     p_ir_operand p_src;
 };

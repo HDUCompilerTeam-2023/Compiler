@@ -1,6 +1,7 @@
 #include <ast_gen/param.h>
 
 #include <ast_gen.h>
+#include <symbol/type.h>
 
 p_ast_param_list ast_param_list_init(void) {
     p_ast_param_list p_param_list = malloc(sizeof(*p_param_list));
@@ -11,8 +12,10 @@ p_ast_param_list ast_param_list_init(void) {
 }
 p_ast_param_list ast_param_list_add(p_ast_param_list p_param_list, p_ast_exp p_exp) {
     p_ast_param p_param = malloc(sizeof(*p_param));
+    p_exp = ast_exp_ptr_to_val(p_exp);
     *p_param = (ast_param) {
-        .p_exp = ast_exp_ptr_to_val(p_exp),
+        .p_exp = p_exp,
+        .is_stck_ptr = p_exp->p_type->ref_level > 0 ? ast_exp_ptr_is_stack(p_exp) : false,
         .node = list_head_init(&p_param->node),
     };
 

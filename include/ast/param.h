@@ -8,6 +8,7 @@ struct ast_param_list {
 };
 
 struct ast_param {
+    bool is_stck_ptr;
     p_ast_exp p_exp;
     list_head node;
 };

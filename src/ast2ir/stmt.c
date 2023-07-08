@@ -9,7 +9,7 @@ void ast2ir_stmt_gen(p_ast2ir_info p_info, p_ir_basic_block p_while_cond, p_ir_b
     if (!p_stmt) return;
     switch (p_stmt->type) {
     case ast_stmt_assign:
-        ast2ir_stmt_assign_gen(p_info, p_stmt->p_lval, p_stmt->p_rval);
+        ast2ir_stmt_assign_gen(p_info, p_stmt->p_lval, p_stmt->p_rval, p_stmt->is_stack);
         break;
     case ast_stmt_return:
         ast2ir_stmt_return_gen(p_info, p_stmt->p_exp);
@@ -38,10 +38,10 @@ void ast2ir_stmt_gen(p_ast2ir_info p_info, p_ir_basic_block p_while_cond, p_ir_b
     }
 }
 
-void ast2ir_stmt_assign_gen(p_ast2ir_info p_info, p_ast_exp p_lval, p_ast_exp p_rval) {
+void ast2ir_stmt_assign_gen(p_ast2ir_info p_info, p_ast_exp p_lval, p_ast_exp p_rval, bool is_stack) {
     p_ir_operand p_src = ast2ir_exp_gen(p_info, p_rval);
     p_ir_operand p_addr = ast2ir_exp_gen(p_info, p_lval);
-    p_ir_instr p_instr = ir_store_instr_gen(p_addr, p_src);
+    p_ir_instr p_instr = ir_store_instr_gen(p_addr, p_src, is_stack);
     ast2ir_info_add_instr(p_info, p_instr);
 }
 // 将返回值全部放到 一个变量, 并跳转到 ret 块
@@ -50,7 +50,7 @@ void ast2ir_stmt_return_gen(p_ast2ir_info p_info, p_ast_exp p_exp) {
         assert(p_info->p_ret_vmem);
         p_ir_operand p_ret = ast2ir_exp_gen(p_info, p_exp);
         p_ir_operand p_ret_addr_operand = ir_operand_addr_gen(p_info->p_ret_vmem);
-        ast2ir_info_add_instr(p_info, ir_store_instr_gen(p_ret_addr_operand, p_ret));
+        ast2ir_info_add_instr(p_info, ir_store_instr_gen(p_ret_addr_operand, p_ret, true));
     }
     else {
         assert(!p_info->p_ret_vmem);

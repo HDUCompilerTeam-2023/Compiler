@@ -74,10 +74,14 @@ struct ast_exp {
         p_symbol_var p_var; // ptr
         struct {
             bool is_element;
+            bool is_stack_for_gep;
             p_ast_exp p_addr;
             p_ast_exp p_offset;
         }; // gep
-        p_ast_exp p_ptr; // load
+        struct {
+            bool is_stack;
+            p_ast_exp p_ptr;
+        }; // load
         union {
             I32CONST_t i32const; // int
             F32CONST_t f32const; // float

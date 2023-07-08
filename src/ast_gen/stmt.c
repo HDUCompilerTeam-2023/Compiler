@@ -118,6 +118,7 @@ p_ast_stmt ast_stmt_assign_gen(p_ast_exp lval, p_ast_exp rval) {
         .type = ast_stmt_assign,
         .p_lval = lval,
         .p_rval = rval,
+        .is_stack = ast_exp_ptr_is_stack(lval),
     };
     return p_exp;
 }

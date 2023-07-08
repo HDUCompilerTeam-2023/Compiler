@@ -73,6 +73,9 @@ p_symbol_type_array symbol_type_array_copy(p_symbol_type_array p_array) {
     return p_copy;
 }
 
+uint64_t basic_type_get_size(basic_type b_type) {
+    return 4; 
+}
 uint64_t symbol_type_get_size(p_symbol_type p_type) {
     return p_type->size;
 }

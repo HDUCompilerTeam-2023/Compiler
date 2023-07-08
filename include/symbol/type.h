@@ -3,6 +3,7 @@
 
 #include <symbol.h>
 
+uint64_t basic_type_get_size(basic_type b_type);
 uint64_t symbol_type_get_size(p_symbol_type p_type);
 uint64_t symbol_type_array_get_size(p_symbol_type_array p_array);
 

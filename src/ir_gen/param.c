@@ -9,10 +9,11 @@ p_ir_param_list ir_param_list_init(void) {
     return p_param_list;
 }
 
-p_ir_param_list ir_param_list_add(p_ir_param_list p_param_list, p_ir_operand p_param) {
+p_ir_param_list ir_param_list_add(p_ir_param_list p_param_list, p_ir_operand p_param, bool is_stack_ptr) {
     p_ir_param p_ir_param = malloc(sizeof(*p_ir_param));
     *p_ir_param = (ir_param) {
         .p_param = p_param,
+        .is_stack_ptr = is_stack_ptr,
         .node = list_head_init(&p_ir_param->node),
     };
 

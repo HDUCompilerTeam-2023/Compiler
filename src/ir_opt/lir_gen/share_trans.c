@@ -7,6 +7,7 @@
 static inline void gep_trans(p_ir_instr p_instr, p_ir_basic_block p_basic_block, p_symbol_func p_func) {
     p_ir_gep_instr p_gep_instr = &p_instr->ir_gep;
     size_t size = symbol_type_get_size(p_gep_instr->p_des->p_type);
+    size *= basic_type_get_size(p_gep_instr->p_des->p_type->basic);
     assert(ir_operand_get_basic_type(p_gep_instr->p_offset) == type_i32);
 
     p_ir_vreg p_mul_des = ir_vreg_gen(symbol_type_var_gen(type_i32));
