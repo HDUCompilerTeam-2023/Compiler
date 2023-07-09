@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
         set_cond_pass(p_program);
         program_ir_print(p_program);
 
-        reg_alloca_pass(alloca_color_graph, 13, 32, p_program);
+        reg_alloca_pass(alloca_color_graph, 12, 32, p_program);
         program_ir_print(p_program);
 
         critical_edge_cut_pass(p_program);
