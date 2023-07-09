@@ -305,25 +305,29 @@ void mcs_get_seqs(p_conflict_graph p_graph) {
 
 // 保险起见检验是否是弦图（可删）
 void check_chordal(p_conflict_graph p_graph) {
-    bool *visited = malloc(sizeof(*visited) * p_graph->node_num);
-    memset(visited, false, sizeof(*visited) * p_graph->node_num);
+    p_graph_node *p_nodes = malloc(sizeof(void *) * p_graph->node_num);
+    size_t num;
     p_list_head p_node;
     list_for_each_tail(p_node, &p_graph->seo_seq->node) {
         p_graph_node p_g_node = list_entry(p_node, graph_nodes, node)->p_node;
-        visited[p_g_node->node_id] = true;
+        num = 0;
         p_list_head p_node;
-        p_graph_node p_min_node = NULL;
         list_for_each(p_node, &p_g_node->p_neighbors->node) {
             p_graph_node p_neighbor = list_entry(p_node, graph_nodes, node)->p_node;
-            if (!visited[p_neighbor->node_id]) {
-                if (!p_min_node)
-                    p_min_node = p_neighbor;
-                else // 最小的节点与其他节点必定相邻
-                    assert(if_in_neighbors(p_min_node, p_neighbor));
+            if (p_neighbor->seq_id < p_g_node->seq_id) {
+                p_nodes[num] = p_neighbor;
+                if (p_neighbor->seq_id > p_nodes[0]->seq_id) {
+                    p_graph_node tmp = p_nodes[0];
+                    p_nodes[0] = p_nodes[num];
+                    p_nodes[num] = tmp;
+                }
+                num++;
             }
         }
+        for (size_t i = 1; i < num; i++)
+            assert(if_in_neighbors(p_nodes[0], p_nodes[i]));
     }
-    free(visited);
+    free(p_nodes);
 }
 
 void set_node_color(p_conflict_graph p_graph, p_graph_node p_node, size_t color) {
@@ -512,12 +516,20 @@ static void choose_spill_node(p_conflict_graph p_graph, p_graph_node_list p_list
             break;
         case reg_reg:
             set_spill_node(p_graph, may_spilled_list[i]);
+            printf("溢出(reg_reg):");
+            print_conflict_node(may_spilled_list[i]->p_def_node);
             // 溢出后更新该节点对应得所有极大团的 may_spill
             p_list_head p_pc_node_;
             list_for_each(p_pc_node_, &may_spilled_list[i]->pcliques) {
                 p_clique_node p_c = list_entry(p_pc_node_, pclique_node, node)->p_c_node;
-                node_list_del(p_c->may_spilled_list_r, may_spilled_list[i]->p_def_node);
-                p_c->have_spilled_num_s++;
+                if (may_spilled_list[i]->p_def_node->p_vreg->if_float) {
+                    node_list_del(p_c->may_spilled_list_s, may_spilled_list[i]->p_def_node);
+                    p_c->have_spilled_num_r++;
+                }
+                else {
+                    node_list_del(p_c->may_spilled_list_r, may_spilled_list[i]->p_def_node);
+                    p_c->have_spilled_num_s++;
+                }
             }
             need_spill_num--;
             break;
@@ -528,12 +540,17 @@ static void choose_spill_node(p_conflict_graph p_graph, p_graph_node_list p_list
     }
     assert(need_spill_num <= p_2m_num);
     for (size_t i = 0; i < need_spill_num; i++) {
+        printf("溢出(mem):");
+        print_conflict_node(p_2m_list[i]->p_def_node);
         set_vmem(p_graph, p_2m_list[i]);
         // 溢出后更新该节点对应得所有极大团的 may_spill
         p_list_head p_pc_node_;
         list_for_each(p_pc_node_, &p_2m_list[i]->pcliques) {
             p_clique_node p_c = list_entry(p_pc_node_, pclique_node, node)->p_c_node;
-            node_list_del(p_c->may_spilled_list_r, p_2m_list[i]->p_def_node);
+            if (p_2m_list[i]->p_def_node->p_vreg->if_float)
+                node_list_del(p_c->may_spilled_list_s, p_2m_list[i]->p_def_node);
+            else
+                node_list_del(p_c->may_spilled_list_r, p_2m_list[i]->p_def_node);
         }
     }
     free(may_spilled_list);
