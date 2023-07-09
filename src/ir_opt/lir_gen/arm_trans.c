@@ -139,9 +139,9 @@ static void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
                 p_ir_vreg p_new_des = ir_vreg_copy(p_unary_instr->p_des);
                 p_new_des->if_float = false;
                 symbol_func_vreg_add(p_func, p_new_des);
-                p_ir_instr p_new_assign = ir_unary_instr_gen(ir_val_assign, p_unary_instr->p_src, p_new_des);
+                p_ir_instr p_new_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_copy(p_unary_instr->p_src), p_new_des);
                 list_add_prev(&p_new_assign->node, &p_instr->node);
-                p_unary_instr->p_src = ir_operand_vreg_gen(p_new_des);
+                ir_instr_reset_unary(p_instr, ir_val_assign, ir_operand_vreg_gen(p_new_des), p_unary_instr->p_des);
             }
         break;
     case ir_i2f_op:
@@ -154,9 +154,9 @@ static void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         // f32 = i32 -> i32(s) = i32; f32(s) = i32(s)
         p_ir_vreg p_new_src = ir_vreg_gen(symbol_type_var_gen(type_i32));
         symbol_func_vreg_add(p_func, p_new_src);
-        p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, p_unary_instr->p_src, p_new_src);
+        p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_copy(p_unary_instr->p_src), p_new_src);
         list_add_prev(&p_assign->node, &p_instr->node);
-        p_unary_instr->p_src = ir_operand_vreg_gen(p_new_src);
+        ir_instr_reset_unary(p_instr, ir_i2f_op, ir_operand_vreg_gen(p_new_src), p_unary_instr->p_des);
         set_float_reg(p_new_src);
         set_float_reg(p_unary_instr->p_des);
         break;
@@ -170,10 +170,9 @@ static void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         // i32 = f32 -> i32(s) = f32(s); i32 = i32(s)
         p_ir_vreg p_new_des = ir_vreg_gen(symbol_type_var_gen(type_i32));
         symbol_func_vreg_add(p_func, p_new_des);
-        p_ir_instr p_new_float2int = ir_unary_instr_gen(ir_f2i_op, p_unary_instr->p_src, p_new_des);
+        p_ir_instr p_new_float2int = ir_unary_instr_gen(ir_f2i_op, ir_operand_copy(p_unary_instr->p_src), p_new_des);
         list_add_prev(&p_new_float2int->node, &p_instr->node);
-        p_unary_instr->op = ir_val_assign;
-        p_unary_instr->p_src = ir_operand_vreg_gen(p_new_des);
+        ir_instr_reset_unary(p_instr, ir_val_assign, ir_operand_vreg_gen(p_new_des), p_unary_instr->p_des);
         set_float_reg(p_new_des);
         set_float_reg(p_new_float2int->ir_unary.p_src->p_vreg);
         break;

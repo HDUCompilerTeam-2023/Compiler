@@ -16,10 +16,7 @@ static inline void gep_trans(p_ir_instr p_instr, p_ir_basic_block p_basic_block,
     list_add_prev(&p_mul->node, &p_instr->node);
 
     p_ir_vreg p_add_des = p_gep_instr->p_des;
-    p_ir_instr p_add = ir_binary_instr_gen(ir_add_op, ir_operand_copy(p_gep_instr->p_addr), ir_operand_vreg_gen(p_mul_des), p_add_des);
-    list_add_prev(&p_add->node, &p_instr->node);
-
-    ir_instr_drop(p_instr);
+    ir_instr_reset_binary(p_instr, ir_add_op, ir_operand_copy(p_gep_instr->p_addr), ir_operand_vreg_gen(p_mul_des), p_add_des);
 }
 
 static void binary_trans(p_ir_instr p_instr, p_symbol_func p_func) {
@@ -40,10 +37,7 @@ static void binary_trans(p_ir_instr p_instr, p_symbol_func p_func) {
         list_add_prev(&p_mul->node, &p_instr->node);
 
         p_ir_vreg p_sub_des = p_binary_instr->p_des;
-        p_ir_instr p_sub = ir_binary_instr_gen(ir_sub_op, ir_operand_copy(p_binary_instr->p_src1), ir_operand_vreg_gen(p_mul_des), p_sub_des);
-        list_add_prev(&p_sub->node, &p_instr->node);
-
-        ir_instr_drop(p_instr);
+        ir_instr_reset_binary(p_instr, ir_sub_op, ir_operand_copy(p_binary_instr->p_src1), ir_operand_vreg_gen(p_mul_des), p_sub_des);
         break;
     case ir_add_op:
     case ir_sub_op:

@@ -247,11 +247,7 @@ void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa_list p_con
                 continue;
             }
 
-            ir_operand_drop(p_instr->ir_load.p_addr);
-            p_instr->irkind = ir_unary;
-            p_instr->ir_unary.op = ir_val_assign;
-            p_instr->ir_unary.p_des = p_instr->ir_load.p_des;
-            p_instr->ir_unary.p_src = p_top_operand;
+            ir_instr_reset_unary(p_instr, ir_val_assign, p_top_operand, p_instr->ir_load.p_des);
             continue;
         }
         if (p_instr->irkind == ir_store) {
@@ -259,15 +255,10 @@ void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa_list p_con
             if (var_index == -1) continue;
 
             p_ir_vreg p_vreg = ir_vreg_gen(symbol_type_copy(p_var_list->p_base[var_index].p_vmem->p_type));
-            ir_vreg_set_instr_def(p_vreg, p_instr);
             symbol_func_vreg_add(p_var_list->p_func, p_vreg);
             p_var_list->p_base[var_index].p_current_vreg = p_vreg;
 
-            ir_operand_drop(p_instr->ir_store.p_addr);
-            p_instr->irkind = ir_unary;
-            p_instr->ir_unary.op = ir_val_assign;
-            p_instr->ir_unary.p_src = p_instr->ir_store.p_src;
-            p_instr->ir_unary.p_des = p_vreg;
+            ir_instr_reset_unary(p_instr, ir_val_assign, ir_operand_copy(p_instr->ir_store.p_src), p_vreg);
             continue;
         }
     }
