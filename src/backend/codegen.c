@@ -47,7 +47,6 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
         size_t current_work_r1 = r1[i];
         size_t current_work_r2 = r2[i];
         while (use_reg_count[current_work_r2] == 0 && current_work_r1 != current_work_r2) {
-            assert((current_work_r1 >= R_NUM && current_work_r2 >= R_NUM) || (current_work_r1 < R_NUM && current_work_r2 < R_NUM));
             mov_reg2reg(p_info->asm_code, current_work_r2, current_work_r1, false);
             use_reg_count[current_work_r1]--;
             if_deal[current_work_r2] = true;
@@ -721,6 +720,7 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
             arm_out_func_gen(p_info, p_func->stack_size);
             break;
         }
+        assert(p_block->p_branch->p_exp->kind == reg);
         size_t rd = 0;
         if (p_block->p_branch->p_exp->p_type->basic == type_f32)
             rd = R_NUM;

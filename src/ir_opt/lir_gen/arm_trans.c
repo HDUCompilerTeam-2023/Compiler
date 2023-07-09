@@ -240,31 +240,10 @@ void arm_lir_func_trans(p_symbol_func p_func) {
     p_list_head p_block_node;
     list_for_each_tail(p_block_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
-        p_list_head p_node;
-        p_ir_instr p_head_instr = list_entry(&p_basic_block->instr_list, ir_instr, node);
         switch (p_basic_block->p_branch->kind) {
         case ir_br_branch:
-            // 为避免浮点寄存器与标量寄存器之间 的交换行为，基本块参数的浮点数放浮点寄存器
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
-                p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                check_imme2reg(p_param, p_head_instr, p_func);
-                if (p_param->kind == reg && if_need_float(p_param->p_vreg))
-                    set_float_reg(p_param->p_vreg);
-            }
             break;
         case ir_cond_branch:
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
-                p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                check_imme2reg(p_param, p_head_instr, p_func);
-                if (p_param->kind == reg && if_need_float(p_param->p_vreg))
-                    set_float_reg(p_param->p_vreg);
-            }
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_2->p_block_param->bb_param) {
-                p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                check_imme2reg(p_param, p_head_instr, p_func);
-                if (p_param->kind == reg && if_need_float(p_param->p_vreg))
-                    set_float_reg(p_param->p_vreg);
-            }
             imme2reg(p_basic_block->p_branch->p_exp, list_entry(&p_basic_block->instr_list, ir_instr, node), p_func);
             break;
         case ir_ret_branch:
@@ -279,11 +258,6 @@ void arm_lir_func_trans(p_symbol_func p_func) {
         list_for_each_tail(p_instr_node, &p_basic_block->instr_list) {
             p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
             deal_instr(p_instr, p_func);
-        }
-        list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
-            p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
-            if (if_need_float(p_phi))
-                set_float_reg(p_phi);
         }
     }
     symbol_func_set_block_id(p_func);
