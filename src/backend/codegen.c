@@ -342,6 +342,27 @@ static void swap_in_phi(p_arm_codegen_info p_info, p_ir_bb_phi_list p_bb_phi_lis
     free(des_reg);
 }
 
+static inline void swap_in_func_param(p_arm_codegen_info p_info, p_symbol_func p_func) {
+    size_t *src_reg = malloc(sizeof(*src_reg) * REG_NUM);
+    size_t *des_reg = malloc(sizeof(*des_reg) * REG_NUM);
+    p_list_head p_node;
+    size_t r = 0;
+    size_t s = R_NUM;
+    size_t num = 0;
+    list_for_each(p_node, &p_func->param_reg_list) {
+        p_ir_vreg p_param = list_entry(p_node, ir_vreg, node);
+        if (p_param->p_type->ref_level > 0 || p_param->p_type->basic == type_i32)
+            src_reg[num] = r++;
+        else
+            src_reg[num] = s++;
+        des_reg[num] = p_param->reg_id;
+        num++;
+    }
+    swap_reg(p_info, src_reg, des_reg, num);
+    free(src_reg);
+    free(des_reg);
+}
+
 static void arm_unary_instr_codegen(p_arm_codegen_info p_info, p_ir_unary_instr p_unary_instr) {
     size_t rd = p_unary_instr->p_des->reg_id;
     bool s = p_unary_instr->p_des->if_cond;
@@ -750,7 +771,7 @@ void arm_func_codegen(p_symbol_func p_func, char *asm_code) {
     p_arm_codegen_info p_info = arm_codegen_info_gen(p_func, asm_code);
 
     arm_into_func_gen(p_info, p_func, p_func->stack_size);
-
+    swap_in_func_param(p_info, p_func);
     p_list_head p_block_node;
     list_for_each(p_block_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
