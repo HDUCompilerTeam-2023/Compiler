@@ -231,12 +231,6 @@ static void deal_instr(p_ir_instr p_instr, p_symbol_func p_func) {
 }
 
 void arm_lir_func_trans(p_symbol_func p_func) {
-    p_list_head p_node;
-    list_for_each(p_node, &p_func->param_reg_list) {
-        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        if (if_need_float(p_vreg))
-            set_float_reg(p_vreg);
-    }
     p_list_head p_block_node;
     list_for_each_tail(p_block_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);

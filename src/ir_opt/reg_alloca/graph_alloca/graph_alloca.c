@@ -5,25 +5,6 @@
 #include <ir_gen.h>
 #include <symbol_gen.h>
 
-// 对传入的参数进行预着色
-void pre_color(p_conflict_graph p_graph) {
-    p_list_head p_node;
-    size_t current_r = 0;
-    size_t current_s = 0;
-    list_for_each(p_node, &p_graph->p_func->param_reg_list) {
-        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        p_graph_node p_g_node = (p_graph_node) p_vreg->p_info;
-        if (p_vreg->if_float) {
-            set_node_color(p_graph, p_g_node, current_s);
-            current_s++;
-        }
-        else {
-            set_node_color(p_graph, p_g_node, current_r);
-            current_r++;
-        }
-    }
-}
-
 static inline void live_edge(p_ir_bb_phi_list p_live, p_ir_vreg p_vreg) {
     p_list_head p_node;
     list_for_each(p_node, &p_live->bb_phi) {
@@ -440,7 +421,6 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
         maximum_clique(p_graph);
         get_color_num(p_graph);
     }
-    pre_color(p_graph);
     set_graph_color(p_graph);
 
     combine_mov(p_func);
