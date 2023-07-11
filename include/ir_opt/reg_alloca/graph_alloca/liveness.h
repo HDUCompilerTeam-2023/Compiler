@@ -16,10 +16,8 @@ struct liveness_info{
     bool **graph_table;
 };
 
-void check_liveness(p_symbol_func p_func);
 void liveness_analysis(p_liveness_info p_info);
 p_liveness_info liveness_info_gen(p_symbol_func p_func);
 void liveness_info_drop(p_liveness_info p_info);
-bool if_in_live_set(p_ir_bb_phi_list p_list, p_ir_vreg p_vreg);
 
 #endif

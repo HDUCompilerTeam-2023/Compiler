@@ -143,49 +143,6 @@ static inline void set_live(p_liveness_info p_info, p_ir_bb_phi_list p_list, p_b
     }
 }
 
-bool if_in_live_set(p_ir_bb_phi_list p_list, p_ir_vreg p_vreg) {
-    p_list_head p_node;
-    list_for_each(p_node, &p_list->bb_phi) {
-        p_ir_vreg p_live = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
-        if (p_live == p_vreg)
-            return true;
-    }
-    return false;
-}
-
-// 检验基本块参数传入的参数在跳转目标基本块的入口是不活跃的，避免错误，可删
-void check_liveness(p_symbol_func p_func) {
-    p_list_head p_block_node;
-    list_for_each(p_block_node, &p_func->block) {
-        p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
-        p_list_head p_node;
-        switch (p_basic_block->p_branch->kind) {
-        case ir_br_branch:
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
-                p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                if (p_param->kind == reg)
-                    assert(!if_in_live_set(p_basic_block->p_branch->p_target_1->p_block->p_live_in, p_param->p_vreg));
-            }
-            break;
-        case ir_cond_branch:
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
-                p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                if (p_param->kind == reg)
-                    assert(!if_in_live_set(p_basic_block->p_branch->p_target_1->p_block->p_live_in, p_param->p_vreg));
-            }
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_2->p_block_param->bb_param) {
-                p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                if (p_param->kind == reg)
-                    assert(!if_in_live_set(p_basic_block->p_branch->p_target_2->p_block->p_live_in, p_param->p_vreg));
-            }
-            break;
-        case ir_ret_branch:
-        case ir_abort_branch:
-            break;
-        }
-    }
-}
-
 // 将 info中的 bitmap 转为链表
 static void set_func_live(p_liveness_info p_info) {
     p_list_head p_block_node;
