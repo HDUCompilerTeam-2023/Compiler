@@ -9,7 +9,7 @@ static void p_live_out_block(p_liveness_info p_info, p_ir_basic_block p_basic_bl
 static void p_live_in_block(p_liveness_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
 static void p_live_in_branch(p_liveness_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
 
-static inline void set_graph_table_edge(p_liveness_info p_info, p_ir_vreg r1, p_ir_vreg r2){
+static inline void set_graph_table_edge(p_liveness_info p_info, p_ir_vreg r1, p_ir_vreg r2) {
     p_info->graph_table[r1->id][r2->id] = p_info->graph_table[r2->id][r1->id] = true;
 }
 static inline bool in_bb_phi_list(p_liveness_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
@@ -248,6 +248,7 @@ p_liveness_info liveness_info_gen(p_symbol_func p_func) {
     p_info->graph_table = malloc(sizeof(*p_info->graph_table) * vreg_num);
     for (size_t i = 0; i < vreg_num; i++) {
         p_info->graph_table[i] = malloc(sizeof(*p_info->graph_table[i]) * vreg_num);
+        memset(p_info->graph_table[i], false, sizeof(*p_info->graph_table[i]) * vreg_num);
     }
     return p_info;
 }
@@ -264,7 +265,7 @@ void liveness_info_drop(p_liveness_info p_info) {
         bitmap_drop(p_info->instr_live_out[i]);
     }
 
-    for(size_t i = 0; i < p_info->vreg_num; i ++)
+    for (size_t i = 0; i < p_info->vreg_num; i++)
         free(p_info->graph_table[i]);
     free(p_info->graph_table);
     free(p_info->block_live_in);
