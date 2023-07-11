@@ -437,7 +437,6 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     adjust_graph_color(p_graph);
 
     combine_mov(p_func);
-    check_liveness(p_func);
     liveness_info_drop(p_live_info);
     conflict_graph_drop(p_graph);
     symbol_func_set_block_id(p_func);
