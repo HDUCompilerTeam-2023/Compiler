@@ -74,21 +74,6 @@ static inline p_graph_node_list graph_node_list_copy(p_graph_node_list p_list) {
     }
     return p_copy;
 }
-p_list_head get_node_pos(p_graph_node_list p_list, p_graph_node p_g_node) {
-    p_list_head p_head = &p_list->node;
-    p_list_head p_node = p_head;
-    list_for_each(p_node, p_head) {
-        p_graph_node p_neighbor = list_entry(p_node, graph_nodes, node)->p_node;
-        if (p_neighbor->node_id > p_g_node->node_id)
-            return p_node;
-        if (p_neighbor->node_id == p_g_node->node_id)
-            break;
-    }
-    if (p_node == p_head) {
-        return p_node;
-    }
-    return NULL;
-}
 
 p_conflict_graph conflict_graph_gen(size_t reg_num_r, size_t reg_num_s, p_symbol_func p_func) {
     p_conflict_graph p_graph = malloc(sizeof(*p_graph));
