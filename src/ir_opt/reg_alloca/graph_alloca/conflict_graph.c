@@ -63,6 +63,16 @@ void graph_node_list_add(p_graph_node_list p_list, p_graph_node p_g_node) {
     p_list->num++;
 }
 
+static inline p_graph_node_list graph_node_list_copy(p_graph_node_list p_list) {
+    p_graph_node_list p_copy = malloc(sizeof(*p_copy));
+    p_copy->node = list_head_init(&p_copy->node);
+    p_list_head p_node;
+    list_for_each(p_node, &p_list->node) {
+        p_graph_node p_g_node = list_entry(p_node, graph_nodes, node)->p_node;
+        graph_node_list_add(p_copy, p_g_node);
+    }
+    return p_copy;
+}
 p_list_head get_node_pos(p_graph_node_list p_list, p_graph_node p_g_node) {
     p_list_head p_head = &p_list->node;
     p_list_head p_node = p_head;
@@ -572,4 +582,360 @@ void choose_spill(p_conflict_graph p_graph) {
             choose_spill_node(p_graph, p_c_node->may_spilled_list_s, need_spill_num_s);
         }
     }
+}
+
+typedef struct ou_unit ou_unit, *p_ou_unit;
+typedef struct ou_unit_queue ou_unit_queue, *p_ou_unit_queue;
+typedef struct ou_unit_list ou_unit_list, *p_ou_unit_list;
+
+typedef enum unit_type unit_type;
+enum unit_type {
+    single,
+    range
+};
+struct ou_unit {
+    p_graph_node_list p_nodes;
+    list_head node;
+    size_t *nodes_color;
+    p_bitmap candidates;
+    size_t color;
+    bool if_float;
+};
+struct ou_unit_queue {
+    list_head ou_units;
+    p_graph_node_list p_nodes;
+    list_head node;
+    unit_type type;
+    size_t allowed_color;
+    bool if_float;
+    size_t node_num;
+    size_t *nodes_color;
+};
+
+struct ou_unit_list {
+    list_head node;
+    p_bitmap pinned;
+    size_t *nodes_color;
+    size_t node_num;
+    size_t color_num_r;
+    size_t color_num_s;
+    bool *if_visited;
+};
+static inline p_ou_unit create_ou_unit(size_t color, p_graph_node_list p_nodes, p_ou_unit_queue p_unit_queue) {
+    p_ou_unit p_unit = malloc(sizeof(*p_unit));
+    p_unit->if_float = p_unit_queue->if_float;
+    p_unit->candidates = bitmap_gen(p_unit_queue->node_num);
+    bitmap_set_empty(p_unit->candidates);
+    p_unit->node = list_head_init(&p_unit->node);
+    p_unit->nodes_color = malloc(sizeof(p_unit->nodes_color) * p_unit_queue->node_num);
+    memcpy(p_unit->nodes_color, p_unit_queue->nodes_color, sizeof(*p_unit_queue->nodes_color) * p_unit_queue->node_num);
+    p_unit->p_nodes = p_nodes;
+    p_unit->color = color;
+    list_add_prev(&p_unit->node, &p_unit_queue->ou_units);
+    return p_unit;
+}
+static inline p_ou_unit_queue create_ou_unit_queue(bool if_float, unit_type type, size_t allowed_color, p_ou_unit_list p_list) {
+    p_ou_unit_queue p_unit_queue = malloc(sizeof(*p_unit_queue));
+    p_unit_queue->node = list_head_init(&p_unit_queue->node);
+    p_unit_queue->p_nodes = graph_node_list_gen();
+    p_unit_queue->type = type;
+    p_unit_queue->allowed_color = allowed_color;
+    p_unit_queue->if_float = if_float;
+    p_unit_queue->node_num = p_list->node_num;
+    p_unit_queue->nodes_color = malloc(sizeof(*p_unit_queue->nodes_color) * p_unit_queue->node_num);
+    p_unit_queue->ou_units = list_head_init(&p_unit_queue->ou_units);
+    list_add_prev(&p_unit_queue->node, &p_list->node);
+    return p_unit_queue;
+}
+
+static inline p_ou_unit_list ou_unit_list_gen(p_conflict_graph p_graph) {
+    p_ou_unit_list p_list = malloc(sizeof(*p_list));
+    p_list->node = list_head_init(&p_list->node);
+    p_list->pinned = bitmap_gen(p_graph->node_num);
+    bitmap_set_empty(p_list->pinned);
+
+    p_list->node_num = p_graph->node_num;
+    p_list->nodes_color = malloc(sizeof(*p_list->nodes_color) * p_graph->node_num);
+    for (size_t i = 0; i < p_graph->origin_node_num; i++) {
+        p_list->nodes_color[(p_graph->p_nodes + i)->p_def_node->node_id] = (p_graph->p_nodes + i)->p_def_node->color;
+        if ((p_graph->p_nodes + i)->p_spill_node)
+            p_list->nodes_color[(p_graph->p_nodes + i)->p_spill_node->node_id] = (p_graph->p_nodes + i)->p_spill_node->color;
+        p_list_head p_node;
+        list_for_each(p_node, &(p_graph->p_nodes + i)->p_use_spill_list->node) {
+            p_graph_node p_g_node = list_entry(p_node, graph_nodes, node)->p_node;
+            p_list->nodes_color[p_g_node->node_id] = p_g_node->color;
+        }
+    }
+    p_list->color_num_r = p_graph->color_num_r;
+    p_list->color_num_s = p_graph->color_num_s;
+
+    p_list->if_visited = malloc(sizeof(*p_list->if_visited) * p_list->node_num);
+    return p_list;
+}
+
+static inline void ou_unit_drop(p_ou_unit p_unit) {
+    list_del(&p_unit->node);
+    graph_node_list_drop(p_unit->p_nodes);
+    free(p_unit->nodes_color);
+    bitmap_drop(p_unit->candidates);
+    free(p_unit);
+}
+
+static inline void ou_unit_queue_drop(p_ou_unit_queue p_unit_queue) {
+    p_list_head p_node, p_node_next;
+    list_for_each_safe(p_node, p_node_next, &p_unit_queue->ou_units) {
+        p_ou_unit p_unit = list_entry(p_node, ou_unit, node);
+        ou_unit_drop(p_unit);
+    }
+    list_del(&p_unit_queue->node);
+    graph_node_list_drop(p_unit_queue->p_nodes);
+    free(p_unit_queue->nodes_color);
+    free(p_unit_queue);
+}
+
+static inline void ou_unit_list_drop(p_ou_unit_list p_unit_list) {
+    p_list_head p_node, p_node_next;
+    list_for_each_safe(p_node, p_node_next, &p_unit_list->node) {
+        p_ou_unit_queue p_unit_queue = list_entry(p_node, ou_unit_queue, node);
+        ou_unit_queue_drop(p_unit_queue);
+    }
+    bitmap_drop(p_unit_list->pinned);
+    free(p_unit_list->nodes_color);
+    free(p_unit_list->if_visited);
+    free(p_unit_list);
+}
+
+static inline void deal_block_target(p_ir_basic_block p_basic_block, p_ir_basic_block_branch_target p_target, p_ou_unit_list p_list) {
+    if (!p_target) return;
+    if (p_target->p_block != p_basic_block) return;
+    p_list_head p_node_param;
+    p_list_head p_node_phi = p_basic_block->basic_block_phis->bb_phi.p_prev;
+    p_list_head p_node = p_list->node.p_prev;
+    list_for_each_tail(p_node_param, &p_target->p_block_param->bb_param) {
+        p_ir_operand p_param = list_entry(p_node_param, ir_bb_param, node)->p_bb_param;
+        if (p_param->kind == reg) {
+            p_ir_vreg p_phi = list_entry(p_node_phi, ir_bb_phi, node)->p_bb_phi;
+            if (p_phi->if_float == p_param->p_vreg->if_float) {
+                p_ou_unit p_unit = list_entry(p_node, ou_unit, node);
+                graph_node_list_add(p_unit->p_nodes, (p_graph_node) p_param->p_vreg->p_info);
+            }
+        }
+        p_node_phi = p_node_phi->p_prev;
+        p_node = p_node->p_prev;
+    }
+}
+
+static inline void create_ou_unit_phi(p_ir_basic_block p_basic_block, p_ou_unit_list p_list) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
+        p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
+        p_ou_unit_queue p_unit_queue;
+        if (p_phi->if_float)
+            p_unit_queue = create_ou_unit_queue(p_phi->if_float, range, p_list->color_num_s, p_list);
+        else
+            p_unit_queue = create_ou_unit_queue(p_phi->if_float, range, p_list->color_num_r, p_list);
+        graph_node_list_add(p_unit_queue->p_nodes, (p_graph_node) (p_phi->p_info));
+    }
+
+    p_list_head p_prev_node;
+    list_for_each(p_prev_node, &p_basic_block->prev_basic_block_list) {
+        p_ir_basic_block p_prev_block = list_entry(p_prev_node, ir_basic_block_list_node, node)->p_basic_block;
+        deal_block_target(p_basic_block, p_prev_block->p_branch->p_target_1, p_list);
+        deal_block_target(p_basic_block, p_prev_block->p_branch->p_target_2, p_list);
+    }
+}
+
+static inline void create_ou_unit_func_param(p_symbol_func p_func, p_ou_unit_list p_list) {
+    p_list_head p_node;
+    size_t r = 0;
+    size_t s = 0;
+    p_list_head p_reg_node = p_func->param_reg_list.p_next;
+    list_for_each(p_node, &p_func->param) {
+        p_symbol_var p_param = list_entry(p_node, symbol_var, node);
+        p_ir_vreg p_param_reg = list_entry(p_reg_node, ir_vreg, node);
+        bool if_float = (p_param->p_type == 0 && p_param->p_type->basic == type_f32);
+        if (if_float) {
+            if (p_param_reg->if_float) {
+                p_ou_unit_queue p_queue = create_ou_unit_queue(true, single, s, p_list);
+                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param_reg->p_info);
+            }
+            s++;
+        }
+        else {
+            if (!p_param_reg->if_float) {
+                p_ou_unit_queue p_queue = create_ou_unit_queue(false, single, r, p_list);
+                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param_reg->p_info);
+            }
+            r++;
+        }
+        p_reg_node = p_reg_node->p_next;
+    }
+}
+
+static inline void create_ou_unit_func_call(p_ir_call_instr p_call_instr, p_ou_unit_list p_list) {
+    p_list_head p_node;
+    size_t r = 0;
+    size_t s = 0;
+    p_list_head p_operand_node = p_call_instr->p_param_list->param.p_next;
+    list_for_each(p_node, &p_call_instr->p_func->param) {
+        p_symbol_var p_param = list_entry(p_node, symbol_var, node);
+        p_ir_operand p_param_operand = list_entry(p_operand_node, ir_param, node)->p_param;
+        bool if_float = (p_param->p_type == 0 && p_param->p_type->basic == type_f32);
+        if (if_float) {
+            if (p_param_operand->kind == reg && p_param_operand->p_vreg->if_float) {
+                p_ou_unit_queue p_queue = create_ou_unit_queue(true, single, s, p_list);
+                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param_operand->p_vreg->p_info);
+            }
+            s++;
+        }
+        else {
+            if (p_param_operand->kind == reg && !p_param_operand->p_vreg->if_float) {
+                p_ou_unit_queue p_queue = create_ou_unit_queue(false, single, r, p_list);
+                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param_operand->p_vreg->p_info);
+            }
+            r++;
+        }
+        p_operand_node = p_operand_node->p_next;
+    }
+}
+typedef struct ret_info ret_info, *p_ret_info;
+typedef enum try_type try_type;
+enum try_type {
+    ok,
+    candidate,
+    pinned,
+    forbidden,
+};
+struct ret_info {
+    try_type type;
+    p_graph_node p_g_node;
+};
+static inline ret_info try_color(p_graph_node p_g_node, size_t color, p_ou_unit p_unit, p_ou_unit_list p_list) {
+    if (p_list->if_visited[p_g_node->node_id])
+        return (ret_info) { ok, NULL };
+    p_list->if_visited[p_g_node->node_id] = true;
+    size_t origin_color = p_unit->nodes_color[p_g_node->node_id];
+    if (origin_color == color)
+        if (p_unit->if_float == p_g_node->p_vreg->if_float)
+            return (ret_info) { ok, NULL };
+    if (bitmap_if_in(p_list->pinned, p_g_node->node_id))
+        return (ret_info) { pinned, p_g_node };
+    if (bitmap_if_in(p_unit->candidates, p_g_node->node_id))
+        return (ret_info) { candidate, p_g_node };
+    // maybe forbidden
+    p_list_head p_node;
+    list_for_each(p_node, &p_g_node->p_neighbors->node) {
+        p_graph_node p_n_node = list_entry(p_node, graph_nodes, node)->p_node;
+        if (p_unit->nodes_color[p_n_node->node_id] != color)
+            continue;
+        ret_info ret = try_color(p_n_node, origin_color, p_unit, p_list);
+        if (ret.type != ok)
+            return ret;
+    }
+    p_unit->nodes_color[p_g_node->node_id] = color;
+    return (ret_info) { ok, NULL };
+}
+
+static inline void deal_unit_queue(p_ou_unit_queue p_unit_queue, p_ou_unit_list p_list) {
+    while (1) {
+        assert(!list_head_alone(&p_unit_queue->ou_units));
+        p_ou_unit p_unit = list_entry(p_unit_queue->ou_units.p_next, ou_unit, node);
+        p_list_head p_node;
+        bool if_success = true;
+        list_for_each(p_node, &p_unit->p_nodes->node) {
+            p_graph_node p_phi_node = list_entry(p_unit->p_nodes->node.p_next, graph_nodes, node)->p_node;
+            p_graph_node p_g_node = list_entry(p_node, graph_nodes, node)->p_node;
+            memset(p_list->if_visited, false, sizeof(*p_list->if_visited) * p_list->node_num);
+            ret_info ret = try_color(p_g_node, p_unit->color, p_unit, p_list);
+            if (ret.type == ok)
+                bitmap_add_element(p_unit->candidates, p_g_node->node_id);
+            else {
+                if (ret.type == candidate && ret.p_g_node != p_phi_node) {
+                    p_graph_node_list p_new_nodes1 = graph_node_list_copy(p_unit->p_nodes);
+                    node_list_del(p_new_nodes1, p_g_node);
+                    create_ou_unit(p_unit->color, p_new_nodes1, p_unit_queue);
+                    p_graph_node_list p_new_nodes2 = graph_node_list_copy(p_unit->p_nodes);
+                    node_list_del(p_new_nodes2, ret.p_g_node);
+                    create_ou_unit(p_unit->color, p_new_nodes2, p_unit_queue);
+                }
+                else {
+                    p_graph_node_list p_new_nodes = graph_node_list_copy(p_unit->p_nodes);
+                    node_list_del(p_new_nodes, p_g_node);
+                    create_ou_unit(p_unit->color, p_new_nodes, p_unit_queue);
+                }
+                if_success = false;
+                break;
+            }
+        }
+        if (if_success) {
+            memcpy(p_unit_queue->nodes_color, p_unit->nodes_color, sizeof(*p_list->nodes_color) * p_list->node_num);
+            bitmap_merge_not_new(p_list->pinned, p_unit->candidates);
+            return;
+        }
+        ou_unit_drop(p_unit);
+    }
+}
+
+static inline void reset_node_color(p_conflict_graph p_graph, p_graph_node p_g_node, size_t color) {
+    if (p_g_node->color == color) return;
+    // print_conflict_node(p_g_node);
+    // printf("    reset:%ld -> %ld\n", p_g_node->color, color);
+    set_node_color(p_graph, p_g_node, color);
+}
+static inline void reset_graph_color(p_conflict_graph p_graph, p_ou_unit_list p_list) {
+    for (size_t i = 0; i < p_graph->origin_node_num; i++) {
+        p_origin_graph_node p_o_node = p_graph->p_nodes + i;
+        reset_node_color(p_graph, p_o_node->p_def_node, p_list->nodes_color[p_o_node->p_def_node->node_id]);
+        p_list_head p_node;
+        list_for_each(p_node, &p_o_node->p_use_spill_list->node) {
+            p_graph_node p_g_node = list_entry(p_node, graph_nodes, node)->p_node;
+            reset_node_color(p_graph, p_g_node, p_list->nodes_color[p_g_node->node_id]);
+        }
+        if (p_o_node->p_spill_node)
+            reset_node_color(p_graph, p_o_node->p_spill_node, p_list->nodes_color[p_o_node->p_spill_node->node_id]);
+    }
+}
+void adjust_graph_color(p_conflict_graph p_graph) {
+    p_ou_unit_list p_list = ou_unit_list_gen(p_graph);
+
+    create_ou_unit_func_param(p_graph->p_func, p_list);
+
+    p_list_head p_block_node;
+    list_for_each(p_block_node, &p_graph->p_func->block) {
+        p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
+        create_ou_unit_phi(p_basic_block, p_list);
+        p_list_head p_instr_node;
+        list_for_each(p_instr_node, &p_basic_block->instr_list) {
+            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            if (p_instr->irkind == ir_call) {
+                create_ou_unit_func_call(&p_instr->ir_call, p_list);
+                if (p_instr->ir_call.p_des)
+                    create_ou_unit_queue(p_instr->ir_call.p_func->ret_type == type_f32, single, 0, p_list);
+            }
+        }
+        if (p_basic_block->p_branch->kind == ir_ret_branch && p_basic_block->p_branch->p_exp) {
+            bool if_float = p_graph->p_func->ret_type == type_f32;
+            create_ou_unit_queue(if_float, single, 0, p_list);
+        }
+    }
+    p_list_head p_node, p_next;
+    list_for_each_safe(p_node, p_next, &p_list->node) {
+        p_ou_unit_queue p_unit_queue = list_entry(p_node, ou_unit_queue, node);
+        memcpy(p_unit_queue->nodes_color, p_list->nodes_color, sizeof(*p_unit_queue->nodes_color) * p_unit_queue->node_num);
+        switch (p_unit_queue->type) {
+        case single:
+            create_ou_unit(p_unit_queue->allowed_color, graph_node_list_copy(p_unit_queue->p_nodes), p_unit_queue);
+            break;
+        case range:
+            for (size_t i = 0; i < p_unit_queue->allowed_color; i++) {
+                create_ou_unit(i, graph_node_list_copy(p_unit_queue->p_nodes), p_unit_queue);
+            }
+            break;
+        }
+        deal_unit_queue(p_unit_queue, p_list);
+        memcpy(p_list->nodes_color, p_unit_queue->nodes_color, sizeof(*p_list->nodes_color) * p_list->node_num);
+        ou_unit_queue_drop(p_unit_queue);
+    }
+    reset_graph_color(p_graph, p_list);
+    ou_unit_list_drop(p_list);
 }

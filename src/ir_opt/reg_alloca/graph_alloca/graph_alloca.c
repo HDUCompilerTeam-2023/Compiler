@@ -422,6 +422,7 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
         get_color_num(p_graph);
     }
     set_graph_color(p_graph);
+    adjust_graph_color(p_graph);
 
     combine_mov(p_func);
     check_liveness(p_func);
