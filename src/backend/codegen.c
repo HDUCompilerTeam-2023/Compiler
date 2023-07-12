@@ -48,6 +48,7 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
         size_t current_work_r2 = r2[i];
         while (use_reg_count[current_work_r2] == 0 && current_work_r1 != current_work_r2) {
             mov_reg2reg(p_info->asm_code, current_work_r2, current_work_r1, false);
+            p_info->mov_num++;
             use_reg_count[current_work_r1]--;
             if_deal[current_work_r2] = true;
             current_work_r2 = current_work_r1;
@@ -79,6 +80,7 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
         mov_reg2reg(p_info->asm_code, TMP, r2[i], false);
         mov_reg2reg(p_info->asm_code, r2[i], current_val_in[r1[i]], false);
         mov_reg2reg(p_info->asm_code, current_val_in[r1[i]], TMP, false);
+        p_info->swap_num++;
         // else
         // arm_swap_gen(p_info->asm_code, current_val_in[r1[i]], r2[i]);
         // 交换完成后源寄存器放到了正确位置，目标寄存器的值（可能是其他交换的源寄存器）被放到了源寄存器
@@ -760,6 +762,7 @@ static p_arm_codegen_info arm_codegen_info_gen(p_symbol_func p_func, char *asm_c
     p_arm_codegen_info p_info = malloc(sizeof(*p_info));
     p_info->asm_code = asm_code;
     p_info->p_func = p_func;
+    p_info->mov_num = p_info->swap_num = 0;
     return p_info;
 }
 static void arm_codegen_info_drop(p_arm_codegen_info p_info) {
@@ -778,6 +781,7 @@ void arm_func_codegen(p_symbol_func p_func, char *asm_code) {
         p_ir_basic_block p_next_block = list_entry(p_block_node->p_next, ir_basic_block, node);
         arm_basic_block_codegen(p_info, p_basic_block, p_next_block, p_func);
     }
+    printf("%s: mov_num:%ld swap_num:%ld\n", p_func->name, p_info->mov_num, p_info->swap_num);
     arm_codegen_info_drop(p_info);
 }
 
