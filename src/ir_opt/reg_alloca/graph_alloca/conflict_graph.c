@@ -750,26 +750,23 @@ static inline void create_ou_unit_func_param(p_symbol_func p_func, p_ou_unit_lis
     p_list_head p_node;
     size_t r = 0;
     size_t s = 0;
-    p_list_head p_reg_node = p_func->param_reg_list.p_next;
-    list_for_each(p_node, &p_func->param) {
-        p_symbol_var p_param = list_entry(p_node, symbol_var, node);
-        p_ir_vreg p_param_reg = list_entry(p_reg_node, ir_vreg, node);
+    list_for_each(p_node, &p_func->param_reg_list) {
+        p_ir_vreg p_param = list_entry(p_node, ir_vreg, node);
         bool if_float = (p_param->p_type == 0 && p_param->p_type->basic == type_f32);
         if (if_float) {
-            if (p_param_reg->if_float) {
+            if (p_param->if_float) {
                 p_ou_unit_queue p_queue = create_ou_unit_queue(true, single, s, p_list);
-                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param_reg->p_info);
+                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param->p_info);
             }
             s++;
         }
         else {
-            if (!p_param_reg->if_float) {
+            if (!p_param->if_float) {
                 p_ou_unit_queue p_queue = create_ou_unit_queue(false, single, r, p_list);
-                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param_reg->p_info);
+                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param->p_info);
             }
             r++;
         }
-        p_reg_node = p_reg_node->p_next;
     }
 }
 
@@ -777,26 +774,23 @@ static inline void create_ou_unit_func_call(p_ir_call_instr p_call_instr, p_ou_u
     p_list_head p_node;
     size_t r = 0;
     size_t s = 0;
-    p_list_head p_operand_node = p_call_instr->p_param_list->param.p_next;
-    list_for_each(p_node, &p_call_instr->p_func->param) {
-        p_symbol_var p_param = list_entry(p_node, symbol_var, node);
-        p_ir_operand p_param_operand = list_entry(p_operand_node, ir_param, node)->p_param;
+    list_for_each(p_node, &p_call_instr->p_param_list->param) {
+        p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
         bool if_float = (p_param->p_type == 0 && p_param->p_type->basic == type_f32);
         if (if_float) {
-            if (p_param_operand->kind == reg && p_param_operand->p_vreg->if_float) {
+            if (p_param->kind == reg && p_param->p_vreg->if_float) {
                 p_ou_unit_queue p_queue = create_ou_unit_queue(true, single, s, p_list);
-                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param_operand->p_vreg->p_info);
+                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param->p_vreg->p_info);
             }
             s++;
         }
         else {
-            if (p_param_operand->kind == reg && !p_param_operand->p_vreg->if_float) {
+            if (p_param->kind == reg && !p_param->p_vreg->if_float) {
                 p_ou_unit_queue p_queue = create_ou_unit_queue(false, single, r, p_list);
-                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param_operand->p_vreg->p_info);
+                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param->p_vreg->p_info);
             }
             r++;
         }
-        p_operand_node = p_operand_node->p_next;
     }
 }
 typedef struct ret_info ret_info, *p_ret_info;
@@ -838,8 +832,7 @@ static inline ret_info try_color(p_graph_node p_g_node, size_t color, p_ou_unit 
 }
 
 static inline void deal_unit_queue(p_ou_unit_queue p_unit_queue, p_ou_unit_list p_list) {
-    while (1) {
-        assert(!list_head_alone(&p_unit_queue->ou_units));
+    while (!list_head_alone(&p_unit_queue->ou_units)) {
         p_ou_unit p_unit = list_entry(p_unit_queue->ou_units.p_next, ou_unit, node);
         p_list_head p_node;
         bool if_success = true;
@@ -851,18 +844,20 @@ static inline void deal_unit_queue(p_ou_unit_queue p_unit_queue, p_ou_unit_list 
             if (ret.type == ok)
                 bitmap_add_element(p_unit->candidates, p_g_node->node_id);
             else {
-                if (ret.type == candidate && ret.p_g_node != p_phi_node) {
-                    p_graph_node_list p_new_nodes1 = graph_node_list_copy(p_unit->p_nodes);
-                    node_list_del(p_new_nodes1, p_g_node);
-                    create_ou_unit(p_unit->color, p_new_nodes1, p_unit_queue);
-                    p_graph_node_list p_new_nodes2 = graph_node_list_copy(p_unit->p_nodes);
-                    node_list_del(p_new_nodes2, ret.p_g_node);
-                    create_ou_unit(p_unit->color, p_new_nodes2, p_unit_queue);
-                }
-                else {
-                    p_graph_node_list p_new_nodes = graph_node_list_copy(p_unit->p_nodes);
-                    node_list_del(p_new_nodes, p_g_node);
-                    create_ou_unit(p_unit->color, p_new_nodes, p_unit_queue);
+                if (p_g_node != p_phi_node) {
+                    if (ret.type == candidate && ret.p_g_node != p_phi_node) {
+                        p_graph_node_list p_new_nodes1 = graph_node_list_copy(p_unit->p_nodes);
+                        node_list_del(p_new_nodes1, p_g_node);
+                        create_ou_unit(p_unit->color, p_new_nodes1, p_unit_queue);
+                        p_graph_node_list p_new_nodes2 = graph_node_list_copy(p_unit->p_nodes);
+                        node_list_del(p_new_nodes2, ret.p_g_node);
+                        create_ou_unit(p_unit->color, p_new_nodes2, p_unit_queue);
+                    }
+                    else {
+                        p_graph_node_list p_new_nodes = graph_node_list_copy(p_unit->p_nodes);
+                        node_list_del(p_new_nodes, p_g_node);
+                        create_ou_unit(p_unit->color, p_new_nodes, p_unit_queue);
+                    }
                 }
                 if_success = false;
                 break;
