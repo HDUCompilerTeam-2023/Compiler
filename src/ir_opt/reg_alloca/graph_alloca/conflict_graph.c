@@ -31,6 +31,7 @@ void origin_graph_node_gen(p_origin_graph_node p_node, p_ir_vreg p_vreg, p_confl
     p_node->if_pre_color = false;
     p_node->spl_type = none;
     p_node->pcliques = list_head_init(&p_node->pcliques);
+    p_node->need_delete = false;
 }
 
 void graph_nodes_init(p_conflict_graph p_graph) {
@@ -135,6 +136,16 @@ void add_reg_graph_edge(p_ir_vreg r1, p_ir_vreg r2) {
     add_graph_edge(p_node1, p_node2);
 }
 
+void neighbors_clear(p_graph_node p_g_node) {
+    p_list_head p_node, p_next;
+    list_for_each_safe(p_node, p_next, &p_g_node->p_neighbors->node) {
+        p_graph_nodes p_nodes = list_entry(p_node, graph_nodes, node);
+        node_list_del(p_nodes->p_node->p_neighbors, p_g_node);
+        list_del(p_node);
+        free(p_nodes);
+    }
+}
+
 bool if_in_neighbors(p_graph_node p_g_node, p_graph_node p_n_node) {
     p_list_head p_node;
     list_for_each(p_node, &p_g_node->p_neighbors->node) {
@@ -143,6 +154,14 @@ bool if_in_neighbors(p_graph_node p_g_node, p_graph_node p_n_node) {
             return true;
     }
     return false;
+}
+
+void copy_graph_neighbor(p_graph_node p_des, p_graph_node p_src) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_src->p_neighbors->node) {
+        p_graph_node p_neighbor = list_entry(p_node, graph_nodes, node)->p_node;
+        add_graph_edge(p_des, p_neighbor);
+    }
 }
 
 void node_list_del(p_graph_node_list p_list, p_graph_node p_del_node) {
@@ -490,19 +509,48 @@ static inline spill_type get_spill_type(p_conflict_graph p_graph, p_origin_graph
     return reg_reg;
 }
 
+static inline bool is_load_imme_def(p_symbol_func p_func, p_ir_vreg p_vreg) {
+    if (p_vreg->is_bb_param) return false;
+    if (p_vreg->id < p_func->param_reg_cnt) return false;
+    if (p_vreg->p_instr_def->irkind != ir_load) return false;
+    if (p_vreg->p_instr_def->ir_load.p_addr->kind != imme) return false;
+    return true;
+}
 static inline void set_vmem(p_conflict_graph p_graph, p_origin_graph_node p_o_node) {
-    p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_o_node->p_def_node->p_vreg->p_type));
-    symbol_func_add_variable(p_graph->p_func, p_vmem);
+    p_ir_vreg p_src = p_o_node->p_def_node->p_vreg;
+    p_symbol_var p_vmem;
+    if (is_load_imme_def(p_graph->p_func, p_src)) {
+        p_vmem = p_src->p_instr_def->ir_load.p_addr->p_vmem;
+        ir_instr_drop(p_o_node->p_def_node->p_vreg->p_instr_def);
+        neighbors_clear(p_o_node->p_def_node);
+        p_o_node->need_delete = true;
+    }
+    else {
+        p_vmem = symbol_temp_var_gen(symbol_type_copy(p_o_node->p_def_node->p_vreg->p_type));
+        symbol_func_add_variable(p_graph->p_func, p_vmem);
+        p_o_node->need_delete = false;
+    }
     p_o_node->p_vmem = p_vmem;
     p_o_node->spl_type = reg_mem;
 }
 
 static inline void set_spill_node(p_conflict_graph p_graph, p_origin_graph_node p_o_node) {
-    p_ir_vreg p_vreg = ir_vreg_copy(p_o_node->p_def_node->p_vreg);
+    p_ir_vreg p_src = p_o_node->p_def_node->p_vreg;
+    p_ir_vreg p_vreg = ir_vreg_copy(p_src);
     p_vreg->if_float = !p_vreg->if_float;
     symbol_func_vreg_add(p_graph->p_func, p_vreg);
     p_o_node->p_spill_node = graph_node_gen(p_vreg, p_graph);
     p_o_node->spl_type = reg_reg;
+    if (is_load_imme_def(p_graph->p_func, p_src)) {
+        p_ir_instr p_load = p_src->p_instr_def;
+        p_load->ir_load.p_des = p_vreg;
+        ir_vreg_set_instr_def(p_vreg, p_load);
+        copy_graph_neighbor(p_o_node->p_spill_node, p_o_node->p_def_node);
+        neighbors_clear(p_o_node->p_def_node);
+        p_o_node->need_delete = true;
+    }
+    else
+        p_o_node->need_delete = false;
 }
 
 static void choose_spill_node(p_conflict_graph p_graph, p_graph_node_list p_list, size_t need_spill_num) {

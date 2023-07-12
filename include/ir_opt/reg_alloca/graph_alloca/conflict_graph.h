@@ -50,6 +50,7 @@ struct origin_graph_node {
 
     p_graph_node p_def_node;
 
+    bool need_delete;
     p_symbol_var p_vmem;
     p_graph_node p_spill_node;
 
@@ -86,7 +87,9 @@ void graph_nodes_init(p_conflict_graph p_graph);
 void graph_node_list_add(p_graph_node_list p_list, p_graph_node p_g_node);
 void add_graph_edge(p_graph_node r1, p_graph_node r2);
 void add_reg_graph_edge(p_ir_vreg r1, p_ir_vreg r2);
+void neighbors_clear(p_graph_node p_g_node);
 bool if_in_neighbors(p_graph_node p_g_node, p_graph_node p_n_node);
+void copy_graph_neighbor(p_graph_node p_des, p_graph_node p_src);
 void node_list_del(p_graph_node_list p_list, p_graph_node p_del_node);
 p_conflict_graph conflict_graph_gen(size_t reg_num_r, size_t reg_num_s, p_symbol_func p_func);
 void conflict_graph_set_nodes(p_conflict_graph p_graph, p_origin_graph_node p_nodes, size_t num);
