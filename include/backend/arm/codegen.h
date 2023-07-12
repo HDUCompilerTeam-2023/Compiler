@@ -7,6 +7,8 @@ typedef struct arm_codegen_info arm_codegen_info, *p_arm_codegen_info;
 
 struct arm_codegen_info {
     char *asm_code;
+    size_t mov_num;
+    size_t swap_num;
     p_symbol_func p_func;
 };
 
