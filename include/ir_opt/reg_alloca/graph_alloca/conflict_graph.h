@@ -105,4 +105,6 @@ void graph_clique_add(p_conflict_graph p_graph, p_clique_node p_c_node);
 void maximum_clique(p_conflict_graph p_graph);
 void get_color_num(p_conflict_graph p_graph);
 void choose_spill(p_conflict_graph p_graph);
+
+void adjust_graph_color(p_conflict_graph p_graph);
 #endif
