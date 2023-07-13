@@ -65,6 +65,16 @@ void copy_live(p_ir_bb_phi_list p_des, p_ir_bb_phi_list p_src) {
     }
 }
 
+bool if_in_live_set(p_ir_bb_phi_list p_list, p_ir_vreg p_vreg) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_list->bb_phi) {
+        p_ir_vreg p_live = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
+        if (p_live == p_vreg)
+            return true;
+    }
+    return false;
+}
+
 void live_set_del(p_ir_bb_phi_list p_list, p_ir_vreg p_vreg) {
     p_list_head p_node;
     list_for_each(p_node, &p_list->bb_phi) {
