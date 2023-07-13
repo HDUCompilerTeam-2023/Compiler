@@ -227,27 +227,25 @@ static void arm_global_sym_gen(char *asm_code, p_symbol_var p_sym) {
 static void arm_into_func_gen(p_arm_codegen_info p_info, p_symbol_func p_func, size_t stack_size) {
     arm_func_sym_declare_gen(p_info->asm_code, p_func->name);
     arm_label_gen(p_info->asm_code, p_func->name);
-    size_t r[2] = { FP, LR };
-    arm_push_gen(p_info->asm_code, r, 2);
+    size_t r[1] = { LR };
+    arm_push_gen(p_info->asm_code, r, 1);
     if (!if_legal_rotate_imme12(stack_size)) {
         mov_int2reg(p_info->asm_code, 12, stack_size, false);
         arm_data_process_gen(p_info->asm_code, arm_sub, SP, SP, 12, false, 2, false);
     }
     else
         arm_data_process_gen(p_info->asm_code, arm_sub, SP, SP, stack_size, false, 2, true);
-    arm_mov_gen(p_info->asm_code, arm_mov, FP, SP, false, 0, false);
 }
 
 static void arm_out_func_gen(p_arm_codegen_info p_info, size_t stack_size) {
     if (!if_legal_rotate_imme12(stack_size)) {
-        mov_int2reg(p_info->asm_code, 12, stack_size, false);
-        arm_data_process_gen(p_info->asm_code, arm_add, FP, FP, 12, false, 2, false);
+        mov_int2reg(p_info->asm_code, TMP, stack_size, false);
+        arm_data_process_gen(p_info->asm_code, arm_add, SP, SP, TMP, false, 2, false);
     }
     else
-        arm_data_process_gen(p_info->asm_code, arm_add, FP, FP, stack_size, false, 2, true);
-    arm_mov_gen(p_info->asm_code, arm_mov, SP, FP, false, 0, false);
-    size_t r[2] = { FP, PC };
-    arm_pop_gen(p_info->asm_code, r, 2);
+        arm_data_process_gen(p_info->asm_code, arm_add, SP, SP, stack_size, false, 2, true);
+    size_t r[1] = { PC };
+    arm_pop_gen(p_info->asm_code, r, 1);
     arm_jump_reg_gen(p_info->asm_code, arm_bx, arm_al, LR);
 }
 
@@ -302,7 +300,7 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
         else
             des_reg[num] = r++;
         if (p_param_node->is_stack_ptr) {
-            arm_data_process_gen(p_info->asm_code, arm_add, src_reg[num], FP, src_reg[num], false, 0, false);
+            arm_data_process_gen(p_info->asm_code, arm_add, src_reg[num], SP, src_reg[num], false, 0, false);
         }
         num++;
     }
@@ -310,7 +308,7 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
     swap_reg(p_info, src_reg, des_reg, num);
     for (size_t j = 0; j < i; j++) {
         if (src_immes[j]->is_stack_ptr) {
-            arm_data_process_gen(p_info->asm_code, arm_add, des_imme_reg[j], FP, src_immes[j]->p_param->p_vmem->stack_offset << 2, false, 0, true);
+            arm_data_process_gen(p_info->asm_code, arm_add, des_imme_reg[j], SP, src_immes[j]->p_param->p_vmem->stack_offset << 2, false, 0, true);
             continue;
         }
         mov_imme2reg(p_info, des_imme_reg[j], src_immes[j]->p_param, false);
@@ -557,7 +555,7 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
         size_t stack_offset = p_store_instr->p_addr->p_vmem->stack_offset;
         if (rd >= R_NUM) {
             if (!if_legal_direct_imme8(stack_offset)) {
-                arm_mov_gen(asm_code, arm_mov, TMP, FP, false, 0, false);
+                arm_mov_gen(asm_code, arm_mov, TMP, SP, false, 0, false);
                 while (!if_legal_direct_imme8(stack_offset)) {
                     arm_data_process_gen(asm_code, arm_add, TMP, TMP, imm_8_max, false, 2, true);
                     stack_offset -= imm_8_max;
@@ -565,27 +563,27 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
                 arm_vstore_gen(asm_code, rd, TMP, stack_offset << 2, true);
             }
             else
-                arm_vstore_gen(asm_code, rd, FP, stack_offset << 2, true);
+                arm_vstore_gen(asm_code, rd, SP, stack_offset << 2, true);
             return;
         }
         if (!if_legal_direct_imme12(stack_offset << 2)) { // 这里有bug,要用到临时寄存器,待解决
             mov_int2reg(asm_code, TMP, stack_offset << 2, false);
-            arm_store_gen(asm_code, arm_store, rd, FP, TMP, 0, false);
+            arm_store_gen(asm_code, arm_store, rd, SP, TMP, 0, false);
         }
         else
-            arm_store_gen(asm_code, arm_store, rd, FP, stack_offset, 2, true);
+            arm_store_gen(asm_code, arm_store, rd, SP, stack_offset, 2, true);
         return;
     }
     size_t rn = p_store_instr->p_addr->p_vreg->reg_id;
     if (rd >= R_NUM) {
         if (p_store_instr->is_stack_ptr) {
-            arm_data_process_gen(asm_code, arm_add, rn, FP, rn, false, 0, false);
+            arm_data_process_gen(asm_code, arm_add, rn, SP, rn, false, 0, false);
         }
         arm_vstore_gen(asm_code, rd, rn, 0, true);
         return;
     }
     if (p_store_instr->is_stack_ptr)
-        arm_store_gen(asm_code, arm_store, rd, FP, rn, 0, false);
+        arm_store_gen(asm_code, arm_store, rd, SP, rn, 0, false);
     else
         arm_store_gen(asm_code, arm_store, rd, rn, 0, 0, true);
 }
@@ -598,7 +596,7 @@ static void arm_load_instr_gen(p_arm_codegen_info p_info, p_ir_load_instr p_load
         size_t stack_offset = p_load_instr->p_addr->p_vmem->stack_offset;
         if (rd >= R_NUM) {
             if (!if_legal_direct_imme8(stack_offset)) {
-                arm_mov_gen(asm_code, arm_mov, TMP, FP, false, 0, false);
+                arm_mov_gen(asm_code, arm_mov, TMP, SP, false, 0, false);
                 while (!if_legal_direct_imme8(stack_offset)) {
                     arm_data_process_gen(asm_code, arm_add, TMP, TMP, imm_8_max, false, 2, true);
                     stack_offset -= imm_8_max;
@@ -606,27 +604,27 @@ static void arm_load_instr_gen(p_arm_codegen_info p_info, p_ir_load_instr p_load
                 arm_vload_gen(asm_code, rd, TMP, stack_offset << 2, true);
             }
             else
-                arm_vload_gen(asm_code, rd, FP, stack_offset << 2, 2);
+                arm_vload_gen(asm_code, rd, SP, stack_offset << 2, 2);
             return;
         }
         if (!if_legal_direct_imme12(stack_offset << 2)) {
             mov_int2reg(asm_code, rd, stack_offset << 2, false);
-            arm_load_gen(asm_code, arm_load, rd, FP, rd, 0, false);
+            arm_load_gen(asm_code, arm_load, rd, SP, rd, 0, false);
         }
         else
-            arm_load_gen(asm_code, arm_load, rd, FP, stack_offset, 2, true);
+            arm_load_gen(asm_code, arm_load, rd, SP, stack_offset, 2, true);
         return;
     }
     size_t rn = p_load_instr->p_addr->p_vreg->reg_id;
     if (rd >= R_NUM) {
         if (p_load_instr->is_stack_ptr) {
-            arm_data_process_gen(asm_code, arm_add, rn, FP, rn, false, 0, false);
+            arm_data_process_gen(asm_code, arm_add, rn, SP, rn, false, 0, false);
         }
         arm_vload_gen(asm_code, rd, rn, 0, true);
         return;
     }
     if (p_load_instr->is_stack_ptr)
-        arm_load_gen(asm_code, arm_load, rd, FP, rn, 0, false);
+        arm_load_gen(asm_code, arm_load, rd, SP, rn, 0, false);
     else
         arm_load_gen(asm_code, arm_load, rd, rn, 0, 0, true);
 }
