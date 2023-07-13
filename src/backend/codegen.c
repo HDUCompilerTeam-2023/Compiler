@@ -292,7 +292,7 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
         p_ir_operand p_param = p_param_node->p_param;
         if (p_param->kind == imme) {
             src_immes[i] = p_param_node;
-            if (p_param->p_type->ref_level > 0 || p_param->p_type->basic == type_i32)
+            if (if_in_r(p_param->p_type))
                 des_imme_reg[i] = caller_save_reg_r[r++];
             else if (p_param->p_type->basic == type_f32)
                 des_imme_reg[i] = caller_save_reg_s[s++];
@@ -300,10 +300,11 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
             continue;
         }
         src_reg[num] = p_param->p_vreg->reg_id;
-        if (p_param->p_vreg->if_float)
-            des_reg[num] = caller_save_reg_s[s++];
-        else
+        if (if_in_r(p_param->p_type))
             des_reg[num] = caller_save_reg_r[r++];
+        else
+            des_reg[num] = caller_save_reg_s[s++];
+
         if (p_param_node->is_stack_ptr) {
             arm_data_process_gen(p_info->asm_code, arm_add, src_reg[num], SP, src_reg[num], false, 0, false);
         }
@@ -366,7 +367,7 @@ static inline void swap_in_func_param(p_arm_codegen_info p_info, p_symbol_func p
     size_t num = 0;
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_param = list_entry(p_node, ir_vreg, node);
-        if (p_param->p_type->ref_level > 0 || p_param->p_type->basic == type_i32)
+        if (if_in_r(p_param->p_type))
             src_reg[num] = caller_save_reg_r[r++];
         else
             src_reg[num] = caller_save_reg_s[s++];
