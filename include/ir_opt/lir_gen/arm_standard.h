@@ -17,4 +17,9 @@ bool if_legal_direct_imme8(I32CONST_t i32const);
 #define LR 14
 #define PC 15
 #define TMP 14
+
+#define caller_save_reg_num_r 4
+#define callee_save_reg_num_r 10
+#define caller_save_reg_num_s 16
+#define callee_save_reg_num_s 16
 #endif

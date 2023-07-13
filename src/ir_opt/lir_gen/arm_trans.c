@@ -190,8 +190,77 @@ static void deal_store_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     check_imme2reg(p_store_instr->p_addr, p_instr, p_func);
 }
 
-static void deal_instr(p_ir_instr p_instr, p_symbol_func p_func) {
+static inline bool if_in_r(p_symbol_type p_type) {
+    if (p_type->ref_level > 0)
+        return true;
+    switch (p_type->basic) {
+    case type_i32:
+    case type_str:
+        return true;
+    case type_f32:
+        return false;
+    case type_void:
+        assert(0);
+    }
+    return false;
+}
+
+static inline void new_load_func_param(p_symbol_func p_func, p_ir_basic_block p_entry, p_ir_vreg p_param) {
+    p_symbol_var p_param_vmem = symbol_func_param_reg_mem(p_func, p_param);
+    p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_param_vmem), p_param, true);
+    list_add_next(&p_load->node, &p_entry->instr_list);
+}
+
+static inline void symbol_func_param_vreg2vmem(p_symbol_func p_func) {
+    p_ir_basic_block p_entry = list_entry(p_func->block.p_next, ir_basic_block, node);
+    size_t r = 0;
+    size_t s = 0;
+    p_list_head p_node_vreg, p_node_vreg_next;
+    list_for_each_safe(p_node_vreg, p_node_vreg_next, &p_func->param_reg_list) {
+       p_ir_vreg p_param = list_entry(p_node_vreg, ir_vreg, node);
+        if (if_in_r(p_param->p_type)) {
+            if (r >= caller_save_reg_num_r)
+                new_load_func_param(p_func, p_entry, p_param);
+            r++;
+        }
+        else {
+            if (s >= caller_save_reg_num_s)
+                new_load_func_param(p_func, p_entry, p_param);
+            s++;
+        }
+    }
+}
+
+static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
+    size_t r = 0;
+    size_t s = 0;
+    size_t offset = 0;
     p_list_head p_node;
+    list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
+        p_ir_param p_param = list_entry(p_node, ir_param, node);
+        check_imme2reg(p_param->p_param, p_instr, p_func);
+        if (if_in_r(p_param->p_param->p_type)) {
+            if (r >= caller_save_reg_num_r)
+                p_param->is_in_mem = true;
+            r++;
+        }
+        else {
+            if (s >= caller_save_reg_num_s)
+                p_param->is_in_mem = true;
+            s++;
+        }
+        if (p_param->is_in_mem) {
+            p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_param->p_param->p_type));
+            p_vmem->stack_offset = offset++;
+            symbol_func_add_call_param_vmem(p_func, p_vmem);
+            p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), ir_operand_copy(p_param->p_param), true);
+            list_add_prev(&p_store->node, &p_instr->node);
+            ir_param_set_vmem(p_param, p_vmem);
+        }
+    }
+}
+
+static void deal_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     switch (p_instr->irkind) {
     case ir_binary:
         deal_binary_instr(p_instr, p_func);
@@ -200,14 +269,7 @@ static void deal_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         deal_unary_instr(p_instr, p_func);
         break;
     case ir_call:
-        // 返回值在代码生成的时候新增 mov, 不一定放浮点寄存器
-        // 调用时浮点数放浮点寄存器
-        list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
-            p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
-            check_imme2reg(p_param, p_instr, p_func);
-            if (p_param->kind == reg && if_need_float(p_param->p_vreg))
-                set_float_reg(p_param->p_vreg);
-        }
+        deal_call_instr(p_instr, p_func);
         break;
     case ir_load:
         deal_load_instr(p_instr, p_func);
@@ -222,6 +284,8 @@ static void deal_instr(p_ir_instr p_instr, p_symbol_func p_func) {
 }
 
 void arm_lir_func_trans(p_symbol_func p_func) {
+    if (list_head_alone(&p_func->block)) return;
+    symbol_func_param_vreg2vmem(p_func);
     p_list_head p_block_node;
     list_for_each_tail(p_block_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
