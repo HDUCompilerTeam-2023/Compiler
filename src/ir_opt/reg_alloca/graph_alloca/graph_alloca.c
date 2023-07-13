@@ -86,7 +86,7 @@ static void new_store_middle(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_in
     }
 }
 
-static void new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_instr p_instr, p_ir_bb_phi_list p_live_in, p_symbol_func p_func) {
+static void new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_instr p_instr, p_ir_bb_phi_list p_live_in, p_ir_bb_phi_list p_live_out, p_symbol_func p_func) {
     if (p_operand->kind != reg) return;
     p_graph_node p_vreg_g_node = (p_graph_node) p_operand->p_vreg->p_info;
     if (p_vreg_g_node->node_id >= p_graph->origin_node_num) return;
@@ -116,7 +116,8 @@ static void new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_inst
         list_add_prev(&p_assign->node, &p_instr->node);
         ir_operand_reset_vreg(p_operand, p_new_src);
         copy_live(p_assign->p_live_in, p_live_in);
-        live_set_del(p_live_in, p_o_node->p_spill_node->p_vreg);
+        if (!if_in_live_set(p_live_out, p_o_node->p_spill_node->p_vreg))
+            live_set_del(p_live_in, p_o_node->p_spill_node->p_vreg);
         ir_bb_phi_list_add(p_live_in, p_new_src);
         copy_live(p_assign->p_live_out, p_live_in);
         live_edge(p_assign->p_live_out, p_new_src);
@@ -175,29 +176,29 @@ void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
             deal_live_set(p_graph, p_instr->p_live_out);
             switch (p_instr->irkind) {
             case ir_binary:
-                new_load(p_graph, p_instr->ir_binary.p_src1, p_instr, p_instr->p_live_in, p_func);
-                new_load(p_graph, p_instr->ir_binary.p_src2, p_instr, p_instr->p_live_in, p_func);
+                new_load(p_graph, p_instr->ir_binary.p_src1, p_instr, p_instr->p_live_in, p_instr->p_live_out, p_func);
+                new_load(p_graph, p_instr->ir_binary.p_src2, p_instr, p_instr->p_live_in, p_instr->p_live_out, p_func);
                 new_store_middle(p_graph, p_instr->ir_binary.p_des, p_instr, p_func);
                 break;
             case ir_unary:
-                new_load(p_graph, p_instr->ir_unary.p_src, p_instr, p_instr->p_live_in, p_func);
+                new_load(p_graph, p_instr->ir_unary.p_src, p_instr, p_instr->p_live_in, p_instr->p_live_out, p_func);
                 new_store_middle(p_graph, p_instr->ir_unary.p_des, p_instr, p_func);
                 break;
             case ir_call:
                 list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
                     p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
-                    new_load(p_graph, p_param, p_instr, p_instr->p_live_in, p_func);
+                    new_load(p_graph, p_param, p_instr, p_instr->p_live_in, p_instr->p_live_out, p_func);
                 }
                 if (p_instr->ir_call.p_des)
                     new_store_middle(p_graph, p_instr->ir_call.p_des, p_instr, p_func);
                 break;
             case ir_load:
-                new_load(p_graph, p_instr->ir_load.p_addr, p_instr, p_instr->p_live_in, p_func);
+                new_load(p_graph, p_instr->ir_load.p_addr, p_instr, p_instr->p_live_in, p_instr->p_live_out, p_func);
                 new_store_middle(p_graph, p_instr->ir_load.p_des, p_instr, p_func);
                 break;
             case ir_store:
-                new_load(p_graph, p_instr->ir_store.p_src, p_instr, p_instr->p_live_in, p_func);
-                new_load(p_graph, p_instr->ir_store.p_addr, p_instr, p_instr->p_live_in, p_func);
+                new_load(p_graph, p_instr->ir_store.p_src, p_instr, p_instr->p_live_in, p_instr->p_live_out, p_func);
+                new_load(p_graph, p_instr->ir_store.p_addr, p_instr, p_instr->p_live_in, p_instr->p_live_out, p_func);
                 break;
             case ir_gep:
                 assert(0);
@@ -210,23 +211,23 @@ void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
         case ir_br_branch:
             list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                new_load(p_graph, p_param, p_head_instr, p_basic_block->p_branch->p_live_in, p_func);
+                new_load(p_graph, p_param, p_head_instr, p_basic_block->p_branch->p_live_in, p_basic_block->p_live_out, p_func);
             }
             break;
         case ir_cond_branch:
-            new_load(p_graph, p_basic_block->p_branch->p_exp, p_head_instr, p_basic_block->p_branch->p_live_in, p_func);
+            new_load(p_graph, p_basic_block->p_branch->p_exp, p_head_instr, p_basic_block->p_branch->p_live_in, p_basic_block->p_live_out, p_func);
             list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                new_load(p_graph, p_param, p_head_instr, p_basic_block->p_branch->p_live_in, p_func);
+                new_load(p_graph, p_param, p_head_instr, p_basic_block->p_branch->p_live_in, p_basic_block->p_live_out, p_func);
             }
             list_for_each(p_node, &p_basic_block->p_branch->p_target_2->p_block_param->bb_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                new_load(p_graph, p_param, p_head_instr, p_basic_block->p_branch->p_live_in, p_func);
+                new_load(p_graph, p_param, p_head_instr, p_basic_block->p_branch->p_live_in, p_basic_block->p_live_out, p_func);
             }
             break;
         case ir_ret_branch:
             if (p_basic_block->p_branch->p_exp)
-                new_load(p_graph, p_basic_block->p_branch->p_exp, p_head_instr, p_basic_block->p_branch->p_live_in, p_func);
+                new_load(p_graph, p_basic_block->p_branch->p_exp, p_head_instr, p_basic_block->p_branch->p_live_in, p_basic_block->p_live_out, p_func);
             break;
         case ir_abort_branch:
             assert(0);
