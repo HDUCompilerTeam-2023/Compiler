@@ -21,6 +21,11 @@
 #include <ir_opt/lir_gen/arm_standard.h>
 #include <stdio.h>
 
+size_t caller_save_reg_r[caller_save_reg_num_r] = { 0, 1, 2, 3 };
+size_t callee_save_reg_r[callee_save_reg_num_r] = { 4, 5, 6, 7, 8, 9, 10, 11, 12, LR };
+size_t caller_save_reg_s[caller_save_reg_num_s] = { 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 };
+size_t callee_save_reg_s[callee_save_reg_num_s] = { 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 };
+
 static inline void mov_reg2reg(char *asm_code, size_t rd, size_t rs, bool s) {
     if (rd < R_NUM && rs < R_NUM)
         arm_mov_gen(asm_code, arm_mov, rd, rs, s, 0, false);
@@ -280,7 +285,7 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
     size_t num = 0;
     size_t i = 0;
     size_t r = 0;
-    size_t s = R_NUM;
+    size_t s = 0;
     list_for_each(p_node, &p_param_list->param) {
         p_ir_param p_param_node = list_entry(p_node, ir_param, node);
         if (p_param_node->is_in_mem) continue;
@@ -288,17 +293,17 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
         if (p_param->kind == imme) {
             src_immes[i] = p_param_node;
             if (p_param->p_type->ref_level > 0 || p_param->p_type->basic == type_i32)
-                des_imme_reg[i] = r++;
+                des_imme_reg[i] = caller_save_reg_r[r++];
             else if (p_param->p_type->basic == type_f32)
-                des_imme_reg[i] = s++;
+                des_imme_reg[i] = caller_save_reg_s[s++];
             i++;
             continue;
         }
         src_reg[num] = p_param->p_vreg->reg_id;
         if (p_param->p_vreg->if_float)
-            des_reg[num] = s++;
+            des_reg[num] = caller_save_reg_s[s++];
         else
-            des_reg[num] = r++;
+            des_reg[num] = caller_save_reg_r[r++];
         if (p_param_node->is_stack_ptr) {
             arm_data_process_gen(p_info->asm_code, arm_add, src_reg[num], SP, src_reg[num], false, 0, false);
         }
@@ -357,14 +362,14 @@ static inline void swap_in_func_param(p_arm_codegen_info p_info, p_symbol_func p
     size_t *des_reg = malloc(sizeof(*des_reg) * REG_NUM);
     p_list_head p_node;
     size_t r = 0;
-    size_t s = R_NUM;
+    size_t s = 0;
     size_t num = 0;
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_param = list_entry(p_node, ir_vreg, node);
         if (p_param->p_type->ref_level > 0 || p_param->p_type->basic == type_i32)
-            src_reg[num] = r++;
+            src_reg[num] = caller_save_reg_r[r++];
         else
-            src_reg[num] = s++;
+            src_reg[num] = caller_save_reg_s[s++];
         des_reg[num] = p_param->reg_id;
         num++;
     }
