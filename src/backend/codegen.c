@@ -555,6 +555,8 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
     assert(p_store_instr->p_src->kind == reg);
     size_t rd = p_store_instr->p_src->p_vreg->reg_id;
     char *asm_code = p_info->asm_code;
+    if (p_store_instr->p_call_param && p_store_instr->p_call_param->is_stack_ptr)
+        arm_data_process_gen(asm_code, arm_add, rd, SP, rd, false, 0, false);
     if (p_store_instr->p_addr->kind == imme) {
         assert(p_store_instr->p_addr->p_type->ref_level);
         size_t stack_offset = p_store_instr->p_addr->p_vmem->stack_offset;

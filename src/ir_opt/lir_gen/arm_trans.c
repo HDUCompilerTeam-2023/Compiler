@@ -1,6 +1,6 @@
-#include <ir_opt/lir_gen/arm_trans.h>
-#include <ir_opt/lir_gen/arm_standard.h>
 #include <ir_gen.h>
+#include <ir_opt/lir_gen/arm_standard.h>
+#include <ir_opt/lir_gen/arm_trans.h>
 #include <program/def.h>
 #include <symbol_gen.h>
 
@@ -235,6 +235,7 @@ static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     size_t r = 0;
     size_t s = 0;
     size_t offset = 0;
+    bool if_first = true;
     p_list_head p_node;
     list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
         p_ir_param p_param = list_entry(p_node, ir_param, node);
@@ -254,8 +255,13 @@ static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             p_vmem->stack_offset = offset++;
             symbol_func_add_call_param_vmem(p_func, p_vmem);
             p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), ir_operand_copy(p_param->p_param), true);
+            p_store->ir_store.p_call_param = p_param;
             list_add_prev(&p_store->node, &p_instr->node);
             ir_param_set_vmem(p_param, p_vmem);
+            if (if_first) {
+                p_instr->ir_call.p_first_store = p_store;
+                if_first = false;
+            }
         }
     }
 }
