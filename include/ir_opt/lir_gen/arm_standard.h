@@ -1,10 +1,11 @@
 #ifndef __LIR_GEN_ARM_STANDARD__
 #define __LIR_GEN_ARM_STANDARD__
 #include <util.h>
+#include <symbol.h>
 bool if_legal_rotate_imme12(I32CONST_t i32const);
 bool if_legal_direct_imme12(I32CONST_t i32const);
 bool if_legal_direct_imme8(I32CONST_t i32const);
-
+bool if_in_r(p_symbol_type p_type);
 #define imm_8_max 255
 #define imm_12_max 4095
 #define imm_16_max 65535

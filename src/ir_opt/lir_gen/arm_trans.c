@@ -38,9 +38,6 @@ static inline void check_imme2reg(p_ir_operand p_operand, p_ir_instr p_instr, p_
     }
 }
 
-static inline bool if_need_float(p_ir_vreg p_vreg) {
-    return (p_vreg->p_type->basic == type_f32 && p_vreg->p_type->ref_level == 0);
-}
 static inline void set_float_reg(p_ir_vreg p_vreg) {
     p_vreg->if_float = true;
 }
@@ -53,7 +50,7 @@ static void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     case ir_sub_op:
         check_imme2reg(p_binary_instr->p_src1, p_instr, p_func);
         check_imme2reg(p_binary_instr->p_src2, p_instr, p_func);
-        if (if_need_float(p_binary_instr->p_des)) {
+        if (!if_in_r(p_binary_instr->p_des->p_type)) {
             assert(p_binary_instr->p_src1->kind == reg);
             assert(p_binary_instr->p_src2->kind == reg);
             set_float_reg(p_binary_instr->p_src1->p_vreg);
@@ -98,7 +95,7 @@ static void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             }
         }
         assert(p_binary_instr->p_src1->kind == reg);
-        if (if_need_float(p_binary_instr->p_src1->p_vreg)) {
+        if (!if_in_r(p_binary_instr->p_src1->p_type)) {
             assert(p_binary_instr->p_src2->kind == reg);
             set_float_reg(p_binary_instr->p_src1->p_vreg);
             set_float_reg(p_binary_instr->p_src2->p_vreg);
@@ -188,21 +185,6 @@ static void deal_store_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     p_ir_store_instr p_store_instr = &p_instr->ir_store;
     imme2reg(p_store_instr->p_src, p_instr, p_func); // store 的源必须为寄存器
     check_imme2reg(p_store_instr->p_addr, p_instr, p_func);
-}
-
-static inline bool if_in_r(p_symbol_type p_type) {
-    if (p_type->ref_level > 0)
-        return true;
-    switch (p_type->basic) {
-    case type_i32:
-    case type_str:
-        return true;
-    case type_f32:
-        return false;
-    case type_void:
-        assert(0);
-    }
-    return false;
 }
 
 static inline void new_load_func_param(p_symbol_func p_func, p_ir_basic_block p_entry, p_ir_vreg p_param) {
