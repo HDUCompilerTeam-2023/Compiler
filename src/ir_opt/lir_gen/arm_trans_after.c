@@ -1,4 +1,5 @@
 #include <ir_gen.h>
+#include <ir_opt/lir_gen/arm_standard.h>
 #include <ir_opt/lir_gen/arm_trans_after.h>
 #include <program/def.h>
 #include <symbol_gen.h>
@@ -23,8 +24,9 @@ static inline void stack_alloc(p_symbol_func p_func) {
         p_vmem->stack_offset = stack_size;
         stack_size += p_vmem->p_type->size;
     }
-    p_func->stack_size = alignTo(stack_size + 1, 2) - 1;
-    stack_size = p_func->stack_size + 1;
+    size_t save_size = p_func->save_reg_r_num + p_func->save_reg_s_num + 1;
+    p_func->stack_size = alignTo(stack_size + save_size, 2) - save_size;
+    stack_size = p_func->stack_size + save_size;
     list_for_each(p_node, &p_func->param) {
         p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
         p_vmem->stack_offset = stack_size++;
@@ -55,6 +57,14 @@ static inline void remap_reg_id(p_symbol_func p_func) {
     }
 }
 
+static inline void set_save_reg_num(p_symbol_func p_func) {
+    p_func->save_reg_r_num = p_func->save_reg_s_num = 0;
+    if (p_func->use_reg_num_r > caller_save_reg_num_r)
+        p_func->save_reg_r_num = p_func->use_reg_num_r - caller_save_reg_num_r;
+    if (p_func->use_reg_num_r > caller_save_reg_num_s)
+        p_func->save_reg_s_num = p_func->use_reg_num_s - caller_save_reg_num_s;
+}
+
 static inline void arm_trans_after_func(p_symbol_func p_func) {
     remap_reg_id(p_func);
     p_list_head p_block_node;
@@ -69,6 +79,8 @@ static inline void arm_trans_after_func(p_symbol_func p_func) {
                     p_ir_vreg p_vreg = list_entry(p_live_node, ir_bb_phi, node)->p_bb_phi;
                     if (p_vreg == p_instr->ir_call.p_des)
                         continue;
+                    if (!if_caller_save_reg(p_vreg->reg_id))
+                        continue;
                     p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_vreg->p_type));
                     symbol_func_add_variable(p_func, p_vmem);
                     p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), ir_operand_vreg_gen(p_vreg), true);
@@ -79,6 +91,7 @@ static inline void arm_trans_after_func(p_symbol_func p_func) {
             }
         }
     }
+    set_save_reg_num(p_func);
     stack_alloc(p_func);
 }
 void arm_trans_after_pass(p_program p_ir) {

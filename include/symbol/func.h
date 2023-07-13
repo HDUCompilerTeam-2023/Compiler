@@ -29,6 +29,11 @@ struct symbol_func {
     list_head call_param_vmem_list;
     size_t stack_size;
     size_t inner_stack_size;
+
+    size_t use_reg_num_r;
+    size_t use_reg_num_s;
+    size_t save_reg_r_num;
+    size_t save_reg_s_num;
     list_head node;
 };
 

@@ -9,6 +9,10 @@ struct arm_codegen_info {
     char *asm_code;
     size_t mov_num;
     size_t swap_num;
+    size_t *save_reg_r;
+    size_t *save_reg_s;
+    size_t save_reg_r_num;
+    size_t save_reg_s_num;
     p_symbol_func p_func;
 };
 

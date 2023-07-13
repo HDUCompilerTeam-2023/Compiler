@@ -232,8 +232,9 @@ static void arm_global_sym_gen(char *asm_code, p_symbol_var p_sym) {
 static void arm_into_func_gen(p_arm_codegen_info p_info, p_symbol_func p_func, size_t stack_size) {
     arm_func_sym_declare_gen(p_info->asm_code, p_func->name);
     arm_label_gen(p_info->asm_code, p_func->name);
-    size_t r[1] = { LR };
-    arm_push_gen(p_info->asm_code, r, 1);
+    p_info->save_reg_r[p_info->save_reg_r_num] = LR;
+    arm_push_gen(p_info->asm_code, p_info->save_reg_r, p_info->save_reg_r_num + 1);
+    arm_vpush_gen(p_info->asm_code, p_info->save_reg_s, p_info->save_reg_s_num);
     if (!if_legal_rotate_imme12(stack_size)) {
         mov_int2reg(p_info->asm_code, 12, stack_size, false);
         arm_data_process_gen(p_info->asm_code, arm_sub, SP, SP, 12, false, 2, false);
@@ -249,8 +250,9 @@ static void arm_out_func_gen(p_arm_codegen_info p_info, size_t stack_size) {
     }
     else
         arm_data_process_gen(p_info->asm_code, arm_add, SP, SP, stack_size, false, 2, true);
-    size_t r[1] = { PC };
-    arm_pop_gen(p_info->asm_code, r, 1);
+    p_info->save_reg_r[p_info->save_reg_r_num] = PC;
+    arm_pop_gen(p_info->asm_code, p_info->save_reg_r, p_info->save_reg_r_num + 1);
+    arm_vpop_gen(p_info->asm_code, p_info->save_reg_s, p_info->save_reg_s_num);
     arm_jump_reg_gen(p_info->asm_code, arm_bx, arm_al, LR);
 }
 
@@ -711,9 +713,19 @@ static p_arm_codegen_info arm_codegen_info_gen(p_symbol_func p_func, char *asm_c
     p_info->asm_code = asm_code;
     p_info->p_func = p_func;
     p_info->mov_num = p_info->swap_num = 0;
+    p_info->save_reg_r = malloc(sizeof(*p_info->save_reg_r) * R_NUM);
+    p_info->save_reg_s = malloc(sizeof(*p_info->save_reg_s) * S_NUM);
+    p_info->save_reg_r_num = p_func->save_reg_r_num;
+    p_info->save_reg_s_num = p_func->save_reg_s_num;
+    for (size_t i = 0; i < p_func->save_reg_r_num; i++)
+        p_info->save_reg_r[i] = callee_save_reg_r[i];
+    for (size_t i = 0; i < p_func->save_reg_s_num; i++)
+        p_info->save_reg_s[i] = callee_save_reg_s[i];
     return p_info;
 }
 static void arm_codegen_info_drop(p_arm_codegen_info p_info) {
+    free(p_info->save_reg_r);
+    free(p_info->save_reg_s);
     free(p_info);
 }
 

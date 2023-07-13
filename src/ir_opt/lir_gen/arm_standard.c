@@ -40,3 +40,13 @@ bool if_in_r(p_symbol_type p_type) {
     }
     return false;
 }
+
+bool if_caller_save_reg(size_t id) {
+    if(id < R_NUM)
+        if(id < caller_save_reg_num_r)
+            return true;
+    if(id >= R_NUM)
+        if(id < caller_save_reg_num_s)
+            return true;
+    return false;
+}
