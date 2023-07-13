@@ -54,6 +54,7 @@ struct ir_unary_instr {
 struct ir_call_instr {
     p_symbol_func p_func;
     p_ir_param_list p_param_list;
+    p_ir_instr p_first_store;
     p_ir_vreg p_des;
 };
 
@@ -72,6 +73,7 @@ struct ir_store_instr {
     bool is_stack_ptr;
     p_ir_operand p_addr;
     p_ir_operand p_src;
+    p_ir_param p_call_param;
 };
 
 struct ir_instr {
