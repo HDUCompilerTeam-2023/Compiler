@@ -915,17 +915,37 @@ static inline void reset_node_color(p_conflict_graph p_graph, p_graph_node p_g_n
     set_node_color(p_graph, p_g_node, color);
 }
 static inline void reset_graph_color(p_conflict_graph p_graph, p_ou_unit_list p_list) {
+    size_t use_reg_num_r = 0;
+    size_t use_reg_num_s = 0;
     for (size_t i = 0; i < p_graph->origin_node_num; i++) {
         p_origin_graph_node p_o_node = p_graph->p_nodes + i;
-        reset_node_color(p_graph, p_o_node->p_def_node, p_list->nodes_color[p_o_node->p_def_node->node_id]);
+        size_t color = p_list->nodes_color[p_o_node->p_def_node->node_id];
+        if (p_o_node->p_def_node->p_vreg->if_float)
+            use_reg_num_s = (color + 1) > use_reg_num_s ? (color + 1) : use_reg_num_s;
+        else
+            use_reg_num_r = (color + 1) > use_reg_num_r ? (color + 1) : use_reg_num_r;
+        reset_node_color(p_graph, p_o_node->p_def_node, color);
         p_list_head p_node;
         list_for_each(p_node, &p_o_node->p_use_spill_list->node) {
             p_graph_node p_g_node = list_entry(p_node, graph_nodes, node)->p_node;
-            reset_node_color(p_graph, p_g_node, p_list->nodes_color[p_g_node->node_id]);
+            color = p_list->nodes_color[p_g_node->node_id];
+            if (p_g_node->p_vreg->if_float)
+                use_reg_num_s = (color + 1) > use_reg_num_s ? (color + 1) : use_reg_num_s;
+            else
+                use_reg_num_r = (color + 1) > use_reg_num_r ? (color + 1) : use_reg_num_r;
+            reset_node_color(p_graph, p_g_node, color);
         }
-        if (p_o_node->p_spill_node)
-            reset_node_color(p_graph, p_o_node->p_spill_node, p_list->nodes_color[p_o_node->p_spill_node->node_id]);
+        if (p_o_node->p_spill_node) {
+            color = p_list->nodes_color[p_o_node->p_spill_node->node_id];
+            if (p_o_node->p_spill_node->p_vreg->if_float)
+                use_reg_num_s = (color + 1) > use_reg_num_s ? (color + 1) : use_reg_num_s;
+            else
+                use_reg_num_r = (color + 1) > use_reg_num_r ? (color + 1) : use_reg_num_r;
+            reset_node_color(p_graph, p_o_node->p_spill_node, color);
+        }
     }
+    p_graph->p_func->use_reg_num_r = use_reg_num_r;
+    p_graph->p_func->use_reg_num_s = use_reg_num_s;
 }
 void adjust_graph_color(p_conflict_graph p_graph) {
     p_ou_unit_list p_list = ou_unit_list_gen(p_graph);
