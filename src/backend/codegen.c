@@ -737,6 +737,11 @@ void arm_codegen_pass(p_program p_ir, char *asm_code) {
         assert(p_var->is_global);
         arm_global_sym_gen(asm_code, p_var);
     }
+    list_for_each(p_node, &p_ir->constant) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        assert(p_var->is_global);
+        arm_global_sym_gen(asm_code, p_var);
+    }
 
     strcat(asm_code, "\n");
     strcat(asm_code, ".section .text\n");

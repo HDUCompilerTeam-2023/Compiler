@@ -20,6 +20,7 @@ void symbol_func_vreg_del(p_symbol_func p_func, p_ir_vreg p_vreg);
 void symbol_func_basic_block_init_visited(p_symbol_func p_func);
 void symbol_func_set_block_id(p_symbol_func p_func);
 
+void symbol_func_clear_varible(p_symbol_func p_func);
 void symbol_func_delete_varible(p_symbol_func p_func, p_symbol_var p_var);
 void symbol_func_set_varible_id(p_symbol_func p_func);
 #endif
