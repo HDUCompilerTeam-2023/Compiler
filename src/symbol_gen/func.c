@@ -22,7 +22,10 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va) {
         .block = list_head_init(&p_func->block),
         .block_cnt = 0,
         .param_reg_list = list_head_init(&p_func->param_reg_list),
+        .call_param_vmem_list = list_head_init(&p_func->call_param_vmem_list),
         .vreg_list = list_head_init(&p_func->vreg_list),
+        .stack_size = 0,
+        .inner_stack_size = 0,
     };
     strcpy(p_func->name, name);
     return p_func;
@@ -47,7 +50,14 @@ void symbol_func_param_reg_del(p_symbol_func p_func, p_ir_vreg p_vreg) {
     ir_vreg_drop(p_vreg);
     --p_func->param_reg_cnt;
 }
-
+p_symbol_var symbol_func_param_reg_mem(p_symbol_func p_func, p_ir_vreg p_vreg) {
+    list_del(&p_vreg->node);
+    symbol_func_vreg_add(p_func, p_vreg);
+    p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_vreg->p_type));
+    symbol_func_add_param(p_func, p_vmem);
+    --p_func->param_reg_cnt;
+    return p_vmem;
+}
 void symbol_func_vreg_add(p_symbol_func p_func, p_ir_vreg p_vreg) {
     list_add_prev(&p_vreg->node, &p_func->vreg_list);
     ++p_func->vreg_cnt;
@@ -101,6 +111,12 @@ void symbol_func_add_variable(p_symbol_func p_func, p_symbol_var p_var) {
     p_var->id = p_func->var_cnt++;
     list_add_prev(&p_var->node, &p_func->variable);
 }
+void symbol_func_add_call_param_vmem(p_symbol_func p_func, p_symbol_var p_vmem) {
+    p_vmem->id = p_func->var_cnt++;
+    if (p_vmem->stack_offset + 1 > p_func->inner_stack_size)
+        p_func->inner_stack_size = p_vmem->stack_offset + 1;
+    list_add_prev(&p_vmem->node, &p_func->call_param_vmem_list);
+}
 void symbol_func_add_param(p_symbol_func p_func, p_symbol_var p_var) {
     p_var->id = p_func->var_cnt++;
     list_add_prev(&p_var->node, &p_func->param);
@@ -118,6 +134,10 @@ void symbol_func_drop(p_symbol_func p_func) {
     }
     while (!list_head_alone(&p_func->variable)) {
         p_symbol_var p_del = list_entry(p_func->variable.p_next, symbol_var, node);
+        symbol_var_drop(p_del);
+    }
+    while (!list_head_alone(&p_func->call_param_vmem_list)) {
+        p_symbol_var p_del = list_entry(p_func->call_param_vmem_list.p_next, symbol_var, node);
         symbol_var_drop(p_del);
     }
     while (!list_head_alone(&p_func->block)) {
@@ -151,6 +171,11 @@ void symbol_func_clear_varible(p_symbol_func p_func) {
         p_var->id = id++;
     }
     list_for_each(p_node, &p_func->variable) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        p_map[id] = p_var;
+        p_var->id = id++;
+    }
+    list_for_each(p_node, &p_func->call_param_vmem_list) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         p_map[id] = p_var;
         p_var->id = id++;
@@ -232,6 +257,10 @@ void symbol_func_set_varible_id(p_symbol_func p_func) {
         p_var->id = id++;
     }
     list_for_each(p_node, &p_func->variable) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        p_var->id = id++;
+    }
+    list_for_each(p_node, &p_func->call_param_vmem_list) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         p_var->id = id++;
     }

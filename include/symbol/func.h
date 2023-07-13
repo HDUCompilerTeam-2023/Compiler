@@ -19,13 +19,16 @@ struct symbol_func {
 
     size_t param_reg_cnt;
     list_head param_reg_list;
+
     size_t vreg_cnt;
     list_head vreg_list;
 
     size_t block_cnt;
     list_head block;
 
+    list_head call_param_vmem_list;
     size_t stack_size;
+    size_t inner_stack_size;
     list_head node;
 };
 
