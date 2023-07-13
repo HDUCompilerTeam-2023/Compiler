@@ -285,6 +285,7 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
     size_t s = R_NUM;
     list_for_each(p_node, &p_param_list->param) {
         p_ir_param p_param_node = list_entry(p_node, ir_param, node);
+        if (p_param_node->is_in_mem) continue;
         p_ir_operand p_param = p_param_node->p_param;
         if (p_param->kind == imme) {
             src_immes[i] = p_param_node;

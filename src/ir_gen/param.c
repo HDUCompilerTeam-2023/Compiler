@@ -14,6 +14,7 @@ p_ir_param_list ir_param_list_add(p_ir_param_list p_param_list, p_ir_operand p_p
     *p_ir_param = (ir_param) {
         .p_param = p_param,
         .is_stack_ptr = is_stack_ptr,
+        .is_in_mem = false,
         .node = list_head_init(&p_ir_param->node),
     };
 
@@ -21,11 +22,17 @@ p_ir_param_list ir_param_list_add(p_ir_param_list p_param_list, p_ir_operand p_p
     return p_param_list;
 }
 
+void ir_param_set_vmem(p_ir_param p_param, p_symbol_var p_vmem) {
+    p_param->is_in_mem = true;
+    ir_operand_drop(p_param->p_param);
+    p_param->p_vmem = p_vmem;
+}
 void ir_param_list_drop(p_ir_param_list p_param_list) {
     assert(p_param_list);
     while (!list_head_alone(&p_param_list->param)) {
         p_ir_param p_param = list_entry(p_param_list->param.p_next, ir_param, node);
-        ir_operand_drop(p_param->p_param);
+        if (!p_param->is_in_mem)
+            ir_operand_drop(p_param->p_param);
         list_del(&p_param->node);
         free(p_param);
     }
