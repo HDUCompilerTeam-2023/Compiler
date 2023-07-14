@@ -23,6 +23,9 @@ static inline bool can_update_tag(p_ir_vreg p_vreg, p_symbol_func p_func) {
     case ir_unary:
         switch (p_instr->ir_unary.op) {
         case ir_val_assign:
+            if(p_instr->ir_unary.p_src->kind == reg)
+                if(p_instr->ir_unary.p_des->if_float != p_instr->ir_unary.p_src->p_vreg->if_float)
+                    return false;
             return true;
         default:
             return false;

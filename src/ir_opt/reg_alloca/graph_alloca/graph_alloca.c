@@ -407,7 +407,6 @@ static inline void delete_no_use_vreg(p_conflict_graph p_graph) {
 }
 
 void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
-    assert(p_func->param_reg_cnt < reg_num_r);
     p_conflict_graph p_graph = conflict_graph_gen(reg_num_r, reg_num_s, p_func);
     p_liveness_info p_live_info = liveness_info_gen(p_func);
     liveness_analysis(p_live_info);
