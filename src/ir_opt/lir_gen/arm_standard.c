@@ -1,5 +1,14 @@
 #include <ir_opt/lir_gen/arm_standard.h>
 #include <symbol/type.h>
+
+size_t caller_save_reg_r[caller_save_reg_num_r] = { 0, 1, 2, 3, 12 };
+size_t callee_save_reg_r[callee_save_reg_num_r] = { 4, 5, 6, 7, 8, 9, 10, 11 };
+size_t caller_save_reg_s[caller_save_reg_num_s] = { 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 };
+size_t callee_save_reg_s[callee_save_reg_num_s] = { 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 };
+
+size_t temp_reg_r[temp_reg_num_r] = { 0, 1, 2, 3 };
+size_t temp_reg_s[temp_reg_num_s] = { 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 };
+
 // value循环右移bits位
 #define ror(value, bits) ((value >> bits) | (value << (sizeof(value) * 8 - bits)))
 
@@ -42,11 +51,13 @@ bool if_in_r(p_symbol_type p_type) {
 }
 
 bool if_caller_save_reg(size_t id) {
-    if(id < R_NUM)
-        if(id < caller_save_reg_num_r)
+    for (size_t i = 0; i < caller_save_reg_num_r; i++) {
+        if (caller_save_reg_r[i] == id)
             return true;
-    if(id >= R_NUM)
-        if(id < caller_save_reg_num_s)
+    }
+    for (size_t i = 0; i < caller_save_reg_num_s; i++) {
+        if (caller_save_reg_s[i] == id)
             return true;
+    }
     return false;
 }

@@ -201,12 +201,12 @@ static inline void symbol_func_param_vreg2vmem(p_symbol_func p_func) {
     list_for_each_safe(p_node_vreg, p_node_vreg_next, &p_func->param_reg_list) {
        p_ir_vreg p_param = list_entry(p_node_vreg, ir_vreg, node);
         if (if_in_r(p_param->p_type)) {
-            if (r >= caller_save_reg_num_r)
+            if (r >= temp_reg_num_r)
                 new_load_func_param(p_func, p_entry, p_param);
             r++;
         }
         else {
-            if (s >= caller_save_reg_num_s)
+            if (s >= temp_reg_num_s)
                 new_load_func_param(p_func, p_entry, p_param);
             s++;
         }
@@ -223,12 +223,12 @@ static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         p_ir_param p_param = list_entry(p_node, ir_param, node);
         check_imme2reg(p_param->p_param, p_instr, p_func);
         if (if_in_r(p_param->p_param->p_type)) {
-            if (r >= caller_save_reg_num_r)
+            if (r >= temp_reg_num_r)
                 p_param->is_in_mem = true;
             r++;
         }
         else {
-            if (s >= caller_save_reg_num_s)
+            if (s >= temp_reg_num_s)
                 p_param->is_in_mem = true;
             s++;
         }
