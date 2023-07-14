@@ -34,6 +34,8 @@ struct clique_node {
     size_t have_spilled_num_s;
     p_graph_node_list may_spilled_list_r;
     p_graph_node_list may_spilled_list_s;
+    size_t spilled_mem_num_r; // 当前轮决定溢出到内存的数量，相互溢出时由于可能spilled与这些溢出节点构成极大团，需要据此判断
+    size_t spilled_mem_num_s;
 };
 
 struct pclique_node {
