@@ -38,6 +38,9 @@ int main(int argc, char *argv[]) {
             is_opt = true;
             continue;
         }
+        if (argv[i] && !strcmp(argv[i], "-S")) {
+            continue;
+        }
         assert(!in_file);
         assert(argv[i][0] != '-');
         in_file = argv[i];

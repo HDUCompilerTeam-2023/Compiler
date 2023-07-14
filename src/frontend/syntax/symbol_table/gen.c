@@ -8,7 +8,7 @@ static inline hlist_hash init_hash() {
 }
 p_symbol_table symbol_table_gen() {
     p_symbol_table p_table = malloc(sizeof(*p_table));
-    *p_table = (typeof(*p_table)) {
+    *p_table = (symbol_table) {
         .p_top_table = NULL,
         .hash = init_hash(),
         .string_hash = init_hash(),
