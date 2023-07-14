@@ -651,8 +651,8 @@ struct ou_unit_list {
     p_bitmap pinned;
     size_t *nodes_color;
     size_t node_num;
-    size_t color_num_r;
-    size_t color_num_s;
+    size_t reg_num_r;
+    size_t reg_num_s;
     bool *if_visited;
 };
 static inline p_ou_unit create_ou_unit(size_t color, p_graph_node_list p_nodes, p_ou_unit_queue p_unit_queue) {
@@ -700,8 +700,8 @@ static inline p_ou_unit_list ou_unit_list_gen(p_conflict_graph p_graph) {
             p_list->nodes_color[p_g_node->node_id] = p_g_node->color;
         }
     }
-    p_list->color_num_r = p_graph->color_num_r;
-    p_list->color_num_s = p_graph->color_num_s;
+    p_list->reg_num_r = p_graph->reg_num_r;
+    p_list->reg_num_s = p_graph->reg_num_s;
 
     p_list->if_visited = malloc(sizeof(*p_list->if_visited) * p_list->node_num);
     return p_list;
@@ -765,9 +765,9 @@ static inline void create_ou_unit_phi(p_ir_basic_block p_basic_block, p_ou_unit_
         p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
         p_ou_unit_queue p_unit_queue;
         if (p_phi->if_float)
-            p_unit_queue = create_ou_unit_queue(p_phi->if_float, range, p_list->color_num_s, p_list);
+            p_unit_queue = create_ou_unit_queue(p_phi->if_float, range, p_list->reg_num_s, p_list);
         else
-            p_unit_queue = create_ou_unit_queue(p_phi->if_float, range, p_list->color_num_r, p_list);
+            p_unit_queue = create_ou_unit_queue(p_phi->if_float, range, p_list->reg_num_r, p_list);
         graph_node_list_add(p_unit_queue->p_nodes, (p_graph_node) (p_phi->p_info));
     }
 
