@@ -21,11 +21,6 @@
 #include <ir_opt/lir_gen/arm_standard.h>
 #include <stdio.h>
 
-size_t caller_save_reg_r[caller_save_reg_num_r] = { 0, 1, 2, 3 };
-size_t callee_save_reg_r[callee_save_reg_num_r] = { 4, 5, 6, 7, 8, 9, 10, 11, 12, LR };
-size_t caller_save_reg_s[caller_save_reg_num_s] = { 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 };
-size_t callee_save_reg_s[callee_save_reg_num_s] = { 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 };
-
 static inline void mov_reg2reg(char *asm_code, size_t rd, size_t rs, bool s) {
     if (rd < R_NUM && rs < R_NUM)
         arm_mov_gen(asm_code, arm_mov, rd, rs, s, 0, false);
