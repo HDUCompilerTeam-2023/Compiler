@@ -206,6 +206,7 @@ static inline void symbol_func_param_vreg2vmem(p_symbol_func p_func) {
             r++;
         }
         else {
+            set_float_reg(p_param);
             if (s >= temp_reg_num_s)
                 new_load_func_param(p_func, p_entry, p_param);
             s++;
@@ -228,6 +229,8 @@ static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             r++;
         }
         else {
+            if (p_param->p_param->kind == reg)
+                set_float_reg(p_param->p_param->p_vreg);
             if (s >= temp_reg_num_s)
                 p_param->is_in_mem = true;
             s++;
