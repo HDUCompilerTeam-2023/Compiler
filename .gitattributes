@@ -1,2 +1,2 @@
-test/2022/final_performance/shuffle2.in  filter=lfs diff=lfs merge=lfs -text
-test/2022/final_performance/03_sort2.in  filter=lfs diff=lfs merge=lfs -text
+test/2023/performance/shuffle2.in  filter=lfs diff=lfs merge=lfs -text
+test/2023/performance/03_sort2.in  filter=lfs diff=lfs merge=lfs -text
