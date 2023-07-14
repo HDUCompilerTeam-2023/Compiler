@@ -168,6 +168,7 @@ p_clique_node clique_node_gen() {
     p_c_node->may_spilled_list_r = graph_node_list_gen();
     p_c_node->may_spilled_list_s = graph_node_list_gen();
     p_c_node->node = list_head_init(&p_c_node->node);
+    p_c_node->spilled_mem_num_r = p_c_node->spilled_mem_num_s = 0;
     return p_c_node;
 }
 
@@ -187,9 +188,9 @@ static inline void print_node_list(p_graph_node_list p_list) {
     list_for_each(p_node, &p_list->node) {
         p_graph_node p_neighbor = list_entry(p_node, graph_nodes, node)->p_node;
         if (p_node->p_next != &p_list->node)
-            printf("%ld, ", p_neighbor->node_id);
+            printf("%ld(%ld), ", p_neighbor->node_id, p_neighbor->p_vreg->id);
         else
-            printf("%ld ", p_neighbor->node_id);
+            printf("%ld(%ld) ", p_neighbor->node_id, p_neighbor->p_vreg->id);
     }
     printf("}\n");
 }
@@ -479,10 +480,10 @@ static inline spill_type get_spill_type(p_conflict_graph p_graph, p_origin_graph
     size_t max_nums = 0;
     list_for_each(p_node, &p_o_node->pcliques) {
         p_clique_node p_c_node = list_entry(p_node, pclique_node, node)->p_c_node;
-        if (max_numr < p_c_node->have_spilled_num_r + p_c_node->may_spilled_list_r->num)
-            max_numr = p_c_node->have_spilled_num_r + p_c_node->may_spilled_list_r->num;
-        if (max_nums < p_c_node->have_spilled_num_s + p_c_node->may_spilled_list_s->num)
-            max_nums = p_c_node->have_spilled_num_s + p_c_node->may_spilled_list_s->num;
+        if (max_numr < p_c_node->have_spilled_num_r + p_c_node->may_spilled_list_r->num + p_c_node->spilled_mem_num_r)
+            max_numr = p_c_node->have_spilled_num_r + p_c_node->may_spilled_list_r->num + p_c_node->spilled_mem_num_r;
+        if (max_nums < p_c_node->have_spilled_num_s + p_c_node->may_spilled_list_s->num + p_c_node->spilled_mem_num_s)
+            max_nums = p_c_node->have_spilled_num_s + p_c_node->may_spilled_list_s->num + p_c_node->spilled_mem_num_s;
     }
     if (p_o_node->p_def_node->p_vreg->if_float) {
         if (max_numr >= p_graph->reg_num_r)
@@ -591,10 +592,14 @@ static void choose_spill_node(p_conflict_graph p_graph, p_graph_node_list p_list
         p_list_head p_pc_node_;
         list_for_each(p_pc_node_, &p_2m_list[i]->pcliques) {
             p_clique_node p_c = list_entry(p_pc_node_, pclique_node, node)->p_c_node;
-            if (p_2m_list[i]->p_def_node->p_vreg->if_float)
+            if (p_2m_list[i]->p_def_node->p_vreg->if_float) {
                 node_list_del(p_c->may_spilled_list_s, p_2m_list[i]->p_def_node);
-            else
+                p_c->spilled_mem_num_s++;
+            }
+            else {
                 node_list_del(p_c->may_spilled_list_r, p_2m_list[i]->p_def_node);
+                p_c->spilled_mem_num_r++;
+            }
         }
     }
     free(may_spilled_list);
@@ -854,6 +859,8 @@ static inline ret_info try_color(p_graph_node p_g_node, size_t color, p_ou_unit 
     p_list_head p_node;
     list_for_each(p_node, &p_g_node->p_neighbors->node) {
         p_graph_node p_n_node = list_entry(p_node, graph_nodes, node)->p_node;
+        if (p_n_node->p_vreg->if_float != p_unit->if_float)
+            continue;
         if (p_unit->nodes_color[p_n_node->node_id] != color)
             continue;
         ret_info ret = try_color(p_n_node, origin_color, p_unit, p_list);
