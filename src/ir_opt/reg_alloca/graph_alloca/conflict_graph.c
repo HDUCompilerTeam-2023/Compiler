@@ -785,19 +785,14 @@ static inline void create_ou_unit_func_param(p_symbol_func p_func, p_ou_unit_lis
     size_t s = 0;
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_param = list_entry(p_node, ir_vreg, node);
-        bool if_float = (p_param->p_type == 0 && p_param->p_type->basic == type_f32);
-        if (if_float) {
-            if (p_param->if_float) {
-                p_ou_unit_queue p_queue = create_ou_unit_queue(true, single, s, p_list);
-                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param->p_info);
-            }
+        if (p_param->if_float) {
+            p_ou_unit_queue p_queue = create_ou_unit_queue(true, single, s, p_list);
+            graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param->p_info);
             s++;
         }
         else {
-            if (!p_param->if_float) {
-                p_ou_unit_queue p_queue = create_ou_unit_queue(false, single, r, p_list);
-                graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param->p_info);
-            }
+            p_ou_unit_queue p_queue = create_ou_unit_queue(false, single, r, p_list);
+            graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param->p_info);
             r++;
         }
     }
@@ -812,16 +807,18 @@ static inline void create_ou_unit_func_call(p_ir_call_instr p_call_instr, p_ou_u
         if (p_param->is_in_mem)
             continue;
         p_ir_operand p_param_operand = p_param->p_param;
-        bool if_float = (p_param_operand->p_type == 0 && p_param_operand->p_type->basic == type_f32);
+        bool if_float = (p_param_operand->p_type->ref_level == 0 && p_param_operand->p_type->basic == type_f32);
         if (if_float) {
-            if (p_param_operand->kind == reg && p_param_operand->p_vreg->if_float) {
+            if (p_param_operand->kind == reg) {
+                assert(p_param_operand->p_vreg->if_float == if_float);
                 p_ou_unit_queue p_queue = create_ou_unit_queue(true, single, s, p_list);
                 graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param_operand->p_vreg->p_info);
             }
             s++;
         }
         else {
-            if (p_param_operand->kind == reg && !p_param_operand->p_vreg->if_float) {
+            if (p_param_operand->kind == reg) {
+                assert(p_param_operand->p_vreg->if_float == if_float);
                 p_ou_unit_queue p_queue = create_ou_unit_queue(false, single, r, p_list);
                 graph_node_list_add(p_queue->p_nodes, (p_graph_node) p_param_operand->p_vreg->p_info);
             }
