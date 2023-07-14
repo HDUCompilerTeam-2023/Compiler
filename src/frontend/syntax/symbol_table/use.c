@@ -37,7 +37,7 @@ static inline p_symbol_name symbol_add_name(p_hlist_head p_head, size_t hash_tag
 
 void symbol_table_zone_push(p_symbol_table p_table) {
     p_symbol_zone pst = malloc(sizeof(*pst));
-    *pst = (typeof(*pst)) {
+    *pst = (symbol_zone) {
         .p_item = NULL,
         .p_prev = p_table->p_top_table,
     };
