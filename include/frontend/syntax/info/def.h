@@ -8,6 +8,7 @@ struct syntax_info {
     p_program p_program;
     p_symbol_func p_func;
     p_ast_block p_block;
+    p_symbol_func p_mem_set;
 };
 
 #endif

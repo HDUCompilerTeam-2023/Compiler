@@ -335,6 +335,9 @@ p_ast_exp ast_exp_unary_gen(ast_exp_unary_op u_op, p_ast_exp p_src) {
 
 static inline bool param_arr_check(p_symbol_type p_type_f, p_symbol_type p_type_r) {
     if (p_type_f->ref_level != p_type_r->ref_level) return false;
+    if (p_type_f->ref_level == 1 && p_type_f->basic == type_void) {
+        return p_type_r->ref_level == 1;
+    }
     if (p_type_f->basic != p_type_r->basic) return false;
     p_list_head p_node_f, p_node_r = p_type_r->array.p_prev;
     list_for_each_tail(p_node_f, &p_type_f->array) {

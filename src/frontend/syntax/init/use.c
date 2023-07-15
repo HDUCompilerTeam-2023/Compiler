@@ -4,7 +4,19 @@
 #include <symbol_gen/type.h>
 #include <frontend/syntax/init/gen.h>
 
-p_ast_exp syntax_init_get_exp(p_syntax_init p_init, p_symbol_type p_type, size_t offset) {
+p_syntax_init syntax_init_get_entry(p_list_head p_node) {
+    return list_entry(p_node, syntax_init, node);
+}
+p_list_head syntax_init_get_head(p_syntax_init p_init) {
+    assert(!p_init->is_exp);
+    return &p_init->list;
+}
+p_ast_exp syntax_init_get_exp(p_syntax_init p_init) {
+    assert(p_init->is_exp);
+    return p_init->p_exp;
+}
+
+p_ast_exp syntax_init_find_exp(p_syntax_init p_init, p_symbol_type p_type, size_t offset) {
     if (!p_init) return NULL;
 
     assert(offset < symbol_type_get_size(p_type));
@@ -28,7 +40,7 @@ p_ast_exp syntax_init_get_exp(p_syntax_init p_init, p_symbol_type p_type, size_t
         return NULL;
     }
     p_syntax_init p_inner = list_entry(p_node, syntax_init, node);
-    p_ast_exp p_ret = syntax_init_get_exp(p_inner, p_type, offset % len);
+    p_ast_exp p_ret = syntax_init_find_exp(p_inner, p_type, offset % len);
 
     symbol_type_push_array(p_type, p_pop);
     return p_ret;

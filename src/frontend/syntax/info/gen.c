@@ -10,6 +10,7 @@ p_syntax_info syntax_info_gen(const char *input, const char *output) {
         .p_program = program_gen(input, output),
         .p_func = NULL,
         .p_block = NULL,
+        .p_mem_set = NULL,
     };
     return p_info;
 }
