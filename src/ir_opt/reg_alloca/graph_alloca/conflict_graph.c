@@ -32,12 +32,14 @@ void origin_graph_node_gen(p_origin_graph_node p_node, p_ir_vreg p_vreg, p_confl
     p_node->spl_type = none;
     p_node->pcliques = list_head_init(&p_node->pcliques);
     p_node->need_delete = false;
+    p_node->in_clique_num = 0;
 }
 
 void graph_nodes_init(p_conflict_graph p_graph) {
     p_list_head p_node, p_next;
     for (size_t i = 0; i < p_graph->origin_node_num; i++) {
         (p_graph->p_nodes + i)->spl_type = none;
+        (p_graph->p_nodes + i)->in_clique_num = 0;
         list_for_each_safe(p_node, p_next, &(p_graph->p_nodes + i)->pcliques) {
             p_pclique_node p_pc_node = list_entry(p_node, pclique_node, node);
             list_del(p_node);
