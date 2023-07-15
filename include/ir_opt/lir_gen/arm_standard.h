@@ -4,7 +4,7 @@
 #include <util.h>
 bool if_legal_rotate_imme12(I32CONST_t i32const);
 bool if_legal_direct_imme12(I32CONST_t i32const);
-bool if_legal_direct_imme8(I32CONST_t i32const);
+bool if_legal_imme8_lsl2(I32CONST_t i32const);
 bool if_in_r(p_symbol_type p_type);
 bool if_caller_save_reg(size_t id);
 #define imm_8_max 255
