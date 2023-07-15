@@ -21,12 +21,12 @@
 #include <ir_opt/lir_gen/arm_standard.h>
 #include <stdio.h>
 
-static inline void mov_reg2reg(char *asm_code, size_t rd, size_t rs, bool s) {
+static inline void mov_reg2reg(FILE *out_file, size_t rd, size_t rs, bool s) {
     if (rd < R_NUM && rs < R_NUM)
-        arm_mov_gen(asm_code, arm_mov, rd, rs, s, 0, false);
+        arm_mov_gen(out_file, arm_mov, rd, rs, s, 0, false);
     else {
         assert(!s);
-        arm_vmov_gen(asm_code, rd, rs);
+        arm_vmov_gen(out_file, rd, rs);
     }
 }
 
@@ -47,7 +47,7 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
         size_t current_work_r1 = r1[i];
         size_t current_work_r2 = r2[i];
         while (use_reg_count[current_work_r2] == 0 && current_work_r1 != current_work_r2) {
-            mov_reg2reg(p_info->asm_code, current_work_r2, current_work_r1, false);
+            mov_reg2reg(p_info->out_file, current_work_r2, current_work_r1, false);
             p_info->mov_num++;
             use_reg_count[current_work_r1]--;
             if_deal[current_work_r2] = true;
@@ -77,12 +77,12 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
         }
         // if have tmp
         // if r1[i] >= REG_NUM || r2[i] >= REG_NUM assert(have tmp);
-        mov_reg2reg(p_info->asm_code, TMP, r2[i], false);
-        mov_reg2reg(p_info->asm_code, r2[i], current_val_in[r1[i]], false);
-        mov_reg2reg(p_info->asm_code, current_val_in[r1[i]], TMP, false);
+        mov_reg2reg(p_info->out_file, TMP, r2[i], false);
+        mov_reg2reg(p_info->out_file, r2[i], current_val_in[r1[i]], false);
+        mov_reg2reg(p_info->out_file, current_val_in[r1[i]], TMP, false);
         p_info->swap_num++;
         // else
-        // arm_swap_gen(p_info->asm_code, current_val_in[r1[i]], r2[i]);
+        // arm_swap_gen(p_info->out_file, current_val_in[r1[i]], r2[i]);
         // 交换完成后源寄存器放到了正确位置，目标寄存器的值（可能是其他交换的源寄存器）被放到了源寄存器
         current_val_in[reg_val[r2[i]]] = current_val_in[r1[i]];
         reg_val[current_val_in[r1[i]]] = reg_val[r2[i]];
@@ -97,56 +97,56 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
     free(if_deal);
 }
 
-static inline void mov_imm32_gen(char *asm_code, size_t rd, I32CONST_t i32const, bool s) {
+static inline void mov_imm32_gen(FILE *out_file, size_t rd, I32CONST_t i32const, bool s) {
     uint32_t low = ((1 << 16) - 1) & (uint32_t) i32const;
     uint32_t high = ((uint32_t) i32const >> 16);
-    arm_mov16_gen(asm_code, arm_movw, rd, low, false);
-    arm_mov16_gen(asm_code, arm_movt, rd, high, false);
+    arm_mov16_gen(out_file, arm_movw, rd, low, false);
+    arm_mov16_gen(out_file, arm_movt, rd, high, false);
     if (s)
-        arm_compare_gen(asm_code, arm_cmp, rd, 0, 0, true);
+        arm_compare_gen(out_file, arm_cmp, rd, 0, 0, true);
 }
 
-static void mov_int2reg(char *asm_code, size_t rd, I32CONST_t i32const, bool s) {
+static void mov_int2reg(FILE *out_file, size_t rd, I32CONST_t i32const, bool s) {
     // 处理数字范围过大
     if (i32const > imm_16_max) {
-        mov_imm32_gen(asm_code, rd, i32const, s);
+        mov_imm32_gen(out_file, rd, i32const, s);
         return;
     }
     if (i32const < 0) // 负数
     {
         I32CONST_t neg = -i32const - 1;
         if (if_legal_rotate_imme12(neg)) {
-            arm_mov_gen(asm_code, arm_mvn, rd, neg, s, 0, true);
+            arm_mov_gen(out_file, arm_mvn, rd, neg, s, 0, true);
             return;
         }
-        mov_imm32_gen(asm_code, rd, i32const, s);
+        mov_imm32_gen(out_file, rd, i32const, s);
         return;
     }
     // movs 和 mov 的立即数范围不同
     if (s && !if_legal_rotate_imme12(i32const)) {
-        mov_int2reg(asm_code, rd, i32const, false);
-        arm_compare_gen(asm_code, arm_cmp, rd, 0, 0, true);
+        mov_int2reg(out_file, rd, i32const, false);
+        arm_compare_gen(out_file, arm_cmp, rd, 0, 0, true);
         return;
     }
-    arm_mov_gen(asm_code, arm_mov, rd, i32const, s, 0, true);
+    arm_mov_gen(out_file, arm_mov, rd, i32const, s, 0, true);
 }
 
 static void mov_float2reg(p_arm_codegen_info p_info, size_t rd, F32CONST_t floatconst) {
     // 浮点数放到标量寄存器
     assert(rd < R_NUM);
-    mov_imm32_gen(p_info->asm_code, rd, *(uint32_t *) (&floatconst), false);
+    mov_imm32_gen(p_info->out_file, rd, *(uint32_t *) (&floatconst), false);
 }
 
 static void mov_imme2reg(p_arm_codegen_info p_info, size_t rd, p_ir_operand p_operand, bool s) {
     assert(p_operand->kind == imme);
     if (p_operand->p_type->ref_level > 0) {
         assert(p_operand->p_vmem->is_global);
-        arm_get_global_addr(p_info->asm_code, rd, p_operand->p_vmem->name);
+        arm_get_global_addr(p_info->out_file, rd, p_operand->p_vmem->name);
         return;
     }
     switch (p_operand->p_type->basic) {
     case type_i32:
-        mov_int2reg(p_info->asm_code, rd, p_operand->i32const, s);
+        mov_int2reg(p_info->out_file, rd, p_operand->i32const, s);
         break;
     case type_f32:
         mov_float2reg(p_info, rd, p_operand->f32const);
@@ -194,12 +194,12 @@ static inline arm_cond_type get_opposite_type(arm_cond_type type) {
         return arm_al;
     }
 }
-static void arm_global_sym_gen(char *asm_code, p_symbol_var p_sym) {
-    arm_global_sym_declare_gen(asm_code, p_sym->name, p_sym->p_type->size << 2);
-    arm_label_gen(asm_code, p_sym->name);
+static void arm_global_sym_gen(FILE *out_file, p_symbol_var p_sym) {
+    arm_global_sym_declare_gen(out_file, p_sym->name, p_sym->p_type->size << 2);
+    arm_label_gen(out_file, p_sym->name);
     if (!p_sym->p_init) {
-        arm_space_gen(asm_code, p_sym->p_type->size << 2);
-        strcat(asm_code, "\n");
+        arm_space_gen(out_file, p_sym->p_type->size << 2);
+        fprintf(out_file, "\n");
         return;
     }
     size_t i = 0;
@@ -209,64 +209,61 @@ static void arm_global_sym_gen(char *asm_code, p_symbol_var p_sym) {
             i++;
         size_t space_size = i - space_loc;
         if (space_size)
-            arm_space_gen(asm_code, space_size << 2);
+            arm_space_gen(out_file, space_size << 2);
         if (i == p_sym->p_init->size) break;
         if (p_sym->p_init->basic == type_i32)
-            arm_word_gen(asm_code, (uint32_t) (p_sym->p_init->memory[i].i));
+            arm_word_gen(out_file, (uint32_t) (p_sym->p_init->memory[i].i));
         if (p_sym->p_init->basic == type_f32)
-            arm_word_gen(asm_code, *(uint32_t *) (&p_sym->p_init->memory[i].f));
+            arm_word_gen(out_file, *(uint32_t *) (&p_sym->p_init->memory[i].f));
         i++;
     }
     if ((p_sym->p_type->size - p_sym->p_init->size))
-        arm_space_gen(asm_code, (p_sym->p_type->size - p_sym->p_init->size) << 2);
-    strcat(asm_code, "\n");
+        arm_space_gen(out_file, (p_sym->p_type->size - p_sym->p_init->size) << 2);
+    fprintf(out_file, "\n");
 }
 
 static void arm_into_func_gen(p_arm_codegen_info p_info, p_symbol_func p_func, size_t stack_size) {
-    arm_func_sym_declare_gen(p_info->asm_code, p_func->name);
-    arm_label_gen(p_info->asm_code, p_func->name);
+    arm_func_sym_declare_gen(p_info->out_file, p_func->name);
+    arm_label_gen(p_info->out_file, p_func->name);
     p_info->save_reg_r[p_info->save_reg_r_num] = LR;
-    arm_push_gen(p_info->asm_code, p_info->save_reg_r, p_info->save_reg_r_num + 1);
-    arm_vpush_gen(p_info->asm_code, p_info->save_reg_s, p_info->save_reg_s_num);
+    arm_push_gen(p_info->out_file, p_info->save_reg_r, p_info->save_reg_r_num + 1);
+    arm_vpush_gen(p_info->out_file, p_info->save_reg_s, p_info->save_reg_s_num);
     if (!if_legal_rotate_imme12(stack_size)) {
-        mov_int2reg(p_info->asm_code, 12, stack_size, false);
-        arm_data_process_gen(p_info->asm_code, arm_sub, SP, SP, 12, false, 0, false);
+        mov_int2reg(p_info->out_file, 12, stack_size, false);
+        arm_data_process_gen(p_info->out_file, arm_sub, SP, SP, 12, false, 0, false);
     }
     else
-        arm_data_process_gen(p_info->asm_code, arm_sub, SP, SP, stack_size, false, 0, true);
+        arm_data_process_gen(p_info->out_file, arm_sub, SP, SP, stack_size, false, 0, true);
 }
 
 static void arm_out_func_gen(p_arm_codegen_info p_info, size_t stack_size) {
     if (!if_legal_rotate_imme12(stack_size)) {
-        mov_int2reg(p_info->asm_code, TMP, stack_size, false);
-        arm_data_process_gen(p_info->asm_code, arm_add, SP, SP, TMP, false, 0, false);
+        mov_int2reg(p_info->out_file, TMP, stack_size, false);
+        arm_data_process_gen(p_info->out_file, arm_add, SP, SP, TMP, false, 0, false);
     }
     else
-        arm_data_process_gen(p_info->asm_code, arm_add, SP, SP, stack_size, false, 0, true);
+        arm_data_process_gen(p_info->out_file, arm_add, SP, SP, stack_size, false, 0, true);
     p_info->save_reg_r[p_info->save_reg_r_num] = PC;
-    arm_pop_gen(p_info->asm_code, p_info->save_reg_r, p_info->save_reg_r_num + 1);
-    arm_vpop_gen(p_info->asm_code, p_info->save_reg_s, p_info->save_reg_s_num);
-    arm_jump_reg_gen(p_info->asm_code, arm_bx, arm_al, LR);
+    arm_pop_gen(p_info->out_file, p_info->save_reg_r, p_info->save_reg_r_num + 1);
+    arm_vpop_gen(p_info->out_file, p_info->save_reg_s, p_info->save_reg_s_num);
+    arm_jump_reg_gen(p_info->out_file, arm_bx, arm_al, LR);
 }
 
 static inline char *get_block_label(char *func_name, size_t block_id) {
     char *str_id = uint32_str(block_id);
     char *extra = malloc(strlen(func_name) + strlen(str_id) + 4);
-    strcpy(extra, ".");
-    strcat(extra, func_name);
-    strcat(extra, "_b");
-    strcat(extra, str_id);
+    sprintf(extra, ".%s_b%s", func_name, str_id);
     free(str_id);
     return extra;
 }
-static inline void arm_block_label_gen(char *asm_code, char *func_name, size_t block_id) {
+static inline void arm_block_label_gen(FILE *out_file, char *func_name, size_t block_id) {
     char *tmp = get_block_label(func_name, block_id);
-    arm_label_gen(asm_code, tmp);
+    arm_label_gen(out_file, tmp);
     free(tmp);
 }
-static inline void arm_block_jump_label_gen(char *asm_code, arm_instr_type instr_type, arm_cond_type cond_type, char *func_name, size_t block_id) {
+static inline void arm_block_jump_label_gen(FILE *out_file, arm_instr_type instr_type, arm_cond_type cond_type, char *func_name, size_t block_id) {
     char *tmp = get_block_label(func_name, block_id);
-    arm_jump_label_gen(asm_code, instr_type, cond_type, tmp);
+    arm_jump_label_gen(out_file, instr_type, cond_type, tmp);
     free(tmp);
 }
 
@@ -301,7 +298,7 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
             des_reg[num] = caller_save_reg_s[s++];
 
         if (p_param_node->is_stack_ptr) {
-            arm_data_process_gen(p_info->asm_code, arm_add, src_reg[num], SP, src_reg[num], false, 0, false);
+            arm_data_process_gen(p_info->out_file, arm_add, src_reg[num], SP, src_reg[num], false, 0, false);
         }
         num++;
     }
@@ -310,7 +307,7 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
     for (size_t j = 0; j < i; j++) {
         if (src_immes[j]->is_stack_ptr) {
             assert(src_immes[i]->p_param->kind == imme);
-            arm_data_process_gen(p_info->asm_code, arm_add, des_imme_reg[j], SP, src_immes[j]->p_param->i32const, false, 0, true);
+            arm_data_process_gen(p_info->out_file, arm_add, des_imme_reg[j], SP, src_immes[j]->p_param->i32const, false, 0, true);
             continue;
         }
         mov_imme2reg(p_info, des_imme_reg[j], src_immes[j]->p_param, false);
@@ -378,28 +375,28 @@ static inline void swap_in_func_param(p_arm_codegen_info p_info, p_symbol_func p
 static void arm_unary_instr_codegen(p_arm_codegen_info p_info, p_ir_unary_instr p_unary_instr) {
     size_t rd = p_unary_instr->p_des->reg_id;
     bool s = p_unary_instr->p_des->if_cond;
-    char *asm_code = p_info->asm_code;
+    FILE *out_file = p_info->out_file;
 
     switch (p_unary_instr->op) {
     case ir_minus_op:
         assert(p_unary_instr->p_src->kind == reg);
         if (rd >= R_NUM)
-            arm_vneg_gen(asm_code, rd, p_unary_instr->p_src->p_vreg->reg_id);
+            arm_vneg_gen(out_file, rd, p_unary_instr->p_src->p_vreg->reg_id);
         else
-            arm_data_process_gen(asm_code, arm_rsb, rd, p_unary_instr->p_src->p_vreg->reg_id, 0, s, 0, true);
+            arm_data_process_gen(out_file, arm_rsb, rd, p_unary_instr->p_src->p_vreg->reg_id, 0, s, 0, true);
         break;
     case ir_val_assign:
         if (p_unary_instr->p_src->kind == imme) {
             mov_imme2reg(p_info, rd, p_unary_instr->p_src, s);
             break;
         }
-        mov_reg2reg(asm_code, rd, p_unary_instr->p_src->p_vreg->reg_id, s);
+        mov_reg2reg(out_file, rd, p_unary_instr->p_src->p_vreg->reg_id, s);
         break;
     case ir_i2f_op:
-        arm_vcvt_gen(asm_code, arm_int2float, rd, p_unary_instr->p_src->p_vreg->reg_id);
+        arm_vcvt_gen(out_file, arm_int2float, rd, p_unary_instr->p_src->p_vreg->reg_id);
         break;
     case ir_f2i_op:
-        arm_vcvt_gen(asm_code, arm_float2int, rd, p_unary_instr->p_src->p_vreg->reg_id);
+        arm_vcvt_gen(out_file, arm_float2int, rd, p_unary_instr->p_src->p_vreg->reg_id);
         break;
     default:
         assert(0);
@@ -412,58 +409,58 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
     p_ir_operand p_src1 = p_binary_instr->p_src1;
     p_ir_operand p_src2 = p_binary_instr->p_src2;
     size_t rd = p_des->reg_id;
-    char *asm_code = p_info->asm_code;
+    FILE *out_file = p_info->out_file;
     switch (p_binary_instr->op) {
     case ir_add_op:
         if (p_src1->kind == imme) {
             assert(p_src2->kind == reg);
             assert(p_src1->p_type->ref_level == 0 && p_src1->p_type->basic == type_i32);
-            arm_data_process_gen(asm_code, arm_add, p_des->reg_id, p_src2->p_vreg->reg_id, p_src1->i32const, s, 0, true);
+            arm_data_process_gen(out_file, arm_add, p_des->reg_id, p_src2->p_vreg->reg_id, p_src1->i32const, s, 0, true);
             break;
         }
         if (p_src2->kind == imme) {
             assert(p_src1->kind == reg);
             assert(p_src2->p_type->ref_level == 0 && p_src2->p_type->basic == type_i32);
-            arm_data_process_gen(asm_code, arm_add, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->i32const, s, 0, true);
+            arm_data_process_gen(out_file, arm_add, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->i32const, s, 0, true);
             break;
         }
         if (p_des->if_float) {
-            arm_vdata_process_gen(asm_code, arm_add, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
+            arm_vdata_process_gen(out_file, arm_add, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
             break;
         }
-        arm_data_process_gen(asm_code, arm_add, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id, s, 0, false);
+        arm_data_process_gen(out_file, arm_add, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id, s, 0, false);
         break;
     case ir_sub_op:
         if (p_src1->kind == imme) {
             assert(p_src2->kind == reg);
             assert(p_src1->p_type->ref_level == 0 && p_src1->p_type->basic == type_i32);
-            arm_data_process_gen(asm_code, arm_rsb, p_des->reg_id, p_src2->p_vreg->reg_id, p_src1->i32const, s, 0, true);
+            arm_data_process_gen(out_file, arm_rsb, p_des->reg_id, p_src2->p_vreg->reg_id, p_src1->i32const, s, 0, true);
             break;
         }
         if (p_src2->kind == imme) {
             assert(p_src1->kind == reg);
             assert(p_src2->p_type->ref_level == 0 && p_src2->p_type->basic == type_i32);
-            arm_data_process_gen(asm_code, arm_sub, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->i32const, s, 0, true);
+            arm_data_process_gen(out_file, arm_sub, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->i32const, s, 0, true);
             break;
         }
         if (p_des->if_float) {
-            arm_vdata_process_gen(asm_code, arm_sub, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
+            arm_vdata_process_gen(out_file, arm_sub, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
             break;
         }
-        arm_data_process_gen(asm_code, arm_sub, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id, s, 0, false);
+        arm_data_process_gen(out_file, arm_sub, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id, s, 0, false);
         break;
     case ir_mul_op:
         if (p_des->if_float)
-            arm_vdata_process_gen(asm_code, arm_mul, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+            arm_vdata_process_gen(out_file, arm_mul, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
         else
-            arm_mul_gen(asm_code, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s);
+            arm_mul_gen(out_file, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s);
         break;
     case ir_div_op:
         assert(!s);
         if (rd >= R_NUM)
-            arm_vdata_process_gen(asm_code, arm_div, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+            arm_vdata_process_gen(out_file, arm_div, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
         else
-            arm_sdiv_gen(asm_code, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+            arm_sdiv_gen(out_file, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
         break;
     case ir_eq_op:
     case ir_neq_op:
@@ -476,20 +473,20 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
         if (p_binary_instr->p_src2->kind == imme) {
             assert(p_binary_instr->p_src2->p_type->basic == type_i32);
             if (p_binary_instr->p_src2->i32const < 0)
-                arm_compare_gen(asm_code, arm_cmn, p_binary_instr->p_src1->p_vreg->reg_id, -p_binary_instr->p_src2->i32const, 0, true);
+                arm_compare_gen(out_file, arm_cmn, p_binary_instr->p_src1->p_vreg->reg_id, -p_binary_instr->p_src2->i32const, 0, true);
             else
-                arm_compare_gen(asm_code, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->i32const, 0, true);
+                arm_compare_gen(out_file, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->i32const, 0, true);
         }
         else {
             if (p_binary_instr->p_src1->p_vreg->reg_id >= R_NUM)
-                arm_vcompare_gen(asm_code, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+                arm_vcompare_gen(out_file, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
             else
-                arm_compare_gen(asm_code, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, 0, false);
+                arm_compare_gen(out_file, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, 0, false);
         }
         if (!s) {
             arm_cond_type type = get_cond_type(p_binary_instr->op);
-            arm_movcond_gen(asm_code, type, rd, 1, 0, true);
-            arm_movcond_gen(asm_code, get_opposite_type(type), rd, 0, 0, true);
+            arm_movcond_gen(out_file, type, rd, 1, 0, true);
+            arm_movcond_gen(out_file, get_opposite_type(type), rd, 0, 0, true);
         }
         break;
     case ir_mod_op:
@@ -504,10 +501,10 @@ static void arm_call_instr_codegen(p_arm_codegen_info p_info, p_ir_instr p_instr
     if (p_call_instr->p_des && p_call_instr->p_func->ret_type == type_f32)
         rs = R_NUM;
     swap_in_call(p_info, p_call_instr->p_param_list);
-    arm_jump_label_gen(p_info->asm_code, arm_bl, arm_al, p_call_instr->p_func->name);
+    arm_jump_label_gen(p_info->out_file, arm_bl, arm_al, p_call_instr->p_func->name);
     if (p_call_instr->p_des) {
         if (rs != p_call_instr->p_des->reg_id)
-            mov_reg2reg(p_info->asm_code, p_call_instr->p_des->reg_id, rs, false);
+            mov_reg2reg(p_info->out_file, p_call_instr->p_des->reg_id, rs, false);
     }
 }
 
@@ -515,60 +512,60 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
     assert(p_store_instr->p_src->kind == reg);
     p_ir_vreg p_src = p_store_instr->p_src->p_vreg;
     p_ir_operand p_addr = p_store_instr->p_addr;
-    char *asm_code = p_info->asm_code;
+    FILE *out_file = p_info->out_file;
     if (p_store_instr->p_call_param && p_store_instr->p_call_param->is_stack_ptr)
-        arm_data_process_gen(asm_code, arm_add, p_src->reg_id, SP, p_src->reg_id, false, 0, false);
+        arm_data_process_gen(out_file, arm_add, p_src->reg_id, SP, p_src->reg_id, false, 0, false);
     if (p_store_instr->is_stack_ptr) {
         if (p_src->if_float) {
             if (p_addr->kind == imme)
-                arm_vstore_gen(asm_code, p_src->reg_id, SP, p_addr->i32const, true);
+                arm_vstore_gen(out_file, p_src->reg_id, SP, p_addr->i32const, true);
             else {
-                arm_data_process_gen(asm_code, arm_add, TMP, SP, p_addr->p_vreg->reg_id, false, 0, false);
-                arm_vstore_gen(asm_code, p_src->reg_id, TMP, 0, true);
+                arm_data_process_gen(out_file, arm_add, TMP, SP, p_addr->p_vreg->reg_id, false, 0, false);
+                arm_vstore_gen(out_file, p_src->reg_id, TMP, 0, true);
             }
         }
         else {
             if (p_addr->kind == imme)
-                arm_store_gen(asm_code, arm_store, p_src->reg_id, SP, p_addr->i32const, 0, true);
+                arm_store_gen(out_file, arm_store, p_src->reg_id, SP, p_addr->i32const, 0, true);
             else
-                arm_store_gen(asm_code, arm_store, p_src->reg_id, SP, p_addr->p_vreg->reg_id, 0, false);
+                arm_store_gen(out_file, arm_store, p_src->reg_id, SP, p_addr->p_vreg->reg_id, 0, false);
         }
     }
     else {
         assert(p_addr->kind == reg);
         if (p_src->if_float)
-            arm_vstore_gen(asm_code, p_src->reg_id, p_addr->p_vreg->reg_id, 0, true);
+            arm_vstore_gen(out_file, p_src->reg_id, p_addr->p_vreg->reg_id, 0, true);
         else
-            arm_store_gen(asm_code, arm_store, p_src->reg_id, p_addr->p_vreg->reg_id, 0, 0, true);
+            arm_store_gen(out_file, arm_store, p_src->reg_id, p_addr->p_vreg->reg_id, 0, 0, true);
     }
 }
 
 static void arm_load_instr_gen(p_arm_codegen_info p_info, p_ir_load_instr p_load_instr) {
     p_ir_vreg p_des = p_load_instr->p_des;
-    char *asm_code = p_info->asm_code;
+    FILE *out_file = p_info->out_file;
     p_ir_operand p_addr = p_load_instr->p_addr;
     if (p_load_instr->is_stack_ptr) {
         if (p_des->if_float) {
             if (p_addr->kind == imme)
-                arm_vload_gen(asm_code, p_des->reg_id, SP, p_addr->i32const, true);
+                arm_vload_gen(out_file, p_des->reg_id, SP, p_addr->i32const, true);
             else {
-                arm_data_process_gen(asm_code, arm_add, TMP, SP, p_addr->p_vreg->reg_id, false, 0, false);
-                arm_vload_gen(asm_code, p_des->reg_id, TMP, 0, true);
+                arm_data_process_gen(out_file, arm_add, TMP, SP, p_addr->p_vreg->reg_id, false, 0, false);
+                arm_vload_gen(out_file, p_des->reg_id, TMP, 0, true);
             }
         }
         else {
             if (p_addr->kind == imme)
-                arm_load_gen(asm_code, arm_load, p_des->reg_id, SP, p_addr->i32const, 0, true);
+                arm_load_gen(out_file, arm_load, p_des->reg_id, SP, p_addr->i32const, 0, true);
             else
-                arm_load_gen(asm_code, arm_load, p_des->reg_id, SP, p_addr->p_vreg->reg_id, 0, false);
+                arm_load_gen(out_file, arm_load, p_des->reg_id, SP, p_addr->p_vreg->reg_id, 0, false);
         }
     }
     else {
         assert(p_addr->kind == reg);
         if (p_des->if_float)
-            arm_vload_gen(asm_code, p_des->reg_id, p_addr->p_vreg->reg_id, 0, true);
+            arm_vload_gen(out_file, p_des->reg_id, p_addr->p_vreg->reg_id, 0, true);
         else
-            arm_load_gen(asm_code, arm_load, p_des->reg_id, p_addr->p_vreg->reg_id, 0, 0, true);
+            arm_load_gen(out_file, arm_load, p_des->reg_id, p_addr->p_vreg->reg_id, 0, 0, true);
     }
 }
 static void arm_instr_codegen(p_arm_codegen_info p_info, p_ir_instr p_instr) {
@@ -602,7 +599,7 @@ static arm_cond_type get_jump_type(p_arm_codegen_info p_info, p_ir_vreg p_vreg) 
 }
 
 static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block p_block, p_ir_basic_block p_next_block, p_symbol_func p_func) {
-    arm_block_label_gen(p_info->asm_code, p_func->name, p_block->block_id);
+    arm_block_label_gen(p_info->out_file, p_func->name, p_block->block_id);
     p_list_head p_node;
     list_for_each(p_node, &p_block->instr_list) {
         p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
@@ -612,14 +609,14 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
     case ir_br_branch:
         swap_in_phi(p_info, p_block->p_branch->p_target_1->p_block->basic_block_phis, p_block->p_branch->p_target_1->p_block_param);
         if (p_block->p_branch->p_target_1->p_block != p_next_block)
-            arm_block_jump_label_gen(p_info->asm_code, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_1->p_block->block_id);
+            arm_block_jump_label_gen(p_info->out_file, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_1->p_block->block_id);
         break;
     case ir_cond_branch:
         assert(p_block->p_branch->p_exp->kind == reg);
         arm_cond_type type = get_jump_type(p_info, p_block->p_branch->p_exp->p_vreg);
-        arm_block_jump_label_gen(p_info->asm_code, arm_b, type, p_func->name, p_block->p_branch->p_target_1->p_block->block_id);
+        arm_block_jump_label_gen(p_info->out_file, arm_b, type, p_func->name, p_block->p_branch->p_target_1->p_block->block_id);
         if (p_block->p_branch->p_target_2->p_block != p_next_block)
-            arm_block_jump_label_gen(p_info->asm_code, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_2->p_block->block_id);
+            arm_block_jump_label_gen(p_info->out_file, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_2->p_block->block_id);
         break;
     case ir_ret_branch:
         if (!p_block->p_branch->p_exp) {
@@ -633,7 +630,7 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
         if (p_block->p_branch->p_exp->kind == imme)
             mov_imme2reg(p_info, rd, p_block->p_branch->p_exp, false);
         else if (rd != p_block->p_branch->p_exp->p_vreg->reg_id)
-            mov_reg2reg(p_info->asm_code, rd, p_block->p_branch->p_exp->p_vreg->reg_id, false);
+            mov_reg2reg(p_info->out_file, rd, p_block->p_branch->p_exp->p_vreg->reg_id, false);
         arm_out_func_gen(p_info, p_func->stack_size);
         break;
     case ir_abort_branch:
@@ -641,9 +638,9 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
     }
 }
 
-static p_arm_codegen_info arm_codegen_info_gen(p_symbol_func p_func, char *asm_code) {
+static p_arm_codegen_info arm_codegen_info_gen(p_symbol_func p_func, FILE *out_file) {
     p_arm_codegen_info p_info = malloc(sizeof(*p_info));
-    p_info->asm_code = asm_code;
+    p_info->out_file = out_file;
     p_info->p_func = p_func;
     p_info->mov_num = p_info->swap_num = 0;
     p_info->save_reg_r = malloc(sizeof(*p_info->save_reg_r) * R_NUM);
@@ -662,9 +659,9 @@ static void arm_codegen_info_drop(p_arm_codegen_info p_info) {
     free(p_info);
 }
 
-void arm_func_codegen(p_symbol_func p_func, char *asm_code) {
+void arm_func_codegen(p_symbol_func p_func, FILE *out_file) {
     if (list_head_alone(&p_func->block)) return;
-    p_arm_codegen_info p_info = arm_codegen_info_gen(p_func, asm_code);
+    p_arm_codegen_info p_info = arm_codegen_info_gen(p_func, out_file);
 
     arm_into_func_gen(p_info, p_func, p_func->stack_size);
     swap_in_func_param(p_info, p_func);
@@ -678,27 +675,30 @@ void arm_func_codegen(p_symbol_func p_func, char *asm_code) {
     arm_codegen_info_drop(p_info);
 }
 
-void arm_codegen_pass(p_program p_ir, char *asm_code) {
-    strcat(asm_code, "   .arch armv7ve\n");
-    strcat(asm_code, "   .arm\n");
-    strcat(asm_code, "   .fpu neon-vfpv4\n");
+void arm_codegen_pass(p_program p_ir) {
+    FILE *out_file = fopen(p_ir->output, "w");
+    fprintf(out_file, ".file \"%s\"\n", p_ir->input);
+    fprintf(out_file, "   .arch armv7ve\n");
+    fprintf(out_file, "   .arm\n");
+    fprintf(out_file, "   .fpu neon-vfpv4\n");
 
     p_list_head p_node;
     list_for_each(p_node, &p_ir->variable) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         assert(p_var->is_global);
-        arm_global_sym_gen(asm_code, p_var);
+        arm_global_sym_gen(out_file, p_var);
     }
     list_for_each(p_node, &p_ir->constant) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         assert(p_var->is_global);
-        arm_global_sym_gen(asm_code, p_var);
+        arm_global_sym_gen(out_file, p_var);
     }
 
-    strcat(asm_code, "\n");
-    strcat(asm_code, ".section .text\n");
+    fprintf(out_file, "\n");
+    fprintf(out_file, ".section .text\n");
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
-        arm_func_codegen(p_func, asm_code);
+        arm_func_codegen(p_func, out_file);
     }
+    fclose(out_file);
 }

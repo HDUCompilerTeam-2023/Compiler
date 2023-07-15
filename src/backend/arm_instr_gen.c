@@ -33,436 +33,436 @@ char *uint32_str(uint32_t intconst) {
     return str;
 }
 
-static inline void uint32_str_cat(char *prefix, uint32_t intconst) {
+static inline void uint32_str_cat(FILE *prefix, uint32_t intconst) {
     char *str = uint32_str(intconst);
-    strcat(prefix, str);
+    fprintf(prefix, "%s", str);
     free(str);
 }
 
-static inline void operand2str(char *asm_code, size_t operand, size_t lsl_imme, bool if_imme) {
+static inline void operand2str(FILE *out_file, size_t operand, size_t lsl_imme, bool if_imme) {
     if (if_imme) {
         if (lsl_imme)
             operand <<= lsl_imme;
-        strcat(asm_code, "#");
-        uint32_str_cat(asm_code, operand);
+        fprintf(out_file, "#");
+        uint32_str_cat(out_file, operand);
         return;
     }
     assert(operand < R_NUM);
-    strcat(asm_code, regs[operand]);
+    fprintf(out_file, "%s", regs[operand]);
     if (lsl_imme) {
-        strcat(asm_code, ", lsl #");
-        uint32_str_cat(asm_code, lsl_imme);
+        fprintf(out_file, ", lsl #");
+        uint32_str_cat(out_file, lsl_imme);
     }
 }
 
-static inline void arm_cond_type_gen(char *asm_code, arm_cond_type cond_type) {
+static inline void arm_cond_type_gen(FILE *out_file, arm_cond_type cond_type) {
     switch (cond_type) {
     case arm_eq:
-        strcat(asm_code, "eq ");
+        fprintf(out_file, "eq ");
         break;
     case arm_ne:
-        strcat(asm_code, "ne ");
+        fprintf(out_file, "ne ");
         break;
     case arm_ge:
-        strcat(asm_code, "ge ");
+        fprintf(out_file, "ge ");
         break;
     case arm_gt:
-        strcat(asm_code, "gt ");
+        fprintf(out_file, "gt ");
         break;
     case arm_le:
-        strcat(asm_code, "le ");
+        fprintf(out_file, "le ");
         break;
     case arm_lt:
-        strcat(asm_code, "lt ");
+        fprintf(out_file, "lt ");
         break;
     case arm_al:
-        strcat(asm_code, " ");
+        fprintf(out_file, " ");
         break;
     }
 }
 
-void arm_data_process_gen(char *asm_code, arm_instr_type type, size_t rd, size_t rs, size_t operand, bool s, size_t lsl_imme, bool if_imme) {
+void arm_data_process_gen(FILE *out_file, arm_instr_type type, size_t rd, size_t rs, size_t operand, bool s, size_t lsl_imme, bool if_imme) {
     assert(rd < R_NUM);
     assert(rs < R_NUM);
     switch (type) {
     case arm_add:
-        strcat(asm_code, "   add");
+        fprintf(out_file, "   add");
         break;
     case arm_sub:
-        strcat(asm_code, "   sub");
+        fprintf(out_file, "   sub");
         break;
     case arm_rsb:
-        strcat(asm_code, "   rsb");
+        fprintf(out_file, "   rsb");
         break;
     case arm_lsl:
-        strcat(asm_code, "   lsl");
+        fprintf(out_file, "   lsl");
         break;
     case arm_lsr:
-        strcat(asm_code, "   lsr");
+        fprintf(out_file, "   lsr");
         break;
     case arm_asr:
-        strcat(asm_code, "   asr");
+        fprintf(out_file, "   asr");
         break;
     case arm_and:
-        strcat(asm_code, "   and");
+        fprintf(out_file, "   and");
         break;
     case arm_eor:
-        strcat(asm_code, "   eor");
+        fprintf(out_file, "   eor");
         break;
     case arm_orr:
-        strcat(asm_code, "   orr");
+        fprintf(out_file, "   orr");
         break;
     case arm_orn:
-        strcat(asm_code, "   orn");
+        fprintf(out_file, "   orn");
         break;
     default:
         assert(0);
     }
     if (s)
-        strcat(asm_code, "s");
-    strcat(asm_code, " ");
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", ");
-    strcat(asm_code, regs[rs]);
-    strcat(asm_code, ", ");
-    operand2str(asm_code, operand, lsl_imme, if_imme);
-    strcat(asm_code, "\n");
+        fprintf(out_file, "s");
+    fprintf(out_file, " ");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", ");
+    fprintf(out_file, "%s", regs[rs]);
+    fprintf(out_file, ", ");
+    operand2str(out_file, operand, lsl_imme, if_imme);
+    fprintf(out_file, "\n");
 }
 
 // if_imme 表示 operand 是否是立即数
-void arm_load_gen(char *asm_code, arm_instr_type type, size_t rd, size_t rn, size_t offset, size_t lsl_imme, bool if_imme) {
+void arm_load_gen(FILE *out_file, arm_instr_type type, size_t rd, size_t rn, size_t offset, size_t lsl_imme, bool if_imme) {
     assert(rd < R_NUM);
     assert(rn < R_NUM);
-    strcat(asm_code, "   ldr ");
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", [");
-    strcat(asm_code, regs[rn]);
+    fprintf(out_file, "   ldr ");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", [");
+    fprintf(out_file, "%s", regs[rn]);
     if (!(if_imme && !offset)) { // 偏移不为0
-        strcat(asm_code, ", ");
-        operand2str(asm_code, offset, lsl_imme, if_imme);
+        fprintf(out_file, ", ");
+        operand2str(out_file, offset, lsl_imme, if_imme);
     }
-    strcat(asm_code, "]\n");
+    fprintf(out_file, "]\n");
 }
 
-void arm_store_gen(char *asm_code, arm_instr_type type, size_t rd, size_t rn, size_t offset, size_t lsl_imme, bool if_imme) {
+void arm_store_gen(FILE *out_file, arm_instr_type type, size_t rd, size_t rn, size_t offset, size_t lsl_imme, bool if_imme) {
     assert(rd < R_NUM);
     assert(rn < R_NUM);
-    strcat(asm_code, "   str ");
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", [");
-    strcat(asm_code, regs[rn]);
+    fprintf(out_file, "   str ");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", [");
+    fprintf(out_file, "%s", regs[rn]);
     if (!(if_imme && !offset)) { // 偏移不为0
-        strcat(asm_code, ", ");
-        operand2str(asm_code, offset, lsl_imme, if_imme);
+        fprintf(out_file, ", ");
+        operand2str(out_file, offset, lsl_imme, if_imme);
     }
-    strcat(asm_code, "]\n");
+    fprintf(out_file, "]\n");
 }
 
-void arm_compare_gen(char *asm_code, arm_instr_type type, size_t rd, size_t operand, size_t lsl_imme, bool if_imme) {
+void arm_compare_gen(FILE *out_file, arm_instr_type type, size_t rd, size_t operand, size_t lsl_imme, bool if_imme) {
     assert(rd < R_NUM);
     switch (type) {
     case arm_cmp:
-        strcat(asm_code, "   cmp ");
+        fprintf(out_file, "   cmp ");
         break;
     case arm_cmn:
-        strcat(asm_code, "   cmn ");
+        fprintf(out_file, "   cmn ");
         break;
     case arm_tst:
-        strcat(asm_code, "   tst ");
+        fprintf(out_file, "   tst ");
         break;
     case arm_teq:
-        strcat(asm_code, "   teq ");
+        fprintf(out_file, "   teq ");
         break;
     default:
         assert(0);
     }
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", ");
-    operand2str(asm_code, operand, lsl_imme, if_imme);
-    strcat(asm_code, "\n");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", ");
+    operand2str(out_file, operand, lsl_imme, if_imme);
+    fprintf(out_file, "\n");
 }
 
-void arm_mov16_gen(char *asm_code, arm_instr_type type, size_t rd, size_t imme16, bool s) {
+void arm_mov16_gen(FILE *out_file, arm_instr_type type, size_t rd, size_t imme16, bool s) {
     assert(rd < R_NUM);
     switch (type) {
     case arm_movw:
-        strcat(asm_code, "   movw ");
+        fprintf(out_file, "   movw ");
         break;
     case arm_movt:
-        strcat(asm_code, "   movt ");
+        fprintf(out_file, "   movt ");
         break;
     default:
         assert(0);
     }
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", #");
-    uint32_str_cat(asm_code, imme16);
-    strcat(asm_code, "\n");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", #");
+    uint32_str_cat(out_file, imme16);
+    fprintf(out_file, "\n");
     if (s)
-        arm_compare_gen(asm_code, arm_cmp, rd, 0, 0, true);
+        arm_compare_gen(out_file, arm_cmp, rd, 0, 0, true);
 }
 
-void arm_mov_gen(char *asm_code, arm_instr_type type, size_t rd, size_t operand, bool s, size_t lsl_imme, bool if_imme) {
+void arm_mov_gen(FILE *out_file, arm_instr_type type, size_t rd, size_t operand, bool s, size_t lsl_imme, bool if_imme) {
     assert(rd < R_NUM);
     switch (type) {
     case arm_mov:
-        strcat(asm_code, "   mov");
+        fprintf(out_file, "   mov");
         break;
     case arm_mvn:
-        strcat(asm_code, "   mvn");
+        fprintf(out_file, "   mvn");
         break;
     default:
         assert(0);
     }
     if (s)
-        strcat(asm_code, "s");
-    strcat(asm_code, " ");
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", ");
-    operand2str(asm_code, operand, lsl_imme, if_imme);
-    strcat(asm_code, "\n");
+        fprintf(out_file, "s");
+    fprintf(out_file, " ");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", ");
+    operand2str(out_file, operand, lsl_imme, if_imme);
+    fprintf(out_file, "\n");
 }
 
-void arm_movcond_gen(char *asm_code, arm_cond_type cond_type, size_t rd, size_t operand, size_t lsl_imme, bool if_imme) {
+void arm_movcond_gen(FILE *out_file, arm_cond_type cond_type, size_t rd, size_t operand, size_t lsl_imme, bool if_imme) {
     assert(rd < R_NUM);
-    strcat(asm_code, "   mov");
-    arm_cond_type_gen(asm_code, cond_type);
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", ");
-    operand2str(asm_code, operand, lsl_imme, if_imme);
-    strcat(asm_code, "\n");
+    fprintf(out_file, "   mov");
+    arm_cond_type_gen(out_file, cond_type);
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", ");
+    operand2str(out_file, operand, lsl_imme, if_imme);
+    fprintf(out_file, "\n");
 }
 
-void arm_mul_gen(char *asm_code, size_t rd, size_t rm, size_t rs, bool s) {
+void arm_mul_gen(FILE *out_file, size_t rd, size_t rm, size_t rs, bool s) {
     assert(rd < R_NUM);
     assert(rm < R_NUM);
     assert(rs < R_NUM);
-    strcat(asm_code, "   mul");
+    fprintf(out_file, "   mul");
     if (s)
-        strcat(asm_code, "s");
-    strcat(asm_code, " ");
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", ");
-    strcat(asm_code, regs[rm]);
-    strcat(asm_code, ", ");
-    strcat(asm_code, regs[rs]);
-    strcat(asm_code, "\n");
+        fprintf(out_file, "s");
+    fprintf(out_file, " ");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", ");
+    fprintf(out_file, "%s", regs[rm]);
+    fprintf(out_file, ", ");
+    fprintf(out_file, "%s", regs[rs]);
+    fprintf(out_file, "\n");
 }
 
-void arm_sdiv_gen(char *asm_code, size_t rd, size_t rm, size_t rs) {
+void arm_sdiv_gen(FILE *out_file, size_t rd, size_t rm, size_t rs) {
     assert(rd < R_NUM);
     assert(rm < R_NUM);
     assert(rs < R_NUM);
-    strcat(asm_code, "  sdiv ");
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", ");
-    strcat(asm_code, regs[rm]);
-    strcat(asm_code, ", ");
-    strcat(asm_code, regs[rs]);
-    strcat(asm_code, "\n");
+    fprintf(out_file, "  sdiv ");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", ");
+    fprintf(out_file, "%s", regs[rm]);
+    fprintf(out_file, ", ");
+    fprintf(out_file, "%s", regs[rs]);
+    fprintf(out_file, "\n");
 }
 
-void arm_label_gen(char *asm_code, char *name) {
-    strcat(asm_code, name);
-    strcat(asm_code, ":\n");
+void arm_label_gen(FILE *out_file, char *name) {
+    fprintf(out_file, "%s", name);
+    fprintf(out_file, ":\n");
 }
 
-void arm_jump_reg_gen(char *asm_code, arm_instr_type type, arm_cond_type cond_type, size_t r_target) {
+void arm_jump_reg_gen(FILE *out_file, arm_instr_type type, arm_cond_type cond_type, size_t r_target) {
     assert(r_target < R_NUM);
     switch (type) {
     case arm_bx:
-        strcat(asm_code, "   bx");
+        fprintf(out_file, "   bx");
         break;
     case arm_blx:
-        strcat(asm_code, "   blx");
+        fprintf(out_file, "   blx");
         break;
     default:
         assert(0);
         break;
     }
-    arm_cond_type_gen(asm_code, cond_type);
-    strcat(asm_code, regs[r_target]);
-    strcat(asm_code, "\n");
+    arm_cond_type_gen(out_file, cond_type);
+    fprintf(out_file, "%s", regs[r_target]);
+    fprintf(out_file, "\n");
 }
 
-void arm_jump_label_gen(char *asm_code, arm_instr_type type, arm_cond_type cond_type, char *label) {
+void arm_jump_label_gen(FILE *out_file, arm_instr_type type, arm_cond_type cond_type, char *label) {
     switch (type) {
     case arm_b:
-        strcat(asm_code, "   b");
+        fprintf(out_file, "   b");
         break;
     case arm_bl:
-        strcat(asm_code, "   bl");
+        fprintf(out_file, "   bl");
         break;
     default:
         assert(0);
     }
-    arm_cond_type_gen(asm_code, cond_type);
-    strcat(asm_code, label);
-    strcat(asm_code, "\n");
+    arm_cond_type_gen(out_file, cond_type);
+    fprintf(out_file, "%s", label);
+    fprintf(out_file, "\n");
 }
 
-void arm_swap_gen(char *asm_code, size_t r1, size_t r2) {
+void arm_swap_gen(FILE *out_file, size_t r1, size_t r2) {
     if (r1 == r2) return;
     bool if_r1 = r1 < R_NUM;
     bool if_r2 = r2 < R_NUM;
     assert(if_r1 == if_r2);
     if (if_r1 && if_r2) {
-        arm_data_process_gen(asm_code, arm_eor, r1, r1, r2, false, 0, false);
-        arm_data_process_gen(asm_code, arm_eor, r2, r1, r2, false, 0, false);
-        arm_data_process_gen(asm_code, arm_eor, r1, r1, r2, false, 0, false);
+        arm_data_process_gen(out_file, arm_eor, r1, r1, r2, false, 0, false);
+        arm_data_process_gen(out_file, arm_eor, r2, r1, r2, false, 0, false);
+        arm_data_process_gen(out_file, arm_eor, r1, r1, r2, false, 0, false);
     }
     else {
-        arm_vdata_process_gen(asm_code, arm_add, r1, r1, r2);
-        arm_vdata_process_gen(asm_code, arm_sub, r2, r1, r2);
-        arm_vdata_process_gen(asm_code, arm_sub, r1, r1, r2);
+        arm_vdata_process_gen(out_file, arm_add, r1, r1, r2);
+        arm_vdata_process_gen(out_file, arm_sub, r2, r1, r2);
+        arm_vdata_process_gen(out_file, arm_sub, r1, r1, r2);
     }
 }
 
-void arm_word_gen(char *asm_code, size_t imme32) {
-    strcat(asm_code, "   .word ");
-    uint32_str_cat(asm_code, imme32);
-    strcat(asm_code, "\n");
+void arm_word_gen(FILE *out_file, size_t imme32) {
+    fprintf(out_file, "   .word ");
+    uint32_str_cat(out_file, imme32);
+    fprintf(out_file, "\n");
 }
 
-void arm_space_gen(char *asm_code, size_t size) {
-    strcat(asm_code, "   .space ");
-    uint32_str_cat(asm_code, size);
-    strcat(asm_code, "\n");
+void arm_space_gen(FILE *out_file, size_t size) {
+    fprintf(out_file, "   .space ");
+    uint32_str_cat(out_file, size);
+    fprintf(out_file, "\n");
 }
 
-void arm_global_sym_declare_gen(char *asm_code, char *p_sym, size_t size) {
-    strcat(asm_code, "\n");
-    strcat(asm_code, ".global ");
-    strcat(asm_code, p_sym);
-    strcat(asm_code, "\n");
-    strcat(asm_code, "   .type ");
-    strcat(asm_code, p_sym);
-    strcat(asm_code, ", %object\n");
-    strcat(asm_code, "   .data\n");
-    strcat(asm_code, "   .align 4\n");
-    strcat(asm_code, "   .size ");
-    strcat(asm_code, p_sym);
-    strcat(asm_code, ", ");
-    uint32_str_cat(asm_code, size);
-    strcat(asm_code, "\n");
+void arm_global_sym_declare_gen(FILE *out_file, char *p_sym, size_t size) {
+    fprintf(out_file, "\n");
+    fprintf(out_file, ".global ");
+    fprintf(out_file, "%s", p_sym);
+    fprintf(out_file, "\n");
+    fprintf(out_file, "   .type ");
+    fprintf(out_file, "%s", p_sym);
+    fprintf(out_file, ", %%object\n");
+    fprintf(out_file, "   .data\n");
+    fprintf(out_file, "   .align 4\n");
+    fprintf(out_file, "   .size ");
+    fprintf(out_file, "%s", p_sym);
+    fprintf(out_file, ", ");
+    uint32_str_cat(out_file, size);
+    fprintf(out_file, "\n");
 }
 
-void arm_func_sym_declare_gen(char *asm_code, char *p_func) {
-    strcat(asm_code, "\n");
-    strcat(asm_code, ".global ");
-    strcat(asm_code, p_func);
-    strcat(asm_code, "\n");
-    strcat(asm_code, "   .type ");
-    strcat(asm_code, p_func);
-    strcat(asm_code, ", %function\n");
+void arm_func_sym_declare_gen(FILE *out_file, char *p_func) {
+    fprintf(out_file, "\n");
+    fprintf(out_file, ".global ");
+    fprintf(out_file, "%s", p_func);
+    fprintf(out_file, "\n");
+    fprintf(out_file, "   .type ");
+    fprintf(out_file, "%s", p_func);
+    fprintf(out_file, ", %%function\n");
 }
 
 static inline int cmp(const void *a, const void *b) {
     return *(int *) a - *(int *) b;
 }
 
-void arm_push_gen(char *asm_code, size_t *reg_id, size_t num) {
+void arm_push_gen(FILE *out_file, size_t *reg_id, size_t num) {
     if (num == 0) return;
     assert(reg_id[0] < R_NUM);
     qsort(reg_id, num, sizeof(size_t), cmp);
-    strcat(asm_code, "   push {");
-    strcat(asm_code, regs[reg_id[0]]);
+    fprintf(out_file, "   push {");
+    fprintf(out_file, "%s", regs[reg_id[0]]);
     for (size_t i = 1; i < num; i++) {
         assert(reg_id[i] < R_NUM);
-        strcat(asm_code, ", ");
-        strcat(asm_code, regs[reg_id[i]]);
+        fprintf(out_file, ", ");
+        fprintf(out_file, "%s", regs[reg_id[i]]);
     }
-    strcat(asm_code, "}\n");
+    fprintf(out_file, "}\n");
 }
 
-void arm_pop_gen(char *asm_code, size_t *reg_id, size_t num) {
+void arm_pop_gen(FILE *out_file, size_t *reg_id, size_t num) {
     if (num == 0) return;
     assert(reg_id[0] < R_NUM);
     qsort(reg_id, num, sizeof(size_t), cmp);
-    strcat(asm_code, "   pop {");
-    strcat(asm_code, regs[reg_id[0]]);
+    fprintf(out_file, "   pop {");
+    fprintf(out_file, "%s", regs[reg_id[0]]);
     for (size_t i = 1; i < num; i++) {
         assert(reg_id[i] < R_NUM);
-        strcat(asm_code, ", ");
-        strcat(asm_code, regs[reg_id[i]]);
+        fprintf(out_file, ", ");
+        fprintf(out_file, "%s", regs[reg_id[i]]);
     }
-    strcat(asm_code, "}\n");
+    fprintf(out_file, "}\n");
 }
 
-void arm_get_global_addr(char *asm_code, size_t rd, char *name) {
+void arm_get_global_addr(FILE *out_file, size_t rd, char *name) {
     assert(rd < R_NUM);
-    strcat(asm_code, "   movw ");
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", #:lower16:");
-    strcat(asm_code, name);
-    strcat(asm_code, "\n");
-    strcat(asm_code, "   movt ");
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", #:upper16:");
-    strcat(asm_code, name);
-    strcat(asm_code, "\n");
+    fprintf(out_file, "   movw ");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", #:lower16:");
+    fprintf(out_file, "%s", name);
+    fprintf(out_file, "\n");
+    fprintf(out_file, "   movt ");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", #:upper16:");
+    fprintf(out_file, "%s", name);
+    fprintf(out_file, "\n");
 }
 
-void arm_vset_flag(char *asm_code, size_t r) {
+void arm_vset_flag(FILE *out_file, size_t r) {
     assert(r >= R_NUM);
     assert(r < R_NUM + S_NUM);
-    strcat(asm_code, "   vcmp.f32 ");
-    strcat(asm_code, regs[r]);
-    strcat(asm_code, ", #0\n");
-    strcat(asm_code, "   vmrs APSR_nzcv, FPSCR\n");
+    fprintf(out_file, "   vcmp.f32 ");
+    fprintf(out_file, "%s", regs[r]);
+    fprintf(out_file, ", #0\n");
+    fprintf(out_file, "   vmrs APSR_nzcv, FPSCR\n");
 }
 
-void arm_vmov_gen(char *asm_code, size_t rd, size_t rs) {
+void arm_vmov_gen(FILE *out_file, size_t rd, size_t rs) {
     bool if_sd = rd >= R_NUM;
     bool if_ss = rs >= R_NUM;
     assert(if_sd || if_ss);
-    strcat(asm_code, "   vmov");
+    fprintf(out_file, "   vmov");
     if (if_sd && if_ss)
-        strcat(asm_code, ".f32 ");
+        fprintf(out_file, ".f32 ");
     else
-        strcat(asm_code, " ");
+        fprintf(out_file, " ");
 
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", ");
-    strcat(asm_code, regs[rs]);
-    strcat(asm_code, "\n");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", ");
+    fprintf(out_file, "%s", regs[rs]);
+    fprintf(out_file, "\n");
 }
 
-void arm_vneg_gen(char *asm_code, size_t rd, size_t rs) {
+void arm_vneg_gen(FILE *out_file, size_t rd, size_t rs) {
     assert(rs >= R_NUM);
     assert(rs < R_NUM + S_NUM);
     assert(rd >= R_NUM);
     assert(rd < R_NUM + S_NUM);
-    strcat(asm_code, "   vneg.f32 ");
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", ");
-    strcat(asm_code, regs[rs]);
-    strcat(asm_code, "\n");
+    fprintf(out_file, "   vneg.f32 ");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", ");
+    fprintf(out_file, "%s", regs[rs]);
+    fprintf(out_file, "\n");
 }
 
-void arm_vcvt_gen(char *asm_code, arm_instr_type type, size_t rd, size_t rs) {
+void arm_vcvt_gen(FILE *out_file, arm_instr_type type, size_t rd, size_t rs) {
     assert(rd >= R_NUM);
     assert(rd < R_NUM + S_NUM);
     assert(rs >= R_NUM);
     assert(rs < R_NUM + S_NUM);
-    strcat(asm_code, "   vcvt");
+    fprintf(out_file, "   vcvt");
     switch (type) {
     case arm_int2float:
-        strcat(asm_code, ".f32.s32 ");
+        fprintf(out_file, ".f32.s32 ");
         break;
     case arm_float2int:
-        strcat(asm_code, ".s32.f32 ");
+        fprintf(out_file, ".s32.f32 ");
         break;
     default:
         assert(0);
     }
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", ");
-    strcat(asm_code, regs[rs]);
-    strcat(asm_code, "\n");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", ");
+    fprintf(out_file, "%s", regs[rs]);
+    fprintf(out_file, "\n");
 }
 
-void arm_vdata_process_gen(char *asm_code, arm_instr_type type, size_t rd, size_t rs1, size_t rs2) {
+void arm_vdata_process_gen(FILE *out_file, arm_instr_type type, size_t rd, size_t rs1, size_t rs2) {
     assert(rd >= R_NUM);
     assert(rd < R_NUM + S_NUM);
     assert(rs1 >= R_NUM);
@@ -471,140 +471,140 @@ void arm_vdata_process_gen(char *asm_code, arm_instr_type type, size_t rd, size_
     assert(rs2 < R_NUM + S_NUM);
     switch (type) {
     case arm_add:
-        strcat(asm_code, "   vadd");
+        fprintf(out_file, "   vadd");
         break;
     case arm_sub:
-        strcat(asm_code, "   vsub");
+        fprintf(out_file, "   vsub");
         break;
     case arm_mul:
-        strcat(asm_code, "   vmul");
+        fprintf(out_file, "   vmul");
         break;
     case arm_div:
-        strcat(asm_code, "   vdiv");
+        fprintf(out_file, "   vdiv");
         break;
     case arm_and:
-        strcat(asm_code, "   vand");
+        fprintf(out_file, "   vand");
         break;
     default:
         assert(0);
     }
-    strcat(asm_code, ".f32 ");
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", ");
-    strcat(asm_code, regs[rs1]);
-    strcat(asm_code, ", ");
-    strcat(asm_code, regs[rs2]);
-    strcat(asm_code, "\n");
+    fprintf(out_file, ".f32 ");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", ");
+    fprintf(out_file, "%s", regs[rs1]);
+    fprintf(out_file, ", ");
+    fprintf(out_file, "%s", regs[rs2]);
+    fprintf(out_file, "\n");
 }
 
-void arm_vcompare_gen(char *asm_code, arm_instr_type type, size_t rs1, size_t rs2) {
+void arm_vcompare_gen(FILE *out_file, arm_instr_type type, size_t rs1, size_t rs2) {
     assert(rs1 >= R_NUM);
     assert(rs1 < R_NUM + S_NUM);
     assert(rs2 >= R_NUM);
     assert(rs2 < R_NUM + S_NUM);
     switch (type) {
     case arm_cmp:
-        strcat(asm_code, "  vcmp");
+        fprintf(out_file, "  vcmp");
         break;
     case arm_tst:
-        strcat(asm_code, "  vtst");
+        fprintf(out_file, "  vtst");
         break;
     default:
         assert(0);
         break;
     }
-    strcat(asm_code, ".f32 ");
-    strcat(asm_code, regs[rs1]);
-    strcat(asm_code, ", ");
-    strcat(asm_code, regs[rs2]);
-    strcat(asm_code, "\n");
-    strcat(asm_code, "   vmrs APSR_nzcv, FPSCR\n");
+    fprintf(out_file, ".f32 ");
+    fprintf(out_file, "%s", regs[rs1]);
+    fprintf(out_file, ", ");
+    fprintf(out_file, "%s", regs[rs2]);
+    fprintf(out_file, "\n");
+    fprintf(out_file, "   vmrs APSR_nzcv, FPSCR\n");
 }
 
-void arm_vload_gen(char *asm_code, size_t rd, size_t rs, size_t offset, bool if_imme) {
+void arm_vload_gen(FILE *out_file, size_t rd, size_t rs, size_t offset, bool if_imme) {
     assert(rd >= R_NUM);
     assert(rd < R_NUM + S_NUM);
     assert(rs < R_NUM);
     if (!if_imme)
         assert(offset < R_NUM);
-    strcat(asm_code, "   vldr.32 ");
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", [");
-    strcat(asm_code, regs[rs]);
+    fprintf(out_file, "   vldr.32 ");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", [");
+    fprintf(out_file, "%s", regs[rs]);
     if (if_imme) {
         if (offset) {
-            strcat(asm_code, ", #");
-            uint32_str_cat(asm_code, offset);
+            fprintf(out_file, ", #");
+            uint32_str_cat(out_file, offset);
         }
     }
     else {
-        strcat(asm_code, ", ");
-        strcat(asm_code, regs[offset]);
+        fprintf(out_file, ", ");
+        fprintf(out_file, "%s", regs[offset]);
     }
-    strcat(asm_code, "]\n");
+    fprintf(out_file, "]\n");
 }
 
-void arm_vstore_gen(char *asm_code, size_t rd, size_t rs, size_t offset, bool if_imme) {
+void arm_vstore_gen(FILE *out_file, size_t rd, size_t rs, size_t offset, bool if_imme) {
     assert(rd >= R_NUM);
     assert(rd < R_NUM + S_NUM);
     assert(rs < R_NUM);
     if (!if_imme)
         assert(offset < R_NUM);
-    strcat(asm_code, "   vstr.32 ");
-    strcat(asm_code, regs[rd]);
-    strcat(asm_code, ", [");
-    strcat(asm_code, regs[rs]);
+    fprintf(out_file, "   vstr.32 ");
+    fprintf(out_file, "%s", regs[rd]);
+    fprintf(out_file, ", [");
+    fprintf(out_file, "%s", regs[rs]);
     if (if_imme) {
         if (offset) {
-            strcat(asm_code, ", #");
-            uint32_str_cat(asm_code, offset);
+            fprintf(out_file, ", #");
+            uint32_str_cat(out_file, offset);
         }
     }
     else {
-        strcat(asm_code, ", ");
-        strcat(asm_code, regs[offset]);
+        fprintf(out_file, ", ");
+        fprintf(out_file, "%s", regs[offset]);
     }
-    strcat(asm_code, "]\n");
+    fprintf(out_file, "]\n");
 }
 
-void arm_vpush_gen(char *asm_code, size_t *reg_id, size_t num) {
+void arm_vpush_gen(FILE *out_file, size_t *reg_id, size_t num) {
     if (num == 0) return;
     qsort(reg_id, num, sizeof(size_t), cmp);
     size_t i = 0;
     while (i < num) {
         assert(reg_id[i] >= R_NUM);
         assert(reg_id[i] < R_NUM + S_NUM);
-        strcat(asm_code, "   vpush {");
-        strcat(asm_code, regs[reg_id[i]]);
+        fprintf(out_file, "   vpush {");
+        fprintf(out_file, "%s", regs[reg_id[i]]);
         i++;
         while (i < num && reg_id[i] == reg_id[i - 1] + 1) {
             assert(reg_id[i] >= R_NUM);
             assert(reg_id[i] < R_NUM + S_NUM);
-            strcat(asm_code, ", ");
-            strcat(asm_code, regs[reg_id[i]]);
+            fprintf(out_file, ", ");
+            fprintf(out_file, "%s", regs[reg_id[i]]);
             i++;
         }
-        strcat(asm_code, "}\n");
+        fprintf(out_file, "}\n");
     }
 }
-void arm_vpop_gen(char *asm_code, size_t *reg_id, size_t num) {
+void arm_vpop_gen(FILE *out_file, size_t *reg_id, size_t num) {
     if (num == 0) return;
     qsort(reg_id, num, sizeof(size_t), cmp);
     size_t i = 0;
     while (i < num) {
         assert(reg_id[i] >= R_NUM);
         assert(reg_id[i] < R_NUM + S_NUM);
-        strcat(asm_code, "   vpop {");
-        strcat(asm_code, regs[reg_id[i]]);
+        fprintf(out_file, "   vpop {");
+        fprintf(out_file, "%s", regs[reg_id[i]]);
         i++;
         while (i < num && reg_id[i] == reg_id[i - 1] + 1) {
             assert(reg_id[i] >= R_NUM);
             assert(reg_id[i] < R_NUM + S_NUM);
-            strcat(asm_code, ", ");
-            strcat(asm_code, regs[reg_id[i]]);
+            fprintf(out_file, ", ");
+            fprintf(out_file, "%s", regs[reg_id[i]]);
             i++;
         }
-        strcat(asm_code, "}\n");
+        fprintf(out_file, "}\n");
     }
 }
 

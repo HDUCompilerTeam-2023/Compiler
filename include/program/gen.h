@@ -5,7 +5,7 @@
 
 #include <ir.h>
 
-p_program program_gen(void);
+p_program program_gen(const char *input, const char *output);
 void program_drop(p_program p_program);
 
 bool program_add_str(p_program p_program, p_symbol_str p_str);
