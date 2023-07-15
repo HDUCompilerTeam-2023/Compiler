@@ -244,8 +244,8 @@ static void arm_out_func_gen(p_arm_codegen_info p_info, size_t stack_size) {
     else
         arm_data_process_gen(p_info->out_file, arm_add, SP, SP, stack_size, false, 0, true);
     p_info->save_reg_r[p_info->save_reg_r_num] = PC;
-    arm_pop_gen(p_info->out_file, p_info->save_reg_r, p_info->save_reg_r_num + 1);
     arm_vpop_gen(p_info->out_file, p_info->save_reg_s, p_info->save_reg_s_num);
+    arm_pop_gen(p_info->out_file, p_info->save_reg_r, p_info->save_reg_r_num + 1);
     arm_jump_reg_gen(p_info->out_file, arm_bx, arm_al, LR);
 }
 

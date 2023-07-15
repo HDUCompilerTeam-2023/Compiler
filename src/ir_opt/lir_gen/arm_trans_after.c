@@ -9,8 +9,6 @@ static inline size_t alignTo(size_t N, size_t Align) {
     // (0,Align]返回Align
     return (N + Align - 1) / Align * Align;
 }
-#include <stdio.h>
-#include <symbol_print.h>
 static inline void stack_alloc(p_symbol_func p_func) {
     p_list_head p_node;
     symbol_func_clear_varible(p_func);
@@ -27,8 +25,6 @@ static inline void stack_alloc(p_symbol_func p_func) {
     }
     size_t save_size = (p_func->save_reg_r_num + p_func->save_reg_s_num + 1) * basic_type_get_size(type_i32);
     p_func->stack_size = alignTo(stack_size + save_size, 8) - save_size;
-    printf("%saaa %ld %ld\n", p_func->name, save_size, p_func->stack_size);
-
     stack_size = p_func->stack_size + save_size;
     list_for_each(p_node, &p_func->param) {
         p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
@@ -65,7 +61,7 @@ static inline void set_save_reg_num(p_symbol_func p_func) {
     p_func->save_reg_r_num = p_func->save_reg_s_num = 0;
     if (p_func->use_reg_num_r > caller_save_reg_num_r)
         p_func->save_reg_r_num = p_func->use_reg_num_r - caller_save_reg_num_r;
-    if (p_func->use_reg_num_r > caller_save_reg_num_s)
+    if (p_func->use_reg_num_s > caller_save_reg_num_s)
         p_func->save_reg_s_num = p_func->use_reg_num_s - caller_save_reg_num_s;
 }
 
