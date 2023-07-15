@@ -5,7 +5,7 @@
 #include <ir_gen.h>
 #include <symbol_gen.h>
 
-p_program program_gen(void) {
+p_program program_gen(const char *input, const char *output) {
     p_program p_program = malloc(sizeof(*p_program));
     *p_program = (program) {
         .variable = list_head_init(&p_program->variable),
@@ -15,7 +15,29 @@ p_program program_gen(void) {
         .variable_cnt = 0,
         .constant_cnt = 0,
         .function_cnt = 0,
+        .input = NULL,
+        .output = NULL,
     };
+    if (!output) {
+        char *tmp= malloc(sizeof(char) * 9);
+        strcpy(tmp, "output.s");
+        p_program->output = tmp;
+    }
+    else {
+        char *tmp= malloc(sizeof(char) * (strlen(output) + 1));
+        strcpy(tmp, output);
+        p_program->output = tmp;
+    }
+    if (!input) {
+        char *tmp = malloc(sizeof(char) * 10);
+        strcpy(tmp, "std input");
+        p_program->input = tmp;
+    }
+    else {
+        char *tmp= malloc(sizeof(char) * (strlen(input) + 1));
+        strcpy(tmp, input);
+        p_program->input = tmp;
+    }
     return p_program;
 }
 void program_drop(p_program p_program) {
@@ -39,6 +61,8 @@ void program_drop(p_program p_program) {
         symbol_str_drop(p_del);
     }
 
+    free(p_program->input);
+    free(p_program->output);
     free(p_program);
 }
 

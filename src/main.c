@@ -16,15 +16,9 @@
 #include <ir_opt/simplify_cfg.h>
 #include <stdio.h>
 
-static inline void asm2file(char *output_file, char *asm_code) {
-    FILE *file = fopen(output_file, "w");
-    fputs(asm_code, file);
-    fclose(file);
-}
-
 int main(int argc, char *argv[]) {
     char *in_file = NULL, *out_file = NULL;
-    bool is_opt = false, is_shell = false;
+    bool is_opt = false;
     for (int i = 1; i < argc; ++i) {
         if (argv[i] && !strcmp(argv[i], "-o")) {
             assert(!out_file);
@@ -45,21 +39,10 @@ int main(int argc, char *argv[]) {
         assert(argv[i][0] != '-');
         in_file = argv[i];
     }
-    if (!in_file) {
-        in_file = "input";
-        is_shell = true;
-    }
-    if (!out_file) {
-        out_file = "output.s";
-    }
 
-    char asm_code[100000] = "";
-    strcat(asm_code, ".file \"");
-    strcat(asm_code, in_file);
-    strcat(asm_code, "\"\n");
 
     // gen ir
-    p_program p_program = frontend_trans(is_shell ? NULL : in_file);
+    p_program p_program = frontend_trans(in_file, out_file);
     program_variable_print(p_program);
 
     // simplify cfg
@@ -90,9 +73,8 @@ int main(int argc, char *argv[]) {
     arm_trans_after_pass(p_program);
     program_ir_print(p_program);
 
-    arm_codegen_pass(p_program, asm_code);
+    arm_codegen_pass(p_program);
     // drop ir
     program_drop(p_program);
-    asm2file(out_file, asm_code);
     return 0;
 }

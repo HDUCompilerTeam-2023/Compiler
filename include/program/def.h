@@ -12,6 +12,9 @@ struct program {
     uint64_t variable_cnt;
     uint64_t constant_cnt;
     uint64_t function_cnt;
+
+    char *input;
+    char *output;
 };
 
 #endif

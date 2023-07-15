@@ -3,6 +3,6 @@
 
 #include <program/use.h>
 
-p_program frontend_trans(const char *file);
+p_program frontend_trans(const char *input, const char *output);
 
 #endif
