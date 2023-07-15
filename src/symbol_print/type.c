@@ -22,7 +22,7 @@ void symbol_type_print(p_symbol_type p_type) {
         printf("[%ld X ", symbol_type_array_get_size(p_array));
         ++arr_level;
     }
-    assert(p_type->basic != type_void);
+    assert(p_type->basic != type_void || (list_head_alone(&p_type->array) && p_type->ref_level > 0));
     symbol_basic_type_print(p_type->basic);
     for (uint64_t i = 0; i < arr_level; ++i) {
         printf("]");
