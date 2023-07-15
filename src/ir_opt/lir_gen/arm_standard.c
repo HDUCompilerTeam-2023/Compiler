@@ -15,8 +15,6 @@ size_t temp_reg_s[temp_reg_num_s] = { 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26
 // 是否由八位循环右移偶数位得到
 bool if_legal_rotate_imme12(I32CONST_t i32const) {
     if (i32const == 0) return true;
-    if (i32const < 0) // 负数
-        i32const = -i32const;
     uint32_t trans = i32const;
     uint32_t window = ~imm_8_max;
     for (size_t i = 0; i < 16; i++) {
