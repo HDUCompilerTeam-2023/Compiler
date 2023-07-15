@@ -237,7 +237,8 @@ static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         }
         if (p_param->is_in_mem) {
             p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_param->p_param->p_type));
-            p_vmem->stack_offset = offset++;
+            p_vmem->stack_offset = offset;
+            offset += basic_type_get_size(p_vmem->p_type->basic);
             symbol_func_add_call_param_vmem(p_func, p_vmem);
             p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), ir_operand_copy(p_param->p_param), true);
             p_store->ir_store.p_call_param = p_param;

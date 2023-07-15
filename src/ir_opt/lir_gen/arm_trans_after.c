@@ -9,7 +9,8 @@ static inline size_t alignTo(size_t N, size_t Align) {
     // (0,Align]返回Align
     return (N + Align - 1) / Align * Align;
 }
-
+#include <stdio.h>
+#include <symbol_print.h>
 static inline void stack_alloc(p_symbol_func p_func) {
     p_list_head p_node;
     symbol_func_clear_varible(p_func);
@@ -17,19 +18,22 @@ static inline void stack_alloc(p_symbol_func p_func) {
     list_for_each(p_node, &p_func->variable) {
         p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
         p_vmem->stack_offset = stack_size;
-        stack_size += p_vmem->p_type->size;
+        stack_size += p_vmem->p_type->size * basic_type_get_size(p_vmem->p_type->basic);
     }
     list_for_each(p_node, &p_func->constant) {
         p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
         p_vmem->stack_offset = stack_size;
-        stack_size += p_vmem->p_type->size;
+        stack_size += p_vmem->p_type->size * basic_type_get_size(p_vmem->p_type->basic);
     }
-    size_t save_size = p_func->save_reg_r_num + p_func->save_reg_s_num + 1;
-    p_func->stack_size = alignTo(stack_size + save_size, 2) - save_size;
+    size_t save_size = (p_func->save_reg_r_num + p_func->save_reg_s_num + 1) * basic_type_get_size(type_i32);
+    p_func->stack_size = alignTo(stack_size + save_size, 8) - save_size;
+    printf("%saaa %ld %ld\n", p_func->name, save_size, p_func->stack_size);
+
     stack_size = p_func->stack_size + save_size;
     list_for_each(p_node, &p_func->param) {
         p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
-        p_vmem->stack_offset = stack_size++;
+        p_vmem->stack_offset = stack_size;
+        stack_size += basic_type_get_size(p_vmem->p_type->basic);
     }
 }
 
@@ -65,6 +69,179 @@ static inline void set_save_reg_num(p_symbol_func p_func) {
         p_func->save_reg_s_num = p_func->use_reg_num_s - caller_save_reg_num_s;
 }
 
+static inline p_ir_vreg temp_vreg_gen(p_symbol_func p_func) {
+    p_ir_vreg p_temp_reg = ir_vreg_gen(symbol_type_var_gen(type_i32));
+    p_temp_reg->reg_id = TMP;
+    symbol_func_vreg_add(p_func, p_temp_reg);
+    return p_temp_reg;
+}
+static inline bool if_stack_offset_imme(p_ir_operand p_operand) {
+    return p_operand->kind == imme && p_operand->p_type->ref_level > 0 && !p_operand->p_vmem->is_global;
+}
+static inline void offset_reg(p_ir_operand p_operand, p_ir_instr p_instr, p_symbol_func p_func) {
+    assert(if_stack_offset_imme(p_operand));
+    size_t offset = p_operand->p_vmem->stack_offset;
+    p_ir_vreg p_temp_reg = temp_vreg_gen(p_func);
+    p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(offset), p_temp_reg);
+    ir_operand_reset_vreg(p_operand, p_temp_reg);
+    list_add_prev(&p_assign->node, &p_instr->node);
+}
+static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
+    p_ir_call_instr p_call_instr = &p_instr->ir_call;
+    p_list_head p_node;
+    list_for_each(p_node, &p_call_instr->p_param_list->param) {
+        p_ir_param p_param = list_entry(p_node, ir_param, node);
+        if (p_param->is_in_mem) continue;
+        if (if_stack_offset_imme(p_param->p_param)) {
+            assert(p_param->is_stack_ptr);
+            size_t offset = p_param->p_vmem->stack_offset;
+            if (!if_legal_rotate_imme12(offset)) {
+                offset_reg(p_param->p_param, p_instr, p_func);
+                continue;
+            }
+            ir_operand_reset_int(p_param->p_param, offset);
+        }
+    }
+}
+
+static inline void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
+    p_ir_unary_instr p_unary_instr = &p_instr->ir_unary;
+    p_ir_operand p_src = p_unary_instr->p_src;
+    switch (p_unary_instr->op) {
+    case ir_val_assign:
+        if (if_stack_offset_imme(p_src))
+            ir_operand_reset_int(p_src, p_src->p_vmem->stack_offset);
+        break;
+    default:
+        break;
+    }
+}
+
+static inline void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
+    p_ir_binary_instr p_binary_instr = &p_instr->ir_binary;
+    p_ir_vreg p_des = p_binary_instr->p_des;
+    p_ir_operand p_src1 = p_binary_instr->p_src1;
+    p_ir_operand p_src2 = p_binary_instr->p_src2;
+    size_t offset;
+    switch (p_binary_instr->op) {
+    case ir_add_op:
+        if (if_stack_offset_imme(p_src1)) {
+            offset = p_src1->p_vmem->stack_offset;
+            if (p_src2->kind == imme) {
+                offset += p_src2->i32const;
+                p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(offset), p_des);
+                list_add_prev(&p_assign->node, &p_instr->node);
+                ir_instr_drop(p_instr);
+                break;
+            }
+            if (!if_legal_rotate_imme12(offset)) {
+                offset_reg(p_src1, p_instr, p_func);
+                break;
+            }
+            ir_operand_reset_int(p_src1, offset);
+            break;
+        }
+        if (if_stack_offset_imme(p_src2)) {
+            offset = p_src2->p_vmem->stack_offset;
+            if (p_src1->kind == imme) {
+                offset += p_src1->i32const;
+                p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(offset), p_des);
+                list_add_prev(&p_assign->node, &p_instr->node);
+                ir_instr_drop(p_instr);
+                break;
+            }
+            if (!if_legal_rotate_imme12(offset)) {
+                offset_reg(p_src2, p_instr, p_func);
+                break;
+            }
+            ir_operand_reset_int(p_src2, offset);
+            break;
+        }
+        break;
+    case ir_sub_op:
+        assert(!if_stack_offset_imme(p_src2));
+        if (if_stack_offset_imme(p_src1)) {
+            offset = p_src1->p_vmem->stack_offset;
+            if (p_src2->kind == imme) {
+                offset -= p_src2->i32const;
+                p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(offset), p_des);
+                list_add_prev(&p_assign->node, &p_instr->node);
+                ir_instr_drop(p_instr);
+                break;
+            }
+            if (!if_legal_rotate_imme12(offset)) {
+                offset_reg(p_src1, p_instr, p_func);
+                break;
+            }
+            ir_operand_reset_int(p_src1, offset);
+            break;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+static inline void deal_store_instr(p_ir_instr p_instr, p_symbol_func p_func) {
+    p_ir_store_instr p_store_instr = &p_instr->ir_store;
+    p_ir_operand p_addr = p_store_instr->p_addr;
+    p_ir_vreg p_des = p_store_instr->p_src->p_vreg;
+    if (p_store_instr->is_stack_ptr) {
+        size_t offset;
+        if (if_stack_offset_imme(p_addr))
+            offset = p_addr->p_vmem->stack_offset;
+        else
+            return;
+        // else can do constant progation rs = 3; str rd, [sp, rs] -> str rd, [sp, 3]
+        if (p_des->if_float && !if_legal_imme8_lsl2(offset)) {
+            // vstr rd, [sp, #1028]
+            // ->
+            // tmp = 1028; tmp = sp + tmp; vstr rd, [tmp]
+            // now is difficult to do
+            // tmp = sp + 1028; vstr rd, [tmp]
+            offset_reg(p_addr, p_instr, p_func);
+            return;
+        }
+        if (!if_legal_direct_imme12(offset)) {
+            offset_reg(p_addr, p_instr, p_func);
+            return;
+        }
+        ir_operand_reset_int(p_addr, offset);
+    }
+    // if store a call param in stack, maybe :
+    // rd = 3; rd = sp + rd; str rd, []
+    // ->
+    // rd = sp + 3; str rd, []
+    // now is diffcult to do this
+}
+
+static inline void deal_load_instr(p_ir_instr p_instr, p_symbol_func p_func) {
+    p_ir_load_instr p_load_instr = &p_instr->ir_load;
+    p_ir_operand p_addr = p_load_instr->p_addr;
+    p_ir_vreg p_des = p_load_instr->p_des;
+    if (p_load_instr->is_stack_ptr) {
+        size_t offset;
+        if (if_stack_offset_imme(p_addr))
+            offset = p_addr->p_vmem->stack_offset;
+        else
+            return;
+        // else can do constant progation rs = 3; ldr rd, [sp, rs] -> ldr rd, [sp, 3]
+        if (p_des->if_float && !if_legal_imme8_lsl2(offset)) {
+            // vldr rd, [sp, #1028]
+            // ->
+            // tmp = 1028; tmp = sp + tmp; vldr rd, [tmp]
+            // now is difficult to do
+            // tmp = sp + 1028; vldr rd, [tmp]
+            offset_reg(p_addr, p_instr, p_func);
+            return;
+        }
+        if (!if_legal_direct_imme12(offset)) {
+            offset_reg(p_addr, p_instr, p_func);
+            return;
+        }
+        ir_operand_reset_int(p_addr, offset);
+    }
+}
 static inline void arm_trans_after_func(p_symbol_func p_func) {
     remap_reg_id(p_func);
     p_list_head p_block_node;
@@ -93,6 +270,32 @@ static inline void arm_trans_after_func(p_symbol_func p_func) {
     }
     set_save_reg_num(p_func);
     stack_alloc(p_func);
+
+    list_for_each(p_block_node, &p_func->block) {
+        p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
+        p_list_head p_instr_node, p_instr_node_next;
+        list_for_each_safe(p_instr_node, p_instr_node_next, &p_basic_block->instr_list) {
+            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            switch (p_instr->irkind) {
+            case ir_call:
+                deal_call_instr(p_instr, p_func);
+            case ir_binary:
+                deal_binary_instr(p_instr, p_func);
+            case ir_unary:
+                deal_unary_instr(p_instr, p_func);
+                break;
+            case ir_store:
+                deal_store_instr(p_instr, p_func);
+                break;
+            case ir_load:
+                deal_load_instr(p_instr, p_func);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    symbol_func_set_block_id(p_func);
 }
 void arm_trans_after_pass(p_program p_ir) {
     p_list_head p_node;

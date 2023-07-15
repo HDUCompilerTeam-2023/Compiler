@@ -113,8 +113,8 @@ void symbol_func_add_variable(p_symbol_func p_func, p_symbol_var p_var) {
 }
 void symbol_func_add_call_param_vmem(p_symbol_func p_func, p_symbol_var p_vmem) {
     p_vmem->id = p_func->var_cnt++;
-    if (p_vmem->stack_offset + 1 > p_func->inner_stack_size)
-        p_func->inner_stack_size = p_vmem->stack_offset + 1;
+    if (p_vmem->stack_offset + basic_type_get_size(p_vmem->p_type->basic) > p_func->inner_stack_size)
+        p_func->inner_stack_size = p_vmem->stack_offset + basic_type_get_size(p_vmem->p_type->basic);
     list_add_prev(&p_vmem->node, &p_func->call_param_vmem_list);
 }
 void symbol_func_add_param(p_symbol_func p_func, p_symbol_var p_var) {
