@@ -14,20 +14,12 @@ void ir_bb_phi_list_print(p_ir_bb_phi_list p_bb_phi_list) {
     }
     printf(")");
 }
-void ir_bb_param_list_print(p_ir_bb_param_list p_bb_param_list) {
-    assert(p_bb_param_list);
-    p_list_head p_node;
-    printf("(");
-    list_for_each(p_node, &p_bb_param_list->bb_param) {
-        p_ir_bb_param p_bb_param = list_entry(p_node, ir_bb_param, node);
-        if (!p_bb_param->p_bb_param) {
-            printf("-");
-        }
-        else {
-            ir_operand_print(p_bb_param->p_bb_param);
-        }
-        if (p_node->p_next != &p_bb_param_list->bb_param)
-            printf(", ");
+
+void ir_bb_param_print(p_ir_bb_param p_bb_param) {
+    if (!p_bb_param->p_bb_param) {
+        printf("-");
     }
-    printf(")");
+    else {
+        ir_operand_print(p_bb_param->p_bb_param);
+    }
 }

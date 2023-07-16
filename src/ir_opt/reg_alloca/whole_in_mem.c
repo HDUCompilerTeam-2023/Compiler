@@ -124,9 +124,9 @@ static void deal_instr(p_inmem_alloca_info p_info, p_ir_instr p_instr) {
     p_info->current_reg_s = current_reg_s;
 }
 
-static inline void deal_block_param(p_inmem_alloca_info p_info, p_ir_basic_block p_block, p_ir_bb_param_list p_param_list) {
+static inline void deal_block_param(p_inmem_alloca_info p_info, p_ir_basic_block p_block, p_ir_basic_block_branch_target p_target) {
     p_list_head p_node;
-    list_for_each(p_node, &p_param_list->bb_param) {
+    list_for_each(p_node, &p_target->block_param) {
         p_ir_param p_param = list_entry(p_node, ir_param, node);
         if (p_param->p_param)
             new_load_operand(p_info, list_entry(&p_block->instr_list, ir_instr, node), p_param->p_param);
@@ -189,13 +189,13 @@ void whole_in_mem_alloca(p_symbol_func p_func, size_t reg_r_num, size_t reg_s_nu
         }
         switch (p_basic_block->p_branch->kind) {
         case ir_br_branch:
-            deal_block_param(p_info, p_basic_block, p_basic_block->p_branch->p_target_1->p_block_param);
+            deal_block_param(p_info, p_basic_block, p_basic_block->p_branch->p_target_1);
             break;
         case ir_abort_branch:
             break;
         case ir_cond_branch:
-            deal_block_param(p_info, p_basic_block, p_basic_block->p_branch->p_target_1->p_block_param);
-            deal_block_param(p_info, p_basic_block, p_basic_block->p_branch->p_target_2->p_block_param);
+            deal_block_param(p_info, p_basic_block, p_basic_block->p_branch->p_target_1);
+            deal_block_param(p_info, p_basic_block, p_basic_block->p_branch->p_target_2);
             break;
         case ir_ret_branch:
             if (p_basic_block->p_branch->p_exp)

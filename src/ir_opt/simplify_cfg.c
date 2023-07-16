@@ -114,12 +114,11 @@ static inline void ir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_fun
         if (p_prev_bb->p_branch->kind != ir_br_branch) continue;
         assert(p_prev_bb != p_bb);
 
-        p_ir_bb_param_list p_param_list = p_prev_bb->p_branch->p_target_1->p_block_param;
         p_ir_bb_phi_list p_phi_list = p_bb->basic_block_phis;
 
-        p_list_head p_node, p_node_src = p_param_list->bb_param.p_next;
+        p_list_head p_node, p_node_src = p_prev_bb->p_branch->p_target_1->block_param.p_next;
         list_for_each(p_node, &p_phi_list->bb_phi) {
-            assert(p_node_src != &p_param_list->bb_param);
+            assert(p_node_src != &p_prev_bb->p_branch->p_target_1->block_param);
             p_ir_vreg p_des = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
             p_ir_operand p_src = list_entry(p_node_src, ir_bb_param, node)->p_bb_param;
             assert(p_src->kind == reg);
@@ -132,7 +131,7 @@ static inline void ir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_fun
             need_del[del_reg_cnt++] = p_des;
             p_node_src = p_node_src->p_next;
         }
-        assert(p_node_src == &p_param_list->bb_param);
+        assert(p_node_src == &p_prev_bb->p_branch->p_target_1->block_param);
 
         p_ir_basic_block_branch_target p_target_1 = p_bb->p_branch->p_target_1;
         p_ir_basic_block_branch_target p_target_2 = p_bb->p_branch->p_target_2;
@@ -219,14 +218,14 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
             p_ir_basic_block_branch_target p_prev_target_new = ir_basic_block_branch_target_gen(p_target->p_block);
 
             p_list_head p_node;
-            list_for_each(p_node, &p_target->p_block_param->bb_param) {
+            list_for_each(p_node, &p_target->block_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
                 assert(p_param->kind == reg);
                 p_ir_vreg p_param_reg = p_param->p_vreg;
                 if (p_param_reg->is_bb_param) {
-                    p_list_head p_node, p_node_src = p_prev_target_del->p_block_param->bb_param.p_next;
+                    p_list_head p_node, p_node_src = p_prev_target_del->block_param.p_next;
                     list_for_each(p_node, &p_bb->basic_block_phis->bb_phi) {
-                        assert(p_node_src != &p_prev_target_del->p_block_param->bb_param);
+                        assert(p_node_src != &p_prev_target_del->block_param);
                         p_ir_vreg p_des = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
                         p_ir_operand p_src = list_entry(p_node_src, ir_bb_param, node)->p_bb_param;
                         assert(p_src->kind == reg);
@@ -236,7 +235,7 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
                         }
                         p_node_src = p_node_src->p_next;
                     }
-                    assert(p_node_src == &p_prev_target_del->p_block_param->bb_param || p_param_reg != p_param->p_vreg);
+                    assert(p_node_src == &p_prev_target_del->block_param || p_param_reg != p_param->p_vreg);
                 }
                 ir_basic_block_branch_target_add_param(p_prev_target_new, ir_operand_vreg_gen(p_param_reg));
             }
@@ -244,9 +243,9 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
             *pp_prev_target_del = p_prev_target_new;
 
             if (p_prev_target_no_del && p_prev_target_no_del->p_block == p_target->p_block) {
-                p_list_head p_node_new, p_node_old = p_prev_target_no_del->p_block_param->bb_param.p_next;
-                list_for_each(p_node_new, &p_prev_target_new->p_block_param->bb_param) {
-                    assert(p_node_old != &p_prev_target_no_del->p_block_param->bb_param);
+                p_list_head p_node_new, p_node_old = p_prev_target_no_del->block_param.p_next;
+                list_for_each(p_node_new, &p_prev_target_new->block_param) {
+                    assert(p_node_old != &p_prev_target_no_del->block_param);
                     p_ir_operand p_param_new = list_entry(p_node_new, ir_bb_param, node)->p_bb_param;
                     p_ir_operand p_param_old = list_entry(p_node_old, ir_bb_param, node)->p_bb_param;
                     assert(p_param_new->kind == reg);
@@ -255,8 +254,8 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
                         break;
                     p_node_old = p_node_old->p_next;
                 }
-                if (p_node_new == &p_prev_target_new->p_block_param->bb_param) {
-                    assert(p_node_old == &p_prev_target_no_del->p_block_param->bb_param);
+                if (p_node_new == &p_prev_target_new->block_param) {
+                    assert(p_node_old == &p_prev_target_no_del->block_param);
                     if_del = true;
                     p_prev_bb->p_branch->kind = ir_br_branch;
                     ir_operand_drop(p_prev_bb->p_branch->p_exp);
@@ -303,12 +302,11 @@ static inline void ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_symbo
             p_target = p_prev_bb->p_branch->p_target_2;
         assert(p_target);
 
-        p_ir_bb_param_list p_param_list = p_target->p_block_param;
         p_ir_bb_phi_list p_phi_list = p_bb->basic_block_phis;
 
-        p_list_head p_node, p_node_src = p_param_list->bb_param.p_next;
+        p_list_head p_node, p_node_src = p_target->block_param.p_next;
         list_for_each(p_node, &p_phi_list->bb_phi) {
-            assert(p_node_src != &p_param_list->bb_param);
+            assert(p_node_src != &p_target->block_param);
             p_ir_vreg p_des = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
             p_ir_operand p_src = list_entry(p_node_src, ir_bb_param, node)->p_bb_param;
             assert(p_src->kind == reg);
@@ -321,10 +319,10 @@ static inline void ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_symbo
             need_del[del_reg_cnt++] = p_des;
             p_node_src = p_node_src->p_next;
         }
-        assert(p_node_src == &p_param_list->bb_param);
+        assert(p_node_src == &p_target->block_param);
 
         ir_bb_phi_list_drop(p_bb->basic_block_phis);
-        ir_bb_param_list_drop(p_target->p_block_param);
+        ir_basic_block_branch_target_clear_param(p_target);
     }
     for (size_t i = 0; i < del_reg_cnt; ++i) {
         symbol_func_vreg_del(p_func, need_del[i]);

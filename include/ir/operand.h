@@ -23,6 +23,12 @@ struct ir_operand {
             };
         };
     };
+    enum {
+        bb_param_ptr,
+    } used_type;
+    struct {
+        p_ir_bb_param p_bb_param;
+    };
     p_symbol_type p_type;
 };
 
