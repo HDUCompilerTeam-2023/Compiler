@@ -39,7 +39,7 @@ static inline p_reg_info deal_instr_src(p_ir_instr p_instr, p_reg_info reg_info_
     p_list_head p_node;
     switch (p_instr->irkind) {
     case ir_call:
-        list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
+        list_for_each(p_node, &p_instr->ir_call.param_list) {
             p_top = deal_operand(list_entry(p_node, ir_param, node)->p_param, reg_info_table, p_top, p_func);
         }
         if (p_instr->ir_call.p_des)

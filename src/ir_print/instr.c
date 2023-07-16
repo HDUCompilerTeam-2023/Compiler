@@ -1,5 +1,6 @@
 #include <ir/basic_block.h>
 #include <ir/instr.h>
+#include <ir/param.h>
 #include <ir_print.h>
 #include <stdio.h>
 #include <symbol_print.h>
@@ -98,7 +99,15 @@ void ir_call_instr_print(p_ir_call_instr p_instr) {
         printf(" = ");
     }
     symbol_func_name_print(p_instr->p_func);
-    ir_param_list_print(p_instr->p_param_list);
+    p_list_head p_node;
+    printf("(");
+    list_for_each(p_node, &p_instr->param_list) {
+        p_ir_param p_param = list_entry(p_node, ir_param, node);
+        ir_param_print(p_param);
+        if (p_node->p_next != &p_instr->param_list)
+            printf(", ");
+    }
+    printf(")");
 }
 
 void ir_gep_instr_print(p_ir_gep_instr p_instr) {

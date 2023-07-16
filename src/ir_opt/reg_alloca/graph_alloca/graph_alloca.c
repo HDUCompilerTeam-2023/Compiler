@@ -185,7 +185,7 @@ void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
                 new_store_middle(p_graph, p_instr->ir_unary.p_des, p_instr, p_func);
                 break;
             case ir_call:
-                list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
+                list_for_each(p_node, &p_instr->ir_call.param_list) {
                     p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
                     new_load(p_graph, p_param, p_instr, p_instr->p_live_in, p_instr->p_live_out, p_func);
                 }
@@ -334,7 +334,7 @@ static void combine_mov(p_symbol_func p_func) {
                 combine_remap_operand(p_instr->ir_unary.p_src, p_map);
                 break;
             case ir_call:
-                list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
+                list_for_each(p_node, &p_instr->ir_call.param_list) {
                     p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
                     combine_remap_operand(p_param, p_map);
                 }

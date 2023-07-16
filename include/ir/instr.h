@@ -53,7 +53,7 @@ struct ir_unary_instr {
 
 struct ir_call_instr {
     p_symbol_func p_func;
-    p_ir_param_list p_param_list;
+    list_head param_list;
     p_ir_instr p_first_store;
     p_ir_vreg p_des;
 };

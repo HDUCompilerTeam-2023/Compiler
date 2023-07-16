@@ -11,8 +11,4 @@ struct ir_param {
     list_head node;
 };
 
-struct ir_param_list {
-    list_head param;
-};
-
 #endif

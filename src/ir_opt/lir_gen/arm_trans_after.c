@@ -85,7 +85,7 @@ static inline void offset_reg(p_ir_operand p_operand, p_ir_instr p_instr, p_symb
 static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     p_ir_call_instr p_call_instr = &p_instr->ir_call;
     p_list_head p_node;
-    list_for_each(p_node, &p_call_instr->p_param_list->param) {
+    list_for_each(p_node, &p_call_instr->param_list) {
         p_ir_param p_param = list_entry(p_node, ir_param, node);
         if (p_param->is_in_mem) continue;
         if (if_stack_offset_imme(p_param->p_param)) {
