@@ -41,6 +41,7 @@ struct ir_basic_block_list_node {
 };
 
 struct ir_basic_block_branch_target {
+    p_ir_basic_block p_source_block;
     p_ir_basic_block p_block;
     list_head block_param;
 };

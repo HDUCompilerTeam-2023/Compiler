@@ -23,10 +23,8 @@ static inline p_ir_basic_block cut_edge(p_ir_basic_block p_basic_block, p_ir_bas
     list_add_next(&p_new_basic_block->node, &p_basic_block->node);
     ir_basic_block_add_prev(p_basic_block, p_new_basic_block);
     p_func->block_cnt++;
-    p_new_basic_block->p_dom_parent = p_basic_block;
     p_new_basic_block->p_branch->kind = ir_br_branch;
-    p_new_basic_block->p_branch->p_target_1 = p_target;
-
+    ir_basic_block_set_target1(p_basic_block, p_target);
     p_list_head p_node;
     list_for_each(p_node, &p_new_basic_block->p_branch->p_target_1->p_block->prev_basic_block_list) {
         p_ir_basic_block_list_node p_prev = list_entry(p_node, ir_basic_block_list_node, node);
