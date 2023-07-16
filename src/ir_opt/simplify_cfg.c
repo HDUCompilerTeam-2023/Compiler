@@ -162,8 +162,8 @@ static inline void ir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_fun
         p_bb->instr_list.p_prev = &p_bb->instr_list;
 
         p_ir_basic_block_branch p_tmp_branch = p_prev_bb->p_branch;
-        p_prev_bb->p_branch = p_bb->p_branch;
-        p_bb->p_branch = p_tmp_branch;
+        ir_basic_block_set_branch(p_prev_bb, p_bb->p_branch);
+        ir_basic_block_set_branch(p_bb, p_tmp_branch);
 
         symbol_func_bb_del(p_func, p_bb);
     }
@@ -239,9 +239,11 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
                 }
                 ir_basic_block_branch_target_add_param(p_prev_target_new, ir_operand_vreg_gen(p_param_reg));
             }
-            ir_basic_block_branch_target_drop(p_prev_target_del);
+            ir_basic_block_branch_target_drop(p_prev_bb, p_prev_target_del);
             *pp_prev_target_del = p_prev_target_new;
-
+            // it's dangerous
+            p_prev_target_new->p_source_block = p_prev_bb;
+            
             if (p_prev_target_no_del && p_prev_target_no_del->p_block == p_target->p_block) {
                 p_list_head p_node_new, p_node_old = p_prev_target_no_del->block_param.p_next;
                 list_for_each(p_node_new, &p_prev_target_new->block_param) {
@@ -260,7 +262,7 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
                     p_prev_bb->p_branch->kind = ir_br_branch;
                     ir_operand_drop(p_prev_bb->p_branch->p_exp);
                     p_prev_bb->p_branch->p_exp = NULL;
-                    ir_basic_block_branch_target_drop(p_prev_bb->p_branch->p_target_2);
+                    ir_basic_block_branch_target_drop(p_prev_bb, p_prev_bb->p_branch->p_target_2);
                     p_prev_bb->p_branch->p_target_2 = NULL;
                 }
             }
