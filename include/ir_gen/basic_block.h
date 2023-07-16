@@ -12,6 +12,7 @@ void ir_basic_block_set_br(p_ir_basic_block p_bb, p_ir_basic_block p_next);
 void ir_basic_block_set_cond(p_ir_basic_block p_bb, p_ir_operand p_exp, p_ir_basic_block p_true, p_ir_basic_block p_false);
 void ir_basic_block_set_ret(p_ir_basic_block p_bb, p_ir_operand p_exp);
 void ir_basic_block_set_branch(p_ir_basic_block p_basic_block, p_ir_basic_block_branch p_branch);
+void ir_basic_block_set_cond_exp(p_ir_basic_block p_basic_block, p_ir_operand p_exp);
 
 void ir_basic_block_branch_target_clear_param(p_ir_basic_block_branch_target p_target);
 p_ir_basic_block_branch_target ir_basic_block_branch_target_gen(p_ir_basic_block p_block);

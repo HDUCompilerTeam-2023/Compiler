@@ -25,9 +25,12 @@ struct ir_operand {
     };
     enum {
         bb_param_ptr,
+        cond_ptr,
+        ret_ptr,
     } used_type;
-    struct {
+    union {
         p_ir_bb_param p_bb_param;
+        p_ir_basic_block p_basic_block;
     };
     p_symbol_type p_type;
 };
