@@ -130,7 +130,7 @@ void arm_data_process_gen(FILE *out_file, arm_instr_type type, size_t rd, size_t
 }
 
 // if_imme 表示 operand 是否是立即数
-void arm_load_gen(FILE *out_file, arm_instr_type type, size_t rd, size_t rn, size_t offset, size_t lsl_imme, bool if_imme) {
+void arm_load_gen(FILE *out_file, size_t rd, size_t rn, size_t offset, size_t lsl_imme, bool if_imme) {
     assert(rd < R_NUM);
     assert(rn < R_NUM);
     fprintf(out_file, "   ldr ");
@@ -144,7 +144,7 @@ void arm_load_gen(FILE *out_file, arm_instr_type type, size_t rd, size_t rn, siz
     fprintf(out_file, "]\n");
 }
 
-void arm_store_gen(FILE *out_file, arm_instr_type type, size_t rd, size_t rn, size_t offset, size_t lsl_imme, bool if_imme) {
+void arm_store_gen(FILE *out_file, size_t rd, size_t rn, size_t offset, size_t lsl_imme, bool if_imme) {
     assert(rd < R_NUM);
     assert(rn < R_NUM);
     fprintf(out_file, "   str ");
@@ -521,48 +521,32 @@ void arm_vcompare_gen(FILE *out_file, arm_instr_type type, size_t rs1, size_t rs
     fprintf(out_file, "   vmrs APSR_nzcv, FPSCR\n");
 }
 
-void arm_vload_gen(FILE *out_file, size_t rd, size_t rs, size_t offset, bool if_imme) {
+void arm_vload_gen(FILE *out_file, size_t rd, size_t rs, size_t offset) {
     assert(rd >= R_NUM);
     assert(rd < R_NUM + S_NUM);
     assert(rs < R_NUM);
-    if (!if_imme)
-        assert(offset < R_NUM);
     fprintf(out_file, "   vldr.32 ");
     fprintf(out_file, "%s", regs[rd]);
     fprintf(out_file, ", [");
     fprintf(out_file, "%s", regs[rs]);
-    if (if_imme) {
-        if (offset) {
-            fprintf(out_file, ", #");
-            uint32_str_cat(out_file, offset);
-        }
-    }
-    else {
-        fprintf(out_file, ", ");
-        fprintf(out_file, "%s", regs[offset]);
+    if (offset) {
+        fprintf(out_file, ", #");
+        uint32_str_cat(out_file, offset);
     }
     fprintf(out_file, "]\n");
 }
 
-void arm_vstore_gen(FILE *out_file, size_t rd, size_t rs, size_t offset, bool if_imme) {
+void arm_vstore_gen(FILE *out_file, size_t rd, size_t rs, size_t offset) {
     assert(rd >= R_NUM);
     assert(rd < R_NUM + S_NUM);
     assert(rs < R_NUM);
-    if (!if_imme)
-        assert(offset < R_NUM);
     fprintf(out_file, "   vstr.32 ");
     fprintf(out_file, "%s", regs[rd]);
     fprintf(out_file, ", [");
     fprintf(out_file, "%s", regs[rs]);
-    if (if_imme) {
-        if (offset) {
-            fprintf(out_file, ", #");
-            uint32_str_cat(out_file, offset);
-        }
-    }
-    else {
-        fprintf(out_file, ", ");
-        fprintf(out_file, "%s", regs[offset]);
+    if (offset) {
+        fprintf(out_file, ", #");
+        uint32_str_cat(out_file, offset);
     }
     fprintf(out_file, "]\n");
 }
@@ -607,4 +591,3 @@ void arm_vpop_gen(FILE *out_file, size_t *reg_id, size_t num) {
         fprintf(out_file, "}\n");
     }
 }
-

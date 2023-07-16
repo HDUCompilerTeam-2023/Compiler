@@ -373,30 +373,31 @@ static inline void swap_in_func_param(p_arm_codegen_info p_info, p_symbol_func p
 }
 
 static void arm_unary_instr_codegen(p_arm_codegen_info p_info, p_ir_unary_instr p_unary_instr) {
-    size_t rd = p_unary_instr->p_des->reg_id;
-    bool s = p_unary_instr->p_des->if_cond;
+    p_ir_vreg p_des = p_unary_instr->p_des;
+    bool s = p_des->if_cond;
+    p_ir_operand p_src = p_unary_instr->p_src;
     FILE *out_file = p_info->out_file;
 
     switch (p_unary_instr->op) {
     case ir_minus_op:
         assert(p_unary_instr->p_src->kind == reg);
-        if (rd >= R_NUM)
-            arm_vneg_gen(out_file, rd, p_unary_instr->p_src->p_vreg->reg_id);
+        if (p_des->if_float)
+            arm_vneg_gen(out_file, p_des->reg_id, p_src->p_vreg->reg_id);
         else
-            arm_data_process_gen(out_file, arm_rsb, rd, p_unary_instr->p_src->p_vreg->reg_id, 0, s, 0, true);
+            arm_data_process_gen(out_file, arm_rsb, p_des->reg_id, p_src->p_vreg->reg_id, 0, s, 0, true);
         break;
     case ir_val_assign:
         if (p_unary_instr->p_src->kind == imme) {
-            mov_imme2reg(p_info, rd, p_unary_instr->p_src, s);
+            mov_imme2reg(p_info, p_des->reg_id, p_src, s);
             break;
         }
-        mov_reg2reg(out_file, rd, p_unary_instr->p_src->p_vreg->reg_id, s);
+        mov_reg2reg(out_file, p_des->reg_id, p_src->p_vreg->reg_id, s);
         break;
     case ir_i2f_op:
-        arm_vcvt_gen(out_file, arm_int2float, rd, p_unary_instr->p_src->p_vreg->reg_id);
+        arm_vcvt_gen(out_file, arm_int2float, p_des->reg_id, p_src->p_vreg->reg_id);
         break;
     case ir_f2i_op:
-        arm_vcvt_gen(out_file, arm_float2int, rd, p_unary_instr->p_src->p_vreg->reg_id);
+        arm_vcvt_gen(out_file, arm_float2int, p_des->reg_id, p_src->p_vreg->reg_id);
         break;
     default:
         assert(0);
@@ -405,10 +406,9 @@ static void arm_unary_instr_codegen(p_arm_codegen_info p_info, p_ir_unary_instr 
 }
 static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_instr p_binary_instr) {
     p_ir_vreg p_des = p_binary_instr->p_des;
-    bool s = p_binary_instr->p_des->if_cond;
+    bool s = p_des->if_cond;
     p_ir_operand p_src1 = p_binary_instr->p_src1;
     p_ir_operand p_src2 = p_binary_instr->p_src2;
-    size_t rd = p_des->reg_id;
     FILE *out_file = p_info->out_file;
     switch (p_binary_instr->op) {
     case ir_add_op:
@@ -451,16 +451,16 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
         break;
     case ir_mul_op:
         if (p_des->if_float)
-            arm_vdata_process_gen(out_file, arm_mul, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+            arm_vdata_process_gen(out_file, arm_mul, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
         else
-            arm_mul_gen(out_file, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, s);
+            arm_mul_gen(out_file, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id, s);
         break;
     case ir_div_op:
         assert(!s);
-        if (rd >= R_NUM)
-            arm_vdata_process_gen(out_file, arm_div, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+        if (p_des->if_float)
+            arm_vdata_process_gen(out_file, arm_div, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
         else
-            arm_sdiv_gen(out_file, rd, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+            arm_sdiv_gen(out_file, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
         break;
     case ir_eq_op:
     case ir_neq_op:
@@ -469,24 +469,24 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
     case ir_g_op:
     case ir_geq_op:
         // can pointer compare ?
-        assert(p_binary_instr->p_src1->kind == reg);
-        if (p_binary_instr->p_src2->kind == imme) {
-            assert(p_binary_instr->p_src2->p_type->basic == type_i32);
-            if (p_binary_instr->p_src2->i32const < 0)
-                arm_compare_gen(out_file, arm_cmn, p_binary_instr->p_src1->p_vreg->reg_id, -p_binary_instr->p_src2->i32const, 0, true);
+        assert(p_src1->kind == reg);
+        if (p_src2->kind == imme) {
+            assert(p_src2->p_type->basic == type_i32);
+            if (p_src2->i32const < 0)
+                arm_compare_gen(out_file, arm_cmn, p_src1->p_vreg->reg_id, p_src2->i32const, 0, true);
             else
-                arm_compare_gen(out_file, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->i32const, 0, true);
+                arm_compare_gen(out_file, arm_cmp, p_src1->p_vreg->reg_id, p_src2->i32const, 0, true);
         }
         else {
-            if (p_binary_instr->p_src1->p_vreg->reg_id >= R_NUM)
-                arm_vcompare_gen(out_file, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id);
+            if (p_src1->p_vreg->reg_id >= R_NUM)
+                arm_vcompare_gen(out_file, arm_cmp, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
             else
-                arm_compare_gen(out_file, arm_cmp, p_binary_instr->p_src1->p_vreg->reg_id, p_binary_instr->p_src2->p_vreg->reg_id, 0, false);
+                arm_compare_gen(out_file, arm_cmp, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id, 0, false);
         }
         if (!s) {
             arm_cond_type type = get_cond_type(p_binary_instr->op);
-            arm_movcond_gen(out_file, type, rd, 1, 0, true);
-            arm_movcond_gen(out_file, get_opposite_type(type), rd, 0, 0, true);
+            arm_movcond_gen(out_file, type, p_des->reg_id, 1, 0, true);
+            arm_movcond_gen(out_file, get_opposite_type(type), p_des->reg_id, 0, 0, true);
         }
         break;
     case ir_mod_op:
@@ -518,25 +518,25 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
     if (p_store_instr->is_stack_ptr) {
         if (p_src->if_float) {
             if (p_addr->kind == imme)
-                arm_vstore_gen(out_file, p_src->reg_id, SP, p_addr->i32const, true);
+                arm_vstore_gen(out_file, p_src->reg_id, SP, p_addr->i32const);
             else {
                 arm_data_process_gen(out_file, arm_add, TMP, SP, p_addr->p_vreg->reg_id, false, 0, false);
-                arm_vstore_gen(out_file, p_src->reg_id, TMP, 0, true);
+                arm_vstore_gen(out_file, p_src->reg_id, TMP, 0);
             }
         }
         else {
             if (p_addr->kind == imme)
-                arm_store_gen(out_file, arm_store, p_src->reg_id, SP, p_addr->i32const, 0, true);
+                arm_store_gen(out_file,  p_src->reg_id, SP, p_addr->i32const, 0, true);
             else
-                arm_store_gen(out_file, arm_store, p_src->reg_id, SP, p_addr->p_vreg->reg_id, 0, false);
+                arm_store_gen(out_file,  p_src->reg_id, SP, p_addr->p_vreg->reg_id, 0, false);
         }
     }
     else {
         assert(p_addr->kind == reg);
         if (p_src->if_float)
-            arm_vstore_gen(out_file, p_src->reg_id, p_addr->p_vreg->reg_id, 0, true);
+            arm_vstore_gen(out_file, p_src->reg_id, p_addr->p_vreg->reg_id, 0);
         else
-            arm_store_gen(out_file, arm_store, p_src->reg_id, p_addr->p_vreg->reg_id, 0, 0, true);
+            arm_store_gen(out_file, p_src->reg_id, p_addr->p_vreg->reg_id, 0, 0, true);
     }
 }
 
@@ -547,25 +547,25 @@ static void arm_load_instr_gen(p_arm_codegen_info p_info, p_ir_load_instr p_load
     if (p_load_instr->is_stack_ptr) {
         if (p_des->if_float) {
             if (p_addr->kind == imme)
-                arm_vload_gen(out_file, p_des->reg_id, SP, p_addr->i32const, true);
+                arm_vload_gen(out_file, p_des->reg_id, SP, p_addr->i32const);
             else {
                 arm_data_process_gen(out_file, arm_add, TMP, SP, p_addr->p_vreg->reg_id, false, 0, false);
-                arm_vload_gen(out_file, p_des->reg_id, TMP, 0, true);
+                arm_vload_gen(out_file, p_des->reg_id, TMP, 0);
             }
         }
         else {
             if (p_addr->kind == imme)
-                arm_load_gen(out_file, arm_load, p_des->reg_id, SP, p_addr->i32const, 0, true);
+                arm_load_gen(out_file, p_des->reg_id, SP, p_addr->i32const, 0, true);
             else
-                arm_load_gen(out_file, arm_load, p_des->reg_id, SP, p_addr->p_vreg->reg_id, 0, false);
+                arm_load_gen(out_file, p_des->reg_id, SP, p_addr->p_vreg->reg_id, 0, false);
         }
     }
     else {
         assert(p_addr->kind == reg);
         if (p_des->if_float)
-            arm_vload_gen(out_file, p_des->reg_id, p_addr->p_vreg->reg_id, 0, true);
+            arm_vload_gen(out_file, p_des->reg_id, p_addr->p_vreg->reg_id, 0);
         else
-            arm_load_gen(out_file, arm_load, p_des->reg_id, p_addr->p_vreg->reg_id, 0, 0, true);
+            arm_load_gen(out_file, p_des->reg_id, p_addr->p_vreg->reg_id, 0, 0, true);
     }
 }
 static void arm_instr_codegen(p_arm_codegen_info p_info, p_ir_instr p_instr) {
