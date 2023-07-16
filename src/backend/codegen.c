@@ -267,7 +267,7 @@ static inline void arm_block_jump_label_gen(FILE *out_file, arm_instr_type instr
     free(tmp);
 }
 
-void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
+void swap_in_call(p_arm_codegen_info p_info, p_ir_call_instr p_call_instr) {
     p_list_head p_node;
     size_t *src_reg = malloc(sizeof(*src_reg) * REG_NUM);
     size_t *des_reg = malloc(sizeof(*des_reg) * REG_NUM);
@@ -278,7 +278,7 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_param_list p_param_list) {
     size_t i = 0;
     size_t r = 0;
     size_t s = 0;
-    list_for_each(p_node, &p_param_list->param) {
+    list_for_each(p_node, &p_call_instr->param_list) {
         p_ir_param p_param_node = list_entry(p_node, ir_param, node);
         if (p_param_node->is_in_mem) continue;
         p_ir_operand p_param = p_param_node->p_param;
@@ -500,7 +500,7 @@ static void arm_call_instr_codegen(p_arm_codegen_info p_info, p_ir_instr p_instr
     size_t rs = 0;
     if (p_call_instr->p_des && p_call_instr->p_func->ret_type == type_f32)
         rs = R_NUM;
-    swap_in_call(p_info, p_call_instr->p_param_list);
+    swap_in_call(p_info, p_call_instr);
     arm_jump_label_gen(p_info->out_file, arm_bl, arm_al, p_call_instr->p_func->name);
     if (p_call_instr->p_des) {
         if (rs != p_call_instr->p_des->reg_id)

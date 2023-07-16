@@ -220,7 +220,7 @@ static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     size_t offset = 0;
     bool if_first = true;
     p_list_head p_node;
-    list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
+    list_for_each(p_node, &p_instr->ir_call.param_list) {
         p_ir_param p_param = list_entry(p_node, ir_param, node);
         check_imme2reg(p_param->p_param, p_instr, p_func);
         if (if_in_r(p_param->p_param->p_type)) {

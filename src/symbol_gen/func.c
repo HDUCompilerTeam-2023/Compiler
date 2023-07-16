@@ -210,7 +210,7 @@ void symbol_func_clear_varible(p_symbol_func p_func) {
                 p_src2 = p_instr->ir_store.p_src;
                 break;
             case ir_call:
-                p_src_list = &p_instr->ir_call.p_param_list->param;
+                p_src_list = &p_instr->ir_call.param_list;
                 break;
             }
             if (p_src1 && p_src1->kind == imme && p_src1->p_type->ref_level > 0 && !p_src1->p_vmem->is_global) {

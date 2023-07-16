@@ -256,7 +256,7 @@ void liveness_analysis(p_liveness_info p_info) {
                 p_live_in_statments_(p_info, p_instr, p_basic_block, p_instr->ir_store.p_src);
                 break;
             case ir_call:
-                list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
+                list_for_each(p_node, &p_instr->ir_call.param_list) {
                     p_ir_param p_param = list_entry(p_node, ir_param, node);
                     if (!p_param->is_in_mem)
                         p_live_in_statments_(p_info, p_instr, p_basic_block, p_param->p_param);

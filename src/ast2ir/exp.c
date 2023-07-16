@@ -1,4 +1,5 @@
 #include <ast/exp.h>
+#include <ast/param.h>
 #include <ast2ir.h>
 
 #include <program/gen.h>
@@ -173,12 +174,17 @@ static inline p_ir_instr ast2ir_exp_load_gen(p_ast2ir_info p_info, p_ast_exp p_e
     return p_load;
 }
 static inline p_ir_instr ast2ir_exp_call_gen(p_ast2ir_info p_info, p_ast_exp p_exp) {
-    p_ir_param_list p_m_param_list = ast2ir_param_list_gen(p_info, p_exp->p_param_list);
     p_ir_vreg p_des = NULL;
     if (p_exp->p_func->ret_type != type_void) {
         p_des = ir_vreg_gen(symbol_type_var_gen(p_exp->p_func->ret_type));
     }
-    p_ir_instr p_new_instr = ir_call_instr_gen(p_exp->p_func, p_m_param_list, p_des);
+    p_ir_instr p_new_instr = ir_call_instr_gen(p_exp->p_func, p_des);
+    p_list_head p_node;
+    list_for_each(p_node, &p_exp->p_param_list->param) {
+        p_ast_param p_param = list_entry(p_node, ast_param, node);
+        p_ir_operand p_op = ast2ir_exp_gen(p_info, p_param->p_exp);
+        ir_call_param_list_add(&p_new_instr->ir_call, p_op, p_param->is_stck_ptr);
+    }
     p_exp->p_des = p_des;
     return p_new_instr;
 }

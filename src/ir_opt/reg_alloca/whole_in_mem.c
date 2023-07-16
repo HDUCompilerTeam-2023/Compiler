@@ -99,7 +99,7 @@ static void deal_instr(p_inmem_alloca_info p_info, p_ir_instr p_instr) {
         assert(current_reg_r == 0);
         assert(current_reg_s == 0);
         p_list_head p_node;
-        list_for_each(p_node, &p_instr->ir_call.p_param_list->param) {
+        list_for_each(p_node, &p_instr->ir_call.param_list) {
             p_ir_param p_param = list_entry(p_node, ir_param, node);
             new_load_operand(p_info, p_instr, p_param->p_param);
         }

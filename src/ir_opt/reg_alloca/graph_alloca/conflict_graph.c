@@ -809,7 +809,7 @@ static inline void create_ou_unit_func_call(p_ir_call_instr p_call_instr, p_ou_u
     p_list_head p_node;
     size_t r = 0;
     size_t s = 0;
-    list_for_each(p_node, &p_call_instr->p_param_list->param) {
+    list_for_each(p_node, &p_call_instr->param_list) {
         p_ir_param p_param = list_entry(p_node, ir_param, node);
         if (p_param->is_in_mem)
             continue;
