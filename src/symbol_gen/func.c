@@ -157,6 +157,8 @@ void symbol_func_drop(p_symbol_func p_func) {
 }
 
 void symbol_func_clear_varible(p_symbol_func p_func) {
+    if (!p_func->var_cnt)
+        return;
     p_symbol_var *p_map = malloc(sizeof(void *) * p_func->var_cnt);
     p_list_head p_node;
     size_t id = 0;
@@ -231,7 +233,8 @@ void symbol_func_clear_varible(p_symbol_func p_func) {
             }
         }
     }
-    for(id = 0; id < p_func->var_cnt; ++id) {
+    size_t cnt = p_func->var_cnt;
+    for(id = 0; id < cnt; ++id) {
         if (!p_map[id]) continue;
         symbol_func_delete_varible(p_func, p_map[id]);
     }
