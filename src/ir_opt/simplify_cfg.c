@@ -243,7 +243,7 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
             *pp_prev_target_del = p_prev_target_new;
             // it's dangerous
             p_prev_target_new->p_source_block = p_prev_bb;
-            
+
             if (p_prev_target_no_del && p_prev_target_no_del->p_block == p_target->p_block) {
                 p_list_head p_node_new, p_node_old = p_prev_target_no_del->block_param.p_next;
                 list_for_each(p_node_new, &p_prev_target_new->block_param) {

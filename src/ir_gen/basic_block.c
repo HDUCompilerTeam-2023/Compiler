@@ -36,11 +36,16 @@ static inline p_ir_basic_block_branch ir_basic_block_branch_gen() {
 }
 static inline void ir_basic_block_branch_drop(p_ir_basic_block p_source_block, p_ir_basic_block_branch p_branch) {
     assert(p_branch);
-    if (p_branch->kind == ir_ret_branch && p_branch->p_exp)
+    if (p_branch->kind == ir_ret_branch && p_branch->p_exp) {
+        assert(p_branch->p_exp->used_type == ret_ptr);
+        assert(p_branch->p_exp->p_basic_block == p_source_block);
         ir_operand_drop(p_branch->p_exp);
+    }
     if (p_branch->kind == ir_br_branch)
         ir_basic_block_branch_target_drop(p_source_block, p_branch->p_target_1);
     if (p_branch->kind == ir_cond_branch) {
+        assert(p_branch->p_exp->used_type == cond_ptr);
+        assert(p_branch->p_exp->p_basic_block == p_source_block);
         ir_operand_drop(p_branch->p_exp);
         ir_basic_block_branch_target_drop(p_source_block, p_branch->p_target_1);
         ir_basic_block_branch_target_drop(p_source_block, p_branch->p_target_2);
@@ -100,24 +105,38 @@ void ir_basic_block_set_br(p_ir_basic_block p_bb, p_ir_basic_block p_next) {
     ir_basic_block_set_target1(p_bb, ir_basic_block_branch_target_gen(p_next));
     ir_basic_block_add_prev(p_bb, p_next);
 }
+
+void ir_basic_block_set_cond_exp(p_ir_basic_block p_basic_block, p_ir_operand p_exp) {
+    assert(p_basic_block->p_branch->kind == ir_cond_branch);
+    p_basic_block->p_branch->p_exp = p_exp;
+    p_exp->used_type = cond_ptr;
+    p_exp->p_basic_block = p_basic_block;
+}
 void ir_basic_block_set_cond(p_ir_basic_block p_bb, p_ir_operand p_exp, p_ir_basic_block p_true, p_ir_basic_block p_false) {
     p_bb->p_branch->kind = ir_cond_branch;
-    p_bb->p_branch->p_exp = p_exp;
     ir_basic_block_set_target1(p_bb, ir_basic_block_branch_target_gen(p_true));
     ir_basic_block_set_target2(p_bb, ir_basic_block_branch_target_gen(p_false));
+    ir_basic_block_set_cond_exp(p_bb, p_exp);
     ir_basic_block_add_prev(p_bb, p_true);
     ir_basic_block_add_prev(p_bb, p_false);
 }
 void ir_basic_block_set_branch(p_ir_basic_block p_basic_block, p_ir_basic_block_branch p_branch) {
     p_basic_block->p_branch = p_branch;
+    if (p_branch->p_exp)
+        p_branch->p_exp->p_basic_block = p_basic_block;
     if (p_branch->p_target_1)
         ir_basic_block_set_target1(p_basic_block, p_branch->p_target_1);
     if (p_branch->p_target_2)
         ir_basic_block_set_target2(p_basic_block, p_branch->p_target_2);
 }
+
 void ir_basic_block_set_ret(p_ir_basic_block p_bb, p_ir_operand p_exp) {
     p_bb->p_branch->kind = ir_ret_branch;
     p_bb->p_branch->p_exp = p_exp;
+    if (p_exp) {
+        p_exp->used_type = ret_ptr;
+        p_exp->p_basic_block = p_bb;
+    }
 }
 void ir_basic_block_branch_target_clear_param(p_ir_basic_block_branch_target p_target) {
     while (!list_head_alone(&p_target->block_param)) {
