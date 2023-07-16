@@ -62,7 +62,7 @@ static inline p_reg_info deal_instr_src(p_ir_instr p_instr, p_reg_info reg_info_
 static inline p_reg_info deal_block_call(p_ir_basic_block_branch_target p_target, size_t param_index, p_reg_info reg_info_table, p_reg_info p_top, p_symbol_func p_func) {
     size_t call_index = 0;
     p_list_head p_call_node;
-    list_for_each(p_call_node, &p_target->p_block_param->bb_param) {
+    list_for_each(p_call_node, &p_target->block_param) {
         call_index++;
         if (call_index == param_index)
             return deal_operand(list_entry(p_call_node, ir_bb_param, node)->p_bb_param, reg_info_table, p_top, p_func);
@@ -94,14 +94,11 @@ static inline p_reg_info deal_block_param(p_ir_vreg p_vreg, p_reg_info reg_info_
 static inline void delete_block_call(p_ir_basic_block_branch_target p_target, size_t param_index) {
     size_t call_index = 0;
     p_list_head p_call_node;
-    list_for_each(p_call_node, &p_target->p_block_param->bb_param) {
+    list_for_each(p_call_node, &p_target->block_param) {
         call_index++;
         if (call_index == param_index) {
             p_ir_bb_param p_bb_param = list_entry(p_call_node, ir_bb_param, node);
-            if (p_bb_param->p_bb_param)
-                ir_operand_drop(p_bb_param->p_bb_param);
-            list_del(&p_bb_param->node);
-            free(p_bb_param);
+            ir_basic_block_branch_target_del_param(p_target, p_bb_param);
             break;
         }
     }

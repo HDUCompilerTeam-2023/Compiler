@@ -4,6 +4,7 @@
 #include <ir.h>
 struct ir_bb_param {
     p_ir_operand p_bb_param;
+    p_ir_basic_block_branch_target p_target;
     list_head node;
 };
 

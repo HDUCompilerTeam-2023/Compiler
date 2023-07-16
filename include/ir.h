@@ -7,7 +7,6 @@ typedef struct ir_basic_block ir_basic_block, *p_ir_basic_block;
 typedef struct ir_basic_block_branch_target ir_basic_block_branch_target, *p_ir_basic_block_branch_target;
 
 typedef struct ir_bb_param ir_bb_param, *p_ir_bb_param;
-typedef struct ir_bb_param_list ir_bb_param_list, *p_ir_bb_param_list;
 typedef struct ir_bb_phi ir_bb_phi, *p_ir_bb_phi;
 typedef struct ir_bb_phi_list ir_bb_phi_list, *p_ir_bb_phi_list;
 

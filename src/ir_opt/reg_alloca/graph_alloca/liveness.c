@@ -268,7 +268,7 @@ void liveness_analysis(p_liveness_info p_info) {
         }
         switch (p_basic_block->p_branch->kind) {
         case ir_br_branch:
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
+            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->block_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
                 p_live_in_branch_(p_info, p_basic_block, p_param);
             }
@@ -276,11 +276,11 @@ void liveness_analysis(p_liveness_info p_info) {
         case ir_cond_branch:
             // 条件是不活跃的
             // p_live_out_statments_(p_info, p_last_instr, p_basic_block, p_basic_block->p_branch->p_exp);
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
+            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->block_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
                 p_live_in_branch_(p_info, p_basic_block, p_param);
             }
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_2->p_block_param->bb_param) {
+            list_for_each(p_node, &p_basic_block->p_branch->p_target_2->block_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
                 p_live_in_branch_(p_info, p_basic_block, p_param);
             }

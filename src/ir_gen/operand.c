@@ -25,6 +25,8 @@ static inline void _ir_operand_str_set(p_ir_operand p_operand, p_symbol_str strc
         .strconst = strconst,
         .kind = imme,
         .p_type = symbol_type_var_gen(type_str),
+        .used_type = p_operand->used_type,
+        .p_bb_param = p_operand->p_bb_param,
     };
 }
 void ir_operand_reset_str(p_ir_operand p_operand, p_symbol_str strconst) {
@@ -45,6 +47,8 @@ static inline void _ir_operand_int_set(p_ir_operand p_operand, I32CONST_t intcon
         .i32const = intconst,
         .kind = imme,
         .p_type = symbol_type_var_gen(type_i32),
+        .used_type = p_operand->used_type,
+        .p_bb_param = p_operand->p_bb_param,
     };
 }
 void ir_operand_reset_int(p_ir_operand p_operand, I32CONST_t intconst) {
@@ -65,6 +69,8 @@ static inline void _ir_operand_float_set(p_ir_operand p_operand, F32CONST_t floa
         .f32const = floatconst,
         .kind = imme,
         .p_type = symbol_type_var_gen(type_f32),
+        .used_type = p_operand->used_type,
+        .p_bb_param = p_operand->p_bb_param,
     };
 }
 void ir_operand_reset_float(p_ir_operand p_operand, F32CONST_t floatconst) {
@@ -85,6 +91,8 @@ static inline void _ir_operand_void_set(p_ir_operand p_operand) {
     *p_operand = (ir_operand) {
         .kind = imme,
         .p_type = symbol_type_var_gen(type_void),
+        .used_type = p_operand->used_type,
+        .p_bb_param = p_operand->p_bb_param,
     };
 }
 void ir_operand_reset_void(p_ir_operand p_operand) {
@@ -105,6 +113,8 @@ static inline void _ir_operand_addr_set(p_ir_operand p_operand, p_symbol_var p_v
         .kind = imme,
         .p_vmem = p_vmem,
         .p_type = symbol_type_copy(p_vmem->p_type),
+        .used_type = p_operand->used_type,
+        .p_bb_param = p_operand->p_bb_param,
     };
     symbol_type_push_ptr(p_operand->p_type);
 }
@@ -127,6 +137,8 @@ static inline void _ir_operand_vreg_set(p_ir_operand p_operand, p_ir_vreg p_vreg
         .p_vreg = p_vreg,
         .use_node = list_head_init(&p_operand->use_node),
         .p_type = symbol_type_copy(p_vreg->p_type),
+        .used_type = p_operand->used_type,
+        .p_bb_param = p_operand->p_bb_param,
     };
     assert(list_add_prev(&p_operand->use_node, &p_vreg->use_list));
 }
@@ -144,17 +156,30 @@ void ir_operand_reset_vreg(p_ir_operand p_operand, p_ir_vreg p_vreg) {
 }
 
 p_ir_operand ir_operand_copy(p_ir_operand p_src) {
-    if (p_src->kind == reg)
-        return ir_operand_vreg_gen(p_src->p_vreg);
-    if (p_src->p_type->ref_level > 0)
-        return ir_operand_addr_gen(p_src->p_vmem);
+    p_ir_operand p_ret;
+    if (p_src->kind == reg){
+        p_ret = ir_operand_vreg_gen(p_src->p_vreg);
+        p_ret->used_type = p_src->used_type;
+        p_ret->p_bb_param = p_src->p_bb_param;
+        return p_ret;
+    }
+    if (p_src->p_type->ref_level > 0){
+        p_ret = ir_operand_addr_gen(p_src->p_vmem);
+        p_ret->used_type = p_src->used_type;
+        p_ret->p_bb_param = p_src->p_bb_param;
+        return p_ret;
+    }
     if (p_src->p_type->basic == type_i32)
-        return ir_operand_int_gen(p_src->i32const);
+        p_ret = ir_operand_int_gen(p_src->i32const);
     if (p_src->p_type->basic == type_f32)
-        return ir_operand_float_gen(p_src->f32const);
+        p_ret = ir_operand_float_gen(p_src->f32const);
     if (p_src->p_type->basic == type_str)
-        return ir_operand_str_gen(p_src->strconst);
-    return ir_operand_void_gen();
+        p_ret = ir_operand_str_gen(p_src->strconst);
+    if (p_src->p_type->basic == type_void)
+        p_ret = ir_operand_void_gen();
+    p_ret->used_type = p_src->used_type;
+    p_ret->p_bb_param = p_src->p_bb_param;
+    return p_ret;
 }
 void ir_operand_reset_operand(p_ir_operand p_operand, p_ir_operand p_src) {
     if (p_src->kind == reg) {

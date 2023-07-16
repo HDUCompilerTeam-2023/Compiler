@@ -209,18 +209,18 @@ void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
         p_ir_instr p_head_instr = list_entry(&p_basic_block->instr_list, ir_instr, node);
         switch (p_basic_block->p_branch->kind) {
         case ir_br_branch:
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
+            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->block_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
                 new_load(p_graph, p_param, p_head_instr, p_basic_block->p_branch->p_live_in, p_basic_block->p_live_out, p_func);
             }
             break;
         case ir_cond_branch:
             new_load(p_graph, p_basic_block->p_branch->p_exp, p_head_instr, p_basic_block->p_branch->p_live_in, p_basic_block->p_live_out, p_func);
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
+            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->block_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
                 new_load(p_graph, p_param, p_head_instr, p_basic_block->p_branch->p_live_in, p_basic_block->p_live_out, p_func);
             }
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_2->p_block_param->bb_param) {
+            list_for_each(p_node, &p_basic_block->p_branch->p_target_2->block_param) {
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
                 new_load(p_graph, p_param, p_head_instr, p_basic_block->p_branch->p_live_in, p_basic_block->p_live_out, p_func);
             }
@@ -356,20 +356,23 @@ static void combine_mov(p_symbol_func p_func) {
         live_set_swap(p_basic_block->p_branch->p_live_in, p_map, reg_num);
         switch (p_basic_block->p_branch->kind) {
         case ir_br_branch:
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
-                p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                combine_remap_operand(p_param, p_map);
+            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->block_param) {
+                p_ir_bb_param p_param = list_entry(p_node, ir_bb_param, node);
+                assert(p_param->p_bb_param->used_type == bb_param_ptr && p_param->p_bb_param->p_bb_param == p_param);
+                combine_remap_operand(p_param->p_bb_param, p_map);
             }
             break;
         case ir_cond_branch:
             combine_remap_operand(p_basic_block->p_branch->p_exp, p_map);
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->p_block_param->bb_param) {
-                p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                combine_remap_operand(p_param, p_map);
+            list_for_each(p_node, &p_basic_block->p_branch->p_target_1->block_param) {
+                p_ir_bb_param p_param = list_entry(p_node, ir_bb_param, node);
+                assert(p_param->p_bb_param->used_type == bb_param_ptr && p_param->p_bb_param->p_bb_param == p_param);
+                combine_remap_operand(p_param->p_bb_param, p_map);
             }
-            list_for_each(p_node, &p_basic_block->p_branch->p_target_2->p_block_param->bb_param) {
-                p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
-                combine_remap_operand(p_param, p_map);
+            list_for_each(p_node, &p_basic_block->p_branch->p_target_2->block_param) {
+                p_ir_bb_param p_param = list_entry(p_node, ir_bb_param, node);
+                assert(p_param->p_bb_param->used_type == bb_param_ptr && p_param->p_bb_param->p_bb_param == p_param);
+                combine_remap_operand(p_param->p_bb_param, p_map);
             }
             break;
         case ir_ret_branch:
@@ -432,7 +435,7 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     set_graph_color(p_graph);
     adjust_graph_color(p_graph);
     delete_no_use_vreg(p_graph);
-
+    
     combine_mov(p_func);
     liveness_info_drop(p_live_info);
     conflict_graph_drop(p_graph);

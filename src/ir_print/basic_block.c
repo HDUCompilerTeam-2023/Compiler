@@ -71,8 +71,18 @@ void ir_basic_block_print(p_ir_basic_block p_basic_block) {
 
 void ir_basic_block_branch_target_print(p_ir_basic_block_branch_target p_branch_target) {
     printf("b%ld", p_branch_target->p_block->block_id);
-    if (!list_head_alone(&p_branch_target->p_block_param->bb_param))
-        ir_bb_param_list_print(p_branch_target->p_block_param);
+    if (!list_head_alone(&p_branch_target->block_param))
+    {
+        p_list_head p_node;
+        printf("(");
+        list_for_each(p_node, &p_branch_target->block_param) {
+            p_ir_bb_param p_bb_param = list_entry(p_node, ir_bb_param, node);
+            ir_bb_param_print(p_bb_param);
+            if (p_node->p_next != &p_branch_target->block_param)
+                printf(", ");
+        }
+        printf(")");
+    }
 }
 
 void ir_basic_block_dom_info_print(p_ir_basic_block p_basic_block, size_t depth) {

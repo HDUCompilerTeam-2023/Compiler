@@ -1,6 +1,28 @@
 #include <ir_gen.h>
 #include <ir_gen/basic_block.h>
 
+static inline p_ir_bb_param ir_bb_param_gen(p_ir_operand p_operand) {
+    p_ir_bb_param p_ir_bb_param = malloc(sizeof(*p_ir_bb_param));
+    *p_ir_bb_param = (ir_bb_param) {
+        .node = list_head_init(&p_ir_bb_param->node),
+    };
+    if (p_operand) {
+        p_ir_bb_param->p_bb_param = p_operand;
+        p_operand->used_type = bb_param_ptr;
+        p_operand->p_bb_param = p_ir_bb_param;
+    }
+    return p_ir_bb_param;
+}
+static inline void ir_bb_param_drop(p_ir_bb_param p_param) {
+    if (p_param->p_bb_param) {
+        assert(p_param->p_bb_param->used_type == bb_param_ptr);
+        assert(p_param->p_bb_param->p_bb_param == p_param);
+        ir_operand_drop(p_param->p_bb_param);
+    }
+    list_del(&p_param->node);
+    free(p_param);
+}
+
 static inline p_ir_basic_block_branch ir_basic_block_branch_gen() {
     p_ir_basic_block_branch p_branch = malloc(sizeof(*p_branch));
     *p_branch = (ir_basic_block_branch) {
@@ -82,18 +104,29 @@ void ir_basic_block_set_ret(p_ir_basic_block p_bb, p_ir_operand p_exp) {
     p_bb->p_branch->kind = ir_ret_branch;
     p_bb->p_branch->p_exp = p_exp;
 }
+void ir_basic_block_branch_target_clear_param(p_ir_basic_block_branch_target p_target) {
+    while (!list_head_alone(&p_target->block_param)) {
+        p_ir_bb_param p_bb_param = list_entry(p_target->block_param.p_next, ir_bb_param, node);
+        ir_basic_block_branch_target_del_param(p_target, p_bb_param);
+    }
+}
 
-p_ir_basic_block_branch_target ir_basic_block_branch_target_gen(p_ir_basic_block p_block) {
+p_ir_basic_block_branch_target ir_basic_block_branch_target_gen(p_ir_basic_block p_target_block) {
     p_ir_basic_block_branch_target p_branch_target = malloc(sizeof(*p_branch_target));
     *p_branch_target = (ir_basic_block_branch_target) {
-        .p_block = p_block,
-        .p_block_param = ir_bb_param_list_init(),
+        .block_param = list_head_init(&p_branch_target->block_param),
+        .p_block = p_target_block,
     };
     return p_branch_target;
 }
-
 void ir_basic_block_branch_target_add_param(p_ir_basic_block_branch_target p_branch_target, p_ir_operand p_operand) {
-    ir_bb_param_list_add(p_branch_target->p_block_param, p_operand);
+    p_ir_bb_param p_param = ir_bb_param_gen(p_operand);
+    p_param->p_target = p_branch_target;
+    list_add_prev(&p_param->node, &p_branch_target->block_param);
+}
+void ir_basic_block_branch_target_del_param(p_ir_basic_block_branch_target p_branch_target, p_ir_bb_param p_param) {
+    assert(p_param->p_target == p_branch_target);
+    ir_bb_param_drop(p_param);
 }
 
 void ir_basic_block_add_dom_son(p_ir_basic_block p_basic_block, p_ir_basic_block p_son) {
@@ -136,6 +169,6 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
 }
 
 void ir_basic_block_branch_target_drop(p_ir_basic_block_branch_target p_branch_target) {
-    ir_bb_param_list_drop(p_branch_target->p_block_param);
+    ir_basic_block_branch_target_clear_param(p_branch_target);
     free(p_branch_target);
 }
