@@ -27,10 +27,12 @@ struct ir_operand {
         bb_param_ptr,
         cond_ptr,
         ret_ptr,
+        instr_ptr,
     } used_type;
     union {
         p_ir_bb_param p_bb_param;
         p_ir_basic_block p_basic_block;
+        p_ir_instr p_instr;
     };
     p_symbol_type p_type;
 };

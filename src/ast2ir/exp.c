@@ -183,7 +183,7 @@ static inline p_ir_instr ast2ir_exp_call_gen(p_ast2ir_info p_info, p_ast_exp p_e
     list_for_each(p_node, &p_exp->p_param_list->param) {
         p_ast_param p_param = list_entry(p_node, ast_param, node);
         p_ir_operand p_op = ast2ir_exp_gen(p_info, p_param->p_exp);
-        ir_call_param_list_add(&p_new_instr->ir_call, p_op, p_param->is_stck_ptr);
+        ir_call_param_list_add(p_new_instr, p_op, p_param->is_stck_ptr);
     }
     p_exp->p_des = p_des;
     return p_new_instr;
