@@ -20,6 +20,7 @@ struct ir_basic_block_branch {
 struct ir_basic_block {
     size_t block_id;
     list_head instr_list;
+    size_t instr_num;
     p_ir_basic_block_branch p_branch;
 
     list_head prev_basic_block_list;

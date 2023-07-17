@@ -1,6 +1,6 @@
 #include <ir_gen.h>
 #include <ir_gen/instr.h>
-
+#include <symbol/func.h>
 static inline void ir_operand_set_instr_use(p_ir_operand p_operand, p_ir_instr p_instr) {
     p_operand->used_type = instr_ptr;
     p_operand->p_instr = p_instr;
@@ -76,9 +76,14 @@ static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
         break;
     }
 }
+void ir_instr_del(p_ir_instr p_instr) {
+    list_del(&p_instr->node);
+    p_instr->p_basic_block->instr_num--;
+    p_instr->p_basic_block->p_func->instr_num--;
+}
 void ir_instr_drop(p_ir_instr p_instr) {
     assert(p_instr);
-    list_del(&p_instr->node);
+    ir_instr_del(p_instr);
     _ir_instr_inner_drop(p_instr);
     ir_vreg_list_drop(p_instr->p_live_in);
     ir_vreg_list_drop(p_instr->p_live_out);
@@ -276,10 +281,14 @@ p_ir_instr ir_store_instr_gen(p_ir_operand p_addr, p_ir_operand p_src, bool is_s
 void ir_instr_add_prev(p_ir_instr p_prev, p_ir_instr p_next) {
     p_prev->p_basic_block = p_next->p_basic_block;
     list_add_prev(&p_prev->node, &p_next->node);
+    p_prev->p_basic_block->instr_num++;
+    p_prev->p_basic_block->p_func->instr_num++;
 }
 void ir_instr_add_next(p_ir_instr p_next, p_ir_instr p_prev) {
     p_next->p_basic_block = p_prev->p_basic_block;
     list_add_next(&p_next->node, &p_prev->node);
+    p_next->p_basic_block->instr_num++;
+    p_next->p_basic_block->p_func->instr_num++;
 }
 
 p_ir_operand ir_instr_get_src1(p_ir_instr p_instr) {
