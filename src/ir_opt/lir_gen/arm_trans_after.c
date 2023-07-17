@@ -238,6 +238,29 @@ static inline void deal_load_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         ir_operand_reset_int(p_addr, offset);
     }
 }
+
+static inline void rewrite_after_use_new_vreg(p_ir_instr p_instr, p_ir_vreg p_new_vreg, p_ir_vreg p_origin_vreg) {
+    p_list_head p_node, p_node_next;
+    list_for_each_safe(p_node, p_node_next, &p_origin_vreg->use_list) {
+        p_ir_operand p_use = list_entry(p_node, ir_operand, use_node);
+        switch (p_use->used_type) {
+        case instr_ptr:
+            if (p_use->p_instr->instr_id > p_instr->instr_id)
+                ir_operand_reset_vreg(p_use, p_new_vreg);
+            break;
+        case cond_ptr:
+        case ret_ptr:
+            if (p_use->p_basic_block->block_id >= p_instr->p_basic_block->block_id)
+                ir_operand_reset_vreg(p_use, p_new_vreg);
+            break;
+        case bb_param_ptr:
+            if (p_use->p_bb_param->p_target->p_source_block->block_id >= p_instr->p_basic_block->block_id)
+                ir_operand_reset_vreg(p_use, p_new_vreg);
+            break;
+        }
+    }
+}
+
 static inline void arm_trans_after_func(p_symbol_func p_func) {
     remap_reg_id(p_func);
     p_list_head p_block_node;
@@ -258,8 +281,11 @@ static inline void arm_trans_after_func(p_symbol_func p_func) {
                     symbol_func_add_variable(p_func, p_vmem);
                     p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), ir_operand_vreg_gen(p_vreg), true);
                     ir_instr_add_prev(p_store, p_instr);
-                    p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem), p_vreg, true);
+                    p_ir_vreg p_new_des = ir_vreg_copy(p_vreg);
+                    symbol_func_vreg_add(p_func, p_new_des);
+                    p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem), p_new_des, true);
                     ir_instr_add_next(p_load, p_instr);
+                    rewrite_after_use_new_vreg(p_instr, p_new_des, p_vreg);
                 }
             }
         }
