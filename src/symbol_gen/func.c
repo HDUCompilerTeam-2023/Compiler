@@ -45,10 +45,12 @@ void symbol_func_bb_del(p_symbol_func p_func, p_ir_basic_block p_basic_block) {
 void symbol_func_param_reg_add(p_symbol_func p_func, p_ir_vreg p_vreg) {
     list_add_prev(&p_vreg->node, &p_func->param_reg_list);
     p_vreg->def_type = func_param_def;
+    p_vreg->p_func = p_func;
     ++p_func->param_reg_cnt;
 }
 void symbol_func_param_reg_del(p_symbol_func p_func, p_ir_vreg p_vreg) {
-    list_del(&p_vreg->node);
+    assert(p_vreg->p_func == p_func);
+    assert(p_vreg->def_type == func_param_def);
     ir_vreg_drop(p_vreg);
     --p_func->param_reg_cnt;
 }
@@ -157,6 +159,8 @@ void symbol_func_drop(p_symbol_func p_func) {
     }
     assert(p_func->block_cnt == 0);
     assert(p_func->instr_num == 0);
+    assert(p_func->vreg_cnt == 0);
+    assert(p_func->param_reg_cnt == 0);
     free(p_func->name);
     free(p_func);
 }

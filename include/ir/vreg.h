@@ -9,6 +9,7 @@ struct ir_vreg {
     union {
         p_ir_bb_phi p_bb_phi;
         p_ir_instr p_instr_def;
+        p_symbol_func p_func;
     };
     enum {
         instr_def,
