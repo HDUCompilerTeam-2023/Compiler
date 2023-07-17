@@ -85,6 +85,7 @@ p_ir_basic_block ir_basic_block_gen() {
         .if_visited = false,
         .p_live_in = ir_vreg_list_init(),
         .p_live_out = ir_vreg_list_init(),
+        .instr_num = 0,
     };
     return p_ir_block;
 }
@@ -116,11 +117,15 @@ void ir_basic_block_insert_next(p_ir_basic_block p_next, p_ir_basic_block p_prev
 p_ir_basic_block ir_basic_block_addinstr_tail(p_ir_basic_block p_basic_block, p_ir_instr p_instr) {
     p_instr->p_basic_block = p_basic_block;
     list_add_prev(&p_instr->node, &p_basic_block->instr_list);
+    p_basic_block->instr_num++;
+    p_basic_block->p_func->instr_num++;
     return p_basic_block;
 }
 p_ir_basic_block ir_basic_block_addinstr_head(p_ir_basic_block p_basic_block, p_ir_instr p_instr) {
     p_instr->p_basic_block = p_basic_block;
     list_add_next(&p_instr->node, &p_basic_block->instr_list);
+    p_basic_block->instr_num++;
+    p_basic_block->p_func->instr_num++;
     return p_basic_block;
 }
 void ir_basic_block_add_instr_list(p_ir_basic_block p_des_block, p_ir_basic_block p_src_block) {
@@ -128,7 +133,7 @@ void ir_basic_block_add_instr_list(p_ir_basic_block p_des_block, p_ir_basic_bloc
     list_for_each_safe(p_node, p_node_next, &p_src_block->instr_list) {
         p_ir_instr p_src_instr = list_entry(p_node, ir_instr, node);
         assert(p_src_instr->p_basic_block == p_src_block);
-        list_del(&p_src_instr->node);
+        ir_instr_del(p_src_instr);
         ir_basic_block_addinstr_tail(p_des_block, p_src_instr);
     }
 }
@@ -255,6 +260,7 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
     ir_vreg_list_drop(p_basic_block->p_live_in);
     ir_vreg_list_drop(p_basic_block->p_live_out);
     p_basic_block->p_func->block_cnt--;
+    assert(p_basic_block->instr_num == 0);
     free(p_basic_block);
 }
 

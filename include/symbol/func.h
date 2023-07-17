@@ -30,6 +30,8 @@ struct symbol_func {
     size_t stack_size;
     size_t inner_stack_size;
 
+    size_t instr_num;
+
     size_t use_reg_num_r;
     size_t use_reg_num_s;
     size_t save_reg_r_num;

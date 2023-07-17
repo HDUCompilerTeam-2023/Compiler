@@ -26,6 +26,7 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va) {
         .vreg_list = list_head_init(&p_func->vreg_list),
         .stack_size = 0,
         .inner_stack_size = 0,
+        .instr_num = 0,
     };
     strcpy(p_func->name, name);
     return p_func;
@@ -155,6 +156,7 @@ void symbol_func_drop(p_symbol_func p_func) {
         symbol_func_vreg_del(p_func, p_vreg);
     }
     assert(p_func->block_cnt == 0);
+    assert(p_func->instr_num == 0);
     free(p_func->name);
     free(p_func);
 }

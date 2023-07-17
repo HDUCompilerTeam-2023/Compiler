@@ -42,5 +42,6 @@ void ir_set_call_instr_des(p_ir_instr p_call, p_ir_vreg p_des);
 void ir_set_store_instr_src(p_ir_instr p_store, p_ir_operand p_src);
 void ir_set_store_instr_offset(p_ir_instr p_store, p_ir_operand p_offset);
 
+void ir_instr_del(p_ir_instr p_instr);
 void ir_instr_drop(p_ir_instr p_instr);
 #endif
