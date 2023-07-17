@@ -30,7 +30,7 @@ void ast2ir_info_add_basic_block(p_ast2ir_info p_info, p_ir_basic_block p_new) {
 }
 
 void ast2ir_info_add_instr(p_ast2ir_info p_info, p_ir_instr p_instr) {
-    ir_basic_block_addinstr(p_info->p_current_basic_block, p_instr);
+    ir_basic_block_addinstr_tail(p_info->p_current_basic_block, p_instr);
     p_ir_vreg p_des = ir_instr_get_des(p_instr);
     if (p_des) {
         symbol_func_vreg_add(p_info->p_func, p_des);

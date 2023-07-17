@@ -4,34 +4,43 @@
 #include <program/def.h>
 #include <symbol_gen.h>
 
-static inline void imme2reg(p_ir_operand p_operand, p_ir_instr p_instr, p_symbol_func p_func) {
-    if (p_operand->kind != imme) return;
+static inline p_ir_instr imme2reg(p_ir_operand p_operand, p_symbol_func p_func) {
+    if (p_operand->kind != imme) return NULL;
 
     p_ir_vreg p_new_src = ir_vreg_gen(symbol_type_copy(p_operand->p_type));
     p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_copy(p_operand), p_new_src);
     symbol_func_vreg_add(p_func, p_new_src);
-    list_add_prev(&p_assign->node, &p_instr->node);
     ir_operand_reset_vreg(p_operand, p_new_src);
+    return p_assign;
 }
-
+static inline void imme2reg_in_instr(p_ir_operand p_operand, p_ir_instr p_instr, p_symbol_func p_func) {
+    p_ir_instr p_new_instr = imme2reg(p_operand, p_func);
+    if (p_new_instr)
+        ir_instr_add_prev(p_new_instr, p_instr);
+}
+static inline void imme2reg_in_branch(p_ir_operand p_operand, p_ir_basic_block p_basic_block, p_symbol_func p_func) {
+    p_ir_instr p_new_instr = imme2reg(p_operand, p_func);
+    if (p_new_instr)
+        ir_basic_block_addinstr_tail(p_basic_block, p_new_instr);
+}
 static inline void check_imme2reg(p_ir_operand p_operand, p_ir_instr p_instr, p_symbol_func p_func) {
     if (p_operand->kind != imme) return;
 
     if (p_operand->p_type->ref_level > 0) {
         if (p_operand->p_vmem->is_global)
-            imme2reg(p_operand, p_instr, p_func);
+            imme2reg_in_instr(p_operand, p_instr, p_func);
         return;
     }
     switch (p_operand->p_type->basic) {
     case type_i32:
         if (!if_legal_rotate_imme12(p_operand->i32const))
-            imme2reg(p_operand, p_instr, p_func);
+            imme2reg_in_instr(p_operand, p_instr, p_func);
         break;
     case type_f32:
-        imme2reg(p_operand, p_instr, p_func);
+        imme2reg_in_instr(p_operand, p_instr, p_func);
         break;
     case type_str:
-        imme2reg(p_operand, p_instr, p_func);
+        imme2reg_in_instr(p_operand, p_instr, p_func);
         break;
     case type_void:
         assert(0);
@@ -68,7 +77,7 @@ static void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         check_imme2reg(p_binary_instr->p_src2, p_instr, p_func);
         if (p_binary_instr->p_src1->kind == imme) {
             if (p_binary_instr->p_src2->kind == imme) { // 如果指针不能比较 在常量折叠后不应出现这个，之后删
-                imme2reg(p_binary_instr->p_src1, p_instr, p_func);
+                imme2reg_in_instr(p_binary_instr->p_src1, p_instr, p_func);
                 break;
             }
             p_ir_operand temp = p_binary_instr->p_src1;
@@ -105,8 +114,8 @@ static void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     case ir_div_op:
         assert(p_binary_instr->p_src1->p_type->ref_level == 0);
         assert(p_binary_instr->p_src2->p_type->ref_level == 0);
-        imme2reg(p_binary_instr->p_src1, p_instr, p_func);
-        imme2reg(p_binary_instr->p_src2, p_instr, p_func);
+        imme2reg_in_instr(p_binary_instr->p_src1, p_instr, p_func);
+        imme2reg_in_instr(p_binary_instr->p_src2, p_instr, p_func);
         if (p_binary_instr->p_des->p_type->basic == type_f32) {
             set_float_reg(p_binary_instr->p_src1->p_vreg);
             set_float_reg(p_binary_instr->p_src2->p_vreg);
@@ -137,14 +146,14 @@ static void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
                 p_new_des->if_float = false;
                 symbol_func_vreg_add(p_func, p_new_des);
                 p_ir_instr p_new_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_copy(p_unary_instr->p_src), p_new_des);
-                list_add_prev(&p_new_assign->node, &p_instr->node);
+                ir_instr_add_prev(p_new_assign, p_instr);
                 ir_instr_reset_unary(p_instr, ir_val_assign, ir_operand_vreg_gen(p_new_des), p_unary_instr->p_des);
             }
         break;
     case ir_i2f_op:
         assert(p_unary_instr->p_src->kind == reg);
         assert(p_unary_instr->p_src->p_type->ref_level == 0);
-        if(p_unary_instr->p_src->p_vreg->if_float){
+        if (p_unary_instr->p_src->p_vreg->if_float) {
             set_float_reg(p_unary_instr->p_des);
             break;
         }
@@ -152,7 +161,7 @@ static void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         p_ir_vreg p_new_src = ir_vreg_gen(symbol_type_var_gen(type_i32));
         symbol_func_vreg_add(p_func, p_new_src);
         p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_copy(p_unary_instr->p_src), p_new_src);
-        list_add_prev(&p_assign->node, &p_instr->node);
+        ir_instr_add_prev(p_assign, p_instr);
         ir_instr_reset_unary(p_instr, ir_i2f_op, ir_operand_vreg_gen(p_new_src), p_unary_instr->p_des);
         set_float_reg(p_new_src);
         set_float_reg(p_unary_instr->p_des);
@@ -160,7 +169,7 @@ static void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     case ir_f2i_op:
         assert(p_unary_instr->p_src->kind == reg);
         assert(p_unary_instr->p_src->p_type->ref_level == 0);
-        if(p_unary_instr->p_des->if_float){
+        if (p_unary_instr->p_des->if_float) {
             set_float_reg(p_unary_instr->p_src->p_vreg);
             break;
         }
@@ -168,7 +177,7 @@ static void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         p_ir_vreg p_new_des = ir_vreg_gen(symbol_type_var_gen(type_i32));
         symbol_func_vreg_add(p_func, p_new_des);
         p_ir_instr p_new_float2int = ir_unary_instr_gen(ir_f2i_op, ir_operand_copy(p_unary_instr->p_src), p_new_des);
-        list_add_prev(&p_new_float2int->node, &p_instr->node);
+        ir_instr_add_prev(p_new_float2int, p_instr);
         ir_instr_reset_unary(p_instr, ir_val_assign, ir_operand_vreg_gen(p_new_des), p_unary_instr->p_des);
         set_float_reg(p_new_des);
         set_float_reg(p_new_float2int->ir_unary.p_src->p_vreg);
@@ -183,14 +192,14 @@ static void deal_load_instr(p_ir_instr p_instr, p_symbol_func p_func) {
 
 static void deal_store_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     p_ir_store_instr p_store_instr = &p_instr->ir_store;
-    imme2reg(p_store_instr->p_src, p_instr, p_func); // store 的源必须为寄存器
+    imme2reg_in_instr(p_store_instr->p_src, p_instr, p_func); // store 的源必须为寄存器
     check_imme2reg(p_store_instr->p_addr, p_instr, p_func);
 }
 
 static inline void new_load_func_param(p_symbol_func p_func, p_ir_basic_block p_entry, p_ir_vreg p_param) {
     p_symbol_var p_param_vmem = symbol_func_param_reg_mem(p_func, p_param);
     p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_param_vmem), p_param, true);
-    list_add_next(&p_load->node, &p_entry->instr_list);
+    ir_basic_block_addinstr_head(p_entry, p_load);
 }
 
 static inline void symbol_func_param_vreg2vmem(p_symbol_func p_func) {
@@ -199,7 +208,7 @@ static inline void symbol_func_param_vreg2vmem(p_symbol_func p_func) {
     size_t s = 0;
     p_list_head p_node_vreg, p_node_vreg_next;
     list_for_each_safe(p_node_vreg, p_node_vreg_next, &p_func->param_reg_list) {
-       p_ir_vreg p_param = list_entry(p_node_vreg, ir_vreg, node);
+        p_ir_vreg p_param = list_entry(p_node_vreg, ir_vreg, node);
         if (if_in_r(p_param->p_type)) {
             if (r >= temp_reg_num_r)
                 new_load_func_param(p_func, p_entry, p_param);
@@ -242,7 +251,7 @@ static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             symbol_func_add_call_param_vmem(p_func, p_vmem);
             p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), ir_operand_copy(p_param->p_param), true);
             p_store->ir_store.p_call_param = p_param;
-            list_add_prev(&p_store->node, &p_instr->node);
+            ir_instr_add_prev(p_store, p_instr);
             ir_param_set_vmem(p_param, p_vmem);
             if (if_first) {
                 p_instr->ir_call.p_first_store = p_store;
@@ -285,11 +294,11 @@ void arm_lir_func_trans(p_symbol_func p_func) {
         case ir_br_branch:
             break;
         case ir_cond_branch:
-            imme2reg(p_basic_block->p_branch->p_exp, list_entry(&p_basic_block->instr_list, ir_instr, node), p_func);
+            imme2reg_in_branch(p_basic_block->p_branch->p_exp, p_basic_block, p_func);
             break;
         case ir_ret_branch:
-            if (p_basic_block->p_branch->p_exp){
-                imme2reg(p_basic_block->p_branch->p_exp, list_entry(&p_basic_block->instr_list, ir_instr, node), p_func);
+            if (p_basic_block->p_branch->p_exp) {
+                imme2reg_in_branch(p_basic_block->p_branch->p_exp, p_basic_block, p_func);
             }
             break;
         case ir_abort_branch:

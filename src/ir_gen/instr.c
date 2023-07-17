@@ -93,6 +93,7 @@ static inline void _ir_instr_binary_set(p_ir_instr p_instr, ir_binary_op op, p_i
         .instr_id = p_instr->instr_id,
         .p_live_in = p_instr->p_live_in,
         .p_live_out = p_instr->p_live_out,
+        .p_basic_block = p_instr->p_basic_block,
     };
     ir_vreg_set_instr_def(p_des, p_instr);
     ir_operand_set_instr_use(p_src1, p_instr);
@@ -121,6 +122,7 @@ static inline void _ir_instr_unary_set(p_ir_instr p_instr, ir_unary_op op, p_ir_
         .instr_id = p_instr->instr_id,
         .p_live_in = p_instr->p_live_in,
         .p_live_out = p_instr->p_live_out,
+        .p_basic_block = p_instr->p_basic_block,
     };
     ir_vreg_set_instr_def(p_des, p_instr);
     ir_operand_set_instr_use(p_src, p_instr);
@@ -149,6 +151,7 @@ static inline void _ir_instr_call_set(p_ir_instr p_instr, p_symbol_func p_func, 
         .instr_id = p_instr->instr_id,
         .p_live_in = p_instr->p_live_in,
         .p_live_out = p_instr->p_live_out,
+        .p_basic_block = p_instr->p_basic_block,
     };
     if (p_des)
         ir_vreg_set_instr_def(p_des, p_instr);
@@ -183,6 +186,7 @@ static inline void _ir_instr_gep_set(p_ir_instr p_instr, p_ir_operand p_addr, p_
         .instr_id = p_instr->instr_id,
         .p_live_in = p_instr->p_live_in,
         .p_live_out = p_instr->p_live_out,
+        .p_basic_block = p_instr->p_basic_block,
     };
     ir_vreg_set_instr_def(p_des, p_instr);
     ir_operand_set_instr_use(p_addr, p_instr);
@@ -211,6 +215,7 @@ static inline void _ir_instr_load_set(p_ir_instr p_instr, p_ir_operand p_addr, p
         .instr_id = p_instr->instr_id,
         .p_live_in = p_instr->p_live_in,
         .p_live_out = p_instr->p_live_out,
+        .p_basic_block = p_instr->p_basic_block,
     };
     ir_vreg_set_instr_def(p_des, p_instr);
     ir_operand_set_instr_use(p_addr, p_instr);
@@ -239,6 +244,7 @@ static inline void _ir_instr_store_set(p_ir_instr p_instr, p_ir_operand p_addr, 
         .instr_id = p_instr->instr_id,
         .p_live_in = p_instr->p_live_in,
         .p_live_out = p_instr->p_live_out,
+        .p_basic_block = p_instr->p_basic_block,
     };
     ir_operand_set_instr_use(p_addr, p_instr);
     ir_operand_set_instr_use(p_src, p_instr);
@@ -252,6 +258,14 @@ p_ir_instr ir_store_instr_gen(p_ir_operand p_addr, p_ir_operand p_src, bool is_s
     _ir_instr_init(p_instr);
     _ir_instr_store_set(p_instr, p_addr, p_src, is_stack_ptr);
     return p_instr;
+}
+void ir_instr_add_prev(p_ir_instr p_prev, p_ir_instr p_next) {
+    p_prev->p_basic_block = p_next->p_basic_block;
+    list_add_prev(&p_prev->node, &p_next->node);
+}
+void ir_instr_add_next(p_ir_instr p_next, p_ir_instr p_prev) {
+    p_next->p_basic_block = p_prev->p_basic_block;
+    list_add_next(&p_next->node, &p_prev->node);
 }
 
 p_ir_operand ir_instr_get_src1(p_ir_instr p_instr) {

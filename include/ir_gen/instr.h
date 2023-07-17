@@ -19,6 +19,9 @@ void ir_instr_reset_gep(p_ir_instr p_instr, p_ir_operand p_addr, p_ir_operand p_
 void ir_instr_reset_load(p_ir_instr p_instr, p_ir_operand p_addr, p_ir_vreg p_des, bool is_stack_ptr);
 void ir_instr_reset_store(p_ir_instr p_instr, p_ir_operand p_addr, p_ir_operand p_src, bool is_stack_ptr);
 
+void ir_instr_add_next(p_ir_instr p_next, p_ir_instr p_prev);
+void ir_instr_add_prev(p_ir_instr p_prev, p_ir_instr p_next);
+
 p_ir_operand ir_instr_get_src1(p_ir_instr p_instr);
 p_ir_operand ir_instr_get_src2(p_ir_instr p_instr);
 p_ir_vreg ir_instr_get_des(p_ir_instr p_instr);
