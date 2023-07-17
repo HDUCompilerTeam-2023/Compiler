@@ -14,7 +14,7 @@ static inline void set_graph_table_edge(p_liveness_info p_info, p_ir_vreg r1, p_
 }
 static inline bool in_bb_phi_list(p_liveness_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
     p_list_head p_node;
-    list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
+    list_for_each(p_node, &p_basic_block->basic_block_phis) {
         p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
         if (p_phi == p_vreg)
             return true;
@@ -136,10 +136,10 @@ void p_live_in_block(p_liveness_info p_info, p_ir_basic_block p_basic_block, p_i
     }
 }
 
-static inline void set_live(p_liveness_info p_info, p_ir_bb_phi_list p_list, p_bitmap p_b) {
+static inline void set_live(p_liveness_info p_info, p_ir_vreg_list p_list, p_bitmap p_b) {
     for (size_t i = 0; i < p_info->p_func->param_reg_cnt + p_info->p_func->vreg_cnt; i++) {
         if (bitmap_if_in(p_b, i))
-            ir_bb_phi_list_add(p_list, p_info->p_vregs[i]);
+            ir_vreg_list_add(p_list, p_info->p_vregs[i]);
     }
 }
 

@@ -318,13 +318,13 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_call_instr p_call_instr) {
     free(src_immes);
 }
 
-static void swap_in_phi(p_arm_codegen_info p_info, p_ir_bb_phi_list p_bb_phi_list, p_ir_basic_block_branch_target p_target) {
+static void swap_in_phi(p_arm_codegen_info p_info, p_ir_basic_block p_basic_block, p_ir_basic_block_branch_target p_target) {
     size_t *src_reg = malloc(sizeof(*src_reg) * REG_NUM);
     size_t *des_reg = malloc(sizeof(*des_reg) * REG_NUM);
     size_t num = 0;
     p_list_head p_node1, p_node2;
-    for (p_node1 = p_target->block_param.p_next, p_node2 = p_bb_phi_list->bb_phi.p_next; p_node1 != &p_target->block_param
-         && p_node2 != &p_bb_phi_list->bb_phi;
+    for (p_node1 = p_target->block_param.p_next, p_node2 = p_basic_block->basic_block_phis.p_next; p_node1 != &p_target->block_param
+         && p_node2 != &p_basic_block->basic_block_phis;
          p_node1 = p_node1->p_next, p_node2 = p_node2->p_next) {
         p_ir_operand p_param = list_entry(p_node1, ir_bb_param, node)->p_bb_param;
         p_ir_vreg p_phi = list_entry(p_node2, ir_bb_phi, node)->p_bb_phi;
@@ -338,7 +338,7 @@ static void swap_in_phi(p_arm_codegen_info p_info, p_ir_bb_phi_list p_bb_phi_lis
         num++;
     }
     swap_reg(p_info, src_reg, des_reg, num);
-    for (p_node1 = &p_target->block_param, p_node2 = &p_bb_phi_list->bb_phi; p_node1 != &p_target->block_param
+    for (p_node1 = &p_target->block_param, p_node2 = &p_basic_block->basic_block_phis; p_node1 != &p_target->block_param
          && p_node2 != &p_target->block_param;
          p_node1 = p_node1->p_next, p_node2 = p_node2->p_next) {
         // TODO param in mem
@@ -607,7 +607,7 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
     }
     switch (p_block->p_branch->kind) {
     case ir_br_branch:
-        swap_in_phi(p_info, p_block->p_branch->p_target_1->p_block->basic_block_phis, p_block->p_branch->p_target_1);
+        swap_in_phi(p_info, p_block->p_branch->p_target_1->p_block, p_block->p_branch->p_target_1);
         if (p_block->p_branch->p_target_1->p_block != p_next_block)
             arm_block_jump_label_gen(p_info->out_file, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_1->p_block->block_id);
         break;

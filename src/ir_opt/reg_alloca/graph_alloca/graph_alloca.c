@@ -5,16 +5,16 @@
 #include <ir_gen.h>
 #include <symbol_gen.h>
 
-static inline void live_edge(p_ir_bb_phi_list p_live, p_ir_vreg p_vreg) {
+static inline void live_edge(p_ir_vreg_list p_live, p_ir_vreg p_vreg) {
     p_list_head p_node;
-    list_for_each(p_node, &p_live->bb_phi) {
-        p_ir_vreg p_live_vreg = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
+    list_for_each(p_node, &p_live->vreg_list) {
+        p_ir_vreg p_live_vreg = list_entry(p_node, ir_vreg_list_node, node)->p_vreg;
         if (p_live_vreg == p_vreg) continue;
         add_reg_graph_edge(p_vreg, p_live_vreg);
     }
 }
 
-static inline void update_graph(p_conflict_graph p_graph, p_ir_bb_phi_list p_live, p_graph_node p_g_node) {
+static inline void update_graph(p_conflict_graph p_graph, p_ir_vreg_list p_live, p_graph_node p_g_node) {
     neighbors_clear(p_g_node);
     live_edge(p_live, p_g_node->p_vreg);
 }
@@ -23,7 +23,7 @@ static void new_store_front(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_bas
     p_graph_node p_g_node = (p_graph_node) p_vreg->p_info;
     if (p_g_node->node_id >= p_graph->origin_node_num) return;
     p_origin_graph_node p_o_node = p_graph->p_nodes + p_g_node->node_id;
-    p_ir_bb_phi_list p_live_in;
+    p_ir_vreg_list p_live_in;
     if (list_head_alone(&p_basic_block->instr_list))
         p_live_in = p_basic_block->p_branch->p_live_in;
     else {
@@ -37,18 +37,18 @@ static void new_store_front(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_bas
     case reg_mem:
         p_store = ir_store_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), ir_operand_vreg_gen(p_vreg), true);
         ir_basic_block_addinstr_head(p_basic_block, p_store);
-        copy_live(p_store->p_live_out, p_live_in);
-        copy_live(p_store->p_live_in, p_live_in);
-        ir_bb_phi_list_add(p_store->p_live_in, p_vreg);
+        copy_vreg_list(p_store->p_live_out, p_live_in);
+        copy_vreg_list(p_store->p_live_in, p_live_in);
+        ir_vreg_list_add(p_store->p_live_in, p_vreg);
         update_graph(p_graph, p_store->p_live_in, p_g_node);
         break;
     case reg_reg:
         p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_vreg_gen(p_o_node->p_def_node->p_vreg), p_o_node->p_spill_node->p_vreg);
         ir_basic_block_addinstr_head(p_basic_block, p_assign);
-        copy_live(p_assign->p_live_out, p_live_in);
-        copy_live(p_assign->p_live_in, p_live_in);
-        live_set_del(p_assign->p_live_in, p_o_node->p_spill_node->p_vreg);
-        ir_bb_phi_list_add(p_assign->p_live_in, p_vreg);
+        copy_vreg_list(p_assign->p_live_out, p_live_in);
+        copy_vreg_list(p_assign->p_live_in, p_live_in);
+        ir_vreg_list_del(p_assign->p_live_in, p_o_node->p_spill_node->p_vreg);
+        ir_vreg_list_add(p_assign->p_live_in, p_vreg);
         copy_graph_neighbor(p_o_node->p_spill_node, p_o_node->p_def_node);
         update_graph(p_graph, p_assign->p_live_in, p_g_node);
         break;
@@ -68,25 +68,25 @@ static void new_store_middle(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_in
         p_store = ir_store_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), ir_operand_vreg_gen(p_vreg), true);
         ir_instr_add_next(p_store, p_instr);
         // 改变活跃集合
-        copy_live(p_store->p_live_out, p_instr->p_live_out);
-        ir_bb_phi_list_add(p_instr->p_live_out, p_vreg);
-        copy_live(p_store->p_live_in, p_instr->p_live_out);
+        copy_vreg_list(p_store->p_live_out, p_instr->p_live_out);
+        ir_vreg_list_add(p_instr->p_live_out, p_vreg);
+        copy_vreg_list(p_store->p_live_in, p_instr->p_live_out);
         update_graph(p_graph, p_instr->p_live_out, p_o_node->p_def_node);
         break;
     case reg_reg:
         p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_vreg_gen(p_vreg), p_o_node->p_spill_node->p_vreg);
         ir_instr_add_next(p_assign, p_instr);
-        copy_live(p_assign->p_live_out, p_instr->p_live_out);
-        live_set_del(p_instr->p_live_out, p_o_node->p_spill_node->p_vreg);
-        ir_bb_phi_list_add(p_instr->p_live_out, p_vreg);
-        copy_live(p_assign->p_live_in, p_instr->p_live_out);
+        copy_vreg_list(p_assign->p_live_out, p_instr->p_live_out);
+        ir_vreg_list_del(p_instr->p_live_out, p_o_node->p_spill_node->p_vreg);
+        ir_vreg_list_add(p_instr->p_live_out, p_vreg);
+        copy_vreg_list(p_assign->p_live_in, p_instr->p_live_out);
         copy_graph_neighbor(p_o_node->p_spill_node, p_o_node->p_def_node);
         update_graph(p_graph, p_instr->p_live_out, p_o_node->p_def_node);
         break;
     }
 }
 
-static p_ir_instr new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_bb_phi_list p_live_in, p_ir_bb_phi_list p_live_out, p_symbol_func p_func) {
+static p_ir_instr new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_ir_vreg_list p_live_in, p_ir_vreg_list p_live_out, p_symbol_func p_func) {
     if (p_operand->kind != reg) return NULL;
     p_graph_node p_vreg_g_node = (p_graph_node) p_operand->p_vreg->p_info;
     if (p_vreg_g_node->node_id >= p_graph->origin_node_num) return NULL;
@@ -105,19 +105,19 @@ static p_ir_instr new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_i
         p_load = ir_load_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), p_new_src, true);
         ir_operand_reset_vreg(p_operand, p_new_src);
         // 改变活跃集合和冲突图
-        copy_live(p_load->p_live_in, p_live_in);
-        ir_bb_phi_list_add(p_live_in, p_new_src);
-        copy_live(p_load->p_live_out, p_live_in);
+        copy_vreg_list(p_load->p_live_in, p_live_in);
+        ir_vreg_list_add(p_live_in, p_new_src);
+        copy_vreg_list(p_load->p_live_out, p_live_in);
         live_edge(p_load->p_live_out, p_new_src);
         return p_load;
     case reg_reg:
         p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_vreg_gen(p_o_node->p_spill_node->p_vreg), p_new_src);
         ir_operand_reset_vreg(p_operand, p_new_src);
-        copy_live(p_assign->p_live_in, p_live_in);
-        if (!if_in_live_set(p_live_out, p_o_node->p_spill_node->p_vreg))
-            live_set_del(p_live_in, p_o_node->p_spill_node->p_vreg);
-        ir_bb_phi_list_add(p_live_in, p_new_src);
-        copy_live(p_assign->p_live_out, p_live_in);
+        copy_vreg_list(p_assign->p_live_in, p_live_in);
+        if (!if_in_vreg_list(p_live_out, p_o_node->p_spill_node->p_vreg))
+            ir_vreg_list_del(p_live_in, p_o_node->p_spill_node->p_vreg);
+        ir_vreg_list_add(p_live_in, p_new_src);
+        copy_vreg_list(p_assign->p_live_out, p_live_in);
         live_edge(p_assign->p_live_out, p_new_src);
         return p_assign;
     }
@@ -132,21 +132,20 @@ static inline void new_load_in_branch(p_conflict_graph p_graph, p_ir_operand p_o
     if (p_new_instr)
         ir_basic_block_addinstr_tail(p_basic_block, p_new_instr);
 }
-static inline void deal_live_set(p_conflict_graph p_graph, p_ir_bb_phi_list p_live) {
+static inline void deal_live_set(p_conflict_graph p_graph, p_ir_vreg_list p_live) {
     p_list_head p_node, p_next;
-    list_for_each_safe(p_node, p_next, &p_live->bb_phi) {
-        p_ir_bb_phi p_phi = list_entry(p_node, ir_bb_phi, node);
-        p_graph_node p_g_node = (p_graph_node) p_phi->p_bb_phi->p_info;
+    list_for_each_safe(p_node, p_next, &p_live->vreg_list) {
+        p_ir_vreg_list_node p_vreg_list_node = list_entry(p_node, ir_vreg_list_node, node);
+        p_graph_node p_g_node = (p_graph_node) p_vreg_list_node->p_vreg->p_info;
         if (p_g_node->node_id >= p_graph->origin_node_num) continue;
         switch ((p_graph->p_nodes + p_g_node->node_id)->spl_type) {
         case none:
             break;
         case reg_mem:
-            list_del(p_node);
-            free(p_phi);
+            ir_vreg_list_node_drop(p_vreg_list_node);
             break;
         case reg_reg:
-            p_phi->p_bb_phi = (p_graph->p_nodes + p_g_node->node_id)->p_spill_node->p_vreg;
+            ir_vreg_list_node_set_vreg(p_vreg_list_node, (p_graph->p_nodes + p_g_node->node_id)->p_spill_node->p_vreg);
             break;
         }
     }
@@ -154,7 +153,7 @@ static inline void deal_live_set(p_conflict_graph p_graph, p_ir_bb_phi_list p_li
 
 static inline void new_store_bb_phi_front(p_conflict_graph p_graph, p_ir_basic_block p_basic_block, p_symbol_func p_func) {
     p_list_head p_node;
-    list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
+    list_for_each(p_node, &p_basic_block->basic_block_phis) {
         p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
         new_store_front(p_graph, p_phi, p_basic_block, p_func);
     }
@@ -266,20 +265,20 @@ static inline void combine_map_self(p_ir_vreg p_vreg, p_ir_vreg *p_map) {
     p_map[p_vreg->id] = p_vreg;
 }
 
-static inline void live_set_swap(p_ir_bb_phi_list p_live, p_ir_vreg *p_map, size_t num) {
+static inline void live_set_swap(p_ir_vreg_list p_live, p_ir_vreg *p_map, size_t num) {
     p_list_head p_node, p_node_next;
     bool *if_have = malloc(sizeof(*if_have) * num);
     memset(if_have, false, sizeof(*if_have) * num);
-    list_for_each_safe(p_node, p_node_next, &p_live->bb_phi) {
-        p_ir_bb_phi p_live = list_entry(p_node, ir_bb_phi, node);
-        p_ir_vreg p_new_vreg = p_map[p_live->p_bb_phi->id];
+    list_for_each_safe(p_node, p_node_next, &p_live->vreg_list) {
+        p_ir_vreg_list_node p_live_node = list_entry(p_node, ir_vreg_list_node, node);
+        p_ir_vreg p_new_vreg = p_map[p_live_node->p_vreg->id];
         if (if_have[p_new_vreg->id]) {
             list_del(p_node);
             free(p_live);
             continue;
         }
         if_have[p_new_vreg->id] = true;
-        p_live->p_bb_phi = p_new_vreg;
+        p_live_node->p_vreg = p_new_vreg;
     }
     free(if_have);
 }

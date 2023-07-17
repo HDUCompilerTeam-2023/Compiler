@@ -22,7 +22,20 @@ static inline void ir_bb_param_drop(p_ir_bb_param p_param) {
     list_del(&p_param->node);
     free(p_param);
 }
-
+static inline p_ir_bb_phi ir_bb_phi_gen(p_ir_vreg p_vreg) {
+    p_ir_bb_phi p_bb_phi = malloc(sizeof(*p_bb_phi));
+    *p_bb_phi = (ir_bb_phi) {
+        .node = list_head_init(&p_bb_phi->node),
+    };
+    ir_bb_phi_set_vreg(p_bb_phi, p_vreg);
+    return p_bb_phi;
+}
+static inline void ir_bb_phi_drop(p_ir_bb_phi p_bb_phi) {
+    assert(p_bb_phi->p_bb_phi->is_bb_param);
+    assert(p_bb_phi->p_bb_phi->p_bb_phi == p_bb_phi);
+    list_del(&p_bb_phi->node);
+    free(p_bb_phi);
+}
 static inline p_ir_basic_block_branch ir_basic_block_branch_gen() {
     p_ir_basic_block_branch p_branch = malloc(sizeof(*p_branch));
     *p_branch = (ir_basic_block_branch) {
@@ -30,7 +43,7 @@ static inline p_ir_basic_block_branch ir_basic_block_branch_gen() {
         .p_exp = NULL,
         .p_target_1 = NULL,
         .p_target_2 = NULL,
-        .p_live_in = ir_bb_phi_list_init(),
+        .p_live_in = ir_vreg_list_init(),
     };
     return p_branch;
 }
@@ -50,7 +63,7 @@ static inline void ir_basic_block_branch_drop(p_ir_basic_block p_source_block, p
         ir_basic_block_branch_target_drop(p_source_block, p_branch->p_target_1);
         ir_basic_block_branch_target_drop(p_source_block, p_branch->p_target_2);
     }
-    ir_bb_phi_list_drop(p_branch->p_live_in);
+    ir_vreg_list_drop(p_branch->p_live_in);
     free(p_branch);
 }
 
@@ -62,12 +75,12 @@ p_ir_basic_block ir_basic_block_gen() {
         .p_branch = ir_basic_block_branch_gen(),
         .block_id = 0,
         .node = list_head_init(&p_ir_block->node),
-        .basic_block_phis = ir_bb_phi_list_init(),
+        .basic_block_phis = list_head_init(&p_ir_block->basic_block_phis),
         .dom_son_list = list_head_init(&p_ir_block->dom_son_list),
         .p_dom_parent = NULL,
         .if_visited = false,
-        .p_live_in = ir_bb_phi_list_init(),
-        .p_live_out = ir_bb_phi_list_init(),
+        .p_live_in = ir_vreg_list_init(),
+        .p_live_out = ir_vreg_list_init(),
     };
     return p_ir_block;
 }
@@ -187,9 +200,23 @@ void ir_basic_block_add_dom_son(p_ir_basic_block p_basic_block, p_ir_basic_block
     list_add_prev(&p_new_node->node, &p_basic_block->dom_son_list);
 }
 
-void ir_basic_block_add_param(p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
-    ir_bb_phi_list_add(p_basic_block->basic_block_phis, p_vreg);
-    ir_vreg_set_bb_def(p_vreg, p_basic_block);
+void ir_basic_block_add_phi(p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
+    p_ir_bb_phi p_ir_bb_phi = ir_bb_phi_gen(p_vreg);
+    p_ir_bb_phi->p_basic_block = p_basic_block;
+    list_add_prev(&p_ir_bb_phi->node, &p_basic_block->basic_block_phis);
+    ir_vreg_set_bb_def(p_vreg, p_ir_bb_phi);
+}
+
+void ir_basic_block_del_phi(p_ir_basic_block p_basic_block, p_ir_bb_phi p_bb_phi) {
+    assert(p_bb_phi->p_basic_block == p_basic_block);
+    ir_bb_phi_drop(p_bb_phi);
+}
+void ir_basic_block_clear_phi(p_ir_basic_block p_basic_block) {
+    while (!list_head_alone(&p_basic_block->basic_block_phis)) {
+        p_ir_bb_phi p_bb_phi = list_entry(p_basic_block->basic_block_phis.p_next, ir_bb_phi, node);
+        assert(p_bb_phi->p_basic_block == p_basic_block);
+        ir_basic_block_del_phi(p_basic_block, p_bb_phi);
+    }
 }
 
 void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
@@ -211,9 +238,9 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
         free(p_basic_block_list_node);
     }
     ir_basic_block_branch_drop(p_basic_block, p_basic_block->p_branch);
-    ir_bb_phi_list_drop(p_basic_block->basic_block_phis);
-    ir_bb_phi_list_drop(p_basic_block->p_live_in);
-    ir_bb_phi_list_drop(p_basic_block->p_live_out);
+    ir_basic_block_clear_phi(p_basic_block);
+    ir_vreg_list_drop(p_basic_block->p_live_in);
+    ir_vreg_list_drop(p_basic_block->p_live_out);
     free(p_basic_block);
 }
 

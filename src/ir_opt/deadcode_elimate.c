@@ -71,10 +71,10 @@ static inline p_reg_info deal_block_call(p_ir_basic_block_branch_target p_target
 }
 
 static inline p_reg_info deal_block_param(p_ir_vreg p_vreg, p_reg_info reg_info_table, p_reg_info p_top, p_symbol_func p_func) {
-    p_ir_basic_block p_def_block = p_vreg->p_bb_def;
+    p_ir_basic_block p_def_block = p_vreg->p_bb_phi->p_basic_block;
     size_t param_index = 0;
     p_list_head p_param_node;
-    list_for_each(p_param_node, &p_def_block->basic_block_phis->bb_phi) {
+    list_for_each(p_param_node, &p_def_block->basic_block_phis) {
         param_index++;
         if (list_entry(p_param_node, ir_bb_phi, node)->p_bb_phi == p_vreg) {
             p_list_head p_prev_node;
@@ -116,7 +116,7 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
         list_for_each(p_block_node, &p_func->block) {
             p_ir_basic_block p_block = list_entry(p_block_node, ir_basic_block, node);
             p_list_head p_node;
-            list_for_each(p_node, &p_block->basic_block_phis->bb_phi) {
+            list_for_each(p_node, &p_block->basic_block_phis) {
                 p_ir_vreg p_vreg = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
                 reg_info_gen(reg_info_table + p_vreg->id, p_vreg);
             }
@@ -152,10 +152,10 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
         for (size_t j = p_func->param_reg_cnt; j < vreg_num; j++) {
             if (!(reg_info_table + j)->p_prev) {
                 if ((reg_info_table + j)->p_vreg->is_bb_param) {
-                    p_ir_basic_block p_def_block = (reg_info_table + j)->p_vreg->p_bb_def;
+                    p_ir_basic_block p_def_block = (reg_info_table + j)->p_vreg->p_bb_phi->p_basic_block;
                     size_t param_index = 0;
                     p_list_head p_param_node;
-                    list_for_each(p_param_node, &p_def_block->basic_block_phis->bb_phi) {
+                    list_for_each(p_param_node, &p_def_block->basic_block_phis) {
                         param_index++;
                         p_ir_bb_phi p_bb_phi = list_entry(p_param_node, ir_bb_phi, node);
                         if (p_bb_phi->p_bb_phi == (reg_info_table + j)->p_vreg) {
@@ -167,8 +167,7 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
                                 else
                                     delete_block_call(p_prev_block->p_branch->p_target_2, param_index);
                             }
-                            list_del(&p_bb_phi->node);
-                            free(p_bb_phi);
+                            ir_basic_block_del_phi(p_def_block, p_bb_phi);
                             break;
                         }
                     }

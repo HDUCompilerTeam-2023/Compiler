@@ -44,8 +44,17 @@ void ir_basic_block_print(p_ir_basic_block p_basic_block) {
     assert(p_basic_block);
 
     printf("    b%ld", p_basic_block->block_id);
-    if (!list_head_alone(&p_basic_block->basic_block_phis->bb_phi))
-        ir_bb_phi_list_print(p_basic_block->basic_block_phis);
+    if (!list_head_alone(&p_basic_block->basic_block_phis)) {
+        p_list_head p_node;
+        printf("(");
+        list_for_each(p_node, &p_basic_block->basic_block_phis) {
+            p_ir_bb_phi p_bb_phi = list_entry(p_node, ir_bb_phi, node);
+            ir_bb_phi_print(p_bb_phi);
+            if (p_node->p_next != &p_basic_block->basic_block_phis)
+                printf(", ");
+        }
+        printf(")");
+    }
     printf(":");
 
     if (!list_head_alone(&p_basic_block->prev_basic_block_list)) {
@@ -71,8 +80,7 @@ void ir_basic_block_print(p_ir_basic_block p_basic_block) {
 
 void ir_basic_block_branch_target_print(p_ir_basic_block_branch_target p_branch_target) {
     printf("b%ld", p_branch_target->p_block->block_id);
-    if (!list_head_alone(&p_branch_target->block_param))
-    {
+    if (!list_head_alone(&p_branch_target->block_param)) {
         p_list_head p_node;
         printf("(");
         list_for_each(p_node, &p_branch_target->block_param) {

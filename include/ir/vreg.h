@@ -7,7 +7,7 @@ struct ir_vreg {
     size_t id;
 
     union {
-        p_ir_basic_block p_bb_def;
+        p_ir_bb_phi p_bb_phi;
         p_ir_instr p_instr_def;
     };
     bool is_bb_param;
@@ -22,4 +22,11 @@ struct ir_vreg {
     list_head node;
 };
 
+struct ir_vreg_list_node{
+    p_ir_vreg p_vreg;
+    list_head node;
+};
+struct ir_vreg_list{
+    list_head vreg_list;
+};
 #endif

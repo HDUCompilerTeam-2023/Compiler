@@ -5,7 +5,7 @@
 
 static inline bool if_need_cut(p_ir_basic_block_branch_target p_target) {
     p_list_head p_node1 = p_target->block_param.p_next;
-    p_list_head p_node2 = p_target->p_block->basic_block_phis->bb_phi.p_next;
+    p_list_head p_node2 = p_target->p_block->basic_block_phis.p_next;
     while (p_node1 != &p_target->block_param) {
         p_ir_operand p_param = list_entry(p_node1, ir_bb_param, node)->p_bb_param;
         if (p_param->kind == imme)

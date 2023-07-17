@@ -174,7 +174,7 @@ void whole_in_mem_alloca(p_symbol_func p_func, size_t reg_r_num, size_t reg_s_nu
         if (!p_instr_node)
             p_instr_node = p_basic_block->instr_list.p_next;
         p_head_instr = list_entry(&p_basic_block->instr_list, ir_instr, node);
-        list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
+        list_for_each(p_node, &p_basic_block->basic_block_phis) {
             p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
             new_store_vreg(p_info, p_head_instr, p_phi);
         }
