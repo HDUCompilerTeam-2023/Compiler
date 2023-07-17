@@ -14,11 +14,8 @@ struct ir_bb_param_list {
 
 struct ir_bb_phi {
     p_ir_vreg p_bb_phi;
+    p_ir_basic_block p_basic_block;
     list_head node;
-};
-
-struct ir_bb_phi_list {
-    list_head bb_phi;
 };
 
 #endif

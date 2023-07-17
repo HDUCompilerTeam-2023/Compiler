@@ -8,7 +8,8 @@ typedef struct ir_basic_block_branch_target ir_basic_block_branch_target, *p_ir_
 
 typedef struct ir_bb_param ir_bb_param, *p_ir_bb_param;
 typedef struct ir_bb_phi ir_bb_phi, *p_ir_bb_phi;
-typedef struct ir_bb_phi_list ir_bb_phi_list, *p_ir_bb_phi_list;
+typedef struct ir_vreg_list ir_vreg_list, *p_ir_vreg_list;
+typedef struct ir_vreg_list_node ir_vreg_list_node, *p_ir_vreg_list_node;
 
 typedef struct ir_basic_block_list_node ir_basic_block_list_node, *p_ir_basic_block_list_node;
 

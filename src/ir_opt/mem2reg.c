@@ -153,7 +153,7 @@ void mem2reg_insert_phi(p_convert_ssa_list p_convert_list, p_ssa_var_list_info p
         p_convert_ssa p_info = p_convert_list->p_base + p_work_list[work_head];
         p_info->if_in = false;
         bitmap_merge_not_new(p_info->p_def_var, p_info->p_phi_var);
-        list_for_each(p_node, &p_convert_list->p_func->block){
+        list_for_each(p_node, &p_convert_list->p_func->block) {
             size_t j = list_entry(p_node, ir_basic_block, node)->block_id;
             // 当新的 phi 集合发生变化 并且没有被加入到工作集时需要加入工作集合
             if (bitmap_if_in(p_info->dom_frontier, j)) {
@@ -198,7 +198,7 @@ static inline void set_block_param_ssa_id(p_ir_basic_block p_basic_block, p_conv
             p_ir_vreg p_vreg = ir_vreg_gen(symbol_type_copy((p_var_list->p_base + i)->p_vmem->p_type));
             symbol_func_vreg_add(p_var_list->p_func, p_vreg);
             (p_var_list->p_base + i)->p_current_vreg = p_vreg;
-            ir_basic_block_add_param(p_basic_block, p_vreg);
+            ir_basic_block_add_phi(p_basic_block, p_vreg);
         }
     }
 }
@@ -280,7 +280,7 @@ void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa_list p_con
 static inline void print_dom_frontier(p_convert_ssa_list p_convert_list) {
     p_list_head p_node;
     printf(" --- dom_frontier start---\n");
-    list_for_each(p_node, &p_convert_list->p_func->block){
+    list_for_each(p_node, &p_convert_list->p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
         p_convert_ssa p_info = p_convert_list->p_base + p_basic_block->block_id;
         printf("b%ld ", p_basic_block->block_id);

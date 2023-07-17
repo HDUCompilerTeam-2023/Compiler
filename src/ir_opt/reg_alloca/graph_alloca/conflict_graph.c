@@ -750,7 +750,7 @@ static inline void deal_block_target(p_ir_basic_block p_basic_block, p_ir_basic_
     if (!p_target) return;
     if (p_target->p_block != p_basic_block) return;
     p_list_head p_node_param;
-    p_list_head p_node_phi = p_basic_block->basic_block_phis->bb_phi.p_prev;
+    p_list_head p_node_phi = p_basic_block->basic_block_phis.p_prev;
     p_list_head p_node = p_list->node.p_prev;
     list_for_each_tail(p_node_param, &p_target->block_param) {
         p_ir_operand p_param = list_entry(p_node_param, ir_bb_param, node)->p_bb_param;
@@ -768,7 +768,7 @@ static inline void deal_block_target(p_ir_basic_block p_basic_block, p_ir_basic_
 
 static inline void create_ou_unit_phi(p_ir_basic_block p_basic_block, p_ou_unit_list p_list) {
     p_list_head p_node;
-    list_for_each(p_node, &p_basic_block->basic_block_phis->bb_phi) {
+    list_for_each(p_node, &p_basic_block->basic_block_phis) {
         p_ir_vreg p_phi = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
         p_ou_unit_queue p_unit_queue;
         if (p_phi->if_float)

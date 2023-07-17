@@ -16,9 +16,9 @@ p_ir_vreg ir_vreg_gen(p_symbol_type p_type) {
     return p_vreg;
 }
 
-void ir_vreg_set_bb_def(p_ir_vreg p_vreg, p_ir_basic_block p_bb) {
+void ir_vreg_set_bb_def(p_ir_vreg p_vreg, p_ir_bb_phi p_bb_phi) {
     p_vreg->is_bb_param = true;
-    p_vreg->p_bb_def = p_bb;
+    p_vreg->p_bb_phi = p_bb_phi;
 }
 void ir_vreg_set_instr_def(p_ir_vreg p_vreg, p_ir_instr p_instr) {
     p_vreg->is_bb_param = false;
@@ -38,4 +38,68 @@ void ir_vreg_drop(p_ir_vreg p_vreg) {
     symbol_type_drop(p_vreg->p_type);
     assert(list_head_alone(&p_vreg->use_list));
     free(p_vreg);
+}
+p_ir_vreg_list ir_vreg_list_init(void) {
+    p_ir_vreg_list p_vreg_list = malloc(sizeof(*p_vreg_list));
+    *p_vreg_list = (ir_vreg_list) {
+        .vreg_list = list_head_init(&p_vreg_list->vreg_list),
+    };
+    return p_vreg_list;
+}
+p_ir_vreg_list ir_vreg_list_add(p_ir_vreg_list p_bb_phi_list, p_ir_vreg p_vreg) {
+    p_ir_vreg_list_node p_vreg_list_node = ir_vreg_list_node_gen(p_vreg);
+    list_add_prev(&p_vreg_list_node->node, &p_bb_phi_list->vreg_list);
+    return p_bb_phi_list;
+}
+void ir_vreg_list_drop(p_ir_vreg_list p_vreg_list) {
+    assert(p_vreg_list);
+    while (!list_head_alone(&p_vreg_list->vreg_list)) {
+        p_ir_vreg_list_node p_vreg_list_node = list_entry(p_vreg_list->vreg_list.p_next, ir_vreg_list_node, node);
+        ir_vreg_list_node_drop(p_vreg_list_node);
+    }
+    free(p_vreg_list);
+}
+p_ir_vreg_list_node ir_vreg_list_node_gen(p_ir_vreg p_vreg) {
+    p_ir_vreg_list_node p_vreg_list_node = malloc(sizeof(*p_vreg_list_node));
+    *p_vreg_list_node = (ir_vreg_list_node) {
+        .p_vreg = p_vreg,
+        .node = list_head_init(&p_vreg_list_node->node),
+    };
+    return p_vreg_list_node;
+}
+void ir_vreg_list_node_drop(p_ir_vreg_list_node p_vreg_list_node) {
+    list_del(&p_vreg_list_node->node);
+    free(p_vreg_list_node);
+}
+void ir_vreg_list_node_set_vreg(p_ir_vreg_list_node p_vreg_list_node, p_ir_vreg p_vreg) {
+    p_vreg_list_node->p_vreg = p_vreg;
+}
+
+void copy_vreg_list(p_ir_vreg_list p_des, p_ir_vreg_list p_src) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_src->vreg_list) {
+        p_ir_vreg p_param = list_entry(p_node, ir_vreg_list_node, node)->p_vreg;
+        ir_vreg_list_add(p_des, p_param);
+    }
+}
+
+bool if_in_vreg_list(p_ir_vreg_list p_list, p_ir_vreg p_vreg) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_list->vreg_list) {
+        p_ir_vreg p_live = list_entry(p_node, ir_vreg_list_node, node)->p_vreg;
+        if (p_live == p_vreg)
+            return true;
+    }
+    return false;
+}
+
+void ir_vreg_list_del(p_ir_vreg_list p_list, p_ir_vreg p_vreg) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_list->vreg_list) {
+        p_ir_vreg_list_node p_vreg_list_node = list_entry(p_node, ir_vreg_list_node, node);
+        if (p_vreg_list_node->p_vreg == p_vreg) {
+            ir_vreg_list_node_drop(p_vreg_list_node);
+            break;
+        }
+    }
 }

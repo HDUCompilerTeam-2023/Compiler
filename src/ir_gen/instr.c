@@ -66,8 +66,8 @@ void ir_instr_drop(p_ir_instr p_instr) {
     assert(p_instr);
     list_del(&p_instr->node);
     _ir_instr_inner_drop(p_instr);
-    ir_bb_phi_list_drop(p_instr->p_live_in);
-    ir_bb_phi_list_drop(p_instr->p_live_out);
+    ir_vreg_list_drop(p_instr->p_live_in);
+    ir_vreg_list_drop(p_instr->p_live_out);
     free(p_instr);
 }
 
@@ -75,8 +75,8 @@ static inline void _ir_instr_init(p_ir_instr p_instr) {
     *p_instr = (ir_instr) {
         .node = list_head_init(&p_instr->node),
         .instr_id = 0,
-        .p_live_in = ir_bb_phi_list_init(),
-        .p_live_out = ir_bb_phi_list_init(),
+        .p_live_in = ir_vreg_list_init(),
+        .p_live_out = ir_vreg_list_init(),
     };
 }
 

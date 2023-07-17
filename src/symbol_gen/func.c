@@ -80,7 +80,7 @@ void symbol_func_set_block_id(p_symbol_func p_func) {
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
         p_list_head p_param_node;
-        list_for_each(p_param_node, &p_basic_block->basic_block_phis->bb_phi) {
+        list_for_each(p_param_node, &p_basic_block->basic_block_phis) {
             p_ir_bb_phi p_bb_phi = list_entry(p_param_node, ir_bb_phi, node);
             p_bb_phi->p_bb_phi->id = vreg_id++;
         }

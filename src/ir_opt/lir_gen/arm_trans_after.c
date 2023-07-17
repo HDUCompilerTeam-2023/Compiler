@@ -271,8 +271,8 @@ static inline void arm_trans_after_func(p_symbol_func p_func) {
             p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
             if (p_instr->irkind == ir_call) {
                 p_list_head p_live_node;
-                list_for_each(p_live_node, &p_instr->p_live_out->bb_phi) {
-                    p_ir_vreg p_vreg = list_entry(p_live_node, ir_bb_phi, node)->p_bb_phi;
+                list_for_each(p_live_node, &p_instr->p_live_out->vreg_list) {
+                    p_ir_vreg p_vreg = list_entry(p_live_node, ir_vreg_list_node, node)->p_vreg;
                     if (p_vreg == p_instr->ir_call.p_des)
                         continue;
                     if (!if_caller_save_reg(p_vreg->reg_id))
