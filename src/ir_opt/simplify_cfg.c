@@ -155,9 +155,7 @@ static inline void ir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_fun
                 }
             }
         }
-
-        if (!list_blk_add_prev(&p_bb->instr_list, &p_prev_bb->instr_list))
-            list_replace(&p_prev_bb->instr_list, &p_bb->instr_list);
+        ir_basic_block_add_instr_list(p_prev_bb, p_bb);
         p_bb->instr_list.p_next = &p_bb->instr_list;
         p_bb->instr_list.p_prev = &p_bb->instr_list;
 
@@ -338,6 +336,7 @@ static inline bool ir_simplify_cfg_func_pass(p_symbol_func p_func) {
     bool if_del;
     ir_simplify_cfg_func_remove_no_predesessor_bb(p_func);
     ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_func);
+
     ir_simplify_cfg_func_merge_single_predecessor_bb(p_func);
     if_del = ir_simplify_cfg_func_eliminate_single_br_bb(p_func);
     return if_del;

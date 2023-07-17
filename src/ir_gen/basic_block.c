@@ -87,9 +87,24 @@ p_ir_basic_block ir_basic_block_add_prev(p_ir_basic_block p_prev, p_ir_basic_blo
     return p_next;
 }
 
-p_ir_basic_block ir_basic_block_addinstr(p_ir_basic_block p_basic_block, p_ir_instr p_instr) {
+p_ir_basic_block ir_basic_block_addinstr_tail(p_ir_basic_block p_basic_block, p_ir_instr p_instr) {
+    p_instr->p_basic_block = p_basic_block;
     list_add_prev(&p_instr->node, &p_basic_block->instr_list);
     return p_basic_block;
+}
+p_ir_basic_block ir_basic_block_addinstr_head(p_ir_basic_block p_basic_block, p_ir_instr p_instr) {
+    p_instr->p_basic_block = p_basic_block;
+    list_add_next(&p_instr->node, &p_basic_block->instr_list);
+    return p_basic_block;
+}
+void ir_basic_block_add_instr_list(p_ir_basic_block p_des_block, p_ir_basic_block p_src_block) {
+    p_list_head p_node, p_node_next;
+    list_for_each_safe(p_node, p_node_next, &p_src_block->instr_list) {
+        p_ir_instr p_src_instr = list_entry(p_node, ir_instr, node);
+        assert(p_src_instr->p_basic_block == p_src_block);
+        list_del(&p_src_instr->node);
+        ir_basic_block_addinstr_tail(p_des_block, p_src_instr);
+    }
 }
 
 void ir_basic_block_set_target1(p_ir_basic_block p_basic_block, p_ir_basic_block_branch_target p_target) {
@@ -182,6 +197,7 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
     list_del(&p_basic_block->node);
     while (!list_head_alone(&p_basic_block->instr_list)) {
         p_ir_instr p_instr = list_entry(p_basic_block->instr_list.p_next, ir_instr, node);
+        assert(p_instr->p_basic_block == p_basic_block);
         ir_instr_drop(p_instr);
     }
     while (!list_head_alone(&p_basic_block->prev_basic_block_list)) {

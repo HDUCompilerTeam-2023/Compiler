@@ -4,7 +4,9 @@
 p_ir_basic_block ir_basic_block_gen();
 p_ir_basic_block ir_basic_block_add_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next);
 
-p_ir_basic_block ir_basic_block_addinstr(p_ir_basic_block p_basic_block, p_ir_instr p_instr);
+p_ir_basic_block ir_basic_block_addinstr_tail(p_ir_basic_block p_basic_block, p_ir_instr p_instr);
+p_ir_basic_block ir_basic_block_addinstr_head(p_ir_basic_block p_basic_block, p_ir_instr p_instr);
+void ir_basic_block_add_instr_list(p_ir_basic_block p_des_block, p_ir_basic_block p_src_block);
 
 void ir_basic_block_set_target1(p_ir_basic_block p_basic_block, p_ir_basic_block_branch_target p_target);
 void ir_basic_block_set_target2(p_ir_basic_block p_basic_block, p_ir_basic_block_branch_target p_target);

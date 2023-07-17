@@ -80,7 +80,7 @@ static inline void offset_reg(p_ir_operand p_operand, p_ir_instr p_instr, p_symb
     p_ir_vreg p_temp_reg = temp_vreg_gen(p_func);
     p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(offset), p_temp_reg);
     ir_operand_reset_vreg(p_operand, p_temp_reg);
-    list_add_prev(&p_assign->node, &p_instr->node);
+    ir_instr_add_prev(p_assign, p_instr);
 }
 static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     p_ir_call_instr p_call_instr = &p_instr->ir_call;
@@ -126,7 +126,7 @@ static inline void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             if (p_src2->kind == imme) {
                 offset += p_src2->i32const;
                 p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(offset), p_des);
-                list_add_prev(&p_assign->node, &p_instr->node);
+                ir_instr_add_prev(p_assign, p_instr);
                 ir_instr_drop(p_instr);
                 break;
             }
@@ -142,7 +142,7 @@ static inline void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             if (p_src1->kind == imme) {
                 offset += p_src1->i32const;
                 p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(offset), p_des);
-                list_add_prev(&p_assign->node, &p_instr->node);
+                ir_instr_add_prev(p_assign, p_instr);
                 ir_instr_drop(p_instr);
                 break;
             }
@@ -161,7 +161,7 @@ static inline void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             if (p_src2->kind == imme) {
                 offset -= p_src2->i32const;
                 p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(offset), p_des);
-                list_add_prev(&p_assign->node, &p_instr->node);
+                ir_instr_add_prev(p_assign, p_instr);
                 ir_instr_drop(p_instr);
                 break;
             }
@@ -257,9 +257,9 @@ static inline void arm_trans_after_func(p_symbol_func p_func) {
                     p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_vreg->p_type));
                     symbol_func_add_variable(p_func, p_vmem);
                     p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), ir_operand_vreg_gen(p_vreg), true);
-                    list_add_prev(&p_store->node, &p_instr->ir_call.p_first_store->node);
+                    ir_instr_add_prev(p_store, p_instr);
                     p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem), p_vreg, true);
-                    list_add_next(&p_load->node, &p_instr->node);
+                    ir_instr_add_next(p_load, p_instr);
                 }
             }
         }
