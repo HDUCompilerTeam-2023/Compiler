@@ -531,8 +531,7 @@ static inline void set_spill_node(p_conflict_graph p_graph, p_origin_graph_node 
     p_o_node->spl_type = reg_reg;
     if (is_load_imme_def(p_graph->p_func, p_src)) {
         p_ir_instr p_load = p_src->p_instr_def;
-        p_load->ir_load.p_des = p_vreg;
-        ir_vreg_set_instr_def(p_vreg, p_load);
+        ir_set_load_instr_des(p_load, p_vreg);
         copy_graph_neighbor(p_o_node->p_spill_node, p_o_node->p_def_node);
         neighbors_clear(p_o_node->p_def_node);
         p_o_node->need_delete = true;

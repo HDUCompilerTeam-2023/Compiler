@@ -16,15 +16,6 @@ p_ir_vreg ir_vreg_gen(p_symbol_type p_type) {
     return p_vreg;
 }
 
-void ir_vreg_set_bb_def(p_ir_vreg p_vreg, p_ir_bb_phi p_bb_phi) {
-    p_vreg->is_bb_param = true;
-    p_vreg->p_bb_phi = p_bb_phi;
-}
-void ir_vreg_set_instr_def(p_ir_vreg p_vreg, p_ir_instr p_instr) {
-    p_vreg->is_bb_param = false;
-    p_vreg->p_instr_def = p_instr;
-}
-
 p_ir_vreg ir_vreg_copy(p_ir_vreg p_vreg) {
     p_ir_vreg p_copy = malloc(sizeof(*p_copy));
     *p_copy = *p_vreg;

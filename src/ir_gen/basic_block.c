@@ -22,6 +22,10 @@ static inline void ir_bb_param_drop(p_ir_bb_param p_param) {
     list_del(&p_param->node);
     free(p_param);
 }
+static inline void ir_vreg_set_bb_def(p_ir_vreg p_vreg, p_ir_bb_phi p_bb_phi) {
+    p_vreg->is_bb_param = true;
+    p_vreg->p_bb_phi = p_bb_phi;
+}
 static inline p_ir_bb_phi ir_bb_phi_gen(p_ir_vreg p_vreg) {
     p_ir_bb_phi p_bb_phi = malloc(sizeof(*p_bb_phi));
     *p_bb_phi = (ir_bb_phi) {

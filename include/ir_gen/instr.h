@@ -28,5 +28,11 @@ p_ir_vreg ir_instr_get_des(p_ir_instr p_instr);
 p_ir_operand ir_instr_get_load_addr(p_ir_instr p_instr);
 p_ir_operand ir_instr_get_store_addr(p_ir_instr p_instr);
 
+void ir_set_load_instr_des(p_ir_instr p_load, p_ir_vreg p_des);
+void ir_set_binary_instr_des(p_ir_instr p_binary, p_ir_vreg p_des);
+void ir_set_unary_instr_des(p_ir_instr p_unary, p_ir_vreg p_des);
+void ir_set_gep_instr_des(p_ir_instr p_gep, p_ir_vreg p_des);
+void ir_set_call_instr_des(p_ir_instr p_call, p_ir_vreg p_des);
+
 void ir_instr_drop(p_ir_instr p_instr);
 #endif
