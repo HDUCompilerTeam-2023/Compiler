@@ -32,6 +32,8 @@ struct ir_basic_block {
 
     p_ir_vreg_list p_live_in;
     p_ir_vreg_list p_live_out;
+
+    p_symbol_func p_func;
     bool if_visited;
 };
 

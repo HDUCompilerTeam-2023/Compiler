@@ -3,9 +3,9 @@
 #include <ir_gen/basic_block.h>
 #include <ir_gen/bb_param.h>
 #include <ir_gen/instr.h>
-#include <ir_gen/vreg.h>
 #include <ir_gen/operand.h>
 #include <ir_gen/param.h>
+#include <ir_gen/vreg.h>
 
 p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va) {
     p_symbol_func p_func = malloc(sizeof(*p_func));
@@ -32,13 +32,13 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va) {
 }
 
 void symbol_func_bb_add(p_symbol_func p_func, p_ir_basic_block p_basic_block) {
+    p_basic_block->p_func = p_func;
     list_add_prev(&p_basic_block->node, &p_func->block);
     ++p_func->block_cnt;
 }
 void symbol_func_bb_del(p_symbol_func p_func, p_ir_basic_block p_basic_block) {
-    list_del(&p_basic_block->node);
+    assert(p_basic_block->p_func == p_func);
     ir_basic_block_drop(p_basic_block);
-    --p_func->block_cnt;
 }
 
 void symbol_func_param_reg_add(p_symbol_func p_func, p_ir_vreg p_vreg) {
@@ -154,6 +154,7 @@ void symbol_func_drop(p_symbol_func p_func) {
         p_ir_vreg p_vreg = list_entry(p_func->vreg_list.p_next, ir_vreg, node);
         symbol_func_vreg_del(p_func, p_vreg);
     }
+    assert(p_func->block_cnt == 0);
     free(p_func->name);
     free(p_func);
 }
@@ -236,7 +237,7 @@ void symbol_func_clear_varible(p_symbol_func p_func) {
         }
     }
     size_t cnt = p_func->var_cnt;
-    for(id = 0; id < cnt; ++id) {
+    for (id = 0; id < cnt; ++id) {
         if (!p_map[id]) continue;
         symbol_func_delete_varible(p_func, p_map[id]);
     }

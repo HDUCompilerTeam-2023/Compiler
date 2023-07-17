@@ -3,6 +3,8 @@
 #include <ir/basic_block.h>
 p_ir_basic_block ir_basic_block_gen();
 p_ir_basic_block ir_basic_block_add_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next);
+void ir_basic_block_insert_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next);
+void ir_basic_block_insert_next(p_ir_basic_block p_next, p_ir_basic_block p_prev);
 
 p_ir_basic_block ir_basic_block_addinstr_tail(p_ir_basic_block p_basic_block, p_ir_instr p_instr);
 p_ir_basic_block ir_basic_block_addinstr_head(p_ir_basic_block p_basic_block, p_ir_instr p_instr);

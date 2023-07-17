@@ -20,7 +20,7 @@ static inline bool if_need_cut(p_ir_basic_block_branch_target p_target) {
 }
 static inline p_ir_basic_block cut_edge(p_ir_basic_block p_basic_block, p_ir_basic_block_branch_target p_target, p_symbol_func p_func) {
     p_ir_basic_block p_new_basic_block = ir_basic_block_gen();
-    list_add_next(&p_new_basic_block->node, &p_basic_block->node);
+    ir_basic_block_insert_next(p_new_basic_block, p_basic_block);
     ir_basic_block_add_prev(p_basic_block, p_new_basic_block);
     p_func->block_cnt++;
     p_new_basic_block->p_branch->kind = ir_br_branch;

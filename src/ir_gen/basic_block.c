@@ -1,6 +1,6 @@
 #include <ir_gen.h>
 #include <ir_gen/basic_block.h>
-
+#include <symbol/func.h>
 static inline p_ir_bb_param ir_bb_param_gen(p_ir_operand p_operand) {
     p_ir_bb_param p_ir_bb_param = malloc(sizeof(*p_ir_bb_param));
     *p_ir_bb_param = (ir_bb_param) {
@@ -103,7 +103,16 @@ p_ir_basic_block ir_basic_block_add_prev(p_ir_basic_block p_prev, p_ir_basic_blo
     list_add_prev(&node->node, &p_next->prev_basic_block_list);
     return p_next;
 }
-
+void ir_basic_block_insert_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next) {
+    list_add_prev(&p_prev->node, &p_next->node);
+    p_prev->p_func = p_next->p_func;
+    p_prev->p_func->block_cnt++;
+}
+void ir_basic_block_insert_next(p_ir_basic_block p_next, p_ir_basic_block p_prev) {
+    list_add_next(&p_next->node, &p_prev->node);
+    p_next->p_func = p_prev->p_func;
+    p_next->p_func->block_cnt++;
+}
 p_ir_basic_block ir_basic_block_addinstr_tail(p_ir_basic_block p_basic_block, p_ir_instr p_instr) {
     p_instr->p_basic_block = p_basic_block;
     list_add_prev(&p_instr->node, &p_basic_block->instr_list);
@@ -245,6 +254,7 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
     ir_basic_block_clear_phi(p_basic_block);
     ir_vreg_list_drop(p_basic_block->p_live_in);
     ir_vreg_list_drop(p_basic_block->p_live_out);
+    p_basic_block->p_func->block_cnt--;
     free(p_basic_block);
 }
 
