@@ -6,7 +6,7 @@ static inline void ir_operand_set_instr_use(p_ir_operand p_operand, p_ir_instr p
     p_operand->p_instr = p_instr;
 }
 static inline void ir_vreg_set_instr_def(p_ir_vreg p_vreg, p_ir_instr p_instr) {
-    p_vreg->is_bb_param = false;
+    p_vreg->def_type = instr_def;
     p_vreg->p_instr_def = p_instr;
 }
 static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
@@ -18,7 +18,7 @@ static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
         assert(p_instr->ir_binary.p_src2->p_instr == p_instr);
         ir_operand_drop(p_instr->ir_binary.p_src1);
         ir_operand_drop(p_instr->ir_binary.p_src2);
-        assert(!p_instr->ir_binary.p_des->is_bb_param);
+        assert(p_instr->ir_binary.p_des->def_type == instr_def);
         assert(p_instr->ir_binary.p_des->p_instr_def == p_instr);
         ir_vreg_set_instr_def(p_instr->ir_binary.p_des, NULL);
         break;
@@ -26,7 +26,7 @@ static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
         assert(p_instr->ir_unary.p_src->used_type == instr_ptr);
         assert(p_instr->ir_unary.p_src->p_instr == p_instr);
         ir_operand_drop(p_instr->ir_unary.p_src);
-        assert(!p_instr->ir_unary.p_des->is_bb_param);
+        assert(p_instr->ir_unary.p_des->def_type == instr_def);
         assert(p_instr->ir_unary.p_des->p_instr_def == p_instr);
         ir_vreg_set_instr_def(p_instr->ir_unary.p_des, NULL);
         break;
@@ -42,7 +42,7 @@ static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
             free(p_param);
         }
         if (p_instr->ir_call.p_des) {
-            assert(!p_instr->ir_call.p_des->is_bb_param);
+            assert(p_instr->ir_call.p_des->def_type == instr_def);
             assert(p_instr->ir_call.p_des->p_instr_def == p_instr);
             ir_vreg_set_instr_def(p_instr->ir_call.p_des, NULL);
         }
@@ -54,7 +54,7 @@ static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
         assert(p_instr->ir_gep.p_offset->p_instr == p_instr);
         ir_operand_drop(p_instr->ir_gep.p_addr);
         ir_operand_drop(p_instr->ir_gep.p_offset);
-        assert(!p_instr->ir_gep.p_des->is_bb_param);
+        assert(p_instr->ir_gep.p_des->def_type == instr_def);
         assert(p_instr->ir_gep.p_des->p_instr_def == p_instr);
         ir_vreg_set_instr_def(p_instr->ir_gep.p_des, NULL);
         break;
@@ -70,7 +70,7 @@ static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
         assert(p_instr->ir_load.p_addr->used_type == instr_ptr);
         assert(p_instr->ir_load.p_addr->p_instr == p_instr);
         ir_operand_drop(p_instr->ir_load.p_addr);
-        assert(!p_instr->ir_load.p_des->is_bb_param);
+        assert(p_instr->ir_load.p_des->def_type == instr_def);
         assert(p_instr->ir_load.p_des->p_instr_def == p_instr);
         ir_vreg_set_instr_def(p_instr->ir_load.p_des, NULL);
         break;

@@ -498,8 +498,8 @@ static inline spill_type get_spill_type(p_conflict_graph p_graph, p_origin_graph
 }
 
 static inline bool is_load_imme_def(p_symbol_func p_func, p_ir_vreg p_vreg) {
-    if (p_vreg->is_bb_param) return false;
-    if (p_vreg->id < p_func->param_reg_cnt) return false;
+    if (p_vreg->def_type == bb_phi_def) return false;
+    if (p_vreg->def_type == func_param_def) return false;
     if (p_vreg->p_instr_def->irkind != ir_load) return false;
     if (p_vreg->p_instr_def->ir_load.p_addr->kind != imme) return false;
     return true;
