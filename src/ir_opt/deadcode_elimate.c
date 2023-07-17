@@ -141,7 +141,7 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
             p_top->p_prev = p_top;
             p_ir_vreg p_vreg = p_top->p_vreg;
             p_top = p_new_top;
-            if (p_vreg->is_bb_param)
+            if (p_vreg->def_type == bb_phi_def)
                 p_top = deal_block_param(p_vreg, reg_info_table, p_top, p_func);
             else {
                 p_top = deal_operand(ir_instr_get_src1(p_vreg->p_instr_def), reg_info_table, p_top, p_func);
@@ -151,7 +151,7 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
 
         for (size_t j = p_func->param_reg_cnt; j < vreg_num; j++) {
             if (!(reg_info_table + j)->p_prev) {
-                if ((reg_info_table + j)->p_vreg->is_bb_param) {
+                if ((reg_info_table + j)->p_vreg->def_type == bb_phi_def) {
                     p_ir_basic_block p_def_block = (reg_info_table + j)->p_vreg->p_bb_phi->p_basic_block;
                     size_t param_index = 0;
                     p_list_head p_param_node;

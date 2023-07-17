@@ -526,9 +526,9 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
         }
         else {
             if (p_addr->kind == imme)
-                arm_store_gen(out_file,  p_src->reg_id, SP, p_addr->i32const, 0, true);
+                arm_store_gen(out_file, p_src->reg_id, SP, p_addr->i32const, 0, true);
             else
-                arm_store_gen(out_file,  p_src->reg_id, SP, p_addr->p_vreg->reg_id, 0, false);
+                arm_store_gen(out_file, p_src->reg_id, SP, p_addr->p_vreg->reg_id, 0, false);
         }
     }
     else {
@@ -592,7 +592,7 @@ static void arm_instr_codegen(p_arm_codegen_info p_info, p_ir_instr p_instr) {
 
 static arm_cond_type get_jump_type(p_arm_codegen_info p_info, p_ir_vreg p_vreg) {
     assert(p_vreg->if_cond);
-    assert(!p_vreg->is_bb_param);
+    assert(p_vreg->def_type == instr_def);
     if (p_vreg->p_instr_def->irkind != ir_binary)
         return arm_ne;
     return get_cond_type(p_vreg->p_instr_def->ir_binary.op);

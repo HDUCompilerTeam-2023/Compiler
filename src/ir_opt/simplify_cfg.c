@@ -218,7 +218,7 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
                 p_ir_operand p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param;
                 assert(p_param->kind == reg);
                 p_ir_vreg p_param_reg = p_param->p_vreg;
-                if (p_param_reg->is_bb_param) {
+                if (p_param_reg->def_type == bb_phi_def) {
                     p_list_head p_node, p_node_src = p_prev_target_del->block_param.p_next;
                     list_for_each(p_node, &p_bb->basic_block_phis) {
                         assert(p_node_src != &p_prev_target_del->block_param);

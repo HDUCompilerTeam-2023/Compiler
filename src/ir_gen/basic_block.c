@@ -23,7 +23,7 @@ static inline void ir_bb_param_drop(p_ir_bb_param p_param) {
     free(p_param);
 }
 static inline void ir_vreg_set_bb_def(p_ir_vreg p_vreg, p_ir_bb_phi p_bb_phi) {
-    p_vreg->is_bb_param = true;
+    p_vreg->def_type = bb_phi_def;
     p_vreg->p_bb_phi = p_bb_phi;
 }
 static inline p_ir_bb_phi ir_bb_phi_gen(p_ir_vreg p_vreg) {
@@ -35,7 +35,7 @@ static inline p_ir_bb_phi ir_bb_phi_gen(p_ir_vreg p_vreg) {
     return p_bb_phi;
 }
 static inline void ir_bb_phi_drop(p_ir_bb_phi p_bb_phi) {
-    assert(p_bb_phi->p_bb_phi->is_bb_param);
+    assert(p_bb_phi->p_bb_phi->def_type == bb_phi_def);
     assert(p_bb_phi->p_bb_phi->p_bb_phi == p_bb_phi);
     list_del(&p_bb_phi->node);
     free(p_bb_phi);

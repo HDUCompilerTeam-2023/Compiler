@@ -1,11 +1,8 @@
 #include <ir_opt/lir_gen/delete_cmp.h>
 
+#include <ir_gen.h>
 #include <program/def.h>
 #include <symbol_gen.h>
-#include <ir_gen.h>
-static inline bool reg_if_param(p_ir_vreg p_vreg, p_symbol_func p_func) {
-    return p_vreg->id < p_func->param_reg_cnt;
-}
 
 static inline bool if_int0(p_ir_operand p_operand) {
     if (p_operand->kind == imme)
@@ -16,15 +13,15 @@ static inline bool if_int0(p_ir_operand p_operand) {
 }
 
 static inline bool can_update_tag(p_ir_vreg p_vreg, p_symbol_func p_func) {
-    if (p_vreg->is_bb_param || reg_if_param(p_vreg, p_func))
+    if (!(p_vreg->def_type == instr_def))
         return false;
     p_ir_instr p_instr = p_vreg->p_instr_def;
     switch (p_instr->irkind) {
     case ir_unary:
         switch (p_instr->ir_unary.op) {
         case ir_val_assign:
-            if(p_instr->ir_unary.p_src->kind == reg)
-                if(p_instr->ir_unary.p_des->if_float != p_instr->ir_unary.p_src->p_vreg->if_float)
+            if (p_instr->ir_unary.p_src->kind == reg)
+                if (p_instr->ir_unary.p_des->if_float != p_instr->ir_unary.p_src->p_vreg->if_float)
                     return false;
             return true;
         default:
@@ -44,7 +41,7 @@ static inline bool can_update_tag(p_ir_vreg p_vreg, p_symbol_func p_func) {
     }
 }
 
-void delete_cmp_pass(p_program p_ir){
+void delete_cmp_pass(p_program p_ir) {
     p_list_head p_func_node;
     list_for_each(p_func_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_func_node, symbol_func, node);
@@ -54,8 +51,7 @@ void delete_cmp_pass(p_program p_ir){
             if (p_basic_block->p_branch->kind == ir_cond_branch) {
                 assert(p_basic_block->p_branch->p_exp->kind == reg);
                 p_ir_vreg p_cond = p_basic_block->p_branch->p_exp->p_vreg;
-                assert(!p_cond->is_bb_param);
-                assert(!reg_if_param(p_cond, p_func));
+                assert(p_cond->def_type == instr_def);
 
                 p_ir_instr p_def_instr = p_cond->p_instr_def;
                 assert(p_def_instr->irkind == ir_binary);
