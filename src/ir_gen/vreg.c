@@ -26,6 +26,7 @@ p_ir_vreg ir_vreg_copy(p_ir_vreg p_vreg) {
 }
 
 void ir_vreg_drop(p_ir_vreg p_vreg) {
+    list_del(&p_vreg->node);
     symbol_type_drop(p_vreg->p_type);
     assert(list_head_alone(&p_vreg->use_list));
     free(p_vreg);

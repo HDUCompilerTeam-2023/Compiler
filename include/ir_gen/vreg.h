@@ -6,6 +6,7 @@
 p_ir_vreg ir_vreg_gen(p_symbol_type p_type);
 
 p_ir_vreg ir_vreg_copy(p_ir_vreg p_vreg);
+void ir_vreg_del(p_ir_vreg p_vreg);
 void ir_vreg_drop(p_ir_vreg p_vreg);
 
 p_ir_vreg_list ir_vreg_list_init(void);
