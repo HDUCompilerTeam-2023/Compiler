@@ -22,6 +22,7 @@ enum ir_unary_op {
     ir_val_assign,
     ir_i2f_op,
     ir_f2i_op,
+    ir_ptr_add_sp,
 };
 
 enum ir_instr_type {
@@ -73,7 +74,6 @@ struct ir_store_instr {
     bool is_stack_ptr;
     p_ir_operand p_addr;
     p_ir_operand p_src;
-    p_ir_param p_call_param;
 };
 
 struct ir_instr {

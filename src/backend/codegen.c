@@ -297,19 +297,11 @@ void swap_in_call(p_arm_codegen_info p_info, p_ir_call_instr p_call_instr) {
         else
             des_reg[num] = caller_save_reg_s[s++];
 
-        if (p_param_node->is_stack_ptr) {
-            arm_data_process_gen(p_info->out_file, arm_add, src_reg[num], SP, src_reg[num], false, 0, false);
-        }
         num++;
     }
     // TO DO: param in stack
     swap_reg(p_info, src_reg, des_reg, num);
     for (size_t j = 0; j < i; j++) {
-        if (src_immes[j]->is_stack_ptr) {
-            assert(src_immes[i]->p_param->kind == imme);
-            arm_data_process_gen(p_info->out_file, arm_add, des_imme_reg[j], SP, src_immes[j]->p_param->i32const, false, 0, true);
-            continue;
-        }
         mov_imme2reg(p_info, des_imme_reg[j], src_immes[j]->p_param, false);
     }
     free(src_reg);
@@ -399,8 +391,13 @@ static void arm_unary_instr_codegen(p_arm_codegen_info p_info, p_ir_unary_instr 
     case ir_f2i_op:
         arm_vcvt_gen(out_file, arm_float2int, p_des->reg_id, p_src->p_vreg->reg_id);
         break;
-    default:
-        assert(0);
+    case ir_ptr_add_sp:
+        if (p_unary_instr->p_src->kind == imme) {
+            assert(p_unary_instr->p_src->p_type->ref_level > 0);
+            arm_data_process_gen(out_file, arm_add, p_des->reg_id, SP, p_src->i32const, s, 0, true);
+            break;
+        }
+        arm_data_process_gen(out_file, arm_add, p_des->reg_id, SP, p_src->p_vreg->reg_id, s, 0, false);
         break;
     }
 }
@@ -513,8 +510,6 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
     p_ir_vreg p_src = p_store_instr->p_src->p_vreg;
     p_ir_operand p_addr = p_store_instr->p_addr;
     FILE *out_file = p_info->out_file;
-    if (p_store_instr->p_call_param && p_store_instr->p_call_param->is_stack_ptr)
-        arm_data_process_gen(out_file, arm_add, p_src->reg_id, SP, p_src->reg_id, false, 0, false);
     if (p_store_instr->is_stack_ptr) {
         if (p_src->if_float) {
             if (p_addr->kind == imme)

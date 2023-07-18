@@ -182,6 +182,9 @@ static void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         set_float_reg(p_new_des);
         set_float_reg(p_new_float2int->ir_unary.p_src->p_vreg);
         break;
+    case ir_ptr_add_sp:
+        assert(p_unary_instr->p_src->p_type->ref_level > 0);
+        assert(!p_unary_instr->p_des->if_float);
     }
 }
 
@@ -250,7 +253,6 @@ static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             offset += basic_type_get_size(p_vmem->p_type->basic);
             symbol_func_add_call_param_vmem(p_func, p_vmem);
             p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), ir_operand_copy(p_param->p_param), true);
-            p_store->ir_store.p_call_param = p_param;
             ir_instr_add_prev(p_store, p_instr);
             ir_param_set_vmem(p_param, p_vmem);
             if (if_first) {

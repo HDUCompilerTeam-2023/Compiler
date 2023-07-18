@@ -80,6 +80,7 @@ static void deal_unary_instr(p_inmem_alloca_info p_info, p_ir_instr p_instr) {
     case ir_val_assign:
     case ir_i2f_op:
     case ir_f2i_op:
+    case ir_ptr_add_sp:
         new_load_operand(p_info, p_instr, p_unary_instr->p_src);
         new_store_vreg(p_info, p_instr, p_unary_instr->p_des);
         break;

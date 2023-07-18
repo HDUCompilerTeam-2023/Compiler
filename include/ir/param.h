@@ -2,7 +2,6 @@
 #define __IR_PARAM__
 #include <ir.h>
 struct ir_param {
-    bool is_stack_ptr;
     bool is_in_mem;
     union {
         p_symbol_var p_vmem;
