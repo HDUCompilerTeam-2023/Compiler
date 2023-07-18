@@ -82,23 +82,6 @@ static inline void offset_reg(p_ir_operand p_operand, p_ir_instr p_instr, p_symb
     ir_operand_reset_vreg(p_operand, p_temp_reg);
     ir_instr_add_prev(p_assign, p_instr);
 }
-static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
-    p_ir_call_instr p_call_instr = &p_instr->ir_call;
-    p_list_head p_node;
-    list_for_each(p_node, &p_call_instr->param_list) {
-        p_ir_param p_param = list_entry(p_node, ir_param, node);
-        if (p_param->is_in_mem) continue;
-        if (if_stack_offset_imme(p_param->p_param)) {
-            assert(p_param->is_stack_ptr);
-            size_t offset = p_param->p_vmem->stack_offset;
-            if (!if_legal_rotate_imme12(offset)) {
-                offset_reg(p_param->p_param, p_instr, p_func);
-                continue;
-            }
-            ir_operand_reset_int(p_param->p_param, offset);
-        }
-    }
-}
 
 static inline void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     p_ir_unary_instr p_unary_instr = &p_instr->ir_unary;
@@ -107,6 +90,16 @@ static inline void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     case ir_val_assign:
         if (if_stack_offset_imme(p_src))
             ir_operand_reset_int(p_src, p_src->p_vmem->stack_offset);
+        break;
+    case ir_ptr_add_sp:
+        if (!if_stack_offset_imme(p_src))
+            break;
+        size_t offset = p_src->p_vmem->stack_offset;
+        if (!if_legal_rotate_imme12(offset)) {
+            offset_reg(p_src, p_instr, p_func);
+            break;
+        }
+        ir_operand_reset_int(p_src, offset);
         break;
     default:
         break;
@@ -299,8 +292,6 @@ static inline void arm_trans_after_func(p_symbol_func p_func) {
         list_for_each_safe(p_instr_node, p_instr_node_next, &p_basic_block->instr_list) {
             p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
             switch (p_instr->irkind) {
-            case ir_call:
-                deal_call_instr(p_instr, p_func);
             case ir_binary:
                 deal_binary_instr(p_instr, p_func);
             case ir_unary:

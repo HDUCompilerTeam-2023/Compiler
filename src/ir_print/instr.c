@@ -89,6 +89,9 @@ void ir_unary_instr_print(p_ir_unary_instr p_instr) {
     case ir_f2i_op:
         printf("f2i ");
         break;
+    case ir_ptr_add_sp:
+        printf("SP + ");
+        break;
     }
     ir_operand_print(p_instr->p_src);
 }

@@ -186,8 +186,8 @@ p_ir_instr ir_call_instr_gen(p_symbol_func p_func, p_ir_vreg p_des) {
     return p_instr;
 }
 
-void ir_call_param_list_add(p_ir_instr p_instr, p_ir_operand p_param, bool is_stack_ptr) {
-    p_ir_param p_ir_param = ir_param_gen(p_param, is_stack_ptr);
+void ir_call_param_list_add(p_ir_instr p_instr, p_ir_operand p_param) {
+    p_ir_param p_ir_param = ir_param_gen(p_param);
     ir_operand_set_instr_use(p_param, p_instr);
     list_add_prev(&p_ir_param->node, &p_instr->ir_call.param_list);
 }
@@ -257,7 +257,6 @@ static inline void _ir_instr_store_set(p_ir_instr p_instr, p_ir_operand p_addr, 
             .p_addr = p_addr,
             .p_src = p_src,
             .is_stack_ptr = is_stack_ptr,
-            .p_call_param = NULL,
         },
         .node = p_instr->node,
         .instr_id = p_instr->instr_id,

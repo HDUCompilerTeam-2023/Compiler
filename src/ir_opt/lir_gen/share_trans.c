@@ -60,6 +60,7 @@ static void unary_trans(p_ir_instr p_instr, p_symbol_func p_func) {
     case ir_val_assign:
     case ir_f2i_op:
     case ir_i2f_op:
+    case ir_ptr_add_sp:
         break;
     }
 }
