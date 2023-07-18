@@ -43,7 +43,14 @@ static inline size_t ancestor_with_lowest_semi(p_cfg_build_dom_tree_info_list p_
     }
     return (p_info_list->p_base + node)->min_semi_id;
 }
-
+static inline void set_dom_depth(p_ir_basic_block p_basic_block, size_t depth){
+    p_basic_block->dom_depth = depth;
+    p_list_head p_node;
+    list_for_each(p_node, &p_basic_block->dom_son_list){
+        p_ir_basic_block p_son = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
+        set_dom_depth(p_son, depth + 1);
+    }
+}
 // 必须保证图连通， 否则会出错
 void ir_cfg_set_func_dom(p_symbol_func p_func) {
     if (list_head_alone(&p_func->block)) return;
@@ -101,6 +108,7 @@ void ir_cfg_set_func_dom(p_symbol_func p_func) {
         if (p_info->p_basic_block->p_dom_parent != (p_info_list->p_base + p_info->semi_block)->p_basic_block)
             ir_basic_block_add_dom_son(p_info->p_basic_block->p_dom_parent->p_dom_parent, p_info->p_basic_block);
     }
+    set_dom_depth(p_func->p_entry_block, 0);
     cfg_build_dom_tree_info_list_drop(p_info_list);
 }
 
