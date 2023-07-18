@@ -96,7 +96,7 @@ void mem2reg_compute_dom_frontier(p_convert_ssa_list p_convert_list) {
         p_bitmap p_son_list = bitmap_gen(p_convert_list->p_func->block_cnt);
         bitmap_set_empty(p_son_list);
         // 将支配树上的直接儿子的支配边界作为候选
-        list_for_each(p_node, &p_basic_block->dom_son_list) {
+        list_for_each(p_node, &p_basic_block->dom_son_list->block_list) {
             p_ir_basic_block p_son = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
             p_convert_ssa p_son_info = p_convert_list->p_base + p_son->block_id;
             bitmap_add_element(p_son_list, p_son->block_id);

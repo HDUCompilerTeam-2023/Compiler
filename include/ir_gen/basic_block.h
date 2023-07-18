@@ -24,12 +24,21 @@ void ir_basic_block_branch_target_add_param(p_ir_basic_block_branch_target p_bra
 void ir_basic_block_branch_target_del_param(p_ir_basic_block_branch_target p_branch_target, p_ir_bb_param p_param);
 
 void ir_basic_block_add_dom_son(p_ir_basic_block p_basic_block, p_ir_basic_block p_son);
-void ir_basic_block_del_dom_son(p_ir_basic_block p_parent, p_ir_basic_block p_son);
+void ir_basic_block_dom_son_list_drop(p_ir_basic_block p_basic_block);
 void ir_basic_block_add_phi(p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
 void ir_basic_block_del_phi(p_ir_basic_block p_basic_block, p_ir_bb_phi p_bb_phi);
 void ir_basic_block_clear_phi(p_ir_basic_block p_basic_block);
 
 void ir_basic_block_drop(p_ir_basic_block p_basic_block);
 void ir_basic_block_branch_target_drop(p_ir_basic_block p_source_block, p_ir_basic_block_branch_target p_branch_target);
-void ir_basic_block_list_node_drop(p_ir_basic_block_list_node);
+
+p_ir_basic_block_list ir_basic_block_list_init();
+void ir_basic_block_list_add(p_ir_basic_block_list p_list, p_ir_basic_block p_basic_block);
+void ir_basic_block_list_drop(p_ir_basic_block_list p_basic_block_list);
+p_ir_basic_block_list_node ir_basic_block_list_node_gen(p_ir_basic_block p_basic_block);
+void ir_basic_block_list_node_set_basic_block(p_ir_basic_block_list_node p_basic_block_list_node, p_ir_basic_block p_basic_block);
+void ir_basic_block_list_node_drop(p_ir_basic_block_list_node p_basic_block_list_node);
+void copy_basic_block_list(p_ir_basic_block_list p_des, p_ir_basic_block_list p_src);
+bool if_in_basic_block_list(p_ir_basic_block_list p_list, p_ir_basic_block p_block);
+void ir_basic_block_list_del(p_ir_basic_block_list p_list, p_ir_basic_block p_block);
 #endif

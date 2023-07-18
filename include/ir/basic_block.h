@@ -29,7 +29,7 @@ struct ir_basic_block {
     // SSA 相关
     list_head basic_block_phis; // 基本块参数列表
     p_ir_basic_block p_dom_parent; // 支配树上的父亲
-    list_head dom_son_list; // 支配树上的儿子
+    p_ir_basic_block_list dom_son_list; // 支配树上的儿子
     size_t dom_depth; // 支配树深度
 
     p_ir_vreg_list p_live_in;
@@ -39,6 +39,9 @@ struct ir_basic_block {
     bool if_visited;
 };
 
+struct ir_basic_block_list{
+    list_head block_list;
+};
 struct ir_basic_block_list_node {
     p_ir_basic_block p_basic_block;
     list_head node;
