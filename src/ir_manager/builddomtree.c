@@ -76,7 +76,7 @@ void ir_cfg_set_func_dom(p_symbol_func p_func) {
         return;
     }
     clear_dom_info(p_func->p_entry_block);
-    size_t block_num = list_entry(p_func->block.p_prev, ir_basic_block, node)->block_id + 1;
+    size_t block_num = p_func->block_cnt;
     p_cfg_build_dom_tree_info_list p_info_list = malloc(sizeof(*p_info_list));
     p_info_list->block_num = block_num;
     p_info_list->block2dfn_id = malloc(sizeof(*p_info_list->block2dfn_id) * block_num);
@@ -134,6 +134,14 @@ void ir_cfg_set_func_dom(p_symbol_func p_func) {
     cfg_build_dom_tree_info_list_drop(p_info_list);
     p_func->if_updated_graph = false;
     ir_basic_block_dom_info_print(p_func->p_entry_block);
+}
+
+bool ir_basic_block_dom_check(p_ir_basic_block p_son, p_ir_basic_block p_parent) {
+    while (p_son->dom_depth > p_parent->dom_depth)
+        p_son = p_son->p_dom_parent;
+    if (p_son == p_parent)
+        return true;
+    return false;
 }
 
 void ir_cfg_set_program_dom(p_program p_program) {

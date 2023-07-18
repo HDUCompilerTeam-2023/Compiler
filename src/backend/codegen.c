@@ -249,20 +249,20 @@ static void arm_out_func_gen(p_arm_codegen_info p_info, size_t stack_size) {
     arm_jump_reg_gen(p_info->out_file, arm_bx, arm_al, LR);
 }
 
-static inline char *get_block_label(char *func_name, size_t block_id) {
-    char *str_id = uint32_str(block_id);
-    char *extra = malloc(strlen(func_name) + strlen(str_id) + 4);
-    sprintf(extra, ".%s_b%s", func_name, str_id);
+static inline char *get_block_label(p_ir_basic_block p_basic_block) {
+    char *str_id = uint32_str(p_basic_block->block_id);
+    char *extra = malloc(strlen(p_basic_block->p_func->name) + strlen(str_id) + 4);
+    sprintf(extra, ".%s_b%s", p_basic_block->p_func->name, str_id);
     free(str_id);
     return extra;
 }
-static inline void arm_block_label_gen(FILE *out_file, char *func_name, size_t block_id) {
-    char *tmp = get_block_label(func_name, block_id);
+static inline void arm_block_label_gen(FILE *out_file, p_ir_basic_block p_basic_block) {
+    char *tmp = get_block_label(p_basic_block);
     arm_label_gen(out_file, tmp);
     free(tmp);
 }
-static inline void arm_block_jump_label_gen(FILE *out_file, arm_instr_type instr_type, arm_cond_type cond_type, char *func_name, size_t block_id) {
-    char *tmp = get_block_label(func_name, block_id);
+static inline void arm_block_jump_label_gen(FILE *out_file, arm_instr_type instr_type, arm_cond_type cond_type, p_ir_basic_block p_basic_block) {
+    char *tmp = get_block_label(p_basic_block);
     arm_jump_label_gen(out_file, instr_type, cond_type, tmp);
     free(tmp);
 }
@@ -599,7 +599,7 @@ static arm_cond_type get_jump_type(p_arm_codegen_info p_info, p_ir_vreg p_vreg) 
 }
 
 static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block p_block, p_ir_basic_block p_next_block, p_symbol_func p_func) {
-    arm_block_label_gen(p_info->out_file, p_func->name, p_block->block_id);
+    arm_block_label_gen(p_info->out_file, p_block);
     p_list_head p_node;
     list_for_each(p_node, &p_block->instr_list) {
         p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
@@ -609,14 +609,14 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
     case ir_br_branch:
         swap_in_phi(p_info, p_block->p_branch->p_target_1->p_block, p_block->p_branch->p_target_1);
         if (p_block->p_branch->p_target_1->p_block != p_next_block)
-            arm_block_jump_label_gen(p_info->out_file, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_1->p_block->block_id);
+            arm_block_jump_label_gen(p_info->out_file, arm_b, arm_al, p_block->p_branch->p_target_1->p_block);
         break;
     case ir_cond_branch:
         assert(p_block->p_branch->p_exp->kind == reg);
         arm_cond_type type = get_jump_type(p_info, p_block->p_branch->p_exp->p_vreg);
-        arm_block_jump_label_gen(p_info->out_file, arm_b, type, p_func->name, p_block->p_branch->p_target_1->p_block->block_id);
+        arm_block_jump_label_gen(p_info->out_file, arm_b, type, p_block->p_branch->p_target_1->p_block);
         if (p_block->p_branch->p_target_2->p_block != p_next_block)
-            arm_block_jump_label_gen(p_info->out_file, arm_b, arm_al, p_func->name, p_block->p_branch->p_target_2->p_block->block_id);
+            arm_block_jump_label_gen(p_info->out_file, arm_b, arm_al, p_block->p_branch->p_target_2->p_block);
         break;
     case ir_ret_branch:
         if (!p_block->p_branch->p_exp) {
