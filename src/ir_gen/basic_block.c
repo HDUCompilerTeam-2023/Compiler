@@ -82,6 +82,7 @@ p_ir_basic_block ir_basic_block_gen() {
         .basic_block_phis = list_head_init(&p_ir_block->basic_block_phis),
         .dom_son_list = list_head_init(&p_ir_block->dom_son_list),
         .p_dom_parent = NULL,
+        .dom_depth = 0,
         .if_visited = false,
         .p_live_in = ir_vreg_list_init(),
         .p_live_out = ir_vreg_list_init(),

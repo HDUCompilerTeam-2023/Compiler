@@ -30,6 +30,7 @@ struct ir_basic_block {
     list_head basic_block_phis; // 基本块参数列表
     p_ir_basic_block p_dom_parent; // 支配树上的父亲
     list_head dom_son_list; // 支配树上的儿子
+    size_t dom_depth; // 支配树深度
 
     p_ir_vreg_list p_live_in;
     p_ir_vreg_list p_live_out;
