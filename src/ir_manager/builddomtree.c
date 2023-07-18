@@ -52,14 +52,14 @@ static inline size_t ancestor_with_lowest_semi(p_cfg_build_dom_tree_info_list p_
 static inline void set_dom_depth(p_ir_basic_block p_basic_block, size_t depth) {
     p_basic_block->dom_depth = depth;
     p_list_head p_node;
-    list_for_each(p_node, &p_basic_block->dom_son_list) {
+    list_for_each(p_node, &p_basic_block->dom_son_list->block_list) {
         p_ir_basic_block p_son = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
         set_dom_depth(p_son, depth + 1);
     }
 }
 static inline void clear_dom_info(p_ir_basic_block p_basic_block) {
     p_list_head p_node, p_node_next;
-    list_for_each_safe(p_node, p_node_next, &p_basic_block->dom_son_list) {
+    list_for_each_safe(p_node, p_node_next, &p_basic_block->dom_son_list->block_list) {
         p_ir_basic_block_list_node p_son = list_entry(p_node, ir_basic_block_list_node, node);
         clear_dom_info(p_son->p_basic_block);
         ir_basic_block_list_node_drop(p_son);

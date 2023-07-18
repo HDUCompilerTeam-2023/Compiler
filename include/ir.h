@@ -11,6 +11,7 @@ typedef struct ir_bb_phi ir_bb_phi, *p_ir_bb_phi;
 typedef struct ir_vreg_list ir_vreg_list, *p_ir_vreg_list;
 typedef struct ir_vreg_list_node ir_vreg_list_node, *p_ir_vreg_list_node;
 
+typedef struct ir_basic_block_list ir_basic_block_list, *p_ir_basic_block_list;
 typedef struct ir_basic_block_list_node ir_basic_block_list_node, *p_ir_basic_block_list_node;
 
 typedef struct ir_param ir_param, *p_ir_param;
