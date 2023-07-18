@@ -25,7 +25,7 @@ void ast2ir_info_drop(p_ast2ir_info p_info) {
 }
 
 void ast2ir_info_add_basic_block(p_ast2ir_info p_info, p_ir_basic_block p_new) {
-    symbol_func_bb_add(p_info->p_func, p_new);
+    symbol_func_bb_add_tail(p_info->p_func, p_new);
     p_info->p_current_basic_block = p_new;
 }
 

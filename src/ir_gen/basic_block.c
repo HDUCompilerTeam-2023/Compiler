@@ -1,6 +1,6 @@
 #include <ir_gen.h>
 #include <ir_gen/basic_block.h>
-#include <symbol/func.h>
+#include <symbol_gen.h>
 static inline p_ir_bb_param ir_bb_param_gen(p_ir_operand p_operand) {
     p_ir_bb_param p_ir_bb_param = malloc(sizeof(*p_ir_bb_param));
     *p_ir_bb_param = (ir_bb_param) {
@@ -105,11 +105,18 @@ p_ir_basic_block ir_basic_block_add_prev(p_ir_basic_block p_prev, p_ir_basic_blo
     return p_next;
 }
 void ir_basic_block_insert_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next) {
+    if (p_next->p_func->p_entry_block == p_next) {
+        assert(p_next == list_entry(p_next->p_func->block.p_next, ir_basic_block, node));
+        p_next->p_func->p_entry_block = p_prev;
+    }
     list_add_prev(&p_prev->node, &p_next->node);
     p_prev->p_func = p_next->p_func;
     p_prev->p_func->block_cnt++;
 }
 void ir_basic_block_insert_next(p_ir_basic_block p_next, p_ir_basic_block p_prev) {
+    assert(p_prev->p_func->p_ret_block != p_prev);
+    if (p_next->p_branch->kind == ir_ret_branch)
+        p_prev->p_func->p_ret_block = p_next;
     list_add_next(&p_next->node, &p_prev->node);
     p_next->p_func = p_prev->p_func;
     p_next->p_func->block_cnt++;
@@ -174,11 +181,14 @@ void ir_basic_block_set_branch(p_ir_basic_block p_basic_block, p_ir_basic_block_
         ir_basic_block_set_target1(p_basic_block, p_branch->p_target_1);
     if (p_branch->p_target_2)
         ir_basic_block_set_target2(p_basic_block, p_branch->p_target_2);
+    if (p_branch->kind == ir_ret_branch)
+        p_basic_block->p_func->p_ret_block = p_basic_block;
 }
 
 void ir_basic_block_set_ret(p_ir_basic_block p_bb, p_ir_operand p_exp) {
     p_bb->p_branch->kind = ir_ret_branch;
     p_bb->p_branch->p_exp = p_exp;
+    p_bb->p_func->p_ret_block = p_bb;
     if (p_exp) {
         p_exp->used_type = ret_ptr;
         p_exp->p_basic_block = p_bb;

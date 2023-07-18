@@ -12,7 +12,8 @@ void symbol_func_add_param(p_symbol_func p_func, p_symbol_var p_var);
 
 void symbol_func_drop(p_symbol_func p_func);
 
-void symbol_func_bb_add(p_symbol_func p_func, p_ir_basic_block p_basic_block);
+void symbol_func_bb_add_head(p_symbol_func p_func, p_ir_basic_block p_basic_block);
+void symbol_func_bb_add_tail(p_symbol_func p_func, p_ir_basic_block p_basic_block);
 void symbol_func_bb_del(p_symbol_func p_func, p_ir_basic_block p_basic_block);
 void symbol_func_param_reg_add(p_symbol_func p_func, p_ir_vreg p_vreg);
 void symbol_func_param_reg_del(p_symbol_func p_func, p_ir_vreg p_vreg);
