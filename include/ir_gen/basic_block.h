@@ -24,10 +24,12 @@ void ir_basic_block_branch_target_add_param(p_ir_basic_block_branch_target p_bra
 void ir_basic_block_branch_target_del_param(p_ir_basic_block_branch_target p_branch_target, p_ir_bb_param p_param);
 
 void ir_basic_block_add_dom_son(p_ir_basic_block p_basic_block, p_ir_basic_block p_son);
+void ir_basic_block_del_dom_son(p_ir_basic_block p_parent, p_ir_basic_block p_son);
 void ir_basic_block_add_phi(p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
 void ir_basic_block_del_phi(p_ir_basic_block p_basic_block, p_ir_bb_phi p_bb_phi);
 void ir_basic_block_clear_phi(p_ir_basic_block p_basic_block);
 
 void ir_basic_block_drop(p_ir_basic_block p_basic_block);
 void ir_basic_block_branch_target_drop(p_ir_basic_block p_source_block, p_ir_basic_block_branch_target p_branch_target);
+void ir_basic_block_list_node_drop(p_ir_basic_block_list_node);
 #endif

@@ -113,6 +113,7 @@ void ir_basic_block_insert_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next
     list_add_prev(&p_prev->node, &p_next->node);
     p_prev->p_func = p_next->p_func;
     p_prev->p_func->block_cnt++;
+    p_prev->p_func->if_updated_graph = true;
 }
 void ir_basic_block_insert_next(p_ir_basic_block p_next, p_ir_basic_block p_prev) {
     assert(p_prev->p_func->p_ret_block != p_prev);
@@ -121,6 +122,7 @@ void ir_basic_block_insert_next(p_ir_basic_block p_next, p_ir_basic_block p_prev
     list_add_next(&p_next->node, &p_prev->node);
     p_next->p_func = p_prev->p_func;
     p_next->p_func->block_cnt++;
+    p_next->p_func->if_updated_graph = true;
 }
 p_ir_basic_block ir_basic_block_addinstr_tail(p_ir_basic_block p_basic_block, p_ir_instr p_instr) {
     p_instr->p_basic_block = p_basic_block;
@@ -149,10 +151,12 @@ void ir_basic_block_add_instr_list(p_ir_basic_block p_des_block, p_ir_basic_bloc
 void ir_basic_block_set_target1(p_ir_basic_block p_basic_block, p_ir_basic_block_branch_target p_target) {
     p_basic_block->p_branch->p_target_1 = p_target;
     p_target->p_source_block = p_basic_block;
+    p_basic_block->p_func->if_updated_graph = true;
 }
 void ir_basic_block_set_target2(p_ir_basic_block p_basic_block, p_ir_basic_block_branch_target p_target) {
     p_basic_block->p_branch->p_target_2 = p_target;
     p_target->p_source_block = p_basic_block;
+    p_basic_block->p_func->if_updated_graph = true;
 }
 void ir_basic_block_set_br(p_ir_basic_block p_bb, p_ir_basic_block p_next) {
     p_bb->p_branch->kind = ir_br_branch;
@@ -258,13 +262,14 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
     }
     while (!list_head_alone(&p_basic_block->prev_basic_block_list)) {
         p_ir_basic_block_list_node p_basic_block_list_node = list_entry(p_basic_block->prev_basic_block_list.p_next, ir_basic_block_list_node, node);
-        list_del(&p_basic_block_list_node->node);
-        free(p_basic_block_list_node);
+        ir_basic_block_list_node_drop(p_basic_block_list_node);
     }
+    if (p_basic_block->p_dom_parent)
+        ir_basic_block_del_dom_son(p_basic_block->p_dom_parent, p_basic_block);
     while (!list_head_alone(&p_basic_block->dom_son_list)) {
         p_ir_basic_block_list_node p_basic_block_list_node = list_entry(p_basic_block->dom_son_list.p_next, ir_basic_block_list_node, node);
-        list_del(&p_basic_block_list_node->node);
-        free(p_basic_block_list_node);
+        p_basic_block_list_node->p_basic_block->p_dom_parent = NULL;
+        ir_basic_block_list_node_drop(p_basic_block_list_node);
     }
     ir_basic_block_branch_drop(p_basic_block, p_basic_block->p_branch);
     ir_basic_block_clear_phi(p_basic_block);
@@ -279,4 +284,19 @@ void ir_basic_block_branch_target_drop(p_ir_basic_block p_source_block, p_ir_bas
     assert(p_branch_target->p_source_block == p_source_block);
     ir_basic_block_branch_target_clear_param(p_branch_target);
     free(p_branch_target);
+}
+void ir_basic_block_del_dom_son(p_ir_basic_block p_parent, p_ir_basic_block p_son) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_parent->dom_son_list) {
+        p_ir_basic_block_list_node p_s = list_entry(p_node, ir_basic_block_list_node, node);
+        if (p_s->p_basic_block == p_son) {
+            ir_basic_block_list_node_drop(p_s);
+            break;
+        }
+    }
+}
+
+void ir_basic_block_list_node_drop(p_ir_basic_block_list_node p_basic_block_list_node) {
+    list_del(&p_basic_block_list_node->node);
+    free(p_basic_block_list_node);
 }

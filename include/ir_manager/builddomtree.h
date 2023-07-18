@@ -27,9 +27,6 @@ struct cfg_build_dom_tree_info_list{
     size_t block_num;
     size_t *block2dfn_id;
 };
-size_t init_dfs_sequence(p_cfg_build_dom_tree_info_list p_info_list, size_t current_num, size_t parent, p_ir_basic_block p_entry);
-void cfg_build_dom_tree_info_list_drop(p_cfg_build_dom_tree_info_list p_info_list);
-void cfg_build_dom_tree_info_gen(p_cfg_build_dom_tree_info_list p_dom_info, p_ir_basic_block p_basic_block, size_t parent, size_t current_num);
 void ir_cfg_set_program_dom(p_program p_program);
 void ir_cfg_set_func_dom(p_symbol_func p_func);
 

@@ -27,6 +27,7 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va) {
         .stack_size = 0,
         .inner_stack_size = 0,
         .instr_num = 0,
+        .if_updated_graph = true,
     };
     strcpy(p_func->name, name);
     return p_func;
@@ -40,6 +41,7 @@ void symbol_func_bb_add_tail(p_symbol_func p_func, p_ir_basic_block p_basic_bloc
         p_func->p_entry_block = p_basic_block;
     list_add_prev(&p_basic_block->node, &p_func->block);
     ++p_func->block_cnt;
+    p_func->if_updated_graph = true;
 }
 void symbol_func_bb_add_head(p_symbol_func p_func, p_ir_basic_block p_basic_block) {
     p_basic_block->p_func = p_func;
@@ -50,6 +52,7 @@ void symbol_func_bb_add_head(p_symbol_func p_func, p_ir_basic_block p_basic_bloc
     }
     list_add_next(&p_basic_block->node, &p_func->block);
     ++p_func->block_cnt;
+    p_func->if_updated_graph = true;
 }
 void symbol_func_bb_del(p_symbol_func p_func, p_ir_basic_block p_basic_block) {
     assert(p_basic_block->p_func == p_func);
@@ -68,6 +71,7 @@ void symbol_func_bb_del(p_symbol_func p_func, p_ir_basic_block p_basic_block) {
         }
     }
     ir_basic_block_drop(p_basic_block);
+    p_func->if_updated_graph = true;
 }
 
 void symbol_func_param_reg_add(p_symbol_func p_func, p_ir_vreg p_vreg) {

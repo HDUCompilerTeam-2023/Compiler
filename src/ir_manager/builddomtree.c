@@ -1,10 +1,10 @@
-#include <ir_manager/builddomtree.h>
-
 #include <ir_gen.h>
+#include <ir_manager/builddomtree.h>
+#include <ir_print.h>
 #include <program/def.h>
 #include <symbol_gen/func.h>
 
-void cfg_build_dom_tree_info_gen(p_cfg_build_dom_tree_info_list p_info_list, p_ir_basic_block p_basic_block, size_t parent, size_t current_num) {
+static inline void cfg_build_dom_tree_info_gen(p_cfg_build_dom_tree_info_list p_info_list, p_ir_basic_block p_basic_block, size_t parent, size_t current_num) {
     *(p_info_list->p_base + current_num) = (cfg_build_dom_tree_info) {
         .p_basic_block = p_basic_block,
         .p_semi_block_list = malloc(sizeof(size_t) * (p_info_list->block_num - current_num)),
@@ -14,8 +14,14 @@ void cfg_build_dom_tree_info_gen(p_cfg_build_dom_tree_info_list p_info_list, p_i
     };
     p_info_list->block2dfn_id[p_basic_block->block_id] = current_num;
 }
-
-size_t init_dfs_sequence(p_cfg_build_dom_tree_info_list p_info_list, size_t current_num, size_t parent, p_ir_basic_block p_entry) {
+static inline void cfg_build_dom_tree_info_list_drop(p_cfg_build_dom_tree_info_list p_info_list) {
+    for (size_t i = 0; i < p_info_list->block_num; i++)
+        free((p_info_list->p_base + i)->p_semi_block_list);
+    free(p_info_list->p_base);
+    free(p_info_list->block2dfn_id);
+    free(p_info_list);
+}
+static inline size_t init_dfs_sequence(p_cfg_build_dom_tree_info_list p_info_list, size_t current_num, size_t parent, p_ir_basic_block p_entry) {
     if (p_entry->if_visited) return current_num;
     p_entry->if_visited = true;
     size_t dfn_id = current_num;
@@ -43,17 +49,33 @@ static inline size_t ancestor_with_lowest_semi(p_cfg_build_dom_tree_info_list p_
     }
     return (p_info_list->p_base + node)->min_semi_id;
 }
-static inline void set_dom_depth(p_ir_basic_block p_basic_block, size_t depth){
+static inline void set_dom_depth(p_ir_basic_block p_basic_block, size_t depth) {
     p_basic_block->dom_depth = depth;
     p_list_head p_node;
-    list_for_each(p_node, &p_basic_block->dom_son_list){
+    list_for_each(p_node, &p_basic_block->dom_son_list) {
         p_ir_basic_block p_son = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
         set_dom_depth(p_son, depth + 1);
     }
 }
+static inline void clear_dom_info(p_ir_basic_block p_basic_block) {
+    p_list_head p_node, p_node_next;
+    list_for_each_safe(p_node, p_node_next, &p_basic_block->dom_son_list) {
+        p_ir_basic_block_list_node p_son = list_entry(p_node, ir_basic_block_list_node, node);
+        clear_dom_info(p_son->p_basic_block);
+        ir_basic_block_list_node_drop(p_son);
+    }
+    p_basic_block->p_dom_parent = NULL;
+}
 // 必须保证图连通， 否则会出错
+#include <stdio.h>
 void ir_cfg_set_func_dom(p_symbol_func p_func) {
     if (list_head_alone(&p_func->block)) return;
+    printf("--- build dom tree %s ---\n", p_func->name);
+    if (!p_func->if_updated_graph) {
+        printf("    control graph not changed!\n");
+        return;
+    }
+    clear_dom_info(p_func->p_entry_block);
     size_t block_num = list_entry(p_func->block.p_prev, ir_basic_block, node)->block_id + 1;
     p_cfg_build_dom_tree_info_list p_info_list = malloc(sizeof(*p_info_list));
     p_info_list->block_num = block_num;
@@ -110,6 +132,8 @@ void ir_cfg_set_func_dom(p_symbol_func p_func) {
     }
     set_dom_depth(p_func->p_entry_block, 0);
     cfg_build_dom_tree_info_list_drop(p_info_list);
+    p_func->if_updated_graph = false;
+    ir_basic_block_dom_info_print(p_func->p_entry_block);
 }
 
 void ir_cfg_set_program_dom(p_program p_program) {
@@ -118,12 +142,4 @@ void ir_cfg_set_program_dom(p_program p_program) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         ir_cfg_set_func_dom(p_func);
     }
-}
-
-void cfg_build_dom_tree_info_list_drop(p_cfg_build_dom_tree_info_list p_info_list) {
-    for (size_t i = 0; i < p_info_list->block_num; i++)
-        free((p_info_list->p_base + i)->p_semi_block_list);
-    free(p_info_list->p_base);
-    free(p_info_list->block2dfn_id);
-    free(p_info_list);
 }
