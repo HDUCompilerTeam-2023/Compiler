@@ -178,13 +178,10 @@ p_liveness_info liveness_info_gen(p_symbol_func p_func) {
         p_info->block_branch_live_in[i] = bitmap_gen(vreg_num);
         bitmap_set_empty(p_info->block_branch_live_in[i]);
     }
-    p_ir_basic_block p_last_block = list_entry(p_func->block.p_prev, ir_basic_block, node);
-    while (list_head_alone(&p_last_block->instr_list))
-        p_last_block = list_entry(p_last_block->node.p_prev, ir_basic_block, node);
-    size_t instr_num = list_entry(p_last_block->instr_list.p_prev, ir_instr, node)->instr_id + 1;
+    size_t instr_num = p_func->instr_num;
+    p_info->instr_num = instr_num;
     p_info->instr_live_in = malloc(sizeof(void *) * instr_num);
     p_info->instr_live_out = malloc(sizeof(void *) * instr_num);
-    p_info->instr_num = instr_num;
     for (size_t i = 0; i < instr_num; i++) {
         p_info->instr_live_in[i] = bitmap_gen(vreg_num);
         bitmap_set_empty(p_info->instr_live_in[i]);
