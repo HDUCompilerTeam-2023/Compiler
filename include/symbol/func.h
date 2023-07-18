@@ -25,6 +25,8 @@ struct symbol_func {
 
     size_t block_cnt;
     list_head block;
+    p_ir_basic_block p_ret_block;
+    p_ir_basic_block p_entry_block;
 
     list_head call_param_vmem_list;
     size_t stack_size;
