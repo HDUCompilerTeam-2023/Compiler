@@ -14,6 +14,7 @@
 #include <ir_opt/mem2reg.h>
 #include <ir_opt/reg_alloca/reg_alloca.h>
 #include <ir_opt/simplify_cfg.h>
+#include <ir_opt/copy_propagation.h>
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
@@ -56,6 +57,8 @@ int main(int argc, char *argv[]) {
     // deadcode elimate
     ir_deadcode_elimate_pass(p_program, true);
 
+    ir_opt_copy_propagation(p_program);
+
     // shared lir trans
     share_lir_trans_pass(p_program);
 
@@ -69,6 +72,7 @@ int main(int argc, char *argv[]) {
 
     critical_edge_cut_pass(p_program);
 
+    program_ir_print(p_program);
     delete_cmp_pass(p_program);
 
     arm_trans_after_pass(p_program);
