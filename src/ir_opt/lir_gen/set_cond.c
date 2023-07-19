@@ -9,6 +9,11 @@ void set_cond_pass(p_program p_ir) {
     p_list_head p_func_node;
     list_for_each(p_func_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_func_node, symbol_func, node);
+        p_list_head p_node;
+        list_for_each(p_node, &p_func->vreg_list) {
+            p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
+            p_vreg->if_cond = false;
+        }
         p_list_head p_block_node;
         list_for_each(p_block_node, &p_func->block) {
             p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
