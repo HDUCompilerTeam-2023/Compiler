@@ -130,8 +130,8 @@ void p_live_in_block(p_liveness_info p_info, p_ir_basic_block p_basic_block, p_i
         }
         return;
     }
-    list_for_each(p_node, &p_basic_block->prev_basic_block_list) {
-        p_ir_basic_block p_prev_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
+    list_for_each(p_node, &p_basic_block->prev_branch_target_list) {
+        p_ir_basic_block p_prev_block = list_entry(p_node, ir_branch_target_node, node)->p_target->p_source_block;
         p_live_out_block(p_info, p_prev_block, p_vreg);
     }
 }

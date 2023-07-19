@@ -57,13 +57,13 @@ void ir_basic_block_print(p_ir_basic_block p_basic_block) {
     }
     printf(":");
 
-    if (!list_head_alone(&p_basic_block->prev_basic_block_list)) {
+    if (!list_head_alone(&p_basic_block->prev_branch_target_list)) {
         printf("                        ; preds = ");
         p_list_head p_node;
-        list_for_each(p_node, &p_basic_block->prev_basic_block_list) {
-            size_t id = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block->block_id;
+        list_for_each(p_node, &p_basic_block->prev_branch_target_list) {
+           size_t id = list_entry(p_node, ir_branch_target_node, node)->p_target->p_source_block->block_id;
             printf("b%ld", id);
-            if (p_node->p_next != &p_basic_block->prev_basic_block_list)
+            if (p_node->p_next != &p_basic_block->prev_branch_target_list)
                 printf(", ");
         }
     }

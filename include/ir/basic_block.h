@@ -23,7 +23,7 @@ struct ir_basic_block {
     size_t instr_num;
     p_ir_basic_block_branch p_branch;
 
-    list_head prev_basic_block_list;
+    list_head prev_branch_target_list;
     list_head node;
 
     // SSA 相关
@@ -38,7 +38,10 @@ struct ir_basic_block {
     p_symbol_func p_func;
     bool if_visited;
 };
-
+struct ir_branch_target_node{
+    p_ir_basic_block_branch_target p_target;
+    list_head node;
+};
 struct ir_basic_block_list{
     list_head block_list;
 };
