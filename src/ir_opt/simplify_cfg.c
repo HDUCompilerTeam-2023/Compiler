@@ -61,21 +61,19 @@ static inline void ir_simplify_cfg_func_remove_no_predesessor_bb(p_symbol_func p
         p_ir_basic_block_branch_target p_target_2 = p_bb->p_branch->p_target_2;
         p_list_head p_prev_node;
         if (p_target_1) {
-            list_for_each(p_prev_node, &p_target_1->p_block->prev_basic_block_list) {
-                p_ir_basic_block_list_node p_bbl = list_entry(p_prev_node, ir_basic_block_list_node, node);
-                if (p_bbl->p_basic_block == p_bb) {
-                    list_del(p_prev_node);
-                    free(p_bbl);
+            list_for_each(p_prev_node, &p_target_1->p_block->prev_branch_target_list) {
+                p_ir_branch_target_node p_bbl = list_entry(p_prev_node, ir_branch_target_node, node);
+                if (p_bbl->p_target->p_source_block == p_bb) {
+                    ir_branch_target_node_drop(p_bbl);
                     break;
                 }
             }
         }
         if (p_target_2) {
-            list_for_each(p_prev_node, &p_target_2->p_block->prev_basic_block_list) {
-                p_ir_basic_block_list_node p_bbl = list_entry(p_prev_node, ir_basic_block_list_node, node);
-                if (p_bbl->p_basic_block == p_bb) {
-                    list_del(p_prev_node);
-                    free(p_bbl);
+            list_for_each(p_prev_node, &p_target_2->p_block->prev_branch_target_list) {
+                p_ir_branch_target_node p_bbl = list_entry(p_prev_node, ir_branch_target_node, node);
+                if (p_bbl->p_target->p_source_block == p_bb) {
+                    ir_branch_target_node_drop(p_bbl);
                     break;
                 }
             }
@@ -106,11 +104,11 @@ static inline void ir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_fun
     p_list_head p_next;
     list_for_each_safe(p_node, p_next, &p_func->block) {
         p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
-        if ((&p_bb->prev_basic_block_list)->p_next->p_next != &p_bb->prev_basic_block_list) continue;
+        if ((&p_bb->prev_branch_target_list)->p_next->p_next != &p_bb->prev_branch_target_list) continue;
         if (p_node == p_func->block.p_next) continue;
-        assert(!list_head_alone(&p_bb->prev_basic_block_list));
+        assert(!list_head_alone(&p_bb->prev_branch_target_list));
 
-        p_ir_basic_block p_prev_bb = list_entry(p_bb->prev_basic_block_list.p_prev, ir_basic_block_list_node, node)->p_basic_block;
+        p_ir_basic_block p_prev_bb = list_entry(p_bb->prev_branch_target_list.p_prev, ir_branch_target_node, node)->p_target->p_source_block;
         if (p_prev_bb->p_branch->kind != ir_br_branch) continue;
         assert(p_prev_bb != p_bb);
 
@@ -131,28 +129,6 @@ static inline void ir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_fun
         }
         assert(p_node_src == &p_prev_bb->p_branch->p_target_1->block_param);
 
-        p_ir_basic_block_branch_target p_target_1 = p_bb->p_branch->p_target_1;
-        p_ir_basic_block_branch_target p_target_2 = p_bb->p_branch->p_target_2;
-        if (p_target_1) {
-            p_list_head p_node;
-            list_for_each(p_node, &p_target_1->p_block->prev_basic_block_list) {
-                p_ir_basic_block_list_node p_bbl = list_entry(p_node, ir_basic_block_list_node, node);
-                if (p_bbl->p_basic_block == p_bb) {
-                    p_bbl->p_basic_block = p_prev_bb;
-                    break;
-                }
-            }
-        }
-        if (p_target_2) {
-            p_list_head p_node;
-            list_for_each(p_node, &p_target_2->p_block->prev_basic_block_list) {
-                p_ir_basic_block_list_node p_bbl = list_entry(p_node, ir_basic_block_list_node, node);
-                if (p_bbl->p_basic_block == p_bb) {
-                    p_bbl->p_basic_block = p_prev_bb;
-                    break;
-                }
-            }
-        }
         ir_basic_block_add_instr_list(p_prev_bb, p_bb);
         p_bb->instr_list.p_next = &p_bb->instr_list;
         p_bb->instr_list.p_prev = &p_bb->instr_list;
@@ -185,17 +161,17 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
         if (p_target->p_block == p_bb) continue;
 
         p_list_head p_prev_node;
-        list_for_each(p_prev_node, &p_target->p_block->prev_basic_block_list) {
-            p_ir_basic_block_list_node p_bbl = list_entry(p_prev_node, ir_basic_block_list_node, node);
-            if (p_bbl->p_basic_block == p_bb) {
-                list_del(p_prev_node);
-                free(p_bbl);
+        list_for_each(p_prev_node, &p_target->p_block->prev_branch_target_list) {
+            p_ir_branch_target_node p_bbl = list_entry(p_prev_node, ir_branch_target_node, node);
+            if (p_bbl->p_target->p_source_block == p_bb) {
+                ir_branch_target_node_drop(p_bbl);
                 break;
             }
         }
 
-        list_for_each(p_prev_node, &p_bb->prev_basic_block_list) {
-            p_ir_basic_block p_prev_bb = list_entry(p_prev_node, ir_basic_block_list_node, node)->p_basic_block;
+        p_list_head p_next;
+        list_for_each_safe(p_prev_node, p_next, &p_bb->prev_branch_target_list) {
+            p_ir_basic_block p_prev_bb = list_entry(p_prev_node, ir_branch_target_node, node)->p_target->p_source_block;
             p_ir_basic_block_branch_target *pp_prev_target_del;
             p_ir_basic_block_branch_target p_prev_target_del;
             p_ir_basic_block_branch_target p_prev_target_no_del;
@@ -235,10 +211,12 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
                 }
                 ir_basic_block_branch_target_add_param(p_prev_target_new, ir_operand_vreg_gen(p_param_reg));
             }
+            ir_basic_block_branch_del_prev_target(p_prev_target_del, p_target->p_block);
             ir_basic_block_branch_target_drop(p_prev_bb, p_prev_target_del);
             *pp_prev_target_del = p_prev_target_new;
             // it's dangerous
             p_prev_target_new->p_source_block = p_prev_bb;
+            ir_basic_block_add_prev_target(p_prev_target_new, p_target->p_block);
 
             if (p_prev_target_no_del && p_prev_target_no_del->p_block == p_target->p_block) {
                 p_list_head p_node_new, p_node_old = p_prev_target_no_del->block_param.p_next;
@@ -258,12 +236,10 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
                     p_prev_bb->p_branch->kind = ir_br_branch;
                     ir_operand_drop(p_prev_bb->p_branch->p_exp);
                     p_prev_bb->p_branch->p_exp = NULL;
+                    ir_basic_block_branch_del_prev_target(p_prev_bb->p_branch->p_target_2, p_target->p_block);
                     ir_basic_block_branch_target_drop(p_prev_bb, p_prev_bb->p_branch->p_target_2);
                     p_prev_bb->p_branch->p_target_2 = NULL;
                 }
-            }
-            else {
-                ir_basic_block_add_prev(p_prev_bb, p_target->p_block);
             }
         }
 
@@ -287,13 +263,13 @@ static inline void ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_symbo
     p_list_head p_node;
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
-        if ((&p_bb->prev_basic_block_list)->p_next->p_next != &p_bb->prev_basic_block_list) continue;
+        if ((&p_bb->prev_branch_target_list)->p_next->p_next != &p_bb->prev_branch_target_list) continue;
         if (p_node == p_func->block.p_next) continue;
-        assert(!list_head_alone(&p_bb->prev_basic_block_list));
+        assert(!list_head_alone(&p_bb->prev_branch_target_list));
         if (list_head_alone(&p_bb->basic_block_phis))
             continue;
 
-        p_ir_basic_block p_prev_bb = list_entry(&p_bb->prev_basic_block_list.p_next, ir_basic_block_list_node, node)->p_basic_block;
+        p_ir_basic_block p_prev_bb = list_entry(&p_bb->prev_branch_target_list.p_next, ir_branch_target_node, node)->p_target->p_source_block;
         p_ir_basic_block_branch_target p_target = p_prev_bb->p_branch->p_target_1;
         assert(p_target);
         if (p_target->p_block != p_bb)

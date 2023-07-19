@@ -5,7 +5,7 @@ typedef enum ir_basic_block_branch_kind ir_basic_block_branch_kind;
 typedef struct ir_basic_block_branch ir_basic_block_branch, *p_ir_basic_block_branch;
 typedef struct ir_basic_block ir_basic_block, *p_ir_basic_block;
 typedef struct ir_basic_block_branch_target ir_basic_block_branch_target, *p_ir_basic_block_branch_target;
-
+typedef struct ir_branch_target_node ir_branch_target_node, *p_ir_branch_target_node;
 typedef struct ir_bb_param ir_bb_param, *p_ir_bb_param;
 typedef struct ir_bb_phi ir_bb_phi, *p_ir_bb_phi;
 typedef struct ir_vreg_list ir_vreg_list, *p_ir_vreg_list;

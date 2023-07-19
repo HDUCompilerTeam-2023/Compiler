@@ -78,12 +78,9 @@ static inline p_reg_info deal_block_param(p_ir_vreg p_vreg, p_reg_info reg_info_
         param_index++;
         if (list_entry(p_param_node, ir_bb_phi, node)->p_bb_phi == p_vreg) {
             p_list_head p_prev_node;
-            list_for_each(p_prev_node, &p_def_block->prev_basic_block_list) {
-                p_ir_basic_block p_prev_block = list_entry(p_prev_node, ir_basic_block_list_node, node)->p_basic_block;
-                if (p_prev_block->p_branch->p_target_1 && p_prev_block->p_branch->p_target_1->p_block == p_def_block)
-                    p_top = deal_block_call(p_prev_block->p_branch->p_target_1, param_index, reg_info_table, p_top, p_func);
-                else
-                    p_top = deal_block_call(p_prev_block->p_branch->p_target_2, param_index, reg_info_table, p_top, p_func);
+            list_for_each(p_prev_node, &p_def_block->prev_branch_target_list) {
+                p_ir_basic_block_branch_target p_prev_target = list_entry(p_prev_node, ir_branch_target_node, node)->p_target;
+                p_top = deal_block_call(p_prev_target, param_index, reg_info_table, p_top, p_func);
             }
             break;
         }
@@ -160,12 +157,9 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
                         p_ir_bb_phi p_bb_phi = list_entry(p_param_node, ir_bb_phi, node);
                         if (p_bb_phi->p_bb_phi == (reg_info_table + j)->p_vreg) {
                             p_list_head p_prev_node;
-                            list_for_each(p_prev_node, &p_def_block->prev_basic_block_list) {
-                                p_ir_basic_block p_prev_block = list_entry(p_prev_node, ir_basic_block_list_node, node)->p_basic_block;
-                                if (p_prev_block->p_branch->p_target_1 && p_prev_block->p_branch->p_target_1->p_block == p_def_block)
-                                    delete_block_call(p_prev_block->p_branch->p_target_1, param_index);
-                                else
-                                    delete_block_call(p_prev_block->p_branch->p_target_2, param_index);
+                            list_for_each(p_prev_node, &p_def_block->prev_branch_target_list) {
+                                p_ir_basic_block_branch_target p_prev_target = list_entry(p_prev_node, ir_branch_target_node, node)->p_target;
+                                delete_block_call(p_prev_target, param_index);
                             }
                             ir_basic_block_del_phi(p_def_block, p_bb_phi);
                             break;

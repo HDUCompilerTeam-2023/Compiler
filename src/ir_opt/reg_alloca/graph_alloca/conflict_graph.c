@@ -778,8 +778,8 @@ static inline void create_ou_unit_phi(p_ir_basic_block p_basic_block, p_ou_unit_
     }
 
     p_list_head p_prev_node;
-    list_for_each(p_prev_node, &p_basic_block->prev_basic_block_list) {
-        p_ir_basic_block p_prev_block = list_entry(p_prev_node, ir_basic_block_list_node, node)->p_basic_block;
+    list_for_each(p_prev_node, &p_basic_block->prev_branch_target_list) {
+        p_ir_basic_block p_prev_block = list_entry(p_prev_node, ir_branch_target_node, node)->p_target->p_source_block;
         deal_block_target(p_basic_block, p_prev_block->p_branch->p_target_1, p_list);
         deal_block_target(p_basic_block, p_prev_block->p_branch->p_target_2, p_list);
     }

@@ -90,8 +90,8 @@ void ir_cfg_set_func_dom(p_symbol_func p_func) {
         p_list_head p_node;
         size_t min_semi_id = p_info->parent;
         // 计算半支配点
-        list_for_each(p_node, &p_info->p_basic_block->prev_basic_block_list) {
-            p_ir_basic_block p_prev = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
+        list_for_each(p_node, &p_info->p_basic_block->prev_branch_target_list) {
+            p_ir_basic_block p_prev = list_entry(p_node, ir_branch_target_node, node)->p_target->p_source_block;
             if (p_info_list->block2dfn_id[p_prev->block_id] <= i) // 若是真祖先取最小的
                 min_semi_id = min_semi_id > p_info_list->block2dfn_id[p_prev->block_id] ? p_info_list->block2dfn_id[p_prev->block_id] : min_semi_id;
             else {

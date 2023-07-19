@@ -2,7 +2,9 @@
 #define __IR_GEN_BASIC_BLOCK__
 #include <ir/basic_block.h>
 p_ir_basic_block ir_basic_block_gen();
-p_ir_basic_block ir_basic_block_add_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next);
+p_ir_basic_block ir_basic_block_add_prev_target(p_ir_basic_block_branch_target p_target, p_ir_basic_block p_des);
+void ir_basic_block_branch_del_prev_target(p_ir_basic_block_branch_target p_target, p_ir_basic_block p_des);
+
 void ir_basic_block_insert_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next);
 void ir_basic_block_insert_next(p_ir_basic_block p_next, p_ir_basic_block p_prev);
 
@@ -41,4 +43,6 @@ void ir_basic_block_list_node_drop(p_ir_basic_block_list_node p_basic_block_list
 void copy_basic_block_list(p_ir_basic_block_list p_des, p_ir_basic_block_list p_src);
 bool if_in_basic_block_list(p_ir_basic_block_list p_list, p_ir_basic_block p_block);
 void ir_basic_block_list_del(p_ir_basic_block_list p_list, p_ir_basic_block p_block);
+
+void ir_branch_target_node_drop(p_ir_branch_target_node p_del);
 #endif

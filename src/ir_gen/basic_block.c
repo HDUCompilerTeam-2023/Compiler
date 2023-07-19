@@ -75,7 +75,7 @@ p_ir_basic_block ir_basic_block_gen() {
     p_ir_basic_block p_ir_block = malloc(sizeof(*p_ir_block));
     *p_ir_block = (ir_basic_block) {
         .instr_list = list_head_init(&p_ir_block->instr_list),
-        .prev_basic_block_list = list_head_init(&p_ir_block->prev_basic_block_list),
+        .prev_branch_target_list = list_head_init(&p_ir_block->prev_branch_target_list),
         .p_branch = ir_basic_block_branch_gen(),
         .block_id = 0,
         .node = list_head_init(&p_ir_block->node),
@@ -91,19 +91,29 @@ p_ir_basic_block ir_basic_block_gen() {
     return p_ir_block;
 }
 // 插入前驱节点列表
-p_ir_basic_block ir_basic_block_add_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next) {
+p_ir_basic_block ir_basic_block_add_prev_target(p_ir_basic_block_branch_target p_target, p_ir_basic_block p_des) {
     p_list_head p_node;
-    list_for_each(p_node, &p_next->prev_basic_block_list) {
-        if (list_entry(p_node, ir_basic_block, node) == p_prev) // 若已存在不插入
+    list_for_each(p_node, &p_des->prev_branch_target_list) {
+        if (list_entry(p_node, ir_branch_target_node, node)->p_target == p_target) // 若已存在不插入
             return NULL;
     }
-    p_ir_basic_block_list_node node = malloc(sizeof(*node));
-    *node = (ir_basic_block_list_node) {
-        .p_basic_block = p_prev,
+    p_ir_branch_target_node node = malloc(sizeof(*node));
+    *node = (ir_branch_target_node) {
+        .p_target = p_target,
         .node = list_head_init(&node->node),
     };
-    list_add_prev(&node->node, &p_next->prev_basic_block_list);
-    return p_next;
+    list_add_prev(&node->node, &p_des->prev_branch_target_list);
+    return p_des;
+}
+void ir_basic_block_branch_del_prev_target(p_ir_basic_block_branch_target p_target, p_ir_basic_block p_des) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_des->prev_branch_target_list) {
+        p_ir_branch_target_node p_branch_target = list_entry(p_node, ir_branch_target_node, node);
+        if (p_branch_target->p_target == p_target) {
+            ir_branch_target_node_drop(p_branch_target);
+            break;
+        }
+    }
 }
 void ir_basic_block_insert_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next) {
     if (p_next->p_func->p_entry_block == p_next) {
@@ -161,7 +171,7 @@ void ir_basic_block_set_target2(p_ir_basic_block p_basic_block, p_ir_basic_block
 void ir_basic_block_set_br(p_ir_basic_block p_bb, p_ir_basic_block p_next) {
     p_bb->p_branch->kind = ir_br_branch;
     ir_basic_block_set_target1(p_bb, ir_basic_block_branch_target_gen(p_next));
-    ir_basic_block_add_prev(p_bb, p_next);
+    ir_basic_block_add_prev_target(p_bb->p_branch->p_target_1, p_next);
 }
 
 void ir_basic_block_set_cond_exp(p_ir_basic_block p_basic_block, p_ir_operand p_exp) {
@@ -175,8 +185,8 @@ void ir_basic_block_set_cond(p_ir_basic_block p_bb, p_ir_operand p_exp, p_ir_bas
     ir_basic_block_set_target1(p_bb, ir_basic_block_branch_target_gen(p_true));
     ir_basic_block_set_target2(p_bb, ir_basic_block_branch_target_gen(p_false));
     ir_basic_block_set_cond_exp(p_bb, p_exp);
-    ir_basic_block_add_prev(p_bb, p_true);
-    ir_basic_block_add_prev(p_bb, p_false);
+    ir_basic_block_add_prev_target(p_bb->p_branch->p_target_1, p_true);
+    ir_basic_block_add_prev_target(p_bb->p_branch->p_target_2, p_false);
 }
 void ir_basic_block_set_branch(p_ir_basic_block p_basic_block, p_ir_basic_block_branch p_branch) {
     p_basic_block->p_branch = p_branch;
@@ -254,9 +264,9 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
         assert(p_instr->p_basic_block == p_basic_block);
         ir_instr_drop(p_instr);
     }
-    while (!list_head_alone(&p_basic_block->prev_basic_block_list)) {
-        p_ir_basic_block_list_node p_basic_block_list_node = list_entry(p_basic_block->prev_basic_block_list.p_next, ir_basic_block_list_node, node);
-        ir_basic_block_list_node_drop(p_basic_block_list_node);
+    while (!list_head_alone(&p_basic_block->prev_branch_target_list)) {
+        p_ir_branch_target_node p_branch_target_node = list_entry(p_basic_block->prev_branch_target_list.p_next, ir_branch_target_node, node);
+        ir_branch_target_node_drop(p_branch_target_node);
     }
     ir_basic_block_list_drop(p_basic_block->dom_son_list);
     ir_basic_block_branch_drop(p_basic_block, p_basic_block->p_branch);
@@ -337,4 +347,9 @@ void ir_basic_block_list_del(p_ir_basic_block_list p_list, p_ir_basic_block p_bl
             break;
         }
     }
+}
+
+void ir_branch_target_node_drop(p_ir_branch_target_node p_del) {
+    list_del(&p_del->node);
+    free(p_del);
 }
