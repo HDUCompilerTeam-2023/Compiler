@@ -21,9 +21,8 @@ static inline bool if_need_cut(p_ir_basic_block_branch_target p_target) {
 static inline p_ir_basic_block cut_edge(p_ir_basic_block p_basic_block, p_ir_basic_block_branch_target p_target, p_symbol_func p_func) {
     p_ir_basic_block p_new_basic_block = ir_basic_block_gen();
     ir_basic_block_insert_next(p_new_basic_block, p_basic_block);
-    p_func->block_cnt++;
     p_new_basic_block->p_branch->kind = ir_br_branch;
-    ir_basic_block_set_target1(p_basic_block, p_target);
+    ir_basic_block_set_target1(p_new_basic_block, p_target);
     return p_new_basic_block;
 }
 
@@ -38,13 +37,13 @@ void critical_edge_cut_pass(p_program p_ir) {
                 if (if_need_cut(p_basic_block->p_branch->p_target_1)) {
                     // 新建块处理target2 的 block_param
                     p_ir_basic_block p_new_basic_block = cut_edge(p_basic_block, p_basic_block->p_branch->p_target_1, p_func);
-                    p_basic_block->p_branch->p_target_1 = ir_basic_block_branch_target_gen(p_new_basic_block);
+                    ir_basic_block_set_target1(p_basic_block, ir_basic_block_branch_target_gen(p_new_basic_block));
                     ir_basic_block_add_prev_target(p_basic_block->p_branch->p_target_1, p_new_basic_block);
                 }
                 if (if_need_cut(p_basic_block->p_branch->p_target_2)) {
                     // 新建块处理target2 的 block_param
                     p_ir_basic_block p_new_basic_block = cut_edge(p_basic_block, p_basic_block->p_branch->p_target_2, p_func);
-                    p_basic_block->p_branch->p_target_2 = ir_basic_block_branch_target_gen(p_new_basic_block);
+                    ir_basic_block_set_target2(p_basic_block, ir_basic_block_branch_target_gen(p_new_basic_block));
                     ir_basic_block_add_prev_target(p_basic_block->p_branch->p_target_2, p_new_basic_block);
                 }
             }
