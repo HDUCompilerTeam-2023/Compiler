@@ -227,14 +227,6 @@ void ir_basic_block_add_dom_son(p_ir_basic_block p_basic_block, p_ir_basic_block
     ir_basic_block_list_add(p_basic_block->dom_son_list, p_son);
     p_son->p_dom_parent = p_basic_block;
 }
-void ir_basic_block_dom_son_list_drop(p_ir_basic_block p_basic_block) {
-    while (!list_head_alone(&p_basic_block->dom_son_list->block_list)) {
-        p_ir_basic_block_list_node p_basic_block_list_node = list_entry(p_basic_block->dom_son_list->block_list.p_next, ir_basic_block_list_node, node);
-        p_basic_block_list_node->p_basic_block->p_dom_parent = NULL;
-        ir_basic_block_list_node_drop(p_basic_block_list_node);
-    }
-    free(p_basic_block->dom_son_list);
-}
 void ir_basic_block_add_phi(p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
     p_ir_bb_phi p_ir_bb_phi = ir_bb_phi_gen(p_vreg);
     p_ir_bb_phi->p_basic_block = p_basic_block;
@@ -266,9 +258,7 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
         p_ir_basic_block_list_node p_basic_block_list_node = list_entry(p_basic_block->prev_basic_block_list.p_next, ir_basic_block_list_node, node);
         ir_basic_block_list_node_drop(p_basic_block_list_node);
     }
-    if (p_basic_block->p_dom_parent)
-        ir_basic_block_list_del(p_basic_block->p_dom_parent->dom_son_list, p_basic_block);
-    ir_basic_block_dom_son_list_drop(p_basic_block);
+    ir_basic_block_list_drop(p_basic_block->dom_son_list);
     ir_basic_block_branch_drop(p_basic_block, p_basic_block->p_branch);
     ir_basic_block_clear_phi(p_basic_block);
     ir_vreg_list_drop(p_basic_block->p_live_in);
@@ -289,16 +279,19 @@ p_ir_basic_block_list ir_basic_block_list_init() {
     p_block_list->block_list = list_head_init(&p_block_list->block_list);
     return p_block_list;
 }
+void ir_basic_block_list_clear(p_ir_basic_block_list p_block_list) {
+    p_list_head p_node, p_node_next;
+    list_for_each_safe(p_node, p_node_next, &p_block_list->block_list){
+        p_ir_basic_block_list_node p_block_node = list_entry(p_node, ir_basic_block_list_node, node);
+        ir_basic_block_list_node_drop(p_block_node);
+    }
+}
 void ir_basic_block_list_add(p_ir_basic_block_list p_list, p_ir_basic_block p_basic_block) {
     p_ir_basic_block_list_node p_node = ir_basic_block_list_node_gen(p_basic_block);
     list_add_prev(&p_node->node, &p_list->block_list);
 }
 void ir_basic_block_list_drop(p_ir_basic_block_list p_basic_block_list) {
-    p_list_head p_node, p_node_next;
-    list_for_each_safe(p_node, p_node_next, &p_basic_block_list->block_list) {
-        p_ir_basic_block_list_node p_block_node = list_entry(p_node, ir_basic_block_list_node, node);
-        ir_basic_block_list_node_drop(p_block_node);
-    }
+    ir_basic_block_list_clear(p_basic_block_list);
     free(p_basic_block_list);
 }
 

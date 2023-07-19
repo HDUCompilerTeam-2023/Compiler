@@ -57,14 +57,13 @@ static inline void set_dom_depth(p_ir_basic_block p_basic_block, size_t depth) {
         set_dom_depth(p_son, depth + 1);
     }
 }
-static inline void clear_dom_info(p_ir_basic_block p_basic_block) {
-    p_list_head p_node, p_node_next;
-    list_for_each_safe(p_node, p_node_next, &p_basic_block->dom_son_list->block_list) {
-        p_ir_basic_block_list_node p_son = list_entry(p_node, ir_basic_block_list_node, node);
-        clear_dom_info(p_son->p_basic_block);
-        ir_basic_block_list_node_drop(p_son);
+static inline void clear_dom_info(p_symbol_func p_func) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_func->block) {
+        p_ir_basic_block p_block = list_entry(p_node, ir_basic_block, node);
+        p_block->p_dom_parent = NULL;
+        ir_basic_block_list_clear(p_block->dom_son_list);
     }
-    p_basic_block->p_dom_parent = NULL;
 }
 // 必须保证图连通， 否则会出错
 #include <stdio.h>
@@ -75,7 +74,7 @@ void ir_cfg_set_func_dom(p_symbol_func p_func) {
         printf("    control graph not changed!\n");
         return;
     }
-    clear_dom_info(p_func->p_entry_block);
+    clear_dom_info(p_func);
     size_t block_num = p_func->block_cnt;
     p_cfg_build_dom_tree_info_list p_info_list = malloc(sizeof(*p_info_list));
     p_info_list->block_num = block_num;
