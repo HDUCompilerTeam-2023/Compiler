@@ -2,6 +2,7 @@
 #define __IR_OPT_SIMPLIFYCFG__
 
 #include <program/use.h>
+#include <util.h>
 
 bool ir_simplify_cfg_pass(p_program p_program);
 
