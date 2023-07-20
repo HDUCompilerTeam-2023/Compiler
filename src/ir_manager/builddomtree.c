@@ -75,6 +75,7 @@ void ir_cfg_set_func_dom(p_symbol_func p_func) {
         return;
     }
     clear_dom_info(p_func);
+    symbol_func_set_block_id(p_func);
     size_t block_num = p_func->block_cnt;
     p_cfg_build_dom_tree_info_list p_info_list = malloc(sizeof(*p_info_list));
     p_info_list->block_num = block_num;
