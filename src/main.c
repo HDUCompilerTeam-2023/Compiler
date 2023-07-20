@@ -46,43 +46,36 @@ int main(int argc, char *argv[]) {
     p_program p_program = frontend_trans(in_file, out_file);
     program_variable_print(p_program);
 
-    // simplify cfg
-    ir_simplify_cfg_pass(p_program);
-
     // into ssa
+    ir_simplify_cfg_pass(p_program);
     mem2reg_program_pass(p_program);
-    ir_build_program_nestedtree(p_program);
-
-    program_ir_dom_info_print(p_program);
-
     // deadcode elimate
     ir_deadcode_elimate_pass(p_program, true);
 
-    ir_opt_copy_propagation(p_program);
+    do {
+        // optimize - need keep block information
+        ir_opt_copy_propagation(p_program);
+        ir_opt_gcm(p_program);
 
-    ir_opt_gcm(p_program);
+        // deadcode elimate
+        ir_deadcode_elimate_pass(p_program, true);
+    } while(0);
 
     // shared lir trans
     share_lir_trans_pass(p_program);
 
     // arm lir trans
     arm_lir_trans_pass(p_program);
-
-    // set_cond
     set_cond_pass(p_program);
-
     reg_alloca_pass(alloca_color_graph, 13, 32, p_program);
-
+    arm_trans_after_pass(p_program);
+    set_cond_pass(p_program);
     critical_edge_cut_pass(p_program);
 
-    program_ir_print(p_program);
-    delete_cmp_pass(p_program);
-
-    arm_trans_after_pass(p_program);
-    program_ir_print(p_program);
-
     arm_codegen_pass(p_program);
+
     // drop ir
+    program_ir_print(p_program);
     program_drop(p_program);
     return 0;
 }

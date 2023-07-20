@@ -319,8 +319,8 @@ bool ir_simplify_cfg_pass(p_program p_program) {
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        symbol_func_set_block_id(p_func);
         if_del |= ir_simplify_cfg_func_pass(p_func);
-
         symbol_func_set_block_id(p_func);
     }
     return if_del;

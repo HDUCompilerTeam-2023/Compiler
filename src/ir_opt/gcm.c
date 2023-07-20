@@ -309,4 +309,7 @@ void ir_opt_gcm(p_program p_ir) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         _ir_opt_gcm_func(p_func);
     }
+    ir_cfg_set_program_dom(p_ir);
+    ir_build_program_nestedtree(p_ir);
+    set_cond_pass(p_ir);
 }
