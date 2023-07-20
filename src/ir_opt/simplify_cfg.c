@@ -269,7 +269,7 @@ static inline void ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_symbo
         if (list_head_alone(&p_bb->basic_block_phis))
             continue;
 
-        p_ir_basic_block p_prev_bb = list_entry(&p_bb->prev_branch_target_list.p_next, ir_branch_target_node, node)->p_target->p_source_block;
+        p_ir_basic_block p_prev_bb = list_entry(p_bb->prev_branch_target_list.p_next, ir_branch_target_node, node)->p_target->p_source_block;
         p_ir_basic_block_branch_target p_target = p_prev_bb->p_branch->p_target_1;
         assert(p_target);
         if (p_target->p_block != p_bb)
