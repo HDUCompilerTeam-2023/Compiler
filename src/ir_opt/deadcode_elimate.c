@@ -106,6 +106,7 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         if (list_head_alone(&p_func->block)) continue;
+        symbol_func_set_block_id(p_func);
         size_t vreg_num = p_func->vreg_cnt + p_func->param_reg_cnt;
         p_reg_info p_top = NULL;
         p_reg_info reg_info_table = malloc(vreg_num * sizeof(*reg_info_table));
