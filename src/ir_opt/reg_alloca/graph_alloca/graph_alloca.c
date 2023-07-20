@@ -414,7 +414,31 @@ static inline void delete_no_use_vreg(p_conflict_graph p_graph) {
     }
 }
 
+#include <stdio.h>
+static inline void cal_spill_num(p_conflict_graph p_graph) {
+    size_t spill_reg_num = 0;
+    size_t spill_mem_num = 0;
+    size_t spill_assign_instr_num = 0;
+    size_t spill_mem_instr_num = 0;
+
+    for (size_t i = 0; i < p_graph->origin_node_num; i++) {
+        if ((p_graph->p_nodes + i)->p_spill_node) {
+            spill_reg_num++;
+            spill_assign_instr_num++;
+            spill_assign_instr_num += (p_graph->p_nodes + i)->p_use_spill_list->num;
+        }
+        if ((p_graph->p_nodes + i)->p_vmem) {
+            spill_mem_num++;
+            spill_mem_instr_num++;
+            spill_mem_instr_num += (p_graph->p_nodes + i)->p_use_spill_list->num;
+        }
+    }
+    printf("used reg_num_r %ld, used_reg_num_s %ld\n", p_graph->p_func->use_reg_num_r, p_graph->p_func->use_reg_num_s);
+    printf("spilled_reg_num: %ld, spilled_assign_instr_num %ld\n", spill_reg_num, spill_assign_instr_num);
+    printf("spilled_mem_num: %ld, spilled_mem_instr_num %ld\n", spill_mem_num, spill_mem_instr_num);
+}
 void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
+    size_t before_instr_num = p_func->instr_num;
     p_conflict_graph p_graph = conflict_graph_gen(reg_num_r, reg_num_s, p_func);
     p_liveness_info p_live_info = liveness_info_gen(p_func);
     liveness_analysis(p_live_info);
@@ -443,6 +467,9 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
 
     combine_mov(p_func);
     liveness_info_drop(p_live_info);
+    cal_spill_num(p_graph);
     conflict_graph_drop(p_graph);
     symbol_func_set_block_id(p_func);
+    printf("before alloca instr num %ld\n", before_instr_num);
+    printf("after alloca instr num %ld\n", p_func->instr_num);
 }
