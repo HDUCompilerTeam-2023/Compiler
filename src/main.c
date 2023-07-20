@@ -4,13 +4,13 @@
 #include <program/print.h>
 
 #include <backend/arm/codegen.h>
+#include <ir_manager/set_cond.h>
 #include <ir_opt/deadcode_elimate.h>
 #include <ir_opt/lir_gen/arm_trans.h>
+#include <ir_opt/lir_gen/arm_trans_after.h>
 #include <ir_opt/lir_gen/critical_edge_cut.h>
 #include <ir_opt/lir_gen/delete_cmp.h>
-#include <ir_opt/lir_gen/set_cond.h>
 #include <ir_opt/lir_gen/share_trans.h>
-#include <ir_opt/lir_gen/arm_trans_after.h>
 #include <ir_opt/mem2reg.h>
 #include <ir_opt/reg_alloca/reg_alloca.h>
 #include <ir_opt/simplify_cfg.h>
@@ -39,7 +39,6 @@ int main(int argc, char *argv[]) {
         assert(argv[i][0] != '-');
         in_file = argv[i];
     }
-
 
     // gen ir
     p_program p_program = frontend_trans(in_file, out_file);
