@@ -23,6 +23,7 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va) {
         .block_cnt = 0,
         .param_reg_list = list_head_init(&p_func->param_reg_list),
         .call_param_vmem_list = list_head_init(&p_func->call_param_vmem_list),
+        .p_nestedtree_root = NULL,
         .vreg_list = list_head_init(&p_func->vreg_list),
         .stack_size = 0,
         .inner_stack_size = 0,

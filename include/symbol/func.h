@@ -2,8 +2,9 @@
 #define __SYMBOL_FUNC__
 
 #include <ir.h>
+#include <ir_manager/builddomtree.h>
+#include <ir_manager/buildnestree.h>
 #include <symbol.h>
-
 struct symbol_func {
     // type info
     bool is_va;
@@ -31,6 +32,8 @@ struct symbol_func {
     list_head call_param_vmem_list;
     size_t stack_size;
     size_t inner_stack_size;
+
+    p_nestedtree_node p_nestedtree_root;
 
     size_t instr_num;
 

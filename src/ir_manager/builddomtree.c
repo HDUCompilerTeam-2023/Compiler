@@ -136,18 +136,17 @@ void ir_cfg_set_func_dom(p_symbol_func p_func) {
     ir_basic_block_dom_info_print(p_func->p_entry_block);
 }
 
-bool ir_basic_block_dom_check(p_ir_basic_block p_son, p_ir_basic_block p_parent) {
-    while (p_son->dom_depth > p_parent->dom_depth)
-        p_son = p_son->p_dom_parent;
-    if (p_son == p_parent)
-        return true;
-    return false;
-}
-
 void ir_cfg_set_program_dom(p_program p_program) {
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         ir_cfg_set_func_dom(p_func);
     }
+}
+
+bool ir_basic_block_dom_check(p_ir_basic_block p_block1, p_ir_basic_block p_block2) {
+    while (p_block1->dom_depth > p_block2->dom_depth)
+        p_block1 = p_block1->p_dom_parent;
+    if (p_block1 != p_block2) return false;
+    return true;
 }

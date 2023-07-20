@@ -49,6 +49,8 @@ int main(int argc, char *argv[]) {
 
     // into ssa
     mem2reg_program_pass(p_program);
+    ir_build_program_nestedtree(p_program);
+
     program_ir_dom_info_print(p_program);
 
     // deadcode elimate
