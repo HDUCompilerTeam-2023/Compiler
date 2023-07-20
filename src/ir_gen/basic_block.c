@@ -83,6 +83,13 @@ p_ir_basic_block ir_basic_block_gen() {
         .dom_son_list = ir_basic_block_list_init(),
         .p_dom_parent = NULL,
         .dom_depth = 0,
+        .target1_scc_list = list_head_init(&p_ir_block->target1_scc_list),
+        .target2_scc_list = list_head_init(&p_ir_block->target2_scc_list),
+        .loop_node_list = list_head_init(&p_ir_block->loop_node_list),
+        .loop_check = initializeRedBlackTree(),
+        .is_loop_tail = false,
+        .is_loop_head = false,
+        .p_nestree_node = NULL,
         .if_visited = false,
         .p_live_in = ir_vreg_list_init(),
         .p_live_out = ir_vreg_list_init(),
@@ -268,6 +275,8 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
         p_ir_branch_target_node p_branch_target_node = list_entry(p_basic_block->prev_branch_target_list.p_next, ir_branch_target_node, node);
         ir_branch_target_node_drop(p_branch_target_node);
     }
+    ir_natual_loop_bb_drop(p_basic_block);
+    destroyRedBlackTree(p_basic_block->loop_check);
     ir_basic_block_list_drop(p_basic_block->dom_son_list);
     ir_basic_block_branch_drop(p_basic_block, p_basic_block->p_branch);
     ir_basic_block_clear_phi(p_basic_block);
@@ -291,7 +300,7 @@ p_ir_basic_block_list ir_basic_block_list_init() {
 }
 void ir_basic_block_list_clear(p_ir_basic_block_list p_block_list) {
     p_list_head p_node, p_node_next;
-    list_for_each_safe(p_node, p_node_next, &p_block_list->block_list){
+    list_for_each_safe(p_node, p_node_next, &p_block_list->block_list) {
         p_ir_basic_block_list_node p_block_node = list_entry(p_node, ir_basic_block_list_node, node);
         ir_basic_block_list_node_drop(p_block_node);
     }

@@ -22,12 +22,13 @@ struct cfg_build_dom_tree_info {
     size_t min_semi_id;
 };
 
-struct cfg_build_dom_tree_info_list{
+struct cfg_build_dom_tree_info_list {
     p_cfg_build_dom_tree_info p_base;
     size_t block_num;
     size_t *block2dfn_id;
 };
 void ir_cfg_set_program_dom(p_program p_program);
 void ir_cfg_set_func_dom(p_symbol_func p_func);
+bool ir_basic_block_dom_check(p_ir_basic_block p_block1, p_ir_basic_block p_block2);
 
 #endif

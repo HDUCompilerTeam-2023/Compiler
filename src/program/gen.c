@@ -19,12 +19,12 @@ p_program program_gen(const char *input, const char *output) {
         .output = NULL,
     };
     if (!output) {
-        char *tmp= malloc(sizeof(char) * 9);
+        char *tmp = malloc(sizeof(char) * 9);
         strcpy(tmp, "output.s");
         p_program->output = tmp;
     }
     else {
-        char *tmp= malloc(sizeof(char) * (strlen(output) + 1));
+        char *tmp = malloc(sizeof(char) * (strlen(output) + 1));
         strcpy(tmp, output);
         p_program->output = tmp;
     }
@@ -34,13 +34,14 @@ p_program program_gen(const char *input, const char *output) {
         p_program->input = tmp;
     }
     else {
-        char *tmp= malloc(sizeof(char) * (strlen(input) + 1));
+        char *tmp = malloc(sizeof(char) * (strlen(input) + 1));
         strcpy(tmp, input);
         p_program->input = tmp;
     }
     return p_program;
 }
 void program_drop(p_program p_program) {
+    program_nestedtree_drop(p_program);
     while (!list_head_alone(&p_program->function)) {
         p_symbol_func p_del = list_entry(p_program->function.p_next, symbol_func, node);
         symbol_func_drop(p_del);

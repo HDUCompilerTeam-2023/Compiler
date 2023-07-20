@@ -2,6 +2,7 @@
 #define __IR_BASIC_BLOCK__
 
 #include <ir.h>
+#include <ir_manager/buildnestree.h>
 
 enum ir_basic_block_branch_kind {
     ir_abort_branch,
@@ -32,17 +33,24 @@ struct ir_basic_block {
     p_ir_basic_block_list dom_son_list; // 支配树上的儿子
     size_t dom_depth; // 支配树深度
 
+    p_nestedtree_node p_nestree_node;
+    list_head loop_node_list;
+    list_head target1_scc_list, target2_scc_list;
+    struct RedBlackTree *loop_check;
+    bool is_loop_head;
+    bool is_loop_tail;
+
     p_ir_vreg_list p_live_in;
     p_ir_vreg_list p_live_out;
 
     p_symbol_func p_func;
     bool if_visited;
 };
-struct ir_branch_target_node{
+struct ir_branch_target_node {
     p_ir_basic_block_branch_target p_target;
     list_head node;
 };
-struct ir_basic_block_list{
+struct ir_basic_block_list {
     list_head block_list;
 };
 struct ir_basic_block_list_node {
