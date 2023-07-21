@@ -3,7 +3,7 @@
 #include <ir/basic_block.h>
 p_ir_basic_block ir_basic_block_gen();
 p_ir_basic_block ir_basic_block_add_prev_target(p_ir_basic_block_branch_target p_target, p_ir_basic_block p_des);
-void ir_basic_block_branch_del_prev_target(p_ir_basic_block_branch_target p_target, p_ir_basic_block p_des);
+void ir_basic_block_branch_del_prev_target(p_ir_basic_block_branch_target p_target);
 
 void ir_basic_block_insert_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next);
 void ir_basic_block_insert_next(p_ir_basic_block p_next, p_ir_basic_block p_prev);

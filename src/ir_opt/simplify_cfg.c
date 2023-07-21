@@ -211,7 +211,7 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
                 }
                 ir_basic_block_branch_target_add_param(p_prev_target_new, ir_operand_vreg_gen(p_param_reg));
             }
-            ir_basic_block_branch_del_prev_target(p_prev_target_del, p_target->p_block);
+            ir_basic_block_branch_del_prev_target(p_prev_target_del);
             ir_basic_block_branch_target_drop(p_prev_bb, p_prev_target_del);
             *pp_prev_target_del = p_prev_target_new;
             // it's dangerous
@@ -236,7 +236,7 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
                     p_prev_bb->p_branch->kind = ir_br_branch;
                     ir_operand_drop(p_prev_bb->p_branch->p_exp);
                     p_prev_bb->p_branch->p_exp = NULL;
-                    ir_basic_block_branch_del_prev_target(p_prev_bb->p_branch->p_target_2, p_target->p_block);
+                    ir_basic_block_branch_del_prev_target(p_prev_bb->p_branch->p_target_2);
                     ir_basic_block_branch_target_drop(p_prev_bb, p_prev_bb->p_branch->p_target_2);
                     p_prev_bb->p_branch->p_target_2 = NULL;
                 }
