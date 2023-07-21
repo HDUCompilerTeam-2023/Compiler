@@ -175,8 +175,8 @@ static inline void delete_block_cond_branch(p_reverse_dom_tree_info_list p_info_
                 assert(p_block->p_branch->kind == ir_cond_branch);
                 assert(list_head_alone(&p_block->p_branch->p_target_1->block_param));
                 assert(list_head_alone(&p_block->p_branch->p_target_2->block_param));
-                ir_basic_block_branch_del_prev_target(p_block->p_branch->p_target_1, p_block->p_branch->p_target_1->p_block);
-                ir_basic_block_branch_del_prev_target(p_block->p_branch->p_target_2, p_block->p_branch->p_target_2->p_block);
+                ir_basic_block_branch_del_prev_target(p_block->p_branch->p_target_1);
+                ir_basic_block_branch_del_prev_target(p_block->p_branch->p_target_2);
                 ir_basic_block_branch_target_drop(p_block, p_block->p_branch->p_target_1);
                 ir_basic_block_branch_target_drop(p_block, p_block->p_branch->p_target_2);
                 ir_operand_drop(p_block->p_branch->p_exp);

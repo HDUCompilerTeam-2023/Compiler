@@ -113,7 +113,8 @@ p_ir_basic_block ir_basic_block_add_prev_target(p_ir_basic_block_branch_target p
     list_add_prev(&node->node, &p_des->prev_branch_target_list);
     return p_des;
 }
-void ir_basic_block_branch_del_prev_target(p_ir_basic_block_branch_target p_target, p_ir_basic_block p_des) {
+void ir_basic_block_branch_del_prev_target(p_ir_basic_block_branch_target p_target) {
+    p_ir_basic_block p_des = p_target->p_block;
     p_list_head p_node;
     list_for_each(p_node, &p_des->prev_branch_target_list) {
         p_ir_branch_target_node p_branch_target = list_entry(p_node, ir_branch_target_node, node);
@@ -122,6 +123,7 @@ void ir_basic_block_branch_del_prev_target(p_ir_basic_block_branch_target p_targ
             break;
         }
     }
+    assert(p_node != &p_des->prev_branch_target_list);
 }
 void ir_basic_block_insert_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next) {
     if (p_next->p_func->p_entry_block == p_next) {
