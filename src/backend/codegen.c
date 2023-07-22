@@ -393,7 +393,6 @@ static void arm_unary_instr_codegen(p_arm_codegen_info p_info, p_ir_unary_instr 
         break;
     case ir_ptr_add_sp:
         if (p_unary_instr->p_src->kind == imme) {
-            assert(p_unary_instr->p_src->p_type->ref_level > 0);
             arm_data_process_gen(out_file, arm_add, p_des->reg_id, SP, p_src->i32const, s, 0, true);
             break;
         }
