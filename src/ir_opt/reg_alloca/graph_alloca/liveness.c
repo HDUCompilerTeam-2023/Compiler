@@ -27,26 +27,6 @@ static inline bool in_bb_phi_list(p_liveness_info p_info, p_ir_basic_block p_bas
     }
     return false;
 }
-
-static inline void p_live_in_statments(p_liveness_info p_info, p_ir_instr p_instr, p_ir_vreg p_vreg) {
-    p_ir_basic_block p_basic_block = p_instr->p_basic_block;
-    if (p_info->use_table)
-        bitmap_add_element(p_info->instr_live_in[p_instr->instr_id], p_vreg->id);
-    else {
-        if (!if_in_vreg_list(p_instr->p_live_in, p_vreg))
-            ir_vreg_list_add(p_instr->p_live_in, p_vreg);
-    }
-    if (&p_instr->node == p_basic_block->instr_list.p_next) {
-        if (in_bb_phi_list(p_info, p_basic_block, p_vreg))
-            return;
-        p_live_in_block(p_info, p_basic_block, p_vreg);
-    }
-    else {
-        p_ir_instr p_last_instr = list_entry(p_instr->node.p_prev, ir_instr, node);
-        p_live_out_statments(p_info, p_last_instr, p_vreg);
-    }
-}
-
 static inline p_ir_vreg add_edge_with(p_ir_instr p_instr) {
     switch (p_instr->irkind) {
     case ir_binary:
@@ -79,6 +59,43 @@ static inline p_ir_vreg add_edge_with(p_ir_instr p_instr) {
         return NULL;
     case ir_gep:
         assert(0);
+    }
+}
+static inline void p_live_in_statments(p_liveness_info p_info, p_ir_instr p_instr, p_ir_vreg p_vreg) {
+    p_ir_basic_block p_basic_block = p_instr->p_basic_block;
+    while (1) {
+        if (p_info->use_table)
+            bitmap_add_element(p_info->instr_live_in[p_instr->instr_id], p_vreg->id);
+        else {
+            if (!if_in_vreg_list(p_instr->p_live_in, p_vreg))
+                ir_vreg_list_add(p_instr->p_live_in, p_vreg);
+        }
+        if (&p_instr->node == p_basic_block->instr_list.p_next) {
+            if (in_bb_phi_list(p_info, p_basic_block, p_vreg))
+                return;
+            p_live_in_block(p_info, p_basic_block, p_vreg);
+            break;
+        }
+        else {
+            p_ir_instr p_last_instr = list_entry(p_instr->node.p_prev, ir_instr, node);
+            if (p_info->use_table)
+                bitmap_add_element(p_info->instr_live_out[p_last_instr->instr_id], p_vreg->id);
+            else {
+                if (!if_in_vreg_list(p_last_instr->p_live_out, p_vreg))
+                    ir_vreg_list_add(p_last_instr->p_live_out, p_vreg);
+            }
+            p_ir_vreg p_des = add_edge_with(p_last_instr);
+            if (p_des) {
+                if (p_des != p_vreg) {
+                    set_graph_table_edge(p_info, p_vreg, p_des);
+                    p_instr = p_last_instr;
+                }
+                else
+                    break;
+            }
+            else
+                p_instr = p_last_instr;
+        }
     }
 }
 
