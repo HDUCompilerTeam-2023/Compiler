@@ -109,6 +109,10 @@ static inline void p_live_out_block(p_liveness_info p_info, p_ir_basic_block p_b
 static inline void p_live_in_block(p_liveness_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
     bitmap_add_element(p_info->block_live_in[p_basic_block->block_id], p_vreg->id);
     p_list_head p_node;
+    list_for_each(p_node, &p_basic_block->prev_branch_target_list) {
+        p_ir_basic_block p_prev_block = list_entry(p_node, ir_branch_target_node, node)->p_target->p_source_block;
+        p_live_out_block(p_info, p_prev_block, p_vreg);
+    }
     if (p_info->p_func->block.p_next == &p_basic_block->node) {
         list_for_each(p_node, &p_info->p_func->param_reg_list) {
             p_ir_vreg p_param = list_entry(p_node, ir_vreg, node);
@@ -117,10 +121,6 @@ static inline void p_live_in_block(p_liveness_info p_info, p_ir_basic_block p_ba
             set_graph_table_edge(p_info, p_param, p_vreg);
         }
         return;
-    }
-    list_for_each(p_node, &p_basic_block->prev_branch_target_list) {
-        p_ir_basic_block p_prev_block = list_entry(p_node, ir_branch_target_node, node)->p_target->p_source_block;
-        p_live_out_block(p_info, p_prev_block, p_vreg);
     }
 }
 
