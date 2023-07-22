@@ -15,6 +15,7 @@
 #include <ir_opt/reg_alloca/reg_alloca.h>
 #include <ir_opt/simplify_cfg.h>
 #include <ir_opt/copy_propagation.h>
+#include <ir_opt/sccp.h>
 #include <ir_opt/gcm.h>
 #include <stdio.h>
 
@@ -55,6 +56,7 @@ int main(int argc, char *argv[]) {
     do {
         // optimize - need keep block information
         ir_opt_copy_propagation(p_program);
+        ir_opt_sccp(p_program);
         ir_opt_gcm(p_program);
 
         // deadcode elimate
