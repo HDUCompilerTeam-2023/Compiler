@@ -88,16 +88,16 @@ static void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             case ir_neq_op:
                 break;
             case ir_l_op:
-                p_binary_instr->op = ir_geq_op;
-                break;
-            case ir_leq_op:
                 p_binary_instr->op = ir_g_op;
                 break;
+            case ir_leq_op:
+                p_binary_instr->op = ir_geq_op;
+                break;
             case ir_g_op:
-                p_binary_instr->op = ir_leq_op;
+                p_binary_instr->op = ir_l_op;
                 break;
             case ir_geq_op:
-                p_binary_instr->op = ir_l_op;
+                p_binary_instr->op = ir_leq_op;
                 break;
             default:
                 break;
