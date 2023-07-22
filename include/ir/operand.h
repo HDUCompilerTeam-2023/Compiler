@@ -19,7 +19,10 @@ struct ir_operand {
                 I32CONST_t i32const;
                 F32CONST_t f32const;
                 p_symbol_str strconst;
-                p_symbol_var p_vmem;
+                struct {
+                    p_symbol_var p_vmem;
+                    I32CONST_t offset;
+                };
             };
         };
     };

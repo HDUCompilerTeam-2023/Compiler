@@ -208,7 +208,7 @@ p_ir_operand ast2ir_exp_gen(p_ast2ir_info p_info, p_ast_exp p_exp) {
     case ast_exp_num: // 若是常量 直接返回该常量对应的操作数
         return ast2ir_exp_num_gen(p_info, p_exp);
     case ast_exp_ptr:
-        return ir_operand_addr_gen(p_exp->p_var);
+        return ir_operand_addr_gen(p_exp->p_var, NULL, 0);
     case ast_exp_gep:
         p_instr = ast2ir_exp_gep_gen(p_info, p_exp);
         break;

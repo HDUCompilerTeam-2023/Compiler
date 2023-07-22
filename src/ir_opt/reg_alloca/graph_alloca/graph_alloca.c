@@ -35,7 +35,7 @@ static void new_store_front(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_bas
     case none:
         return;
     case reg_mem:
-        p_store = ir_store_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), ir_operand_vreg_gen(p_vreg), true);
+        p_store = ir_store_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem, NULL, 0), ir_operand_vreg_gen(p_vreg), true);
         ir_basic_block_addinstr_head(p_basic_block, p_store);
         copy_vreg_list(p_store->p_live_out, p_live_in);
         copy_vreg_list(p_store->p_live_in, p_live_in);
@@ -65,7 +65,7 @@ static void new_store_middle(p_conflict_graph p_graph, p_ir_vreg p_vreg, p_ir_in
     case none:
         return;
     case reg_mem:
-        p_store = ir_store_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), ir_operand_vreg_gen(p_vreg), true);
+        p_store = ir_store_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem, NULL, 0), ir_operand_vreg_gen(p_vreg), true);
         ir_instr_add_next(p_store, p_instr);
         // 改变活跃集合
         copy_vreg_list(p_store->p_live_out, p_instr->p_live_out);
@@ -102,7 +102,7 @@ static p_ir_instr new_load(p_conflict_graph p_graph, p_ir_operand p_operand, p_i
     case none:
         return NULL;
     case reg_mem:
-        p_load = ir_load_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem), p_new_src, true);
+        p_load = ir_load_instr_gen(ir_operand_addr_gen(p_o_node->p_vmem, NULL, 0), p_new_src, true);
         ir_operand_reset_vreg(p_operand, p_new_src);
         // 改变活跃集合和冲突图
         copy_vreg_list(p_load->p_live_in, p_live_in);

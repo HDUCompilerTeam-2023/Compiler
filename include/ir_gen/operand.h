@@ -12,8 +12,8 @@ p_ir_operand ir_operand_str_gen(p_symbol_str strconst);
 p_ir_operand ir_operand_void_gen(void);
 
 
-void ir_operand_reset_addr(p_ir_operand p_operand, p_symbol_var p_vmem);
-p_ir_operand ir_operand_addr_gen(p_symbol_var p_vmem);
+void ir_operand_reset_addr(p_ir_operand p_operand, p_symbol_var p_vmem, p_symbol_type p_type, I32CONST_t offset);
+p_ir_operand ir_operand_addr_gen(p_symbol_var p_vmem, p_symbol_type p_type, I32CONST_t offset);
 
 
 void ir_operand_reset_vreg(p_ir_operand p_operand, p_ir_vreg p_vreg);

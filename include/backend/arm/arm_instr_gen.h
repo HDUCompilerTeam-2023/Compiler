@@ -69,7 +69,7 @@ void arm_jump_reg_gen(FILE *out_file, arm_instr_type type, arm_cond_type cond_ty
 
 void arm_label_gen(FILE *out_file, char *name);
 
-void arm_get_global_addr(FILE *out_file, size_t id, char *name);
+void arm_get_global_addr(FILE *out_file, size_t id, char *name, size_t offset);
 
 void arm_word_gen(FILE *out_file, size_t imme32);
 void arm_space_gen(FILE *out_file, size_t size);

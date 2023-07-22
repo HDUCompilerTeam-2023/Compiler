@@ -108,27 +108,46 @@ p_ir_operand ir_operand_void_gen(void) {
     return p_ir_void;
 }
 
-static inline void _ir_operand_addr_set(p_ir_operand p_operand, p_symbol_var p_vmem) {
+static inline void _ir_operand_addr_set(p_ir_operand p_operand, p_symbol_var p_vmem, p_symbol_type p_type, I32CONST_t offset) {
+    if (!p_type) {
+        p_type = symbol_type_copy(p_vmem->p_type);
+        symbol_type_push_ptr(p_type);
+    }
+    else {
+        p_type = symbol_type_copy(p_type);
+    }
+    assert(p_type->basic == p_vmem->p_type->basic);
+    if (p_vmem->p_type->ref_level == 0) {
+        p_list_head p_node, p_node_vmem = p_vmem->p_type->array.p_prev;
+        list_for_each_tail(p_node, &p_type->array) {
+            assert(p_node_vmem != &p_vmem->p_type->array);
+            p_symbol_type_array p_arr = list_entry(p_node, symbol_type_array, node);
+            p_symbol_type_array p_arr_vmem = list_entry(p_node_vmem, symbol_type_array, node);
+            assert(symbol_type_array_get_size(p_arr) == symbol_type_array_get_size(p_arr_vmem));
+            p_node_vmem = p_node_vmem->p_prev;
+        }
+    }
+    assert(p_type->ref_level = p_vmem->p_type->ref_level + 1);
     *p_operand = (ir_operand) {
         .kind = imme,
         .p_vmem = p_vmem,
-        .p_type = symbol_type_copy(p_vmem->p_type),
+        .offset = offset,
+        .p_type = p_type,
         .used_type = p_operand->used_type,
         .p_bb_param = p_operand->p_bb_param,
     };
-    symbol_type_push_ptr(p_operand->p_type);
 }
-p_ir_operand ir_operand_addr_gen(p_symbol_var p_vmem) {
+p_ir_operand ir_operand_addr_gen(p_symbol_var p_vmem, p_symbol_type p_type, I32CONST_t offset) {
     p_ir_operand p_operand = malloc(sizeof(*p_operand));
-    _ir_operand_addr_set(p_operand, p_vmem);
+    _ir_operand_addr_set(p_operand, p_vmem, p_type, offset);
     return p_operand;
 }
-void ir_operand_reset_addr(p_ir_operand p_operand, p_symbol_var p_vmem) {
+void ir_operand_reset_addr(p_ir_operand p_operand, p_symbol_var p_vmem, p_symbol_type p_type, I32CONST_t offset) {
     assert(p_operand);
     if (p_operand->kind == imme && p_operand->p_type->ref_level > 0 && p_operand->p_vmem == p_vmem)
         return;
     _ir_operand_inner_drop(p_operand);
-    _ir_operand_addr_set(p_operand, p_vmem);
+    _ir_operand_addr_set(p_operand, p_vmem, p_type, offset);
 }
 
 static inline void _ir_operand_vreg_set(p_ir_operand p_operand, p_ir_vreg p_vreg) {
@@ -164,7 +183,7 @@ p_ir_operand ir_operand_copy(p_ir_operand p_src) {
         return p_ret;
     }
     if (p_src->p_type->ref_level > 0){
-        p_ret = ir_operand_addr_gen(p_src->p_vmem);
+        p_ret = ir_operand_addr_gen(p_src->p_vmem, p_src->p_type, p_src->offset);
         p_ret->used_type = p_src->used_type;
         p_ret->p_bb_param = p_src->p_bb_param;
         return p_ret;
@@ -187,7 +206,7 @@ void ir_operand_reset_operand(p_ir_operand p_operand, p_ir_operand p_src) {
         return;
     }
     if (p_src->p_type->ref_level > 0) {
-        ir_operand_reset_addr(p_operand, p_src->p_vmem);
+        ir_operand_reset_addr(p_operand, p_src->p_vmem, p_src->p_type, p_src->offset);
         return;
     }
     assert(list_head_alone(&p_src->p_type->array));
