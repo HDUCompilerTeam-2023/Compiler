@@ -76,7 +76,7 @@ static inline bool if_stack_offset_imme(p_ir_operand p_operand) {
 }
 static inline void offset_reg(p_ir_operand p_operand, p_ir_instr p_instr, p_symbol_func p_func) {
     assert(if_stack_offset_imme(p_operand));
-    size_t offset = p_operand->p_vmem->stack_offset;
+    size_t offset = p_operand->p_vmem->stack_offset + p_operand->offset;
     p_ir_vreg p_temp_reg = temp_vreg_gen(p_func);
     p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(offset), p_temp_reg);
     ir_operand_reset_vreg(p_operand, p_temp_reg);
@@ -89,12 +89,12 @@ static inline void deal_unary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     switch (p_unary_instr->op) {
     case ir_val_assign:
         if (if_stack_offset_imme(p_src))
-            ir_operand_reset_int(p_src, p_src->p_vmem->stack_offset);
+            ir_operand_reset_int(p_src, p_src->p_vmem->stack_offset + p_src->offset);
         break;
     case ir_ptr_add_sp:
         if (!if_stack_offset_imme(p_src))
             break;
-        size_t offset = p_src->p_vmem->stack_offset;
+        size_t offset = p_src->p_vmem->stack_offset + p_src->offset;
         if (!if_legal_rotate_imme12(offset)) {
             offset_reg(p_src, p_instr, p_func);
             break;
@@ -115,7 +115,7 @@ static inline void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     switch (p_binary_instr->op) {
     case ir_add_op:
         if (if_stack_offset_imme(p_src1)) {
-            offset = p_src1->p_vmem->stack_offset;
+            offset = p_src1->p_vmem->stack_offset + p_src1->offset;
             if (p_src2->kind == imme) {
                 offset += p_src2->i32const;
                 p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(offset), p_des);
@@ -131,7 +131,7 @@ static inline void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             break;
         }
         if (if_stack_offset_imme(p_src2)) {
-            offset = p_src2->p_vmem->stack_offset;
+            offset = p_src2->p_vmem->stack_offset + p_src2->offset;
             if (p_src1->kind == imme) {
                 offset += p_src1->i32const;
                 p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(offset), p_des);
@@ -150,7 +150,7 @@ static inline void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     case ir_sub_op:
         assert(!if_stack_offset_imme(p_src2));
         if (if_stack_offset_imme(p_src1)) {
-            offset = p_src1->p_vmem->stack_offset;
+            offset = p_src1->p_vmem->stack_offset + p_src1->offset;
             if (p_src2->kind == imme) {
                 offset -= p_src2->i32const;
                 p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(offset), p_des);
@@ -178,7 +178,7 @@ static inline void deal_store_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     if (p_store_instr->is_stack_ptr) {
         size_t offset;
         if (if_stack_offset_imme(p_addr))
-            offset = p_addr->p_vmem->stack_offset;
+            offset = p_addr->p_vmem->stack_offset + p_addr->offset;
         else
             return;
         // else can do constant progation rs = 3; str rd, [sp, rs] -> str rd, [sp, 3]
@@ -211,7 +211,7 @@ static inline void deal_load_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     if (p_load_instr->is_stack_ptr) {
         size_t offset;
         if (if_stack_offset_imme(p_addr))
-            offset = p_addr->p_vmem->stack_offset;
+            offset = p_addr->p_vmem->stack_offset + p_addr->offset;
         else
             return;
         // else can do constant progation rs = 3; ldr rd, [sp, rs] -> ldr rd, [sp, 3]
@@ -272,11 +272,11 @@ static inline void arm_trans_after_func(p_symbol_func p_func) {
                         continue;
                     p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_vreg->p_type));
                     symbol_func_add_variable(p_func, p_vmem);
-                    p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), ir_operand_vreg_gen(p_vreg), true);
+                    p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem, NULL, 0), ir_operand_vreg_gen(p_vreg), true);
                     ir_instr_add_prev(p_store, p_instr);
                     p_ir_vreg p_new_des = ir_vreg_copy(p_vreg);
                     symbol_func_vreg_add(p_func, p_new_des);
-                    p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem), p_new_des, true);
+                    p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem, NULL, 0), p_new_des, true);
                     ir_instr_add_next(p_load, p_instr);
                     rewrite_after_use_new_vreg(p_instr, p_new_des, p_vreg);
                 }

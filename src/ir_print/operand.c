@@ -15,6 +15,8 @@ void ir_operand_print(p_ir_operand p_operand) {
         if (p_operand->p_type->ref_level > 0) {
             printf(" (addr ");
             symbol_name_print(p_operand->p_vmem);
+            if (p_operand->offset)
+                printf(", %d", p_operand->offset);
             printf(")");
         }
         else if (p_operand->p_type->basic == type_i32)

@@ -141,7 +141,8 @@ static void mov_imme2reg(p_arm_codegen_info p_info, size_t rd, p_ir_operand p_op
     assert(p_operand->kind == imme);
     if (p_operand->p_type->ref_level > 0) {
         assert(p_operand->p_vmem->is_global);
-        arm_get_global_addr(p_info->out_file, rd, p_operand->p_vmem->name);
+        assert(!s);
+        arm_get_global_addr(p_info->out_file, rd, p_operand->p_vmem->name, p_operand->offset);
         return;
     }
     switch (p_operand->p_type->basic) {

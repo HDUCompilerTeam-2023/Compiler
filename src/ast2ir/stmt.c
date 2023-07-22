@@ -49,7 +49,7 @@ void ast2ir_stmt_return_gen(p_ast2ir_info p_info, p_ast_exp p_exp) {
     if (p_exp) {
         assert(p_info->p_ret_vmem);
         p_ir_operand p_ret = ast2ir_exp_gen(p_info, p_exp);
-        p_ir_operand p_ret_addr_operand = ir_operand_addr_gen(p_info->p_ret_vmem);
+        p_ir_operand p_ret_addr_operand = ir_operand_addr_gen(p_info->p_ret_vmem, NULL, 0);
         ast2ir_info_add_instr(p_info, ir_store_instr_gen(p_ret_addr_operand, p_ret, true));
     }
     else {

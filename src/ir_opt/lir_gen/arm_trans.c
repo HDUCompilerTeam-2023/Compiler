@@ -201,7 +201,7 @@ static void deal_store_instr(p_ir_instr p_instr, p_symbol_func p_func) {
 
 static inline void new_load_func_param(p_symbol_func p_func, p_ir_basic_block p_entry, p_ir_vreg p_param) {
     p_symbol_var p_param_vmem = symbol_func_param_reg_mem(p_func, p_param);
-    p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_param_vmem), p_param, true);
+    p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_param_vmem, NULL, 0), p_param, true);
     ir_basic_block_addinstr_head(p_entry, p_load);
 }
 
@@ -252,7 +252,7 @@ static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
             p_vmem->stack_offset = offset;
             offset += basic_type_get_size(p_vmem->p_type->basic);
             symbol_func_add_call_param_vmem(p_func, p_vmem);
-            p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem), ir_operand_copy(p_param->p_param), true);
+            p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem, NULL, 0), ir_operand_copy(p_param->p_param), true);
             ir_instr_add_prev(p_store, p_instr);
             ir_param_set_vmem(p_param, p_vmem);
             if (if_first) {
