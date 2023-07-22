@@ -73,3 +73,18 @@ bool program_add_function(p_program p_program, p_symbol_func p_func) {
     p_func->id = p_program->function_cnt++;
     return list_add_prev(&p_func->node, &p_program->function);
 }
+
+void program_del_global(p_program p_program, p_symbol_var p_var) {
+    --p_program->variable_cnt;
+    list_del(&p_var->node);
+}
+
+void program_global_set_id(p_program p_program) {
+    size_t id = 0;
+    p_list_head p_node;
+    list_for_each(p_node, &p_program->variable) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        p_var->id = id++;
+    }
+    assert(id == p_program->variable_cnt);
+}
