@@ -273,8 +273,7 @@ static inline void live_set_swap(p_ir_vreg_list p_live, p_ir_vreg *p_map, size_t
         p_ir_vreg_list_node p_live_node = list_entry(p_node, ir_vreg_list_node, node);
         p_ir_vreg p_new_vreg = p_map[p_live_node->p_vreg->id];
         if (if_have[p_new_vreg->id]) {
-            list_del(p_node);
-            free(p_live);
+            ir_vreg_list_node_drop(p_live_node);
             continue;
         }
         if_have[p_new_vreg->id] = true;
