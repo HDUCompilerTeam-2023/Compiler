@@ -35,20 +35,6 @@ void nestedtree_tail_list_insert(p_ir_basic_block p_basic_block, p_nestedtree_no
 void program_nestedtree_drop(p_program p_program);
 void nestedtree_node_drop(p_nestedtree_node root);
 
-typedef struct {
-    int stacktop;
-    int stacksize;
-
-    p_ir_basic_block *stackdata;
-} stack;
-
-stack *InitStack();
-void stack_push(stack *pushstack, p_ir_basic_block pushnumber);
-p_ir_basic_block stack_pop(stack *popstack);
-p_ir_basic_block stack_top(stack *popstack);
-bool checkstack(stack *checkstack);
-void destroystack(stack *stk);
-
 void ir_set_program_scc(p_program p_program);
 void ir_cfg_set_func_scc(p_symbol_func p_func);
 void scc_info_target1_gen(p_ir_basic_block p_block, p_ir_basic_block to);

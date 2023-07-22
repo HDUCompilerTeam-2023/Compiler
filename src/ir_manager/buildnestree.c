@@ -20,24 +20,21 @@ void ir_build_func_nestedtree(p_symbol_func p_func) {
     if (list_head_alone(&p_func->block)) return;
     p_nestedtree_node root = malloc(sizeof(*root));
     p_list_head p_node;
+    *root = (nestedtree_node) {
+        .head = NULL,
+        .parent = NULL,
+        .son_list = list_head_init(&root->son_list),
+        .tail_list = list_head_init(&root->tail_list),
+        .rbtree = initializeRedBlackTree(),
+        .depth = 0,
+    };
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
-        if (!p_basic_block->block_id) {
-            assert(!p_basic_block->is_loop_head);
-            *root = (nestedtree_node) {
-                .head = p_basic_block,
-                .parent = NULL,
-                .son_list = list_head_init(&root->son_list),
-                .tail_list = list_head_init(&root->tail_list),
-                .rbtree = initializeRedBlackTree(),
-                .depth = 0,
-            };
-            for (int i = 0; i < p_func->block_cnt; ++i)
-                insert(root->rbtree, i);
-            p_func->p_nestedtree_root = root;
-            p_basic_block->p_nestree_node = root;
-            continue;
-        }
+        insert(root->rbtree, (uint64_t) p_basic_block);
+    }
+    p_func->p_nestedtree_root = root;
+    list_for_each(p_node, &p_func->block) {
+        p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
         if (p_basic_block->is_loop_head)
             nestedtree_insert(p_basic_block, p_func->p_nestedtree_root);
         else if (p_basic_block->dom_depth)
@@ -60,7 +57,7 @@ void nestedtree_insert(p_ir_basic_block p_basic_block, p_nestedtree_node p_root)
 
     list_for_each(p_node, &p_root->son_list) {
         p_nestedtree_node p_son_node = list_entry(p_node, nested_list_node, node)->p_nested_node;
-        if (search(p_son_node->rbtree->root, p_basic_block->block_id)) {
+        if (search(p_son_node->rbtree->root, (uint64_t) p_basic_block)) {
             nestedtree_insert(p_basic_block, p_son_node);
             return;
         }
@@ -77,7 +74,7 @@ void nestedtree_insert(p_ir_basic_block p_basic_block, p_nestedtree_node p_root)
     };
     list_for_each(p_node, p_head) {
         p_ir_basic_block p_scc_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
-        insert(p_new_node->rbtree, p_scc_block->block_id);
+        insert(p_new_node->rbtree, (uint64_t) p_scc_block);
     }
 
     p_nested_list_node p_son_node = malloc(sizeof(*p_son_node));
@@ -93,7 +90,7 @@ void nestedtree_tail_list_insert(p_ir_basic_block p_basic_block, p_nestedtree_no
     p_list_head p_node;
     list_for_each(p_node, &p_root->son_list) {
         p_nestedtree_node p_son_node = list_entry(p_node, nested_list_node, node)->p_nested_node;
-        if (search(p_son_node->rbtree->root, p_basic_block->block_id)) {
+        if (search(p_son_node->rbtree->root, (uint64_t) p_basic_block)) {
             nestedtree_tail_list_insert(p_basic_block, p_son_node);
             return;
         }
@@ -157,16 +154,14 @@ void ir_cfg_set_func_scc(p_symbol_func p_func) {
         p_ir_basic_block_branch_target p_true_block = p_basic_block->p_branch->p_target_1;
         p_ir_basic_block_branch_target p_false_block = p_basic_block->p_branch->p_target_2;
 
-        if (p_true_block && p_true_block->p_block->block_id == p_basic_block->block_id) {
-            printf("init\n");
+        if (p_true_block && p_true_block->p_block == p_basic_block) {
             scc_info_target1_gen(p_basic_block, p_true_block->p_block);
         }
 
         else if (p_true_block && ir_basic_block_dom_check(p_basic_block, p_true_block->p_block)) {
-            printf("init\n");
             scc_info_target1_gen(p_basic_block, p_true_block->p_block);
         }
-        if (p_false_block && p_false_block->p_block->block_id == p_basic_block->block_id)
+        if (p_false_block && p_false_block->p_block == p_basic_block)
             scc_info_target2_gen(p_basic_block, p_false_block->p_block);
         else if (p_false_block && ir_basic_block_dom_check(p_basic_block, p_false_block->p_block)) {
             scc_info_target2_gen(p_basic_block, p_false_block->p_block);
@@ -184,7 +179,7 @@ void scc_info_target1_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
         };
         list_add_next(&p_new_node->node, &p_block->target1_scc_list);
 
-        if (insert(to->loop_check, to->block_id)) {
+        if (insert(to->loop_check, (uint64_t) to)) {
             p_new_node = malloc(sizeof(*p_new_node));
             *p_new_node = (ir_basic_block_list_node) {
                 .p_basic_block = p_block,
@@ -198,12 +193,12 @@ void scc_info_target1_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
     p_block->is_loop_tail = true;
     to->is_loop_head = true;
     stack *stk = InitStack();
-    stack_push(stk, p_block);
+    stack_push(stk, (uint64_t) p_block);
     RedBlackTree *tree = initializeRedBlackTree();
-    insert(tree, p_block->block_id);
-    insert(tree, to->block_id);
+    insert(tree, (uint64_t) p_block);
+    insert(tree, (uint64_t) to);
     while (checkstack(stk)) {
-        p_ir_basic_block p_top_block = stack_pop(stk);
+        p_ir_basic_block p_top_block = (p_ir_basic_block) stack_pop(stk);
         p_ir_basic_block_list_node p_new_node = malloc(sizeof(*p_new_node));
         *p_new_node = (ir_basic_block_list_node) {
             .p_basic_block = p_top_block,
@@ -211,7 +206,7 @@ void scc_info_target1_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
         };
         list_add_next(&p_new_node->node, &p_block->target1_scc_list);
 
-        if (insert(to->loop_check, p_top_block->block_id)) {
+        if (insert(to->loop_check, (uint64_t) p_top_block)) {
             p_new_node = malloc(sizeof(*p_new_node));
             *p_new_node = (ir_basic_block_list_node) {
                 .p_basic_block = p_top_block,
@@ -223,8 +218,8 @@ void scc_info_target1_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
         p_list_head p_node;
         list_for_each(p_node, &p_top_block->prev_branch_target_list) {
             p_ir_basic_block p_prev = list_entry(p_node, ir_branch_target_node, node)->p_target->p_source_block;
-            if (insert(tree, p_prev->block_id))
-                stack_push(stk, p_prev);
+            if (insert(tree, (uint64_t) p_prev))
+                stack_push(stk, (uint64_t) p_prev);
         }
     }
     p_ir_basic_block_list_node p_new_node = malloc(sizeof(*p_new_node));
@@ -234,7 +229,7 @@ void scc_info_target1_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
     };
     list_add_next(&p_new_node->node, &p_block->target1_scc_list);
 
-    if (insert(to->loop_check, to->block_id)) {
+    if (insert(to->loop_check, (uint64_t) to)) {
         p_new_node = malloc(sizeof(*p_new_node));
         *p_new_node = (ir_basic_block_list_node) {
             .p_basic_block = to,
@@ -257,7 +252,7 @@ void scc_info_target2_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
         };
         list_add_next(&p_new_node->node, &p_block->target2_scc_list);
 
-        if (insert(to->loop_check, to->block_id)) {
+        if (insert(to->loop_check, (uint64_t) to)) {
             p_new_node = malloc(sizeof(*p_new_node));
             *p_new_node = (ir_basic_block_list_node) {
                 .p_basic_block = p_block,
@@ -270,12 +265,12 @@ void scc_info_target2_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
     p_block->is_loop_tail = true;
     to->is_loop_head = true;
     stack *stk = InitStack();
-    stack_push(stk, p_block);
+    stack_push(stk, (uint64_t) p_block);
     RedBlackTree *tree = initializeRedBlackTree();
-    insert(tree, p_block->block_id);
-    insert(tree, to->block_id);
+    insert(tree, (uint64_t) p_block);
+    insert(tree, (uint64_t) to);
     while (checkstack(stk)) {
-        p_ir_basic_block p_top_block = stack_pop(stk);
+        p_ir_basic_block p_top_block = (p_ir_basic_block) stack_pop(stk);
         p_ir_basic_block_list_node p_new_node = malloc(sizeof(*p_new_node));
         *p_new_node = (ir_basic_block_list_node) {
             .p_basic_block = p_top_block,
@@ -283,7 +278,7 @@ void scc_info_target2_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
         };
         list_add_next(&p_new_node->node, &p_block->target2_scc_list);
 
-        if (insert(to->loop_check, p_top_block->block_id)) {
+        if (insert(to->loop_check, (uint64_t) p_top_block)) {
             p_new_node = malloc(sizeof(*p_new_node));
             *p_new_node = (ir_basic_block_list_node) {
                 .p_basic_block = p_top_block,
@@ -295,8 +290,8 @@ void scc_info_target2_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
         p_list_head p_node;
         list_for_each(p_node, &p_top_block->prev_branch_target_list) {
             p_ir_basic_block p_prev = list_entry(p_node, ir_branch_target_node, node)->p_target->p_source_block;
-            if (insert(tree, p_prev->block_id))
-                stack_push(stk, p_prev);
+            if (insert(tree, (uint64_t) p_prev))
+                stack_push(stk, (uint64_t) p_prev);
         }
     }
     p_ir_basic_block_list_node p_new_node = malloc(sizeof(*p_new_node));
@@ -305,7 +300,7 @@ void scc_info_target2_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
         .node = list_head_init(&p_new_node->node),
     };
     list_add_next(&p_new_node->node, &p_block->target2_scc_list);
-    if (insert(to->loop_check, to->block_id)) {
+    if (insert(to->loop_check, (uint64_t) to)) {
         p_new_node = malloc(sizeof(*p_new_node));
         *p_new_node = (ir_basic_block_list_node) {
             .p_basic_block = to,
@@ -387,7 +382,11 @@ void ir_func_scc_info_print(p_symbol_func p_func) {
 void ir_nestree_print(p_nestedtree_node p_root, size_t depth) {
     for (size_t i = 0; i < depth; i++)
         printf(" ");
-    printf("loop head: %ld\n", p_root->head->block_id);
+    printf("loop head:");
+    if (p_root->head)
+        printf(" %ld\n", p_root->head->block_id);
+    else
+        putchar('\n');
     p_list_head p_node;
     list_for_each(p_node, &p_root->son_list) {
         p_nestedtree_node p_tree_node = list_entry(p_node, nested_list_node, node)->p_nested_node;
@@ -432,43 +431,4 @@ void program_naturaloop_drop(p_program p_program) {
             ir_natual_loop_bb_drop(p_basic_block);
         }
     }
-}
-
-stack *InitStack() {
-    stack *stk = (stack *) malloc(sizeof(stack));
-    stk->stackdata = (p_ir_basic_block *) malloc(32 * sizeof(p_ir_basic_block));
-    if (!stk->stackdata) {
-        return NULL;
-    }
-    stk->stacktop = -1;
-    stk->stacksize = 32;
-    return stk;
-}
-
-void stack_push(stack *stk, p_ir_basic_block p_basic_block) {
-    if (++stk->stacktop == stk->stacksize) {
-        stk->stacksize <<= 1;
-        stk->stackdata = (p_ir_basic_block *) realloc(stk->stackdata, sizeof(p_ir_basic_block) * stk->stacksize);
-    }
-    stk->stackdata[stk->stacktop] = p_basic_block;
-}
-
-p_ir_basic_block stack_pop(stack *stk) {
-    if (stk->stacktop == -1) return NULL;
-    return stk->stackdata[stk->stacktop--];
-}
-
-p_ir_basic_block stack_top(stack *stk) {
-    if (stk->stacktop == -1) return NULL;
-    return stk->stackdata[stk->stacktop--];
-}
-
-bool checkstack(stack *stk) {
-    if (stk->stacktop == -1) return false;
-    return true;
-}
-
-void destroystack(stack *stk) {
-    free(stk->stackdata);
-    free(stk);
 }

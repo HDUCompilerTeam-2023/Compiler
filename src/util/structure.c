@@ -4,7 +4,7 @@
 
 // tree
 
-Node *createNode(size_t key, Color color) {
+Node *createNode(uint64_t key, Color color) {
     Node *new_node = (Node *) malloc(sizeof(Node));
     new_node->key = key;
     new_node->color = color;
@@ -102,7 +102,7 @@ void insertFixup(RedBlackTree *tree, Node *new_node) {
     tree->root->color = BLACK;
 }
 
-bool insert(RedBlackTree *tree, size_t key) {
+bool insert(RedBlackTree *tree, uint64_t key) {
     if (search(tree->root, key)) return false;
     Node *new_node = createNode(key, RED);
     Node *y = NULL;
@@ -130,7 +130,7 @@ bool insert(RedBlackTree *tree, size_t key) {
     return true;
 }
 
-bool search(Node *root, size_t key) {
+bool search(Node *root, uint64_t key) {
     if (root == NULL) return false;
     if (root->key == key)
         return true;
@@ -160,4 +160,43 @@ void clearRedBlackTree(RedBlackTree *tree) {
 void destroyRedBlackTree(RedBlackTree *tree) {
     freeNode(tree->root);
     free(tree);
+}
+
+stack *InitStack() {
+    stack *stk = (stack *) malloc(sizeof(stack));
+    stk->stackdata = (uint64_t *) malloc(32 * sizeof(uint64_t));
+    if (!stk->stackdata) {
+        return NULL;
+    }
+    stk->stacktop = -1;
+    stk->stacksize = 32;
+    return stk;
+}
+
+void stack_push(stack *stk, uint64_t p_basic_block) {
+    if (++stk->stacktop == stk->stacksize) {
+        stk->stacksize <<= 1;
+        stk->stackdata = (uint64_t *) realloc(stk->stackdata, sizeof(uint64_t) * stk->stacksize);
+    }
+    stk->stackdata[stk->stacktop] = p_basic_block;
+}
+
+uint64_t stack_pop(stack *stk) {
+    if (stk->stacktop == -1) return 0;
+    return stk->stackdata[stk->stacktop--];
+}
+
+uint64_t stack_top(stack *stk) {
+    if (stk->stacktop == -1) return 0;
+    return stk->stackdata[stk->stacktop--];
+}
+
+bool checkstack(stack *stk) {
+    if (stk->stacktop == -1) return false;
+    return true;
+}
+
+void destroystack(stack *stk) {
+    free(stk->stackdata);
+    free(stk);
 }
