@@ -17,11 +17,7 @@ void program_variable_print(p_program p_program) {
     list_for_each(p_node, &p_program->variable) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         printf("global ");
-        symbol_init_print(p_var);
-    }
-    list_for_each(p_node, &p_program->constant) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        printf("constant ");
+        if (p_var->is_const) printf("constant ");
         symbol_init_print(p_var);
     }
     list_for_each(p_node, &p_program->string) {

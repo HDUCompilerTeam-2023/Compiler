@@ -39,10 +39,6 @@ p_symbol_func syntax_find_func(p_syntax_info p_info, const char *name) {
     return symbol_table_func_find(p_info->p_table, name);
 }
 
-void syntax_func_add_constant(p_syntax_info p_info, p_symbol_var p_var) {
-    symbol_table_var_add(p_info->p_table, p_var);
-    symbol_func_add_constant(p_info->p_func, p_var);
-}
 void syntax_func_add_variable(p_syntax_info p_info, p_symbol_var p_var) {
     symbol_table_var_add(p_info->p_table, p_var);
     symbol_func_add_variable(p_info->p_func, p_var);
@@ -63,10 +59,6 @@ p_symbol_str syntax_get_str(p_syntax_info p_info, const char *string) {
 void syntax_program_add_variable(p_syntax_info p_info, p_symbol_var p_var) {
     symbol_table_var_add(p_info->p_table, p_var);
     program_add_global(p_info->p_program, p_var);
-}
-void syntax_program_add_constant(p_syntax_info p_info, p_symbol_var p_var) {
-    symbol_table_var_add(p_info->p_table, p_var);
-    program_add_constant(p_info->p_program, p_var);
 }
 void syntax_program_add_function(p_syntax_info p_info, p_symbol_func p_func) {
     symbol_table_func_add(p_info->p_table, p_func);
@@ -246,12 +238,7 @@ p_syntax_decl_head syntax_declaration(p_syntax_info p_info, p_syntax_decl_head p
             assert(!is_const);
             p_var = symbol_var_gen(name, p_type, is_const, true, NULL);
         }
-        if (is_const) {
-            syntax_program_add_constant(p_info, p_var);
-        }
-        else {
-            syntax_program_add_variable(p_info, p_var);
-        }
+        syntax_program_add_variable(p_info, p_var);
     }
     else if (!p_info->p_block) {
         assert(!p_s_init);
@@ -276,7 +263,7 @@ p_syntax_decl_head syntax_declaration(p_syntax_info p_info, p_syntax_decl_head p
             symbol_init_add(p_init, i, init_val);
         }
         p_symbol_var p_var = symbol_var_gen(name, p_type, true, false, p_init);
-        syntax_func_add_constant(p_info, p_var);
+        syntax_func_add_variable(p_info, p_var);
     }
     else {
         p_symbol_var p_var = symbol_var_gen(name, p_type, false, false, NULL);

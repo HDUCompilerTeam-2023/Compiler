@@ -17,7 +17,6 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va) {
         .is_va = is_va,
         .var_cnt = 0,
         .param = list_head_init(&p_func->param),
-        .constant = list_head_init(&p_func->constant),
         .variable = list_head_init(&p_func->variable),
         .block = list_head_init(&p_func->block),
         .block_cnt = 0,
@@ -140,10 +139,6 @@ void symbol_func_basic_block_init_visited(p_symbol_func p_func) {
         = false;
 }
 
-void symbol_func_add_constant(p_symbol_func p_func, p_symbol_var p_var) {
-    p_var->id = p_func->var_cnt++;
-    list_add_prev(&p_var->node, &p_func->constant);
-}
 void symbol_func_add_variable(p_symbol_func p_func, p_symbol_var p_var) {
     p_var->id = p_func->var_cnt++;
     list_add_prev(&p_var->node, &p_func->variable);
@@ -168,10 +163,6 @@ void symbol_func_drop(p_symbol_func p_func) {
     list_del(&p_func->node);
     while (!list_head_alone(&p_func->param)) {
         p_symbol_var p_del = list_entry(p_func->param.p_next, symbol_var, node);
-        symbol_var_drop(p_del);
-    }
-    while (!list_head_alone(&p_func->constant)) {
-        p_symbol_var p_del = list_entry(p_func->constant.p_next, symbol_var, node);
         symbol_var_drop(p_del);
     }
     while (!list_head_alone(&p_func->variable)) {
@@ -210,11 +201,6 @@ void symbol_func_clear_varible(p_symbol_func p_func) {
     p_list_head p_node;
     size_t id = 0;
     list_for_each(p_node, &p_func->param) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        p_map[id] = p_var;
-        p_var->id = id++;
-    }
-    list_for_each(p_node, &p_func->constant) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         p_map[id] = p_var;
         p_var->id = id++;
@@ -299,10 +285,6 @@ void symbol_func_set_varible_id(p_symbol_func p_func) {
     p_list_head p_node;
     size_t id = 0;
     list_for_each(p_node, &p_func->param) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        p_var->id = id++;
-    }
-    list_for_each(p_node, &p_func->constant) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         p_var->id = id++;
     }

@@ -683,11 +683,6 @@ void arm_codegen_pass(p_program p_ir) {
         assert(p_var->is_global);
         arm_global_sym_gen(out_file, p_var);
     }
-    list_for_each(p_node, &p_ir->constant) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        assert(p_var->is_global);
-        arm_global_sym_gen(out_file, p_var);
-    }
 
     fprintf(out_file, "\n");
     fprintf(out_file, ".section .text\n");

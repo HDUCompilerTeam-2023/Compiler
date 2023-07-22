@@ -19,12 +19,10 @@ p_symbol_func syntax_find_func(p_syntax_info p_info, const char *name);
 p_symbol_str syntax_get_str(p_syntax_info p_info, const char *string);
 
 void syntax_set_func(p_syntax_info p_info, p_symbol_func p_func);
-void syntax_func_add_constant(p_syntax_info p_info, p_symbol_var p_var);
 void syntax_func_add_variable(p_syntax_info p_info, p_symbol_var p_var);
 void syntax_func_add_param(p_syntax_info p_info, p_symbol_var p_var);
 
 void syntax_program_add_variable(p_syntax_info p_info, p_symbol_var p_var);
-void syntax_program_add_constant(p_syntax_info p_info, p_symbol_var p_var);
 void syntax_program_add_function(p_syntax_info p_info, p_symbol_func p_func);
 
 p_syntax_decl_head syntax_declaration(p_syntax_info p_info, p_syntax_decl_head p_head, p_syntax_decl p_decl);
