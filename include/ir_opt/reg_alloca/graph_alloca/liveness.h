@@ -14,6 +14,7 @@ struct liveness_info{
     p_ir_vreg *p_vregs;
     size_t vreg_num;
     bool **graph_table;
+    bool use_table;
 };
 
 void liveness_analysis(p_liveness_info p_info);
