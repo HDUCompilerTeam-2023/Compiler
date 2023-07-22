@@ -1,5 +1,15 @@
 # Change log
 
+## 0.27.0
+
+- 生成 asm
+- 完成一部分优化
+  - mem2reg
+  - simplify CFG
+  - dead code eliminate
+  - global code motion
+  - sparse conditional constant propagation
+
 ## 0.26.2
 
 - 改进 mir 与 ssa
