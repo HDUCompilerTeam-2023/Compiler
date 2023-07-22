@@ -9,11 +9,9 @@ p_program program_gen(const char *input, const char *output) {
     p_program p_program = malloc(sizeof(*p_program));
     *p_program = (program) {
         .variable = list_head_init(&p_program->variable),
-        .constant = list_head_init(&p_program->constant),
         .function = list_head_init(&p_program->function),
         .string = list_head_init(&p_program->string),
         .variable_cnt = 0,
-        .constant_cnt = 0,
         .function_cnt = 0,
         .input = NULL,
         .output = NULL,
@@ -52,11 +50,6 @@ void program_drop(p_program p_program) {
         symbol_var_drop(p_del);
     }
 
-    while (!list_head_alone(&p_program->constant)) {
-        p_symbol_var p_del = list_entry(p_program->constant.p_next, symbol_var, node);
-        symbol_var_drop(p_del);
-    }
-
     while (!list_head_alone(&p_program->string)) {
         p_symbol_str p_del = list_entry(p_program->string.p_next, symbol_str, node);
         symbol_str_drop(p_del);
@@ -74,11 +67,6 @@ bool program_add_str(p_program p_program, p_symbol_str p_str) {
 bool program_add_global(p_program p_program, p_symbol_var p_var) {
     p_var->id = p_program->variable_cnt++;
     return list_add_prev(&p_var->node, &p_program->variable);
-}
-
-bool program_add_constant(p_program p_program, p_symbol_var p_var) {
-    p_var->id = p_program->constant_cnt++;
-    return list_add_prev(&p_var->node, &p_program->constant);
 }
 
 bool program_add_function(p_program p_program, p_symbol_func p_func) {

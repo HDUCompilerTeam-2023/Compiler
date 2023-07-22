@@ -35,14 +35,6 @@ p_ssa_var_list_info mem2reg_init_var_list(p_symbol_func p_func) {
     p_var_list->p_base = malloc(p_var_list->vmem_num * sizeof(*p_var_list->p_base));
     p_list_head p_node;
     // 全局变量, 已初始化
-    list_for_each(p_node, &p_func->constant) {
-        p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
-        *(p_var_list->p_base + p_vmem->id) = (ssa_var_info) {
-            .p_vmem = p_vmem,
-            .p_current_vreg = NULL,
-            .sym_stack = list_init_head(&(p_var_list->p_base + p_vmem->id)->sym_stack),
-        };
-    }
     list_for_each(p_node, &p_func->param) {
         p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
         *(p_var_list->p_base + p_vmem->id) = (ssa_var_info) {
