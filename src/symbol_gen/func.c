@@ -45,31 +45,18 @@ void symbol_func_bb_add_tail(p_symbol_func p_func, p_ir_basic_block p_basic_bloc
 }
 void symbol_func_bb_add_head(p_symbol_func p_func, p_ir_basic_block p_basic_block) {
     p_basic_block->p_func = p_func;
-    p_func->p_entry_block = p_basic_block;
-    if (p_basic_block->p_branch->kind == ir_ret_branch) {
-        assert(list_head_alone(&p_func->block));
+    if (p_basic_block->p_branch->kind == ir_ret_branch)
         p_func->p_ret_block = p_basic_block;
-    }
+    if (list_head_alone(&p_func->block))
+        p_func->p_entry_block = p_basic_block;
     list_add_next(&p_basic_block->node, &p_func->block);
     ++p_func->block_cnt;
     p_func->if_updated_graph = true;
 }
 void symbol_func_bb_del(p_symbol_func p_func, p_ir_basic_block p_basic_block) {
     assert(p_basic_block->p_func == p_func);
-    if (p_func->p_entry_block == p_basic_block) {
-        if (p_basic_block->node.p_next == &p_func->block)
-            p_func->p_entry_block = NULL;
-        else
-            p_func->p_entry_block = list_entry(p_basic_block->node.p_next, ir_basic_block, node);
-    }
-    if (p_func->p_ret_block == p_basic_block) {
-        if (p_basic_block->node.p_prev == &p_func->block)
-            p_func->p_ret_block = NULL;
-        else {
-            p_func->p_ret_block = list_entry(p_basic_block->node.p_prev, ir_basic_block, node);
-            assert(p_func->p_ret_block->p_branch->kind == ir_ret_branch);
-        }
-    }
+    assert(p_func->p_entry_block != p_basic_block);
+    assert(p_func->p_ret_block != p_basic_block);
     ir_basic_block_drop(p_basic_block);
     p_func->if_updated_graph = true;
 }
@@ -155,11 +142,10 @@ void symbol_func_add_param(p_symbol_func p_func, p_symbol_var p_var) {
 }
 
 void symbol_func_drop(p_symbol_func p_func) {
-    if (!list_head_alone(&p_func->block)) {
+    if (!list_head_alone(&p_func->block))
         assert(p_func->p_ret_block->p_branch->kind == ir_ret_branch);
-        assert(p_func->p_entry_block == list_entry(p_func->block.p_next, ir_basic_block, node));
-        assert(p_func->p_ret_block == list_entry(p_func->block.p_prev, ir_basic_block, node));
-    }
+    p_func->p_entry_block = NULL;
+    p_func->p_ret_block = NULL;
     list_del(&p_func->node);
     while (!list_head_alone(&p_func->param)) {
         p_symbol_var p_del = list_entry(p_func->param.p_next, symbol_var, node);

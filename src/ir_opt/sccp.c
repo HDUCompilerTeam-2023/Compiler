@@ -622,12 +622,12 @@ static inline void _visit_exp(p_ir_instr p_instr, p_lattice lattice_map, p_WL p_
 }
 
 static inline void _ir_opt_sccp_func(p_symbol_func p_func) {
-    p_ir_basic_block p_entry = p_func->p_entry_block;
-    if (!p_entry)
+    if (!p_func->p_entry_block)
         return;
     p_ir_basic_block p_start = ir_basic_block_gen();
     symbol_func_bb_add_head(p_func, p_start);
-    ir_basic_block_set_br(p_start, p_entry);
+    ir_basic_block_set_br(p_start, p_func->p_entry_block);
+    p_func->p_entry_block = p_start;
     symbol_func_set_block_id(p_func);
 
     size_t vreg_cnt = p_func->vreg_cnt + p_func->param_reg_cnt;

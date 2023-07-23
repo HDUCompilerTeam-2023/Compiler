@@ -126,17 +126,12 @@ void ir_basic_block_branch_del_prev_target(p_ir_basic_block_branch_target p_targ
     assert(p_node != &p_des->prev_branch_target_list);
 }
 void ir_basic_block_insert_prev(p_ir_basic_block p_prev, p_ir_basic_block p_next) {
-    if (p_next->p_func->p_entry_block == p_next) {
-        assert(p_next == list_entry(p_next->p_func->block.p_next, ir_basic_block, node));
-        p_next->p_func->p_entry_block = p_prev;
-    }
     list_add_prev(&p_prev->node, &p_next->node);
     p_prev->p_func = p_next->p_func;
     p_prev->p_func->block_cnt++;
     p_prev->p_func->if_updated_graph = true;
 }
 void ir_basic_block_insert_next(p_ir_basic_block p_next, p_ir_basic_block p_prev) {
-    assert(p_prev->p_func->p_ret_block != p_prev);
     if (p_next->p_branch->kind == ir_ret_branch)
         p_prev->p_func->p_ret_block = p_next;
     list_add_next(&p_next->node, &p_prev->node);
