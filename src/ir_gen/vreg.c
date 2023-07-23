@@ -12,6 +12,7 @@ p_ir_vreg ir_vreg_gen(p_symbol_type p_type) {
         .reg_id = -1,
         .if_float = false,
         .if_cond = false,
+        .if_loop_inv = true,
     };
     return p_vreg;
 }
