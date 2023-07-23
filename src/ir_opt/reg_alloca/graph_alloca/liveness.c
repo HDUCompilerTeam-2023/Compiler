@@ -10,8 +10,13 @@ static inline void p_live_in_block(p_liveness_info p_info, p_ir_basic_block p_ba
 static inline void p_live_in_branch(p_liveness_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
 
 static inline void set_graph_table_edge(p_liveness_info p_info, p_ir_vreg r1, p_ir_vreg r2) {
-    if (p_info->use_table)
-        p_info->graph_table[r1->id][r2->id] = p_info->graph_table[r2->id][r1->id] = true;
+    if (p_info->use_table){
+        if(!p_info->graph_table[r1->id][r2->id]){
+            assert(!p_info->graph_table[r2->id][r1->id]);
+            add_reg_graph_edge(r1, r2);
+            p_info->graph_table[r1->id][r2->id] = p_info->graph_table[r2->id][r1->id] = true;
+        }
+    }
     else {
         if (!if_in_neighbors((p_graph_node) r1->p_info, (p_graph_node) (r2->p_info)))
             add_reg_graph_edge(r1, r2);
