@@ -106,6 +106,12 @@ typedef struct {
 } lattice, *p_lattice;
 
 static inline bool _const_cmp(p_ir_operand p_op1, p_ir_operand p_op2) {
+    if (p_op1->kind != p_op2->kind)
+        return false;
+    if (p_op1->kind == reg) {
+        assert(p_op2->kind == reg);
+        return p_op1->p_vreg == p_op2->p_vreg;
+    }
     if (p_op1->p_type->basic != p_op2->p_type->basic)
         return false;
     if (p_op1->p_type->ref_level != p_op2->p_type->ref_level)
@@ -143,11 +149,13 @@ static inline bool _set_nac_lattice(const p_lattice p_des) {
 }
 
 static inline bool _set_val_lattice(const p_lattice p_des, p_ir_operand p_const) {
-    assert(p_des->lat != lat_NAC);
-    assert(p_const->kind == imme);
+    if (p_des->lat == lat_NAC) {
+        assert(!p_des->p_const);
+        ir_operand_drop(p_const);
+        return false;
+    }
     if (p_des->lat == lat_VAL) {
         assert(p_des->p_const);
-        assert(p_des->p_const->kind == imme);
         bool same = false;
         printf("cmp ");
         ir_operand_print(p_const);
@@ -211,8 +219,7 @@ static inline void _visit_phi(p_ir_basic_block_branch_target p_target, p_lattice
             continue;
         }
         if (lattice_map[p_src->id].lat == lat_NAC) {
-            assert(!lattice_map[p_src->id].p_const);
-            if (_set_nac_lattice(lattice_map + p_des->id))
+            if (_set_val_lattice(lattice_map + p_des->id, ir_operand_vreg_gen(p_src)))
                 _add_ssa_edge_to_worklist(p_wl, p_des);
             continue;
         }
@@ -224,6 +231,7 @@ static inline void _visit_phi(p_ir_basic_block_branch_target p_target, p_lattice
     assert(p_node_src == p_bb_param_list);
 }
 
+// 默认参与基础运算的指针类型都为基础指针
 static inline bool _visit_binary(p_ir_binary_instr p_instr, p_lattice lattice_map) {
     p_ir_vreg p_des = p_instr->p_des;
     assert(p_des->def_type == instr_def);
@@ -251,33 +259,58 @@ static inline bool _visit_binary(p_ir_binary_instr p_instr, p_lattice lattice_ma
     assert(p_src2);
     assert(p_src2->kind == imme || lattice_map[p_src2->p_vreg->id].lat == lat_NAC);
 
+    // 指针只参与加减运算
     if (p_instr->op != ir_add_op && p_instr->op != ir_sub_op) {
         assert(p_src1->p_type->ref_level == 0);
         assert(list_head_alone(&p_src1->p_type->array));
         assert(p_src2->p_type->ref_level == 0);
         assert(list_head_alone(&p_src2->p_type->array));
     }
+    else {
+        assert(p_des->p_type->ref_level == p_src1->p_type->ref_level + p_src2->p_type->ref_level);
+        assert(p_des->p_type->ref_level <= 1);
+        assert(list_head_alone(&p_src1->p_type->array));
+        assert(list_head_alone(&p_src2->p_type->array));
+        assert(list_head_alone(&p_des->p_type->array));
+    }
+
+    if (p_des->p_type->ref_level) {
+        bool is_add = p_instr->op == ir_add_op;
+        if (p_src2->p_type->ref_level) {
+            assert(is_add);
+            p_ir_operand p_tmp = p_src1;
+            p_src1 = p_src2;
+            p_src2 = p_tmp;
+        }
+        if (p_src1->kind == imme) {
+            if (p_src2->kind == reg)
+                return _set_nac_lattice(p_lat_des);
+            assert(p_src2->p_type->basic == type_i32);
+            size_t offset = is_add ? p_src1->offset + p_src2->i32const : p_src1->offset - p_src2->i32const;
+            return _set_val_lattice(p_lat_des, ir_operand_addr_gen(p_src1->p_vmem, p_des->p_type, offset));
+        }
+        assert(p_src1->p_vreg);
+        if (p_src2->kind == imme) {
+            assert(p_src2->p_type->basic == type_i32);
+            if (p_src2->i32const == 0)
+                return _set_val_lattice(p_lat_des, ir_operand_vreg_gen(p_src1->p_vreg));
+        }
+        return _set_nac_lattice(p_lat_des);
+    }
 
     switch (p_instr->op) {
     case ir_add_op:
-        if (p_src1->kind == reg || p_src2->kind == reg)
+        if (p_src1->kind == reg && p_src2->kind == reg)
             return _set_nac_lattice(p_lat_des);
-        if (p_src1->p_type->ref_level > 0) {
-            assert(p_src1->p_vmem);
-            assert(p_src2->p_type->ref_level == 0);
-            assert(list_head_alone(&p_src2->p_type->array));
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_addr_gen(p_src1->p_vmem, p_des->p_type, p_src1->offset + p_src2->i32const));
+        if (p_src2->kind == reg) {
+            p_ir_operand p_tmp = p_src1; p_src1 = p_src2; p_src2 = p_tmp;
         }
-        if (p_src2->p_type->ref_level > 0) {
-            assert(p_src2->p_vmem);
-            assert(p_src1->p_type->ref_level == 0);
-            assert(list_head_alone(&p_src1->p_type->array));
-            assert(p_src1->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_addr_gen(p_src2->p_vmem, p_des->p_type, p_src2->offset + p_src1->i32const));
-        }
-        assert(list_head_alone(&p_src1->p_type->array));
-        assert(list_head_alone(&p_src2->p_type->array));
+        if (p_src2->p_type->basic == type_i32 && p_src2->i32const == 0)
+            return _set_val_lattice(p_lat_des, ir_operand_copy(p_src1));
+        if (p_src2->p_type->basic == type_f32 && p_src2->f32const == 0)
+            return _set_val_lattice(p_lat_des, ir_operand_copy(p_src1));
+        if (p_src1->kind == reg)
+            return _set_nac_lattice(p_lat_des);
         if (p_src1->p_type->basic == type_i32) {
             assert(p_src2->p_type->basic == type_i32);
             return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const + p_src2->i32const));
@@ -286,16 +319,18 @@ static inline bool _visit_binary(p_ir_binary_instr p_instr, p_lattice lattice_ma
         assert(p_src2->p_type->basic == type_f32);
         return _set_val_lattice(p_lat_des, ir_operand_float_gen(p_src1->f32const + p_src2->f32const));
     case ir_sub_op:
-        if (p_src1->kind == reg && p_src2->kind == reg && p_src1->p_vreg == p_src2->p_vreg)
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
-        assert(p_src2->p_type->ref_level == 0);
-        assert(list_head_alone(&p_src2->p_type->array));
-        if (p_src1->p_type->ref_level > 0) {
-            assert(p_src1->p_vmem);
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_addr_gen(p_src1->p_vmem, p_des->p_type, p_src1->offset - p_src2->i32const));
+        if (p_src1->kind == reg && p_src2->kind == reg) {
+            if (p_src1->p_vreg == p_src2->p_vreg)
+                return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
+            return _set_nac_lattice(p_lat_des);
         }
-        if (p_src1->kind == reg || p_src2->kind == reg)
+        if (p_src2->kind == reg)
+            return _set_nac_lattice(p_lat_des);
+        if (p_src2->p_type->basic == type_i32 && p_src2->i32const == 0)
+            return _set_val_lattice(p_lat_des, ir_operand_copy(p_src1));
+        if (p_src2->p_type->basic == type_f32 && p_src2->f32const == 0)
+            return _set_val_lattice(p_lat_des, ir_operand_copy(p_src1));
+        if (p_src1->kind == reg)
             return _set_nac_lattice(p_lat_des);
         if (p_src1->p_type->basic == type_i32) {
             assert(p_src2->p_type->basic == type_i32);
@@ -310,13 +345,20 @@ static inline bool _visit_binary(p_ir_binary_instr p_instr, p_lattice lattice_ma
         if (p_src2->kind == reg) {
             p_ir_operand p_tmp = p_src1; p_src1 = p_src2; p_src2 = p_tmp;
         }
-        if (p_src1->kind == reg) {
-            if (p_src2->p_type->basic == type_i32 && p_src2->i32const == 0)
+        if (p_src2->p_type->basic == type_i32) {
+            if (p_src2->i32const == 0)
                 return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
-            if (p_src2->p_type->basic == type_f32 && p_src2->f32const == 0)
-                return _set_val_lattice(p_lat_des, ir_operand_float_gen(0));
-            return _set_nac_lattice(p_lat_des);
+            if (p_src2->i32const == 1)
+                return _set_val_lattice(p_lat_des, ir_operand_copy(p_src1));
         }
+        if (p_src2->p_type->basic == type_f32) {
+            if (p_src2->f32const == 0)
+                return _set_val_lattice(p_lat_des, ir_operand_float_gen(0));
+            if (p_src2->f32const == 1)
+                return _set_val_lattice(p_lat_des, ir_operand_copy(p_src1));
+        }
+        if (p_src1->kind == reg)
+            return _set_nac_lattice(p_lat_des);
         if (p_src1->p_type->basic == type_i32) {
             assert(p_src2->p_type->basic == type_i32);
             return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const * p_src2->i32const));
@@ -325,13 +367,22 @@ static inline bool _visit_binary(p_ir_binary_instr p_instr, p_lattice lattice_ma
         assert(p_src2->p_type->basic == type_f32);
         return _set_val_lattice(p_lat_des, ir_operand_float_gen(p_src1->f32const * p_src2->f32const));
     case ir_div_op:
-        if (p_src1->kind == reg && p_src2->kind == reg && p_src1->p_vreg == p_src2->p_vreg)
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(1));
+        if (p_src1->kind == reg && p_src2->kind == reg) {
+            if (p_src1->p_vreg == p_src2->p_vreg)
+                return _set_val_lattice(p_lat_des, ir_operand_int_gen(1));
+            return _set_nac_lattice(p_lat_des);
+        }
         if (p_src1->kind == imme) {
             if (p_src1->p_type->basic == type_i32 && p_src1->i32const == 0)
                 return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
             if (p_src1->p_type->basic == type_f32 && p_src1->f32const == 0)
                 return _set_val_lattice(p_lat_des, ir_operand_float_gen(0));
+        }
+        if (p_src2->kind == imme) {
+            if (p_src2->p_type->basic == type_i32 && p_src2->i32const == 1)
+                return _set_val_lattice(p_lat_des, ir_operand_copy(p_src1));
+            if (p_src2->p_type->basic == type_f32 && p_src2->f32const == 1)
+                return _set_val_lattice(p_lat_des, ir_operand_copy(p_src1));
         }
         if (p_src1->kind == reg || p_src2->kind == reg)
             return _set_nac_lattice(p_lat_des);
@@ -345,8 +396,11 @@ static inline bool _visit_binary(p_ir_binary_instr p_instr, p_lattice lattice_ma
     case ir_mod_op:
         assert(p_src1->p_type->basic == type_i32);
         assert(p_src2->p_type->basic == type_i32);
-        if (p_src1->kind == reg && p_src2->kind == reg && p_src1->p_vreg == p_src2->p_vreg)
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
+        if (p_src1->kind == reg && p_src2->kind == reg) {
+            if (p_src1->p_vreg == p_src2->p_vreg)
+                return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
+            return _set_nac_lattice(p_lat_des);
+        }
         if (p_src1->kind == imme && p_src1->i32const == 0) {
             return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
         }
@@ -431,6 +485,7 @@ static inline bool _visit_binary(p_ir_binary_instr p_instr, p_lattice lattice_ma
     }
 }
 
+// 不考虑多个运算符号逆运算后的传播
 static inline bool _visit_unary(p_ir_unary_instr p_instr, p_lattice lattice_map) {
     p_ir_vreg p_des = p_instr->p_des;
     assert(p_des->def_type == instr_def);
@@ -439,8 +494,12 @@ static inline bool _visit_unary(p_ir_unary_instr p_instr, p_lattice lattice_map)
     p_ir_operand p_src = p_instr->p_src;
     if (p_src->kind == reg) {
         assert(p_src->p_vreg);
-        if (lattice_map[p_src->p_vreg->id].lat == lat_NAC)
+        if (lattice_map[p_src->p_vreg->id].lat == lat_NAC) {
+            if (p_instr->op == ir_val_assign) {
+                return _set_val_lattice(lattice_map + p_des->id, ir_operand_vreg_gen(p_src->p_vreg));
+            }
             return _set_nac_lattice(lattice_map + p_des->id);
+        }
         if (lattice_map[p_src->p_vreg->id].lat == lat_LUB)
             return false;
         assert(lattice_map[p_src->p_vreg->id].p_const);
@@ -484,6 +543,7 @@ static inline bool _visit_unary(p_ir_unary_instr p_instr, p_lattice lattice_map)
     return _set_val_lattice(lattice_map + p_des->id, p_src);
 }
 
+// 指针带有类型信息 不能做复制传播
 static inline bool _visit_gep(p_ir_gep_instr p_instr, p_lattice lattice_map) {
     p_ir_vreg p_des = p_instr->p_des;
     assert(p_des->def_type == instr_def);
@@ -500,6 +560,8 @@ static inline bool _visit_gep(p_ir_gep_instr p_instr, p_lattice lattice_map) {
         if (lattice_map[p_addr->p_vreg->id].lat == lat_NAC)
             return _set_nac_lattice(p_lat_des);
         p_addr = lattice_map[p_addr->p_vreg->id].p_const;
+        if (p_addr->kind == reg)
+            return _set_nac_lattice(p_lat_des);
     }
     assert(p_addr);
     assert(p_addr->kind == imme);
@@ -513,6 +575,8 @@ static inline bool _visit_gep(p_ir_gep_instr p_instr, p_lattice lattice_map) {
         if (lattice_map[p_offset->p_vreg->id].lat == lat_NAC)
             return _set_nac_lattice(p_lat_des);
         p_offset = lattice_map[p_offset->p_vreg->id].p_const;
+        if (p_offset->kind == reg)
+            return _set_nac_lattice(p_lat_des);
     }
     assert(p_offset);
     assert(p_offset->kind == imme);
@@ -633,6 +697,11 @@ static inline void _ir_opt_sccp_func(p_symbol_func p_func) {
                 }
                 assert(p_lat->lat == lat_VAL);
                 assert(p_lat->p_const);
+                if (p_lat->p_const->kind == reg) {
+                    _add_cfg_edge_to_worklist(p_wl, p_block->p_branch->p_target_1);
+                    _add_cfg_edge_to_worklist(p_wl, p_block->p_branch->p_target_2);
+                    continue;
+                }
                 assert(p_lat->p_const->kind == imme);
                 assert(p_lat->p_const->p_type->ref_level == 0);
                 assert(list_head_alone(&p_lat->p_const->p_type->array));
@@ -701,9 +770,20 @@ static inline void _ir_opt_sccp_func(p_symbol_func p_func) {
         case lat_VAL:
             assert(lattice_map[i].p_const);
             p_ir_operand p_const = lattice_map[i].p_const;
-            printf("%%%ld -> ", i);
+            ir_vreg_print(p_vreg);
+            printf(" -> ");
             ir_operand_print(p_const);
             printf("\n");
+
+            if (p_const->kind == reg) {
+                p_list_head p_node, p_next;
+                list_for_each_safe(p_node, p_next, &p_vreg->use_list) {
+                    p_ir_operand p_use = list_entry(p_node, ir_operand, use_node);
+                    ir_operand_reset_vreg(p_use, p_const->p_vreg);
+                }
+                ir_operand_drop(p_const);
+                continue;
+            }
 
             assert(p_const->kind == imme);
             p_ir_vreg p_new = ir_vreg_copy(p_vreg);
