@@ -37,16 +37,17 @@ void ir_build_func_nestedtree(p_symbol_func p_func) {
         p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
         if (p_basic_block->is_loop_head)
             nestedtree_insert(p_basic_block, p_func->p_nestedtree_root);
-        else if (p_basic_block->dom_depth)
+        else
             nestedtree_tail_list_insert(p_basic_block, p_func->p_nestedtree_root);
-        else {
-            p_basic_block->p_nestree_node = p_func->p_nestedtree_root;
-            p_ir_basic_block_list_node p_new_node = malloc(sizeof(*p_new_node));
-            *p_new_node = (ir_basic_block_list_node) {
-                .p_basic_block = p_basic_block,
-                .node = list_head_init(&p_new_node->node),
-            };
-            list_add_next(&p_new_node->node, &p_func->p_nestedtree_root->tail_list);
+        p_ir_basic_block_branch_target p_true_block = p_basic_block->p_branch->p_target_1;
+        p_ir_basic_block_branch_target p_false_block = p_basic_block->p_branch->p_target_2;
+        if (p_true_block) {
+            if (!search(p_basic_block->p_nestree_node->rbtree->root, (uint64_t) p_true_block->p_block))
+                p_basic_block->is_loop_exit = true;
+        }
+        if (p_false_block) {
+            if (!search(p_basic_block->p_nestree_node->rbtree->root, (uint64_t) p_false_block->p_block))
+                p_basic_block->is_loop_exit = true;
         }
     }
 }
@@ -153,18 +154,17 @@ void ir_cfg_set_func_scc(p_symbol_func p_func) {
         p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
         p_ir_basic_block_branch_target p_true_block = p_basic_block->p_branch->p_target_1;
         p_ir_basic_block_branch_target p_false_block = p_basic_block->p_branch->p_target_2;
-
-        if (p_true_block && p_true_block->p_block == p_basic_block) {
-            scc_info_target1_gen(p_basic_block, p_true_block->p_block);
+        if (p_true_block) {
+            if (p_true_block->p_block == p_basic_block)
+                scc_info_target1_gen(p_basic_block, p_true_block->p_block);
+            else if (ir_basic_block_dom_check(p_basic_block, p_true_block->p_block))
+                scc_info_target1_gen(p_basic_block, p_true_block->p_block);
         }
-
-        else if (p_true_block && ir_basic_block_dom_check(p_basic_block, p_true_block->p_block)) {
-            scc_info_target1_gen(p_basic_block, p_true_block->p_block);
-        }
-        if (p_false_block && p_false_block->p_block == p_basic_block)
-            scc_info_target2_gen(p_basic_block, p_false_block->p_block);
-        else if (p_false_block && ir_basic_block_dom_check(p_basic_block, p_false_block->p_block)) {
-            scc_info_target2_gen(p_basic_block, p_false_block->p_block);
+        if (p_false_block) {
+            if (p_false_block->p_block == p_basic_block)
+                scc_info_target2_gen(p_basic_block, p_false_block->p_block);
+            else if (ir_basic_block_dom_check(p_basic_block, p_false_block->p_block))
+                scc_info_target2_gen(p_basic_block, p_false_block->p_block);
         }
     }
 }
@@ -190,7 +190,7 @@ void scc_info_target1_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
 
         return;
     }
-    p_block->is_loop_tail = true;
+    p_block->is_loop_back = true;
     to->is_loop_head = true;
     stack *stk = InitStack();
     stack_push(stk, (uint64_t) p_block);
@@ -262,7 +262,7 @@ void scc_info_target2_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
         }
         return;
     }
-    p_block->is_loop_tail = true;
+    p_block->is_loop_back = true;
     to->is_loop_head = true;
     stack *stk = InitStack();
     stack_push(stk, (uint64_t) p_block);
