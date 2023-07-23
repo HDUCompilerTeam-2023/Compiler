@@ -390,19 +390,20 @@ void arm_pop_gen(FILE *out_file, size_t *reg_id, size_t num) {
 }
 
 void arm_get_global_addr(FILE *out_file, size_t rd, char *name, size_t offset) {
+    bool small_off = offset && offset < 32768;
     assert(rd < R_NUM);
     fprintf(out_file, "   movw ");
     fprintf(out_file, "%s", regs[rd]);
     fprintf(out_file, ", #:lower16:");
     fprintf(out_file, "%s", name);
-    if (offset)
+    if (small_off)
         fprintf(out_file, "+%ld", offset);
     fprintf(out_file, "\n");
     fprintf(out_file, "   movt ");
     fprintf(out_file, "%s", regs[rd]);
     fprintf(out_file, ", #:upper16:");
     fprintf(out_file, "%s", name);
-    if (offset)
+    if (small_off)
         fprintf(out_file, "+%ld", offset);
     fprintf(out_file, "\n");
 }

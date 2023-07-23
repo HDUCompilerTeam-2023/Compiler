@@ -143,6 +143,10 @@ static void mov_imme2reg(p_arm_codegen_info p_info, size_t rd, p_ir_operand p_op
         assert(p_operand->p_vmem->is_global);
         assert(!s);
         arm_get_global_addr(p_info->out_file, rd, p_operand->p_vmem->name, p_operand->offset);
+        if (p_operand->offset >= 32768) {
+            mov_int2reg(p_info->out_file, TMP, p_operand->offset, false);
+            arm_data_process_gen(p_info->out_file, arm_add, rd, rd, TMP, false, 0, false);
+        }
         return;
     }
     switch (p_operand->p_type->basic) {
