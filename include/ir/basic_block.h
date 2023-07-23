@@ -38,7 +38,8 @@ struct ir_basic_block {
     list_head target1_scc_list, target2_scc_list;
     struct RedBlackTree *loop_check;
     bool is_loop_head;
-    bool is_loop_tail;
+    bool is_loop_back;
+    bool is_loop_exit;
 
     p_ir_vreg_list p_live_in;
     p_ir_vreg_list p_live_out;
