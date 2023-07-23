@@ -397,14 +397,6 @@ static void combine_mov(p_symbol_func p_func) {
     free(p_need_del);
 }
 
-static void graph_table2list(p_conflict_graph p_graph, p_liveness_info p_live_info) {
-    for (size_t i = 0; i < p_live_info->vreg_num; i++) {
-        for (size_t j = i + 1; j < p_live_info->vreg_num; j++)
-            if (p_live_info->graph_table[i][j])
-                add_reg_graph_edge(p_live_info->p_vregs[i], p_live_info->p_vregs[j]);
-    }
-}
-
 static inline void delete_no_use_vreg(p_conflict_graph p_graph) {
     for (size_t i = 0; i < p_graph->origin_node_num; i++) {
         if ((p_graph->p_nodes + i)->need_delete) {
@@ -441,8 +433,6 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     p_conflict_graph p_graph = conflict_graph_gen(reg_num_r, reg_num_s, p_func);
     p_liveness_info p_live_info = liveness_info_gen(p_func);
     liveness_analysis(p_live_info);
-    if (p_live_info->use_table)
-        graph_table2list(p_graph, p_live_info);
 
     mcs_get_seqs(p_graph);
     check_chordal(p_graph);
