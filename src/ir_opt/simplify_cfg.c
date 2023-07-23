@@ -108,7 +108,7 @@ static inline void ir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_fun
         p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
         if ((&p_bb->prev_branch_target_list)->p_next->p_next != &p_bb->prev_branch_target_list) continue;
         if (p_bb == p_func->p_entry_block) continue;
-        if (p_bb == p_func->p_ret_block) continue;
+
         assert(!list_head_alone(&p_bb->prev_branch_target_list));
 
         p_ir_basic_block p_prev_bb = list_entry(p_bb->prev_branch_target_list.p_prev, ir_branch_target_node, node)->p_target->p_source_block;
@@ -228,6 +228,9 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
                 }
             }
         }
+
+        if (p_bb == p_func->p_entry_block)
+            p_func->p_entry_block = p_target->p_block;
 
         symbol_func_bb_del(p_func, p_bb);
     }

@@ -56,6 +56,9 @@ static inline void _ir_opt_loop_pre_head_loop(p_symbol_func p_func, p_nestedtree
         ir_basic_block_add_prev_target(p_target, p_prev_head);
     }
 
+    if (p_loop_head == p_func->p_entry_block)
+        p_func->p_entry_block = p_prev_head;
+
 exit:
     free(target_node_map);
 }
