@@ -12,6 +12,7 @@
 #include <ir_gen/operand.h>
 #include <ir_gen/basic_block.h>
 #include <ir_opt/deadcode_elimate.h>
+#include <ir_opt/const_fold.h>
 #include <ir_print.h>
 #include <program/print.h>
 
@@ -251,184 +252,13 @@ static inline bool _visit_binary(p_ir_binary_instr p_instr, p_lattice lattice_ma
     assert(p_src2);
     assert(p_src2->kind == imme || lattice_map[p_src2->p_vreg->id].lat == lat_NAC);
 
-    if (p_instr->op != ir_add_op && p_instr->op != ir_sub_op) {
-        assert(p_src1->p_type->ref_level == 0);
-        assert(list_head_alone(&p_src1->p_type->array));
-        assert(p_src2->p_type->ref_level == 0);
-        assert(list_head_alone(&p_src2->p_type->array));
+    p_ir_operand p_folded = ir_opt_const_fold(p_instr->op, p_src1, p_src2);
+    if (p_folded) {
+        assert(p_folded->p_type->ref_level == p_instr->p_des->p_type->ref_level);
+        assert(p_folded->p_type->basic == p_instr->p_des->p_type->basic);
+        return _set_val_lattice(p_lat_des, p_folded);
     }
-
-    switch (p_instr->op) {
-    case ir_add_op:
-        if (p_src1->kind == reg || p_src2->kind == reg)
-            return _set_nac_lattice(p_lat_des);
-        if (p_src1->p_type->ref_level > 0) {
-            assert(p_src1->p_vmem);
-            assert(p_src2->p_type->ref_level == 0);
-            assert(list_head_alone(&p_src2->p_type->array));
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_addr_gen(p_src1->p_vmem, p_des->p_type, p_src1->offset + p_src2->i32const));
-        }
-        if (p_src2->p_type->ref_level > 0) {
-            assert(p_src2->p_vmem);
-            assert(p_src1->p_type->ref_level == 0);
-            assert(list_head_alone(&p_src1->p_type->array));
-            assert(p_src1->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_addr_gen(p_src2->p_vmem, p_des->p_type, p_src2->offset + p_src1->i32const));
-        }
-        assert(list_head_alone(&p_src1->p_type->array));
-        assert(list_head_alone(&p_src2->p_type->array));
-        if (p_src1->p_type->basic == type_i32) {
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const + p_src2->i32const));
-        }
-        assert(p_src1->p_type->basic == type_f32);
-        assert(p_src2->p_type->basic == type_f32);
-        return _set_val_lattice(p_lat_des, ir_operand_float_gen(p_src1->f32const + p_src2->f32const));
-    case ir_sub_op:
-        if (p_src1->kind == reg && p_src2->kind == reg && p_src1->p_vreg == p_src2->p_vreg)
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
-        assert(p_src2->p_type->ref_level == 0);
-        assert(list_head_alone(&p_src2->p_type->array));
-        if (p_src1->p_type->ref_level > 0) {
-            assert(p_src1->p_vmem);
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_addr_gen(p_src1->p_vmem, p_des->p_type, p_src1->offset - p_src2->i32const));
-        }
-        if (p_src1->kind == reg || p_src2->kind == reg)
-            return _set_nac_lattice(p_lat_des);
-        if (p_src1->p_type->basic == type_i32) {
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const - p_src2->i32const));
-        }
-        assert(p_src1->p_type->basic == type_f32);
-        assert(p_src2->p_type->basic == type_f32);
-        return _set_val_lattice(p_lat_des, ir_operand_float_gen(p_src1->f32const - p_src2->f32const));
-    case ir_mul_op:
-        if (p_src1->kind == reg && p_src2->kind == reg)
-            return _set_nac_lattice(p_lat_des);
-        if (p_src2->kind == reg) {
-            p_ir_operand p_tmp = p_src1; p_src1 = p_src2; p_src2 = p_tmp;
-        }
-        if (p_src1->kind == reg) {
-            if (p_src2->p_type->basic == type_i32 && p_src2->i32const == 0)
-                return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
-            if (p_src2->p_type->basic == type_f32 && p_src2->f32const == 0)
-                return _set_val_lattice(p_lat_des, ir_operand_float_gen(0));
-            return _set_nac_lattice(p_lat_des);
-        }
-        if (p_src1->p_type->basic == type_i32) {
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const * p_src2->i32const));
-        }
-        assert(p_src1->p_type->basic == type_f32);
-        assert(p_src2->p_type->basic == type_f32);
-        return _set_val_lattice(p_lat_des, ir_operand_float_gen(p_src1->f32const * p_src2->f32const));
-    case ir_div_op:
-        if (p_src1->kind == reg && p_src2->kind == reg && p_src1->p_vreg == p_src2->p_vreg)
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(1));
-        if (p_src1->kind == imme) {
-            if (p_src1->p_type->basic == type_i32 && p_src1->i32const == 0)
-                return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
-            if (p_src1->p_type->basic == type_f32 && p_src1->f32const == 0)
-                return _set_val_lattice(p_lat_des, ir_operand_float_gen(0));
-        }
-        if (p_src1->kind == reg || p_src2->kind == reg)
-            return _set_nac_lattice(p_lat_des);
-        if (p_src1->p_type->basic == type_i32) {
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const / p_src2->i32const));
-        }
-        assert(p_src1->p_type->basic == type_f32);
-        assert(p_src2->p_type->basic == type_f32);
-        return _set_val_lattice(p_lat_des, ir_operand_float_gen(p_src1->f32const / p_src2->f32const));
-    case ir_mod_op:
-        assert(p_src1->p_type->basic == type_i32);
-        assert(p_src2->p_type->basic == type_i32);
-        if (p_src1->kind == reg && p_src2->kind == reg && p_src1->p_vreg == p_src2->p_vreg)
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
-        if (p_src1->kind == imme && p_src1->i32const == 0) {
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
-        }
-        if (p_src2->kind == imme && (p_src2->i32const == 1 || p_src2->i32const == -1)) {
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
-        }
-        if (p_src1->kind == reg || p_src2->kind == reg)
-            return _set_nac_lattice(p_lat_des);
-        return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const % p_src2->i32const));
-    case ir_g_op:
-        if (p_src1->kind == reg && p_src2->kind == reg && p_src1->p_vreg == p_src2->p_vreg)
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
-        if (p_src1->kind == reg || p_src2->kind == reg)
-            return _set_nac_lattice(p_lat_des);
-        if (p_src1->p_type->basic == type_i32) {
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const > p_src2->i32const));
-        }
-        assert(p_src1->p_type->basic == type_f32);
-        assert(p_src2->p_type->basic == type_f32);
-        return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->f32const > p_src2->f32const));
-    case ir_geq_op:
-        if (p_src1->kind == reg && p_src2->kind == reg && p_src1->p_vreg == p_src2->p_vreg)
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(1));
-        if (p_src1->kind == reg || p_src2->kind == reg)
-            return _set_nac_lattice(p_lat_des);
-        if (p_src1->p_type->basic == type_i32) {
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const >= p_src2->i32const));
-        }
-        assert(p_src1->p_type->basic == type_f32);
-        assert(p_src2->p_type->basic == type_f32);
-        return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->f32const >= p_src2->f32const));
-    case ir_l_op:
-        if (p_src1->kind == reg && p_src2->kind == reg && p_src1->p_vreg == p_src2->p_vreg)
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
-        if (p_src1->kind == reg || p_src2->kind == reg)
-            return _set_nac_lattice(p_lat_des);
-        if (p_src1->p_type->basic == type_i32) {
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const < p_src2->i32const));
-        }
-        assert(p_src1->p_type->basic == type_f32);
-        assert(p_src2->p_type->basic == type_f32);
-        return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->f32const < p_src2->f32const));
-    case ir_leq_op:
-        if (p_src1->kind == reg && p_src2->kind == reg && p_src1->p_vreg == p_src2->p_vreg)
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(1));
-        if (p_src1->kind == reg || p_src2->kind == reg)
-            return _set_nac_lattice(p_lat_des);
-        if (p_src1->p_type->basic == type_i32) {
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const <= p_src2->i32const));
-        }
-        assert(p_src1->p_type->basic == type_f32);
-        assert(p_src2->p_type->basic == type_f32);
-        return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->f32const <= p_src2->f32const));
-    case ir_eq_op:
-        if (p_src1->kind == reg && p_src2->kind == reg && p_src1->p_vreg == p_src2->p_vreg)
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(1));
-        if (p_src1->kind == reg || p_src2->kind == reg)
-            return _set_nac_lattice(p_lat_des);
-        if (p_src1->p_type->basic == type_i32) {
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const == p_src2->i32const));
-        }
-        assert(p_src1->p_type->basic == type_f32);
-        assert(p_src2->p_type->basic == type_f32);
-        return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->f32const == p_src2->f32const));
-    case ir_neq_op:
-        if (p_src1->kind == reg && p_src2->kind == reg && p_src1->p_vreg == p_src2->p_vreg)
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(0));
-        if (p_src1->kind == reg || p_src2->kind == reg)
-            return _set_nac_lattice(p_lat_des);
-        if (p_src1->p_type->basic == type_i32) {
-            assert(p_src2->p_type->basic == type_i32);
-            return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->i32const != p_src2->i32const));
-        }
-        assert(p_src1->p_type->basic == type_f32);
-        assert(p_src2->p_type->basic == type_f32);
-        return _set_val_lattice(p_lat_des, ir_operand_int_gen(p_src1->f32const != p_src2->f32const));
-    }
+    return _set_nac_lattice(p_lat_des);
 }
 
 static inline bool _visit_unary(p_ir_unary_instr p_instr, p_lattice lattice_map) {
