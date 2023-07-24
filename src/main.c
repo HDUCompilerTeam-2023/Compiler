@@ -57,7 +57,9 @@ int main(int argc, char *argv[]) {
         // optimize - need keep block information
         ir_opt_copy_propagation(p_program);
         ir_opt_sccp(p_program);
-        ir_opt_gcm(p_program);
+        if (is_opt) {
+            ir_opt_gcm(p_program);
+        }
 
         // deadcode elimate
         ir_deadcode_elimate_pass(p_program, true);

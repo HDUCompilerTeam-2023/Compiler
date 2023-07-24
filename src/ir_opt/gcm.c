@@ -182,8 +182,6 @@ static inline void _ir_opt_gcm_schedule_early(p_ir_instr p_instr, instr_info *in
         return;
     if (p_instr->irkind == ir_binary && p_instr->ir_binary.p_des->if_cond)
         return;
-    if (p_early == p_instr->p_basic_block)
-        return;
 
     assert(ir_basic_block_dom_check(p_instr->p_basic_block, p_early));
     _move_instr(p_instr, p_early);
@@ -259,14 +257,15 @@ static inline void _ir_opt_gcm_schedule_late(p_ir_instr p_instr, instr_info *ins
         return;
     if (!p_lca)
         return;
+    if (p_instr->irkind == ir_binary && p_instr->ir_binary.p_des->if_cond)
+        return;
+
     p_ir_basic_block p_best = p_lca;
     while(p_lca != p_instr->p_basic_block->p_dom_parent) {
         if (p_lca->p_nestree_node->depth < p_best->p_nestree_node->depth)
             p_best = p_lca;
         p_lca = p_lca->p_dom_parent;
     }
-    if (p_best == p_instr->p_basic_block)
-        return;
 
     assert(ir_basic_block_dom_check(p_best, p_instr->p_basic_block));
     _move_instr(p_instr, p_best);

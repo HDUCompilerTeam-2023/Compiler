@@ -20,6 +20,15 @@ $(OUTPUT_DIR)/%.compiler_out: %.sy $(BINARY) ALWAYS
 	@cat $<       >> $@
 	@echo ''      >> $@
 	@echo '=====' >> $@
+	@$(BINARY) $< -O1 -o $(<:%.sy=%.s) >> $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
+
+$(OUTPUT_DIR)/test/2023/functional/%.compiler_out: test/2023/functional/%.sy $(BINARY) ALWAYS
+	@echo '  * $<'
+	@mkdir -p $(dir $@)
+	@echo '=====' >  $@
+	@cat $<       >> $@
+	@echo ''      >> $@
+	@echo '=====' >> $@
 	@$(BINARY) $< -o $(<:%.sy=%.s) >> $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
 
 LINK_DIR = lib
