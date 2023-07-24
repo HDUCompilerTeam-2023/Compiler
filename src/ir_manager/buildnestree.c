@@ -26,6 +26,8 @@ void ir_build_func_nestedtree(p_symbol_func p_func) {
         .son_list = list_head_init(&root->son_list),
         .tail_list = list_head_init(&root->tail_list),
         .rbtree = initializeRedBlackTree(),
+        .is_simple_loop = false,
+        .p_info_table = NULL,
         .depth = 0,
     };
     list_for_each(p_node, &p_func->block) {
@@ -71,6 +73,8 @@ void nestedtree_insert(p_ir_basic_block p_basic_block, p_nestedtree_node p_root)
         .son_list = list_head_init(&p_new_node->son_list),
         .tail_list = list_head_init(&p_new_node->tail_list),
         .rbtree = initializeRedBlackTree(),
+        .p_info_table = NULL,
+        .is_simple_loop = false,
         .depth = p_root->depth + 1,
     };
     list_for_each(p_node, p_head) {
@@ -132,7 +136,21 @@ void nestedtree_node_drop(p_nestedtree_node root) {
         list_del(&p_list_node->node);
         free(p_list_node);
     }
+    if (root->p_info_table != NULL) {
+        while (!list_head_alone(&root->p_info_table->ind_var_list)) {
+            p_ind_var_list_node p_list_node = list_entry(root->p_info_table->ind_var_list.p_next, ind_var_list_node, node);
+            while (!list_head_alone(&p_list_node->ind_var_table)) {
+                p_ind_var_table_node p_table_node = list_entry(p_list_node->ind_var_table.p_next, ind_var_table_node, node);
+                list_del(&p_table_node->node);
+                free(p_table_node);
+            }
+            list_del(&p_list_node->node);
+            free(p_list_node);
+        }
+    }
+
     destroyRedBlackTree(root->rbtree);
+    free(root->p_info_table);
     free(root);
     root = NULL;
 }

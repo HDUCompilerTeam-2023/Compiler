@@ -9,7 +9,7 @@
 
 void program_var_analysis(p_program p_program);
 void loop_var_analysis(p_nestedtree_node root);
-void invariant_analysis(p_nestedtree_node root);
+void step_var_analysis(p_nestedtree_node root);
 
 bool check_operand(p_ir_operand p_operand);
 #endif
