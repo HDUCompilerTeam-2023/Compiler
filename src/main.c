@@ -17,6 +17,7 @@
 #include <ir_opt/copy_propagation.h>
 #include <ir_opt/sccp.h>
 #include <ir_opt/gcm.h>
+#include <ir_opt/gvn.h>
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
@@ -58,6 +59,7 @@ int main(int argc, char *argv[]) {
         ir_opt_copy_propagation(p_program);
         ir_opt_sccp(p_program);
         if (is_opt) {
+            ir_opt_gvn(p_program);
             ir_opt_gcm(p_program);
         }
 
