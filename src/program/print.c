@@ -1,3 +1,4 @@
+#include <backend/arm/arm_struct_output.h>
 #include <ir_print.h>
 #include <stdio.h>
 #include <symbol_print.h>
@@ -76,4 +77,21 @@ void program_ir_dom_info_print(p_program p_program) {
         ir_basic_block_dom_info_print(p_basic_block);
     }
     printf("+++ dom_tree end +++\n");
+}
+
+void program_arm_asm_output(p_program p_program) {
+    FILE *out_file = fopen(p_program->output, "w");
+    fprintf(out_file, ".file \"%s\"\n", p_program->input);
+    fprintf(out_file, "   .arch armv7ve\n");
+    fprintf(out_file, "   .arm\n");
+    fprintf(out_file, "   .fpu neon-vfpv4\n");
+    p_list_head p_node;
+    list_for_each(p_node, &p_program->variable) {
+        arm_global_sym_output(out_file, list_entry(p_node, symbol_var, node));
+    }
+    fprintf(out_file, ".section .text\n");
+    list_for_each(p_node, &p_program->arm_function) {
+        arm_func_output(out_file, list_entry(p_node, arm_func, node));
+    }
+    fclose(out_file);
 }

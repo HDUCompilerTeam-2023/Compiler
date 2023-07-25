@@ -3,6 +3,7 @@
 #include <program/use.h>
 
 #include <ir_gen.h>
+#include <backend/arm/arm_struct_gen.h>
 #include <symbol_gen.h>
 
 p_program program_gen(const char *input, const char *output) {
@@ -17,6 +18,7 @@ p_program program_gen(const char *input, const char *output) {
         .ext_function_cnt = 0,
         .input = NULL,
         .output = NULL,
+        .arm_function = list_head_init(&p_program->arm_function),
     };
     if (!output) {
         char *tmp = malloc(sizeof(char) * 9);
@@ -60,7 +62,10 @@ void program_drop(p_program p_program) {
         p_symbol_str p_del = list_entry(p_program->string.p_next, symbol_str, node);
         symbol_str_drop(p_del);
     }
-
+    while (!list_head_alone(&p_program->arm_function)) {
+        p_arm_func p_del = list_entry(p_program->arm_function.p_next, arm_func, node);
+        arm_func_drop(p_del);
+    }
     free(p_program->input);
     free(p_program->output);
     free(p_program);

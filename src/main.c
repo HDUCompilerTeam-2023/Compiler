@@ -3,7 +3,7 @@
 #include <program/gen.h>
 #include <program/print.h>
 
-#include <backend/arm/codegen.h>
+#include <backend/arm/ir_arm_asm.h>
 #include <ir_manager/set_cond.h>
 #include <ir_opt/deadcode_elimate.h>
 #include <ir_opt/lir_gen/arm_trans.h>
@@ -92,8 +92,8 @@ int main(int argc, char *argv[]) {
     set_cond_pass(p_program);
     critical_edge_cut_pass(p_program);
 
-    arm_codegen_pass(p_program);
-
+    ir_arm_asm_pass(p_program);
+    program_arm_asm_output(p_program);
     // drop ir
     program_ir_print(p_program);
     program_drop(p_program);
