@@ -9,13 +9,20 @@
 
 typedef struct nested_list_node nested_list_node, *p_nested_list_node;
 typedef struct nestedtree_node nestedtree_node, *p_nestedtree_node;
-
+typedef struct basic_var_info basic_var_info, *p_basic_var_info;
+struct basic_var_info {
+    p_ir_vreg var_start;
+    p_ir_vreg basic_var;
+    p_ir_instr p_step_instr;
+    list_head node;
+};
 struct nestedtree_node {
     p_ir_basic_block head;
     p_nestedtree_node parent;
     list_head tail_list;
     list_head son_list;
     RedBlackTree *rbtree;
+    list_head p_var_table;
     size_t depth;
 };
 
