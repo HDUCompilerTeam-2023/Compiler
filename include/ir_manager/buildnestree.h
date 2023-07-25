@@ -20,6 +20,8 @@ struct ind_var_table_node {
 };
 struct ind_var_list_node {
     p_ir_vreg basic_ind_var;
+    p_ir_vreg start_var;
+    p_ir_instr p_step_instr;
     list_head ind_var_table;
     list_head node;
 };
