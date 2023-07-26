@@ -103,7 +103,7 @@ void nestedtree_tail_list_insert(p_ir_basic_block p_basic_block, p_nestedtree_no
         .p_basic_block = p_basic_block,
         .node = list_head_init(&p_block_node->node),
     };
-    list_add_next(&p_block_node->node, &p_root->tail_list);
+    list_add_prev(&p_block_node->node, &p_root->tail_list);
     p_basic_block->p_nestree_node = p_root;
 }
 

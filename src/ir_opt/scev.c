@@ -23,7 +23,7 @@ void program_var_analysis(p_program p_program) {
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         if (list_head_alone(&p_func->block)) continue;
-        // printf("\n%s\n", p_func->name);
+        printf("\n%s\n", p_func->name);
         loop_var_analysis(p_func->p_nestedtree_root);
     }
 }
@@ -51,6 +51,9 @@ void loop_var_analysis(p_nestedtree_node root) {
     // invariant analysis
     invariant_analysis(root);
     basic_var_analysis(root);
+    induction_var_analysis(root);
+
+    secv_drop(root);
 }
 
 void invariant_analysis(p_nestedtree_node root) {
@@ -162,7 +165,7 @@ void basic_var_analysis(p_nestedtree_node root) {
         p_list_head p_node;
         list_for_each(p_node, &root->tail_list) {
             p_exit_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
-            if (p_exit_block->p_branch->p_target_1->p_block == root->head || p_exit_block->p_branch->p_target_2->p_block == root->head) break;
+            if (p_exit_block->p_branch->p_target_1->p_block == root->head || (p_exit_block->p_branch->p_target_2 && p_exit_block->p_branch->p_target_2->p_block == root->head)) break;
         }
     }
     else
@@ -182,7 +185,7 @@ void basic_var_analysis(p_nestedtree_node root) {
         if (!search(root->rbtree->root, (uint64_t) p_entry_target->p_source_block)) break;
     }
     // printf("entry %ld\n", p_entry_target->p_source_block->block_id);
-    printf("head %ld\n", root->head->block_id);
+    // printf("head %ld\n", root->head->block_id);
     // printf("barck %ld\n", p_back_target->p_source_block->block_id);
     for (p_list_head p_node1 = (&p_entry_target->block_param)->p_next,
                      p_node2 = (&root->head->basic_block_phis)->p_next,
@@ -202,14 +205,14 @@ void basic_var_analysis(p_nestedtree_node root) {
         // putchar(10);
         p_list_head p_instr_node;
         bool flag = false;
+        p_vreg2->scev_kind = scev_basic;
         list_for_each(p_instr_node, &root->head->instr_list) {
             p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
             if (p_instr->irkind != ir_binary) continue;
             if (p_instr->ir_binary.p_des == p_vreg3) {
                 if (p_instr->ir_binary.p_src1->kind == reg) {
-                    if (p_instr->ir_binary.p_src1->p_vreg == p_vreg2 && check_operand(p_instr->ir_binary.p_src2)) {
+                    if (p_instr->ir_binary.p_src1->p_vreg == p_vreg2) {
                         p_basic_var_info p_var = malloc(sizeof(*p_var));
-                        p_vreg2->is_basic_var = true;
                         *p_var = (basic_var_info) {
                             .var_start = p_vreg1,
                             .basic_var = p_vreg2,
@@ -217,12 +220,19 @@ void basic_var_analysis(p_nestedtree_node root) {
                             .node = list_head_init(&p_var->node),
                         };
                         list_add_next(&p_var->node, &root->p_var_table);
+                        p_vreg2->p_scevexp = malloc(sizeof(*p_vreg2->p_scevexp));
+                        *p_vreg2->p_scevexp = (scevexp) {
+                            .is_scev1 = false,
+                            .is_scev2 = false,
+                            .p_var_info = p_var,
+                            .p_operand2 = NULL,
+
+                        };
                     }
                 }
                 else if (p_instr->ir_binary.p_src2->kind == reg) {
-                    if (p_instr->ir_binary.p_src2->p_vreg == p_vreg2 && check_operand(p_instr->ir_binary.p_src1)) {
+                    if (p_instr->ir_binary.p_src2->p_vreg == p_vreg2) {
                         p_basic_var_info p_var = malloc(sizeof(*p_var));
-                        p_vreg2->is_basic_var = true;
                         *p_var = (basic_var_info) {
                             .var_start = p_vreg1,
                             .basic_var = p_vreg2,
@@ -230,6 +240,14 @@ void basic_var_analysis(p_nestedtree_node root) {
                             .node = list_head_init(&p_var->node),
                         };
                         list_add_next(&p_var->node, &root->p_var_table);
+                        p_vreg2->p_scevexp = malloc(sizeof(*p_vreg2->p_scevexp));
+                        *p_vreg2->p_scevexp = (scevexp) {
+                            .is_scev1 = false,
+                            .is_scev2 = false,
+                            .p_var_info = p_var,
+                            .p_operand2 = NULL,
+
+                        };
                     }
                 }
                 flag = true;
@@ -246,9 +264,9 @@ void basic_var_analysis(p_nestedtree_node root) {
                 if (p_instr->irkind != ir_binary) continue;
                 if (p_instr->ir_binary.p_des == p_vreg3) {
                     if (p_instr->ir_binary.p_src1->kind == reg) {
-                        if (p_instr->ir_binary.p_src1->p_vreg == p_vreg2 && check_operand(p_instr->ir_binary.p_src2)) {
+                        if (p_instr->ir_binary.p_src1->p_vreg == p_vreg2) {
+                            flag = true;
                             p_basic_var_info p_var = malloc(sizeof(*p_var));
-                            p_vreg2->is_basic_var = true;
                             *p_var = (basic_var_info) {
                                 .var_start = p_vreg1,
                                 .basic_var = p_vreg2,
@@ -256,12 +274,19 @@ void basic_var_analysis(p_nestedtree_node root) {
                                 .node = list_head_init(&p_var->node),
                             };
                             list_add_next(&p_var->node, &root->p_var_table);
+                            p_vreg2->p_scevexp = malloc(sizeof(*p_vreg2->p_scevexp));
+                            *p_vreg2->p_scevexp = (scevexp) {
+                                .is_scev1 = false,
+                                .is_scev2 = false,
+                                .p_var_info = p_var,
+                                .p_operand2 = NULL,
+                            };
                         }
                     }
                     else if (p_instr->ir_binary.p_src2->kind == reg) {
-                        if (p_instr->ir_binary.p_src2->p_vreg == p_vreg2 && check_operand(p_instr->ir_binary.p_src1)) {
+                        if (p_instr->ir_binary.p_src2->p_vreg == p_vreg2) {
+                            flag = true;
                             p_basic_var_info p_var = malloc(sizeof(*p_var));
-                            p_vreg2->is_basic_var = true;
                             *p_var = (basic_var_info) {
                                 .var_start = p_vreg1,
                                 .basic_var = p_vreg2,
@@ -269,6 +294,13 @@ void basic_var_analysis(p_nestedtree_node root) {
                                 .node = list_head_init(&p_var->node),
                             };
                             list_add_next(&p_var->node, &root->p_var_table);
+                            p_vreg2->p_scevexp = malloc(sizeof(*p_vreg2->p_scevexp));
+                            *p_vreg2->p_scevexp = (scevexp) {
+                                .is_scev1 = false,
+                                .is_scev2 = false,
+                                .p_var_info = p_var,
+                                .p_operand2 = NULL,
+                            };
                         }
                     }
                     break;
@@ -276,12 +308,343 @@ void basic_var_analysis(p_nestedtree_node root) {
             }
         }
     }
-    return;
+    // return;
+    printf("basic var %ld\n", root->head->block_id);
     list_for_each(p_node, &root->p_var_table) {
         p_basic_var_info p_var = list_entry(p_node, basic_var_info, node);
         putchar(10);
         ir_vreg_print(p_var->basic_var);
         putchar(10);
         ir_instr_print(p_var->p_step_instr);
+    }
+    putchar(10);
+}
+
+void induction_var_analysis(p_nestedtree_node root) {
+    if (!root->head) return;
+    p_list_head p_node;
+    list_for_each(p_node, &root->head->instr_list) {
+        p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
+        switch (p_instr->irkind) {
+        case ir_unary:
+            p_instr->ir_unary.p_des->scev_kind = scev_unknown;
+            break;
+        case ir_gep:
+            p_instr->ir_gep.p_des->scev_kind = scev_unknown;
+            break;
+        case ir_store:
+            break;
+        case ir_load:
+            p_instr->ir_load.p_des->scev_kind = scev_unknown;
+            break;
+        case ir_call:
+            if (p_instr->ir_call.p_func->ret_type != type_void)
+                p_instr->ir_call.p_des->scev_kind = scev_unknown;
+            break;
+        default:
+            switch (p_instr->ir_binary.op) {
+            case ir_add_op:
+                p_instr->ir_binary.p_des->scev_kind = scev_add;
+                break;
+            case ir_sub_op:
+                p_instr->ir_binary.p_des->scev_kind = scev_sub;
+                break;
+            case ir_mul_op:
+                p_instr->ir_binary.p_des->scev_kind = scev_mul;
+                break;
+            case ir_div_op:
+                p_instr->ir_binary.p_des->scev_kind = scev_div;
+                break;
+            case ir_mod_op:
+                p_instr->ir_binary.p_des->scev_kind = scev_mod;
+                break;
+            default:
+                p_instr->ir_binary.p_des->scev_kind = scev_unknown;
+                break;
+            }
+            if (p_instr->ir_binary.p_des->scev_kind == scev_unknown) break;
+            if (p_instr->ir_binary.p_src1->kind == imme) {
+                assert(p_instr->ir_binary.p_src2->kind == reg);
+                if (p_instr->ir_binary.p_src2->p_vreg->scev_kind == scev_unknown) {
+                    p_instr->ir_binary.p_des->scev_kind = scev_unknown;
+                    break;
+                }
+                p_instr->ir_binary.p_des->p_scevexp = malloc(sizeof(*p_instr->ir_binary.p_des->p_scevexp));
+                *p_instr->ir_binary.p_des->p_scevexp = (scevexp) {
+                    .is_scev1 = false,
+                    .is_scev2 = true,
+                    .p_operand1 = p_instr->ir_binary.p_src1,
+                    .p_scev2 = p_instr->ir_binary.p_src2->p_vreg->p_scevexp,
+                };
+            }
+            else if (p_instr->ir_binary.p_src2->kind == imme) {
+                assert(p_instr->ir_binary.p_src1->kind == reg);
+                if (p_instr->ir_binary.p_src1->p_vreg->scev_kind == scev_unknown) {
+                    p_instr->ir_binary.p_des->scev_kind = scev_unknown;
+                    break;
+                }
+                p_instr->ir_binary.p_des->p_scevexp = malloc(sizeof(*p_instr->ir_binary.p_des->p_scevexp));
+                *p_instr->ir_binary.p_des->p_scevexp = (scevexp) {
+                    .is_scev1 = true,
+                    .is_scev2 = false,
+                    .p_scev1 = p_instr->ir_binary.p_src1->p_vreg->p_scevexp,
+                    .p_operand2 = p_instr->ir_binary.p_src2,
+                };
+            }
+            else {
+                if (p_instr->ir_binary.p_src1->p_vreg->scev_kind == scev_unknown || p_instr->ir_binary.p_src2->p_vreg->scev_kind == scev_unknown) {
+                    if (check_operand(p_instr->ir_binary.p_src1)) {
+                        p_instr->ir_binary.p_des->p_scevexp = malloc(sizeof(*p_instr->ir_binary.p_des->p_scevexp));
+                        *p_instr->ir_binary.p_des->p_scevexp = (scevexp) {
+                            .is_scev1 = false,
+                            .is_scev2 = true,
+                            .p_operand1 = p_instr->ir_binary.p_src1,
+                            .p_scev2 = p_instr->ir_binary.p_src2->p_vreg->p_scevexp,
+                        };
+                    }
+                    else if (check_operand(p_instr->ir_binary.p_src2)) {
+                        p_instr->ir_binary.p_des->p_scevexp = malloc(sizeof(*p_instr->ir_binary.p_des->p_scevexp));
+                        *p_instr->ir_binary.p_des->p_scevexp = (scevexp) {
+                            .is_scev1 = true,
+                            .is_scev2 = false,
+                            .p_scev1 = p_instr->ir_binary.p_src1->p_vreg->p_scevexp,
+                            .p_operand2 = p_instr->ir_binary.p_src2,
+                        };
+                    }
+                    else
+                        p_instr->ir_binary.p_des->scev_kind = scev_unknown;
+                    break;
+                }
+                else {
+                    p_instr->ir_binary.p_des->p_scevexp = malloc(sizeof(*p_instr->ir_binary.p_des->p_scevexp));
+                    *p_instr->ir_binary.p_des->p_scevexp = (scevexp) {
+                        .is_scev1 = true,
+                        .is_scev2 = true,
+                        .p_scev1 = p_instr->ir_binary.p_src1->p_vreg->p_scevexp,
+                        .p_scev2 = p_instr->ir_binary.p_src2->p_vreg->p_scevexp,
+                    };
+                }
+            }
+        }
+    }
+    list_for_each(p_node, &root->tail_list) {
+        p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
+        p_list_head p_instr_node;
+        list_for_each(p_instr_node, &p_basic_block->instr_list) {
+            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            switch (p_instr->irkind) {
+            case ir_unary:
+                p_instr->ir_unary.p_des->scev_kind = scev_unknown;
+                break;
+            case ir_gep:
+                p_instr->ir_gep.p_des->scev_kind = scev_unknown;
+                break;
+            case ir_store:
+                break;
+            case ir_load:
+                p_instr->ir_load.p_des->scev_kind = scev_unknown;
+                break;
+            case ir_call:
+                if (p_instr->ir_call.p_func->ret_type != type_void)
+                    p_instr->ir_call.p_des->scev_kind = scev_unknown;
+                break;
+            default:
+                switch (p_instr->ir_binary.op) {
+                case ir_add_op:
+                    p_instr->ir_binary.p_des->scev_kind = scev_add;
+                    break;
+                case ir_sub_op:
+                    p_instr->ir_binary.p_des->scev_kind = scev_sub;
+                    break;
+                case ir_mul_op:
+                    p_instr->ir_binary.p_des->scev_kind = scev_mul;
+                    break;
+                case ir_div_op:
+                    p_instr->ir_binary.p_des->scev_kind = scev_div;
+                    break;
+                case ir_mod_op:
+                    p_instr->ir_binary.p_des->scev_kind = scev_mod;
+                    break;
+                default:
+                    p_instr->ir_binary.p_des->scev_kind = scev_unknown;
+                    break;
+                }
+                if (p_instr->ir_binary.p_des->scev_kind == scev_unknown) break;
+                if (p_instr->ir_binary.p_src1->kind == imme) {
+                    assert(p_instr->ir_binary.p_src2->kind == reg);
+                    if (p_instr->ir_binary.p_src2->p_vreg->scev_kind == scev_unknown) {
+                        p_instr->ir_binary.p_des->scev_kind = scev_unknown;
+                        break;
+                    }
+                    p_instr->ir_binary.p_des->p_scevexp = malloc(sizeof(*p_instr->ir_binary.p_des->p_scevexp));
+                    *p_instr->ir_binary.p_des->p_scevexp = (scevexp) {
+                        .is_scev1 = false,
+                        .is_scev2 = true,
+                        .p_operand1 = p_instr->ir_binary.p_src1,
+                        .p_scev2 = p_instr->ir_binary.p_src2->p_vreg->p_scevexp,
+                    };
+                }
+                else if (p_instr->ir_binary.p_src2->kind == imme) {
+                    assert(p_instr->ir_binary.p_src1->kind == reg);
+                    if (p_instr->ir_binary.p_src1->p_vreg->scev_kind == scev_unknown) {
+                        p_instr->ir_binary.p_des->scev_kind = scev_unknown;
+                        break;
+                    }
+                    p_instr->ir_binary.p_des->p_scevexp = malloc(sizeof(*p_instr->ir_binary.p_des->p_scevexp));
+                    *p_instr->ir_binary.p_des->p_scevexp = (scevexp) {
+                        .is_scev1 = true,
+                        .is_scev2 = false,
+                        .p_scev1 = p_instr->ir_binary.p_src1->p_vreg->p_scevexp,
+                        .p_operand2 = p_instr->ir_binary.p_src2,
+                    };
+                }
+                else {
+                    if (p_instr->ir_binary.p_src1->p_vreg->scev_kind == scev_unknown || p_instr->ir_binary.p_src2->p_vreg->scev_kind == scev_unknown) {
+                        if (check_operand(p_instr->ir_binary.p_src1)) {
+                            p_instr->ir_binary.p_des->p_scevexp = malloc(sizeof(*p_instr->ir_binary.p_des->p_scevexp));
+                            *p_instr->ir_binary.p_des->p_scevexp = (scevexp) {
+                                .is_scev1 = false,
+                                .is_scev2 = true,
+                                .p_operand1 = p_instr->ir_binary.p_src1,
+                                .p_scev2 = p_instr->ir_binary.p_src2->p_vreg->p_scevexp,
+                            };
+                        }
+                        else if (check_operand(p_instr->ir_binary.p_src2)) {
+                            p_instr->ir_binary.p_des->p_scevexp = malloc(sizeof(*p_instr->ir_binary.p_des->p_scevexp));
+                            *p_instr->ir_binary.p_des->p_scevexp = (scevexp) {
+                                .is_scev1 = true,
+                                .is_scev2 = false,
+                                .p_scev1 = p_instr->ir_binary.p_src1->p_vreg->p_scevexp,
+                                .p_operand2 = p_instr->ir_binary.p_src2,
+                            };
+                        }
+                        else
+                            p_instr->ir_binary.p_des->scev_kind = scev_unknown;
+                        break;
+                    }
+                    else {
+                        p_instr->ir_binary.p_des->p_scevexp = malloc(sizeof(*p_instr->ir_binary.p_des->p_scevexp));
+                        *p_instr->ir_binary.p_des->p_scevexp = (scevexp) {
+                            .is_scev1 = true,
+                            .is_scev2 = true,
+                            .p_scev1 = p_instr->ir_binary.p_src1->p_vreg->p_scevexp,
+                            .p_scev2 = p_instr->ir_binary.p_src2->p_vreg->p_scevexp,
+                        };
+                    }
+                }
+            }
+        }
+    }
+    // return;
+    printf("secv\nhead %ld\n", root->head->block_id);
+    list_for_each(p_node, &root->head->instr_list) {
+        p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
+        printf("%ld   ", p_instr->instr_id);
+        if (p_instr->irkind != ir_binary) {
+            printf("secv unkonwn\n");
+            continue;
+        }
+        if (p_instr->ir_binary.p_des->scev_kind == scev_unknown) {
+            printf("secv unkonwn\n");
+            continue;
+        }
+        ir_vreg_print(p_instr->ir_binary.p_des);
+        putchar(' ');
+        ir_operand_print(p_instr->ir_binary.p_src1);
+        switch (p_instr->ir_binary.p_des->scev_kind) {
+        case scev_add:
+            printf(" add ");
+            break;
+        case scev_sub:
+            printf(" sub ");
+            break;
+        case scev_mul:
+            printf(" mul ");
+            break;
+        case scev_div:
+            printf(" div ");
+            break;
+        case scev_mod:
+            printf(" mod ");
+            break;
+        default:
+            break;
+        }
+        ir_operand_print(p_instr->ir_binary.p_src2);
+        putchar(10);
+    }
+    putchar(10);
+    list_for_each(p_node, &root->tail_list) {
+        p_list_head p_instr_node;
+        p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
+        list_for_each(p_instr_node, &p_basic_block->instr_list) {
+            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            printf("%ld   ", p_instr->instr_id);
+            if (p_instr->irkind != ir_binary) {
+                printf("secv unkonwn\n");
+                continue;
+            }
+            if (p_instr->ir_binary.p_des->scev_kind == scev_unknown) {
+                printf("secv unkonwn\n");
+                continue;
+            }
+            ir_vreg_print(p_instr->ir_binary.p_des);
+            putchar(' ');
+            ir_operand_print(p_instr->ir_binary.p_src1);
+            switch (p_instr->ir_binary.p_des->scev_kind) {
+            case scev_add:
+                printf(" add ");
+                break;
+            case scev_sub:
+                printf(" sub ");
+                break;
+            case scev_mul:
+                printf(" mul ");
+                break;
+            case scev_div:
+                printf(" div ");
+                break;
+            case scev_mod:
+                printf(" mod ");
+                break;
+            default:
+                break;
+            }
+            ir_operand_print(p_instr->ir_binary.p_src2);
+            putchar(10);
+        }
+    }
+}
+
+void secv_drop(p_nestedtree_node root) {
+    if (!root->head) return;
+    p_list_head p_node;
+    list_for_each(p_node, &root->head->basic_block_phis) {
+        p_ir_vreg p_vreg = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
+        if (p_vreg->scev_kind == scev_unknown) continue;
+        free(p_vreg->p_scevexp);
+        p_vreg->p_scevexp = NULL;
+    }
+    list_for_each(p_node, &root->head->instr_list) {
+        p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
+        if (p_instr->irkind != ir_binary || p_instr->ir_binary.p_des->scev_kind == scev_unknown) continue;
+        free(p_instr->ir_binary.p_des->p_scevexp);
+        p_instr->ir_binary.p_des->p_scevexp = NULL;
+    }
+    list_for_each(p_node, &root->tail_list) {
+        p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
+        p_list_head p_instr_node;
+        list_for_each(p_instr_node, &p_basic_block->basic_block_phis) {
+            p_ir_vreg p_vreg = list_entry(p_instr_node, ir_bb_phi, node)->p_bb_phi;
+            if (p_vreg->scev_kind == scev_unknown) continue;
+            free(p_vreg->p_scevexp);
+            p_vreg->p_scevexp = NULL;
+        }
+        list_for_each(p_instr_node, &p_basic_block->instr_list) {
+            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            if (p_instr->irkind != ir_binary || p_instr->ir_binary.p_des->scev_kind == scev_unknown) continue;
+            free(p_instr->ir_binary.p_des->p_scevexp);
+            p_instr->ir_binary.p_des->p_scevexp = NULL;
+        }
     }
 }

@@ -13,8 +13,7 @@ p_ir_vreg ir_vreg_gen(p_symbol_type p_type) {
         .if_float = false,
         .if_cond = false,
         .is_loop_inv = true,
-        .is_scev = false,
-        .is_basic_var = false,
+        .scev_kind = scev_unknown,
         .p_scevexp = NULL,
     };
     return p_vreg;
