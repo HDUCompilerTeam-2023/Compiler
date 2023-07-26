@@ -71,8 +71,7 @@ void ir_opt_loop_pre_head(p_program p_ir) {
     p_list_head p_node;
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
-        if (!p_func->block_cnt)
-            continue;
+        assert(p_func->p_entry_block);
         p_list_head p_node;
         list_for_each(p_node, &p_func->p_nestedtree_root->son_list) {
             p_nestedtree_node p_loop = list_entry(p_node, nested_list_node, node)->p_nested_node;

@@ -306,6 +306,7 @@ void ir_opt_gcm(p_program p_ir) {
     p_list_head p_node;
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        assert(p_func->p_entry_block);
         _ir_opt_gcm_func(p_func);
     }
     ir_cfg_set_program_dom(p_ir);

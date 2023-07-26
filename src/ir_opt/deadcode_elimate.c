@@ -240,8 +240,8 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
     p_list_head p_node;
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        assert(p_func->p_entry_block);
         symbol_func_set_block_id(p_func);
-        if (list_head_alone(&p_func->block)) continue;
         ir_dead_code_elimate_func(p_func, if_aggressive);
         symbol_func_set_varible_id(p_func);
     }

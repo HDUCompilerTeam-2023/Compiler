@@ -515,8 +515,6 @@ static inline void _execute_phi(p_ir_bb_phi p_bb_phi) {
 }
 
 static inline void _ir_opt_gvn_func(p_symbol_func p_func) {
-    if (!p_func->p_entry_block)
-        return;
     symbol_func_set_block_id(p_func);
     list_head rpo_vreg_list = list_init_head(&rpo_vreg_list);
     _init_rpo_list(&rpo_vreg_list, p_func);
@@ -559,6 +557,7 @@ void ir_opt_gvn(p_program p_ir) {
     p_list_head p_node;
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        assert(p_func->p_entry_block);
         _ir_opt_gvn_func(p_func);
     }
 }

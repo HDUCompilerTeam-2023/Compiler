@@ -6,10 +6,12 @@
 struct program {
     list_head variable;
     list_head function;
+    list_head ext_function;
     list_head string;
 
     uint64_t variable_cnt;
     uint64_t function_cnt;
+    uint64_t ext_function_cnt;
 
     char *input;
     char *output;

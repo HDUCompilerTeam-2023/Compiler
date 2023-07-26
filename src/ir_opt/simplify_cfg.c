@@ -283,7 +283,7 @@ static inline void ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_symbo
 }
 
 static inline bool ir_simplify_cfg_func_pass(p_symbol_func p_func) {
-    if (list_head_alone(&p_func->block)) return false;
+    assert(p_func->p_entry_block);
 
     bool if_del;
     ir_simplify_cfg_func_remove_no_predesessor_bb(p_func);

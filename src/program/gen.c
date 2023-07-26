@@ -10,9 +10,11 @@ p_program program_gen(const char *input, const char *output) {
     *p_program = (program) {
         .variable = list_head_init(&p_program->variable),
         .function = list_head_init(&p_program->function),
+        .ext_function = list_head_init(&p_program->ext_function),
         .string = list_head_init(&p_program->string),
         .variable_cnt = 0,
         .function_cnt = 0,
+        .ext_function_cnt = 0,
         .input = NULL,
         .output = NULL,
     };
@@ -42,6 +44,10 @@ void program_drop(p_program p_program) {
     program_nestedtree_drop(p_program);
     while (!list_head_alone(&p_program->function)) {
         p_symbol_func p_del = list_entry(p_program->function.p_next, symbol_func, node);
+        symbol_func_drop(p_del);
+    }
+    while (!list_head_alone(&p_program->ext_function)) {
+        p_symbol_func p_del = list_entry(p_program->ext_function.p_next, symbol_func, node);
         symbol_func_drop(p_del);
     }
 
@@ -76,6 +82,11 @@ bool program_add_global(p_program p_program, p_symbol_var p_var) {
 bool program_add_function(p_program p_program, p_symbol_func p_func) {
     p_func->id = p_program->function_cnt++;
     return list_add_prev(&p_func->node, &p_program->function);
+}
+
+bool program_add_ext_function(p_program p_program, p_symbol_func p_func) {
+    p_func->id = p_program->ext_function_cnt++;
+    return list_add_prev(&p_func->node, &p_program->ext_function);
 }
 
 void program_global_set_id(p_program p_program) {

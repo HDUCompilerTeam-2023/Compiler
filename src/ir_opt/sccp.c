@@ -388,8 +388,6 @@ static inline void _visit_exp(p_ir_instr p_instr, p_lattice lattice_map, p_WL p_
 }
 
 static inline void _ir_opt_sccp_func(p_symbol_func p_func) {
-    if (!p_func->p_entry_block)
-        return;
     p_ir_basic_block p_start = ir_basic_block_gen();
     symbol_func_bb_add_head(p_func, p_start);
     ir_basic_block_set_br(p_start, p_func->p_entry_block);
@@ -615,6 +613,7 @@ void ir_opt_sccp(p_program p_ir) {
     p_list_head p_node;
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        assert(p_func->p_entry_block);
         _ir_opt_sccp_func(p_func);
     }
     ir_deadcode_elimate_pass(p_ir, true);

@@ -14,6 +14,7 @@ void ir_opt_copy_propagation(p_program p_ir) {
     p_list_head p_node;
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        assert(p_func->p_entry_block);
         p_list_head p_node;
         list_for_each(p_node, &p_func->block) {
             p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);

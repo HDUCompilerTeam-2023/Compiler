@@ -64,6 +64,10 @@ void syntax_program_add_function(p_syntax_info p_info, p_symbol_func p_func) {
     symbol_table_func_add(p_info->p_table, p_func);
     program_add_function(p_info->p_program, p_func);
 }
+void syntax_program_add_ext_function(p_syntax_info p_info, p_symbol_func p_func) {
+    symbol_table_func_add(p_info->p_table, p_func);
+    program_add_ext_function(p_info->p_program, p_func);
+}
 void syntax_func_head(p_syntax_info p_info, basic_type type, char *name) {
     p_symbol_func p_func = symbol_func_gen(name, type, false);
     syntax_program_add_function(p_info, p_func);
@@ -96,7 +100,7 @@ void syntax_func_end(p_syntax_info p_info, p_ast_block p_block) {
 
 static inline p_symbol_func syntax_rtlib_decl(p_syntax_info p_info, basic_type type, char *name, p_symbol_type p_param1, p_symbol_type p_param2, p_symbol_type p_param3, bool is_va) {
     p_symbol_func p_func = symbol_func_gen(name, type, is_va);
-    syntax_program_add_function(p_info, p_func); // true
+    syntax_program_add_ext_function(p_info, p_func); // true
     p_info->p_func = p_func;
 
     syntax_zone_push(p_info);

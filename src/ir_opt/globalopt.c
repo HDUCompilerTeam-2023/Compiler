@@ -145,8 +145,7 @@ void ir_opt_globalopt(p_program p_ir) {
     p_list_head p_node;
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
-        if (!p_func->p_entry_block)
-            continue;
+        assert(p_func->p_entry_block);
         _global_opt_var_list(&p_func->param);
         _global_opt_var_list(&p_func->variable);
     }

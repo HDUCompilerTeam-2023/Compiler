@@ -283,7 +283,6 @@ static inline void print_dom_frontier(p_convert_ssa_list p_convert_list) {
 }
 
 void mem2reg_func_pass(p_symbol_func p_func) {
-    if (list_head_alone(&p_func->block)) return;
     p_convert_ssa_list p_convert_list = mem2reg_info_gen(p_func);
     // 初始化变量集合
     p_ssa_var_list_info p_var_list = mem2reg_init_var_list(p_func);
@@ -312,6 +311,7 @@ void mem2reg_program_pass(p_program p_program) {
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        assert(p_func->p_entry_block);
         mem2reg_func_pass(p_func);
     }
 }
