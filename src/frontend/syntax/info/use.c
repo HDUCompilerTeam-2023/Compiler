@@ -100,13 +100,13 @@ static inline p_symbol_func syntax_rtlib_decl(p_syntax_info p_info, basic_type t
 
     syntax_zone_push(p_info);
     if (p_param1) {
-        p_symbol_var p_var = symbol_var_gen("arg1", p_param1, false, false, NULL);
+        p_symbol_var p_var = symbol_var_gen("arg1", p_param1, false, NULL);
         syntax_func_add_param(p_info, p_var);
         if (p_param2) {
-            p_var = symbol_var_gen("arg2", p_param2, false, false, NULL);
+            p_var = symbol_var_gen("arg2", p_param2, false, NULL);
             syntax_func_add_param(p_info, p_var);
             if (p_param3) {
-                p_var = symbol_var_gen("arg3", p_param3, false, false, NULL);
+                p_var = symbol_var_gen("arg3", p_param3, false, NULL);
                 syntax_func_add_param(p_info, p_var);
             }
         }
@@ -232,17 +232,17 @@ p_syntax_decl_head syntax_declaration(p_syntax_info p_info, p_syntax_decl_head p
                 ast_exp_drop(p_rval);
                 symbol_init_add(p_init, i, init_val);
             }
-            p_var = symbol_var_gen(name, p_type, is_const, true, p_init);
+            p_var = symbol_var_gen(name, p_type, is_const, p_init);
         }
         else {
             assert(!is_const);
-            p_var = symbol_var_gen(name, p_type, is_const, true, NULL);
+            p_var = symbol_var_gen(name, p_type, is_const, NULL);
         }
         syntax_program_add_variable(p_info, p_var);
     }
     else if (!p_info->p_block) {
         assert(!p_s_init);
-        p_symbol_var p_var = symbol_var_gen(name, p_type, false, false, NULL);
+        p_symbol_var p_var = symbol_var_gen(name, p_type, false, NULL);
         syntax_func_add_param(p_info, p_var);
     }
     else if (is_const) {
@@ -262,11 +262,11 @@ p_syntax_decl_head syntax_declaration(p_syntax_info p_info, p_syntax_decl_head p
             ast_exp_drop(p_rval);
             symbol_init_add(p_init, i, init_val);
         }
-        p_symbol_var p_var = symbol_var_gen(name, p_type, true, false, p_init);
+        p_symbol_var p_var = symbol_var_gen(name, p_type, true, p_init);
         syntax_func_add_variable(p_info, p_var);
     }
     else {
-        p_symbol_var p_var = symbol_var_gen(name, p_type, false, false, NULL);
+        p_symbol_var p_var = symbol_var_gen(name, p_type, false, NULL);
         syntax_func_add_variable(p_info, p_var);
         if (list_head_alone(&p_var->p_type->array)) {
             p_ast_exp p_lval = ast_exp_ptr_gen(p_var);

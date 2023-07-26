@@ -66,17 +66,16 @@ bool program_add_str(p_program p_program, p_symbol_str p_str) {
 
 bool program_add_global(p_program p_program, p_symbol_var p_var) {
     p_var->id = p_program->variable_cnt++;
+    assert(!p_var->p_func);
+    assert(!p_var->p_program);
+    p_var->p_program = p_program;
+    p_var->is_global = true;
     return list_add_prev(&p_var->node, &p_program->variable);
 }
 
 bool program_add_function(p_program p_program, p_symbol_func p_func) {
     p_func->id = p_program->function_cnt++;
     return list_add_prev(&p_func->node, &p_program->function);
-}
-
-void program_del_global(p_program p_program, p_symbol_var p_var) {
-    --p_program->variable_cnt;
-    list_del(&p_var->node);
 }
 
 void program_global_set_id(p_program p_program) {

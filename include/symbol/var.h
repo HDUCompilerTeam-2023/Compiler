@@ -3,6 +3,7 @@
 
 #include <ir.h>
 #include <symbol.h>
+#include <program/use.h>
 
 struct symbol_init_val {
     union {
@@ -27,6 +28,11 @@ struct symbol_var {
     p_symbol_init p_init;
     bool is_global;
     bool is_const;
+
+    union {
+        p_program p_program;
+        p_symbol_func p_func;
+    };
 
     size_t stack_offset;
     list_head node;

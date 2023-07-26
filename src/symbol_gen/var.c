@@ -24,7 +24,7 @@ void symbol_init_drop(p_symbol_init p_init) {
     free(p_init);
 }
 
-p_symbol_var symbol_var_gen(const char *name, p_symbol_type p_type, bool is_const, bool is_global, p_symbol_init p_data) {
+p_symbol_var symbol_var_gen(const char *name, p_symbol_type p_type, bool is_const, p_symbol_init p_data) {
     p_symbol_var p_var = malloc(sizeof(*p_var));
     *p_var = (symbol_var) {
         .node = list_head_init(&p_var->node),
@@ -33,7 +33,7 @@ p_symbol_var symbol_var_gen(const char *name, p_symbol_type p_type, bool is_cons
         .id = 0,
         .is_const = is_const,
         .p_init = p_data,
-        .is_global = is_global,
+        .p_func = NULL,
     };
     strcpy(p_var->name, name);
     return p_var;
@@ -47,12 +47,24 @@ p_symbol_var symbol_temp_var_gen(p_symbol_type p_type) {
         .id = 0,
         .is_const = false,
         .p_init = NULL,
-        .is_global = false,
     };
     return p_var;
 }
+void symbol_var_del(p_symbol_var p_var) {
+    if (!p_var->p_program && !p_var->p_func)
+        return;
+    if (p_var->is_global) {
+        --p_var->p_program->variable_cnt;
+        p_var->p_program = NULL;
+    }
+    else {
+        --p_var->p_func->var_cnt;
+        p_var->p_func = NULL;
+    }
+    assert(list_del(&p_var->node));
+}
 void symbol_var_drop(p_symbol_var p_var) {
-    list_del(&p_var->node);
+    symbol_var_del(p_var);
     symbol_init_drop(p_var->p_init);
     symbol_type_drop(p_var->p_type);
     free(p_var->name);
