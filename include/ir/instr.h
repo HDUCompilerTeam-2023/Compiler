@@ -1,6 +1,7 @@
 #ifndef __IR_INSTR__
 #define __IR_INSTR__
 #include <ir.h>
+#include <ir_manager/call_graph.h>
 enum ir_binary_op {
     // binary instr
     ir_add_op,
@@ -57,6 +58,7 @@ struct ir_call_instr {
     list_head param_list;
     p_ir_instr p_first_store;
     p_ir_vreg p_des;
+    p_call_instr_node p_ci_node;
 };
 
 struct ir_gep_instr {

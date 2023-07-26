@@ -46,6 +46,9 @@ static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
             assert(p_instr->ir_call.p_des->p_instr_def == p_instr);
             ir_vreg_set_instr_def(p_instr->ir_call.p_des, NULL);
         }
+        if (p_instr->ir_call.p_ci_node) {
+            ir_call_instr_node_drop(p_instr);
+        }
         break;
     case ir_gep:
         assert(p_instr->ir_gep.p_addr->used_type == instr_ptr);
@@ -165,6 +168,7 @@ static inline void _ir_instr_call_set(p_ir_instr p_instr, p_symbol_func p_func, 
             .p_des = p_des,
             .p_first_store = p_instr,
             .param_list = list_head_init(&p_instr->ir_call.param_list),
+            .p_ci_node = NULL,
         },
         .node = p_instr->node,
         .instr_id = p_instr->instr_id,

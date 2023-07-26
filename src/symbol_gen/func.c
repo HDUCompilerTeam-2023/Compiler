@@ -23,12 +23,14 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va) {
         .param_reg_list = list_head_init(&p_func->param_reg_list),
         .call_param_vmem_list = list_head_init(&p_func->call_param_vmem_list),
         .p_nestedtree_root = NULL,
+        .p_call_graph_node = NULL,
         .vreg_list = list_head_init(&p_func->vreg_list),
         .stack_size = 0,
         .inner_stack_size = 0,
         .instr_num = 0,
         .if_updated_graph = true,
     };
+    ir_call_graph_node_gen(p_func);
     strcpy(p_func->name, name);
     return p_func;
 }
@@ -181,6 +183,7 @@ void symbol_func_drop(p_symbol_func p_func) {
         p_ir_vreg p_vreg = list_entry(p_func->vreg_list.p_next, ir_vreg, node);
         symbol_func_vreg_del(p_func, p_vreg);
     }
+    ir_call_graph_node_drop(p_func);
     assert(p_func->block_cnt == 0);
     assert(p_func->instr_num == 0);
     assert(p_func->vreg_cnt == 0);

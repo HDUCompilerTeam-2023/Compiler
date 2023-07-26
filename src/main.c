@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
     // gen ir
     p_program p_program = frontend_trans(in_file, out_file);
     program_variable_print(p_program);
+    ir_build_call_graph(p_program);
 
     // into ssa
     ir_simplify_cfg_pass(p_program);
