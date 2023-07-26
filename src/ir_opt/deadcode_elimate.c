@@ -2,6 +2,7 @@
 #include <ir_manager/buildcdg.h>
 #include <ir_opt/simplify_cfg.h>
 #include <program/def.h>
+#include <program/gen.h>
 #include <symbol_gen/func.h>
 
 typedef struct reg_info reg_info, *p_reg_info;
@@ -242,7 +243,9 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
         symbol_func_set_block_id(p_func);
         if (list_head_alone(&p_func->block)) continue;
         ir_dead_code_elimate_func(p_func, if_aggressive);
+        symbol_func_set_varible_id(p_func);
     }
+    program_global_set_id(p_ir);
 }
 
 void ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive) {

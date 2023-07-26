@@ -189,96 +189,23 @@ void symbol_func_drop(p_symbol_func p_func) {
     free(p_func);
 }
 
-void symbol_func_clear_varible(p_symbol_func p_func) {
-    if (!p_func->var_cnt)
-        return;
-    p_symbol_var *p_map = malloc(sizeof(void *) * p_func->var_cnt);
-    p_list_head p_node;
-    size_t id = 0;
-    list_for_each(p_node, &p_func->param) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        p_map[id] = p_var;
-        p_var->id = id++;
-    }
-    list_for_each(p_node, &p_func->variable) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        p_map[id] = p_var;
-        p_var->id = id++;
-    }
-    list_for_each(p_node, &p_func->call_param_vmem_list) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        p_map[id] = p_var;
-        p_var->id = id++;
-    }
-    assert(id == p_func->var_cnt);
-    list_for_each(p_node, &p_func->block) {
-        p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
-        p_list_head p_instr_node;
-        list_for_each(p_instr_node, &p_basic_block->instr_list) {
-            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
-            p_ir_operand p_src1 = NULL, p_src2 = NULL;
-            p_list_head p_src_list = NULL;
-            switch (p_instr->irkind) {
-            case ir_binary:
-                p_src1 = p_instr->ir_binary.p_src1;
-                p_src2 = p_instr->ir_binary.p_src2;
-                break;
-            case ir_unary:
-                p_src1 = p_instr->ir_unary.p_src;
-                break;
-            case ir_gep:
-                p_src1 = p_instr->ir_gep.p_addr;
-                p_src2 = p_instr->ir_gep.p_offset;
-                break;
-            case ir_load:
-                p_src1 = p_instr->ir_load.p_addr;
-                break;
-            case ir_store:
-                p_src1 = p_instr->ir_store.p_addr;
-                p_src2 = p_instr->ir_store.p_src;
-                break;
-            case ir_call:
-                p_src_list = &p_instr->ir_call.param_list;
-                break;
-            }
-            if (p_src1 && p_src1->kind == imme && p_src1->p_type->ref_level > 0 && !p_src1->p_vmem->is_global) {
-                assert(!p_map[p_src1->p_vmem->id] || p_map[p_src1->p_vmem->id] == p_src1->p_vmem);
-                p_map[p_src1->p_vmem->id] = NULL;
-            }
-            if (p_src2 && p_src2->kind == imme && p_src2->p_type->ref_level > 0 && !p_src2->p_vmem->is_global) {
-                assert(!p_map[p_src2->p_vmem->id] || p_map[p_src2->p_vmem->id] == p_src2->p_vmem);
-                p_map[p_src2->p_vmem->id] = NULL;
-            }
-            p_list_head p_node;
-            if (p_src_list) {
-                list_for_each(p_node, p_src_list) {
-                    p_ir_operand p_src = list_entry(p_node, ir_param, node)->p_param;
-                    if (p_src->kind == imme && p_src->p_type->ref_level > 0 && !p_src->p_vmem->is_global) {
-                        assert(!p_map[p_src->p_vmem->id] || p_map[p_src->p_vmem->id] == p_src->p_vmem);
-                        p_map[p_src->p_vmem->id] = NULL;
-                    }
-                }
-            }
-        }
-    }
-    size_t cnt = p_func->var_cnt;
-    for (id = 0; id < cnt; ++id) {
-        if (!p_map[id]) continue;
-        symbol_var_drop(p_map[id]);
-    }
-    free(p_map);
-    symbol_func_set_varible_id(p_func);
-}
-
 void symbol_func_set_varible_id(p_symbol_func p_func) {
-    p_list_head p_node;
     size_t id = 0;
-    list_for_each(p_node, &p_func->param) {
+    p_list_head p_node, p_next;
+    list_for_each_safe(p_node, p_next, &p_func->param) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        if (list_head_alone(&p_var->ref_list)) {
+            symbol_var_drop(p_var);
+            continue;
+        }
         p_var->id = id++;
     }
-    list_for_each(p_node, &p_func->variable) {
+    list_for_each_safe(p_node, p_next, &p_func->variable) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        if (list_head_alone(&p_var->ref_list)) {
+            symbol_var_drop(p_var);
+            continue;
+        }
         p_var->id = id++;
     }
     list_for_each(p_node, &p_func->call_param_vmem_list) {

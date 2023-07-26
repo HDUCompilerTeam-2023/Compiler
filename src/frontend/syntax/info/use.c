@@ -90,6 +90,7 @@ void syntax_func_end(p_syntax_info p_info, p_ast_block p_block) {
         break;
     }
     ast2ir_symbol_func_gen(p_block, p_func, p_info->p_program);
+    symbol_func_set_varible_id(p_func);
     ast_block_drop(p_block);
 }
 

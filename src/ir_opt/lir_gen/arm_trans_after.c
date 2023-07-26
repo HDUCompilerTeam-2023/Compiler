@@ -11,7 +11,6 @@ static inline size_t alignTo(size_t N, size_t Align) {
 }
 static inline void stack_alloc(p_symbol_func p_func) {
     p_list_head p_node;
-    symbol_func_clear_varible(p_func);
     size_t stack_size = p_func->inner_stack_size;
     list_for_each(p_node, &p_func->variable) {
         p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);

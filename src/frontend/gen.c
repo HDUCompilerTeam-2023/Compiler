@@ -15,6 +15,7 @@ p_program frontend_trans(const char *input, const char *output) {
     yyparse(scanner);
     p_program p_program = syntax_info_get_program(p_info);
     syntax_info_drop(p_info);
+    program_global_set_id(p_program);
 
     yylex_destroy(scanner);
     return p_program;

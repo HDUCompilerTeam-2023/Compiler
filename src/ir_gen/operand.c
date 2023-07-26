@@ -12,6 +12,8 @@ basic_type ir_operand_get_basic_type(p_ir_operand p_operand) {
 static inline void _ir_operand_inner_drop(p_ir_operand p_operand) {
     if (p_operand->kind == reg)
         assert(list_del(&p_operand->use_node));
+    else if (p_operand->p_type->ref_level)
+        assert(list_del(&p_operand->ref_node));
     symbol_type_drop(p_operand->p_type);
 }
 void ir_operand_drop(p_ir_operand p_operand) {
@@ -135,7 +137,9 @@ static inline void _ir_operand_addr_set(p_ir_operand p_operand, p_symbol_var p_v
         .p_type = p_type,
         .used_type = p_operand->used_type,
         .p_bb_param = p_operand->p_bb_param,
+        .ref_node = list_init_head(&p_operand->ref_node),
     };
+    list_add_prev(&p_operand->ref_node, &p_vmem->ref_list);
 }
 p_ir_operand ir_operand_addr_gen(p_symbol_var p_vmem, p_symbol_type p_type, I32CONST_t offset) {
     p_ir_operand p_operand = malloc(sizeof(*p_operand));

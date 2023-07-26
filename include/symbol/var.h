@@ -34,6 +34,8 @@ struct symbol_var {
         p_symbol_func p_func;
     };
 
+    list_head ref_list;
+
     size_t stack_offset;
     list_head node;
 };

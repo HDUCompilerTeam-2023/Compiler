@@ -33,7 +33,7 @@ p_symbol_var symbol_var_gen(const char *name, p_symbol_type p_type, bool is_cons
         .id = 0,
         .is_const = is_const,
         .p_init = p_data,
-        .p_func = NULL,
+        .ref_list = list_init_head(&p_var->ref_list),
     };
     strcpy(p_var->name, name);
     return p_var;
@@ -47,6 +47,7 @@ p_symbol_var symbol_temp_var_gen(p_symbol_type p_type) {
         .id = 0,
         .is_const = false,
         .p_init = NULL,
+        .ref_list = list_init_head(&p_var->ref_list),
     };
     return p_var;
 }
@@ -64,6 +65,7 @@ void symbol_var_del(p_symbol_var p_var) {
     assert(list_del(&p_var->node));
 }
 void symbol_var_drop(p_symbol_var p_var) {
+    assert(list_head_alone(&p_var->ref_list));
     symbol_var_del(p_var);
     symbol_init_drop(p_var->p_init);
     symbol_type_drop(p_var->p_type);

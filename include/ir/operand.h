@@ -22,6 +22,7 @@ struct ir_operand {
                 struct {
                     p_symbol_var p_vmem;
                     I32CONST_t offset;
+                    list_head ref_node;
                 };
             };
         };
