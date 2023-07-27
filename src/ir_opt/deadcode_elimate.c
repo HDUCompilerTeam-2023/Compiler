@@ -36,7 +36,10 @@ static inline void push(p_ir_vreg p_vreg, p_reg_info_table reg_info_table) {
 
 static inline void deal_operand(p_ir_operand p_operand, p_reg_info_table reg_info_table) {
     if (p_operand && p_operand->kind == reg) {
-        if (p_operand->p_vreg->def_type == func_param_def) return;
+        if (p_operand->p_vreg->def_type == func_param_def) {
+            (reg_info_table->p_base + p_operand->p_vreg->id)->p_prev = (reg_info_table->p_base + p_operand->p_vreg->id);
+            return;
+        }
         push(p_operand->p_vreg, reg_info_table);
     }
 }
