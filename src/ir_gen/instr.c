@@ -1,6 +1,6 @@
 #include <ir_gen.h>
 #include <ir_gen/instr.h>
-#include <symbol/func.h>
+#include <symbol_gen.h>
 static inline void ir_operand_set_instr_use(p_ir_operand p_operand, p_ir_instr p_instr) {
     p_operand->used_type = instr_ptr;
     p_operand->p_instr = p_instr;
@@ -38,6 +38,8 @@ static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
                 assert(p_param->p_param->p_instr == p_instr);
                 ir_operand_drop(p_param->p_param);
             }
+            else
+                symbol_var_drop(p_param->p_vmem);
             list_del(&p_param->node);
             free(p_param);
         }
@@ -166,7 +168,6 @@ static inline void _ir_instr_call_set(p_ir_instr p_instr, p_symbol_func p_func, 
         .ir_call = (ir_call_instr) {
             .p_func = p_func,
             .p_des = p_des,
-            .p_first_store = p_instr,
             .param_list = list_head_init(&p_instr->ir_call.param_list),
             .p_ci_node = NULL,
         },

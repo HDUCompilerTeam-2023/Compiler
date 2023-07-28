@@ -284,10 +284,6 @@ static inline void arm_sdiv_instr_output(FILE *out_file, p_arm_sdiv_instr p_sdiv
     fprintf(out_file, "\n");
 }
 
-static inline int cmp(const void *a, const void *b) {
-    return *(int *) a - *(int *) b;
-}
-
 static inline void arm_push_pop_instr_output(FILE *out_file, p_arm_push_pop_instr p_push_pop) {
     if (p_push_pop->num == 0) return;
     switch (p_push_pop->op) {
@@ -300,7 +296,6 @@ static inline void arm_push_pop_instr_output(FILE *out_file, p_arm_push_pop_inst
     default:
         assert(0);
     }
-    qsort(p_push_pop->regs, p_push_pop->num, sizeof(size_t), cmp);
     arm_reg_output(out_file, p_push_pop->regs[0]);
     for (size_t i = 1; i < p_push_pop->num; i++) {
         fprintf(out_file, ", ");
@@ -411,26 +406,22 @@ static inline void arm_vneg_instr_output(FILE *out_file, p_arm_vneg_instr p_vneg
 
 static inline void arm_vpush_vpop_instr_output(FILE *out_file, p_arm_vpush_vpop_instr p_vpush_vpop) {
     if (p_vpush_vpop->num == 0) return;
-    qsort(p_vpush_vpop->regs, p_vpush_vpop->num, sizeof(size_t), cmp);
-    size_t i = 0;
-    while (i < p_vpush_vpop->num) {
-        switch (p_vpush_vpop->op) {
-        case arm_vpush:
-            fprintf(out_file, "   vpush {");
-            break;
-        case arm_vpop:
-            fprintf(out_file, "   vpop {");
-            break;
-        }
-        arm_reg_output(out_file, p_vpush_vpop->regs[i]);
-        i++;
-        while (i < p_vpush_vpop->num && p_vpush_vpop->regs[i] == p_vpush_vpop->regs[i - 1] + 1) {
-            fprintf(out_file, ", ");
-            arm_reg_output(out_file, p_vpush_vpop->regs[i]);
-            i++;
-        }
-        fprintf(out_file, "}\n");
+    switch (p_vpush_vpop->op) {
+    case arm_vpush:
+        fprintf(out_file, "   vpush {");
+        break;
+    case arm_vpop:
+        fprintf(out_file, "   vpop {");
+        break;
+    default:
+        assert(0);
     }
+    arm_reg_output(out_file, p_vpush_vpop->regs[0]);
+    for (size_t i = 1; i < p_vpush_vpop->num; i++) {
+        fprintf(out_file, ", ");
+        arm_reg_output(out_file, p_vpush_vpop->regs[i]);
+    }
+    fprintf(out_file, "}\n");
 }
 static inline void arm_instr_output(FILE *out_file, p_arm_instr p_instr) {
     switch (p_instr->type) {

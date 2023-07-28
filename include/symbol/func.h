@@ -30,9 +30,7 @@ struct symbol_func {
     p_ir_basic_block p_entry_block;
 
     list_head param;
-    list_head call_param_vmem_list;
     size_t stack_size;
-    size_t inner_stack_size;
 
     p_nestedtree_node p_nestedtree_root;
 

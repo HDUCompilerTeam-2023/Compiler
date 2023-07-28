@@ -11,7 +11,7 @@ static inline size_t alignTo(size_t N, size_t Align) {
 }
 static inline void stack_alloc(p_symbol_func p_func) {
     p_list_head p_node;
-    size_t stack_size = p_func->inner_stack_size;
+    size_t stack_size = 0;
     list_for_each(p_node, &p_func->variable) {
         p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
         p_vmem->stack_offset = stack_size;
@@ -20,7 +20,7 @@ static inline void stack_alloc(p_symbol_func p_func) {
     size_t save_size = (p_func->save_reg_r_num + p_func->save_reg_s_num + 1) * basic_type_get_size(type_i32);
     p_func->stack_size = alignTo(stack_size + save_size, 8) - save_size;
     stack_size = p_func->stack_size + save_size;
-    list_for_each(p_node, &p_func->param) {
+    list_for_each_tail(p_node, &p_func->param) {
         p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);
         p_vmem->stack_offset = stack_size;
         stack_size += basic_type_get_size(p_vmem->p_type->basic);
@@ -226,60 +226,11 @@ static inline void deal_load_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     }
 }
 
-static inline void rewrite_after_use_new_vreg(p_ir_instr p_instr, p_ir_vreg p_new_vreg, p_ir_vreg p_origin_vreg) {
-    p_list_head p_node, p_node_next;
-    list_for_each_safe(p_node, p_node_next, &p_origin_vreg->use_list) {
-        p_ir_operand p_use = list_entry(p_node, ir_operand, use_node);
-        switch (p_use->used_type) {
-        case instr_ptr:
-            if (p_use->p_instr->instr_id > p_instr->instr_id)
-                ir_operand_reset_vreg(p_use, p_new_vreg);
-            break;
-        case cond_ptr:
-        case ret_ptr:
-            if (p_use->p_basic_block->block_id >= p_instr->p_basic_block->block_id)
-                ir_operand_reset_vreg(p_use, p_new_vreg);
-            break;
-        case bb_param_ptr:
-            if (p_use->p_bb_param->p_target->p_source_block->block_id >= p_instr->p_basic_block->block_id)
-                ir_operand_reset_vreg(p_use, p_new_vreg);
-            break;
-        }
-    }
-}
-
 static inline void arm_trans_after_func(p_symbol_func p_func) {
     remap_reg_id(p_func);
-    p_list_head p_block_node;
-    list_for_each(p_block_node, &p_func->block) {
-        p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
-        p_list_head p_instr_node, p_instr_node_next;
-        list_for_each_safe(p_instr_node, p_instr_node_next, &p_basic_block->instr_list) {
-            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
-            if (p_instr->irkind == ir_call) {
-                p_list_head p_live_node;
-                list_for_each(p_live_node, &p_instr->p_live_out->vreg_list) {
-                    p_ir_vreg p_vreg = list_entry(p_live_node, ir_vreg_list_node, node)->p_vreg;
-                    if (p_vreg == p_instr->ir_call.p_des)
-                        continue;
-                    if (!if_caller_save_reg(p_vreg->reg_id))
-                        continue;
-                    p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_vreg->p_type));
-                    symbol_func_add_variable(p_func, p_vmem);
-                    p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem, NULL, 0), ir_operand_vreg_gen(p_vreg), true);
-                    ir_instr_add_prev(p_store, p_instr);
-                    p_ir_vreg p_new_des = ir_vreg_copy(p_vreg);
-                    symbol_func_vreg_add(p_func, p_new_des);
-                    p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem, NULL, 0), p_new_des, true);
-                    ir_instr_add_next(p_load, p_instr);
-                    rewrite_after_use_new_vreg(p_instr, p_new_des, p_vreg);
-                }
-            }
-        }
-    }
     set_save_reg_num(p_func);
     stack_alloc(p_func);
-
+    p_list_head p_block_node;
     list_for_each(p_block_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_block_node, ir_basic_block, node);
         p_list_head p_instr_node, p_instr_node_next;

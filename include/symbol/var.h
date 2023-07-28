@@ -37,7 +37,7 @@ struct symbol_var {
 
     list_head ref_list;
 
-    size_t stack_offset;
+    int stack_offset;
     list_head node;
     p_mem_info p_visited;
 };

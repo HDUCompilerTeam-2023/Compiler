@@ -229,8 +229,7 @@ static inline void symbol_func_param_vreg2vmem(p_symbol_func p_func) {
 static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     size_t r = 0;
     size_t s = 0;
-    size_t offset = 0;
-    bool if_first = true;
+    int offset = 0;
     p_list_head p_node;
     list_for_each(p_node, &p_instr->ir_call.param_list) {
         p_ir_param p_param = list_entry(p_node, ir_param, node);
@@ -249,16 +248,11 @@ static inline void deal_call_instr(p_ir_instr p_instr, p_symbol_func p_func) {
         }
         if (p_param->is_in_mem) {
             p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_param->p_param->p_type));
+            offset -= basic_type_get_size(p_vmem->p_type->basic);
             p_vmem->stack_offset = offset;
-            offset += basic_type_get_size(p_vmem->p_type->basic);
-            symbol_func_add_call_param_vmem(p_func, p_vmem);
             p_ir_instr p_store = ir_store_instr_gen(ir_operand_addr_gen(p_vmem, NULL, 0), ir_operand_copy(p_param->p_param), true);
             ir_instr_add_prev(p_store, p_instr);
             ir_param_set_vmem(p_param, p_vmem);
-            if (if_first) {
-                p_instr->ir_call.p_first_store = p_store;
-                if_first = false;
-            }
         }
     }
 }

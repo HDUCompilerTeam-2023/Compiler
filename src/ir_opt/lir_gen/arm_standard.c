@@ -30,7 +30,7 @@ bool if_legal_direct_imme12(I32CONST_t i32const) {
 }
 
 bool if_legal_imme8_lsl2(I32CONST_t i32const) {
-    return !(((i32const >> 2) > imm_8_max) || ((i32const >> 2) < imm_8_max) || (i32const & 3));
+    return !(((i32const >> 2) > imm_8_max) || ((i32const >> 2) < -imm_8_max) || (i32const & 3));
 }
 
 bool if_in_r(p_symbol_type p_type) {

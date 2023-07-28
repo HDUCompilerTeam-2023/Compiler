@@ -21,12 +21,10 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va) {
         .block = list_head_init(&p_func->block),
         .block_cnt = 0,
         .param_reg_list = list_head_init(&p_func->param_reg_list),
-        .call_param_vmem_list = list_head_init(&p_func->call_param_vmem_list),
         .p_nestedtree_root = NULL,
         .p_call_graph_node = NULL,
         .vreg_list = list_head_init(&p_func->vreg_list),
         .stack_size = 0,
-        .inner_stack_size = 0,
         .instr_num = 0,
         .if_updated_graph = true,
     };
@@ -139,15 +137,6 @@ void symbol_func_add_variable(p_symbol_func p_func, p_symbol_var p_var) {
     p_var->is_global = false;
     list_add_prev(&p_var->node, &p_func->variable);
 }
-void symbol_func_add_call_param_vmem(p_symbol_func p_func, p_symbol_var p_vmem) {
-    p_vmem->id = p_func->var_cnt++;
-    assert(!p_vmem->p_func && !p_vmem->p_program);
-    p_vmem->p_func = p_func;
-    p_vmem->is_global = false;
-    if (p_vmem->stack_offset + basic_type_get_size(p_vmem->p_type->basic) > p_func->inner_stack_size)
-        p_func->inner_stack_size = p_vmem->stack_offset + basic_type_get_size(p_vmem->p_type->basic);
-    list_add_prev(&p_vmem->node, &p_func->call_param_vmem_list);
-}
 
 void symbol_func_drop(p_symbol_func p_func) {
     if (!list_head_alone(&p_func->block))
@@ -165,10 +154,6 @@ void symbol_func_drop(p_symbol_func p_func) {
     }
     while (!list_head_alone(&p_func->variable)) {
         p_symbol_var p_del = list_entry(p_func->variable.p_next, symbol_var, node);
-        symbol_var_drop(p_del);
-    }
-    while (!list_head_alone(&p_func->call_param_vmem_list)) {
-        p_symbol_var p_del = list_entry(p_func->call_param_vmem_list.p_next, symbol_var, node);
         symbol_var_drop(p_del);
     }
     while (!list_head_alone(&p_func->param_reg_list)) {
@@ -203,10 +188,6 @@ void symbol_func_set_varible_id(p_symbol_func p_func) {
             symbol_var_drop(p_var);
             continue;
         }
-        p_var->id = id++;
-    }
-    list_for_each(p_node, &p_func->call_param_vmem_list) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
         p_var->id = id++;
     }
     assert(id == p_func->var_cnt);

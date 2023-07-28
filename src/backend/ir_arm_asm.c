@@ -189,7 +189,18 @@ static inline arm_cond_type get_cond_type(ir_binary_op op) {
         return arm_ne;
     }
 }
-
+static inline void deal_sp_stack_size(p_arm_asm_gen_info p_info, arm_binary_op op, size_t stack_size) {
+    if (!stack_size) return;
+    if (!if_legal_rotate_imme12(stack_size)) {
+        mov_int2reg(p_info, TMP, stack_size);
+        p_arm_instr p_add = arm_binary_instr_gen(op, SP, SP, arm_operand_reg_gen(TMP));
+        arm_block_add_instr_tail(p_info->p_current_block, p_add);
+    }
+    else {
+        p_arm_instr p_add = arm_binary_instr_gen(op, SP, SP, arm_operand_imme_gen(stack_size));
+        arm_block_add_instr_tail(p_info->p_current_block, p_add);
+    }
+}
 static void arm_into_func_gen(p_arm_asm_gen_info p_info, p_symbol_func p_func, size_t stack_size) {
     p_info->p_current_block = p_info->p_current_func->p_into_func_block;
     p_arm_instr p_push_instr = arm_push_pop_instr_gen(arm_push);
@@ -199,28 +210,10 @@ static void arm_into_func_gen(p_arm_asm_gen_info p_info, p_symbol_func p_func, s
     p_arm_instr p_vpush_instr = arm_vpush_vpop_instr_gen(arm_vpush);
     arm_vpush_vpop_instr_init(&p_vpush_instr->vpush_vpop_instr, p_info->save_reg_s, p_info->save_reg_s_num);
     arm_block_add_instr_tail(p_info->p_current_block, p_vpush_instr);
-
-    if (!if_legal_rotate_imme12(stack_size)) {
-        mov_int2reg(p_info, TMP, stack_size);
-        p_arm_instr p_sub = arm_binary_instr_gen(arm_sub, SP, SP, arm_operand_reg_gen(TMP));
-        arm_block_add_instr_tail(p_info->p_current_block, p_sub);
-    }
-    else {
-        p_arm_instr p_sub = arm_binary_instr_gen(arm_sub, SP, SP, arm_operand_imme_gen(stack_size));
-        arm_block_add_instr_tail(p_info->p_current_block, p_sub);
-    }
+    deal_sp_stack_size(p_info, arm_sub, stack_size);
 }
-
 static void arm_out_func_gen(p_arm_asm_gen_info p_info, size_t stack_size) {
-    if (!if_legal_rotate_imme12(stack_size)) {
-        mov_int2reg(p_info, TMP, stack_size);
-        p_arm_instr p_add = arm_binary_instr_gen(arm_add, SP, SP, arm_operand_reg_gen(TMP));
-        arm_block_add_instr_tail(p_info->p_current_block, p_add);
-    }
-    else {
-        p_arm_instr p_add = arm_binary_instr_gen(arm_add, SP, SP, arm_operand_imme_gen(stack_size));
-        arm_block_add_instr_tail(p_info->p_current_block, p_add);
-    }
+    deal_sp_stack_size(p_info, arm_add, stack_size);
     p_arm_instr p_vpop = arm_vpush_vpop_instr_gen(arm_vpop);
     arm_vpush_vpop_instr_init(&p_vpop->vpush_vpop_instr, p_info->save_reg_s, p_info->save_reg_s_num);
     arm_block_add_instr_tail(p_info->p_current_block, p_vpop);
@@ -461,19 +454,183 @@ static void arm_binary_instr_asm_gen(p_arm_asm_gen_info p_info, p_ir_binary_inst
         arm_block_add_instr_tail(p_info->p_current_block, p_new);
 }
 
+static inline p_list_head find_first_store(p_arm_asm_gen_info p_info, p_ir_instr p_instr, p_ir_call_instr p_call_instr) {
+    if (list_head_alone(&p_call_instr->param_list))
+        return &p_info->p_current_block->instr_list;
+    p_ir_param p_param = list_entry(p_call_instr->param_list.p_prev, ir_param, node);
+    if (!p_param->is_in_mem)
+        return &p_info->p_current_block->instr_list;
+    p_list_head p_node_asm = p_info->p_current_block->instr_list.p_prev;
+    p_list_head p_node_ir = p_instr->node.p_prev;
+    while (1) {
+        p_ir_instr p_tmp = list_entry(p_node_ir, ir_instr, node);
+        ir_instr_print(p_tmp);
+        if (p_tmp->irkind == ir_store && p_tmp->ir_store.p_addr->kind == imme
+            && p_tmp->ir_store.p_addr->i32const == -4)
+            return p_node_asm;
+        p_node_ir = p_node_ir->p_prev;
+        p_node_asm = p_node_asm->p_prev;
+    }
+}
+static inline size_t get_size(p_ir_call_instr p_call_instr) {
+    if (list_head_alone(&p_call_instr->param_list))
+        return 0;
+    p_ir_param p_param = list_entry(p_call_instr->param_list.p_prev, ir_param, node);
+    if (!p_param->is_in_mem)
+        return 0;
+    return -p_param->p_vmem->stack_offset;
+}
+
+static inline int cmp(const void *a, const void *b) {
+    return *(int *) a - *(int *) b;
+}
+static inline void push_still_live(p_arm_asm_gen_info p_info, p_list_head p_insert_loc, p_ir_instr p_instr) {
+    arm_reg *regs_r = malloc(sizeof(*regs_r) * REG_NUM);
+    arm_reg *regs_s = malloc(sizeof(*regs_s) * REG_NUM);
+    size_t push_num_r = 0;
+    size_t push_num_s = 0;
+    p_list_head p_node;
+    list_for_each(p_node, &p_instr->p_live_out->vreg_list) {
+        p_ir_vreg p_live = list_entry(p_node, ir_vreg_list_node, node)->p_vreg;
+        if (p_live == p_instr->ir_call.p_des)
+            continue;
+        if (p_live->if_float)
+            regs_s[push_num_s++] = vreg_arm_reg(p_live);
+        else
+            regs_r[push_num_r++] = vreg_arm_reg(p_live);
+    }
+    if ((push_num_r + push_num_s) & 1) {
+        if (push_num_r)
+            regs_r[push_num_r++] = TMP;
+        else {
+            arm_reg tmp = -1;
+            if (p_instr->ir_call.p_des) // 不用目标做为tmp
+                tmp = p_instr->ir_call.p_des->reg_id;
+            size_t i;
+            for (i = R_NUM; i < REG_NUM; i++) {
+                if (i == tmp)
+                    continue;
+                size_t j;
+                for (j = 0; j < push_num_s; j++)
+                    if (i == regs_s[j])
+                        break;
+                if (j == push_num_s)
+                    break;
+            }
+            regs_s[push_num_s++] = i;
+        }
+    }
+    qsort(regs_r, push_num_r, sizeof(arm_reg), cmp);
+    p_arm_instr p_push = arm_push_pop_instr_gen(arm_push);
+    arm_push_pop_instr_init(&p_push->push_pop_instr, regs_r, push_num_r);
+    list_add_prev(&p_push->node, p_insert_loc);
+    qsort(regs_s, push_num_s, sizeof(arm_reg), cmp);
+
+    size_t i = 0;
+    while (i < push_num_s) {
+        p_arm_instr p_vpush = arm_vpush_vpop_instr_gen(arm_vpush);
+        list_add_prev(&p_vpush->node, p_insert_loc);
+        arm_vpush_vpop_instr_add(&p_vpush->vpush_vpop_instr, regs_s[i]);
+        i++;
+        while (i < push_num_s && regs_s[i] == regs_s[i - 1] + 1) {
+            arm_vpush_vpop_instr_add(&p_vpush->vpush_vpop_instr, regs_s[i]);
+            i++;
+        }
+    }
+    p_node = p_insert_loc;
+    size_t new_sp = (push_num_r + push_num_s) * basic_type_get_size(type_i32);
+    while (p_node != &p_info->p_current_block->instr_list) {
+        p_arm_instr p_a_instr = list_entry(p_node, arm_instr, node);
+        switch (p_a_instr->type) {
+        case arm_mov_type:
+            assert(p_a_instr->mov_instr.op == arm_mov);
+            assert(p_a_instr->mov_instr.operand->if_imme);
+            printf("aaa%ld\n", p_a_instr->mov_instr.rd);
+            if (p_a_instr->mov_instr.rd == TMP) // 偏移放到临时寄存器
+                p_a_instr->mov_instr.operand->imme += new_sp;
+            break;
+        case arm_mov32_type:
+            if (p_a_instr->mov32_instr.label != NULL)
+                break;
+            if (p_a_instr->mov32_instr.rd != TMP)
+                break;
+            p_a_instr->mov32_instr.imme += new_sp;
+            break;
+        case arm_mem_type:
+            if (p_a_instr->mem_instr.op == arm_load) {
+                if (p_a_instr->mem_instr.base == SP) {
+                    if (p_a_instr->mem_instr.offset->if_imme)
+                        p_a_instr->mem_instr.offset->imme += new_sp;
+                }
+            }
+            break;
+        case arm_vmem_type:
+            if (p_a_instr->mem_instr.op == arm_vload) {
+                if (p_a_instr->vmem_instr.base == SP) {
+                    p_a_instr->vmem_instr.offset += new_sp;
+                }
+                else {
+                    assert(p_a_instr->vmem_instr.base == TMP);
+                    assert(p_a_instr->vmem_instr.offset == 0);
+                    p_a_instr->vmem_instr.offset += new_sp;
+                }
+            }
+            break;
+        case arm_binary_type:
+            assert(p_a_instr->binary_instr.op == arm_add);
+            assert(p_a_instr->binary_instr.rs1 == SP);
+            assert(p_a_instr->binary_instr.rd == TMP);
+            break;
+        case arm_vmov_type:
+            break;
+        default:
+            assert(0);
+        }
+        p_node = p_node->p_next;
+    }
+    free(regs_r);
+    free(regs_s);
+}
+static inline void pop_still_live(p_arm_asm_gen_info p_info, p_list_head p_push_loc) {
+    p_list_head p_node = p_push_loc;
+    while (p_node != &p_info->p_current_block->instr_list) {
+        p_arm_instr p_a_instr = list_entry(p_node, arm_instr, node);
+        p_node = p_node->p_prev;
+        p_arm_instr p_pop, p_vpop;
+        if (p_a_instr->type == arm_push_pop_type && p_a_instr->push_pop_instr.op == arm_push) {
+            p_pop = arm_push_pop_instr_gen(arm_pop);
+            arm_push_pop_instr_init(&p_pop->push_pop_instr, p_a_instr->push_pop_instr.regs, p_a_instr->push_pop_instr.num);
+            arm_block_add_instr_tail(p_info->p_current_block, p_pop);
+        }
+        else if (p_a_instr->type == arm_vpush_vpop_type && p_a_instr->vpush_vpop_instr.op == arm_vpush) {
+            p_vpop = arm_vpush_vpop_instr_gen(arm_vpop);
+            arm_vpush_vpop_instr_init(&p_vpop->vpush_vpop_instr, p_a_instr->vpush_vpop_instr.regs, p_a_instr->vpush_vpop_instr.num);
+            arm_block_add_instr_tail(p_info->p_current_block, p_vpop);
+        }
+        else
+            break;
+    }
+}
 static void arm_call_instr_asm_gen(p_arm_asm_gen_info p_info, p_ir_instr p_instr) {
-    // store var in reg
+    ir_instr_print(p_instr);
     p_ir_call_instr p_call_instr = &p_instr->ir_call;
     arm_reg rs = 0;
     if (p_call_instr->p_func->ret_type == type_f32)
         rs = R_NUM;
+    p_list_head p_insert_loc = find_first_store(p_info, p_instr, p_call_instr);
+    push_still_live(p_info, p_insert_loc, p_instr);
+    p_list_head p_push_loc = p_insert_loc->p_prev;
     swap_in_call(p_info, p_call_instr);
+    size_t size = get_size(p_call_instr);
+    deal_sp_stack_size(p_info, arm_sub, size);
     p_arm_instr p_jump = arm_jump_instr_gen(arm_bl, arm_al, arm_label_gen(p_call_instr->p_func->name));
     arm_block_add_instr_tail(p_info->p_current_block, p_jump);
     if (p_call_instr->p_des) {
         if (rs != p_call_instr->p_des->reg_id)
             mov_reg2reg(p_info, vreg_arm_reg(p_call_instr->p_des), rs);
     }
+    deal_sp_stack_size(p_info, arm_add, size);
+    pop_still_live(p_info, p_push_loc);
 }
 
 static void arm_store_instr_gen(p_arm_asm_gen_info p_info, p_ir_store_instr p_store_instr) {
