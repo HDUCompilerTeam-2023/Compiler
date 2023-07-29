@@ -52,11 +52,12 @@ int main(int argc, char *argv[]) {
 
     // into ssa
     ir_simplify_cfg_pass(p_program);
-    mem2reg_program_pass(p_program);
-    // deadcode elimate
-    ir_deadcode_elimate_pass(p_program, true);
 
     do {
+        ir_opt_globalopt(p_program);
+        mem2reg_program_pass(p_program);
+        ir_deadcode_elimate_pass(p_program, true);
+
         // optimize - need keep block information
         ir_opt_copy_propagation(p_program);
         ir_opt_sccp(p_program);
@@ -64,8 +65,6 @@ int main(int argc, char *argv[]) {
             ir_opt_gvn(p_program);
             ir_opt_gcm(p_program);
         }
-
-        ir_opt_globalopt(p_program);
 
         // deadcode elimate
         ir_deadcode_elimate_pass(p_program, true);
