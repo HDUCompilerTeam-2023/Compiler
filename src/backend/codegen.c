@@ -200,13 +200,12 @@ static inline arm_cond_type get_opposite_type(arm_cond_type type) {
     }
 }
 static void arm_global_sym_gen(FILE *out_file, p_symbol_var p_sym) {
-    arm_global_sym_declare_gen(out_file, p_sym->name, p_sym->p_type->size << 2);
-    arm_label_gen(out_file, p_sym->name);
     if (!p_sym->p_init) {
-        arm_space_gen(out_file, p_sym->p_type->size << 2);
-        fprintf(out_file, "\n");
+        fprintf(out_file, "\n.comm %s,%ld,4\n", p_sym->name, symbol_type_get_size(p_sym->p_type) << 2);
         return;
     }
+    arm_global_sym_declare_gen(out_file, p_sym->name, p_sym->p_type->size << 2);
+    arm_label_gen(out_file, p_sym->name);
     size_t i = 0;
     while (i < p_sym->p_init->size) {
         size_t space_loc = i;
