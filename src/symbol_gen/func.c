@@ -158,6 +158,10 @@ void symbol_func_drop(p_symbol_func p_func) {
     p_func->p_entry_block = NULL;
     p_func->p_ret_block = NULL;
     list_del(&p_func->node);
+    while (!list_head_alone(&p_func->block)) {
+        p_ir_basic_block p_del = list_entry(p_func->block.p_next, ir_basic_block, node);
+        symbol_func_bb_del(p_func, p_del);
+    }
     while (!list_head_alone(&p_func->param)) {
         p_symbol_var p_del = list_entry(p_func->param.p_next, symbol_var, node);
         symbol_var_drop(p_del);
@@ -169,10 +173,6 @@ void symbol_func_drop(p_symbol_func p_func) {
     while (!list_head_alone(&p_func->call_param_vmem_list)) {
         p_symbol_var p_del = list_entry(p_func->call_param_vmem_list.p_next, symbol_var, node);
         symbol_var_drop(p_del);
-    }
-    while (!list_head_alone(&p_func->block)) {
-        p_ir_basic_block p_del = list_entry(p_func->block.p_next, ir_basic_block, node);
-        symbol_func_bb_del(p_func, p_del);
     }
     while (!list_head_alone(&p_func->param_reg_list)) {
         p_ir_vreg p_vreg = list_entry(p_func->param_reg_list.p_next, ir_vreg, node);
