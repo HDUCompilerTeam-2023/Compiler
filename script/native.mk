@@ -43,8 +43,8 @@ $(OUTPUT_DIR)/%.asm_out: %.s ALWAYS
 	@$(ARM_ASSEMBLER) $< -o $(basename $<).exe -L$(LINK_DIR) -l$(LINK_FILE) >> $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
 
 $(OUTPUT_DIR)/%.run_out: %.exe ALWAYS
-		@echo '  * $<'
 		@./test_exe.sh $< > $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
+		@cat $(basename $<).time | sed -n '/TO.*/s/TOTAL:/  * $(subst /,\/,$<) --- time: /p'
 
 
 # Phony rules
