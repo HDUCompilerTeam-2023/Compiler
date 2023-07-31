@@ -101,4 +101,16 @@
 - [x] 36. 变量初始化
 - [x] 37. load store 指令的 sp 支持
 - [x] 38. 删掉 `add_at`
+- [ ] 39. Side Effects
+- [ ] 40. MemorySSA
+- [ ] 41. 冗余存储消除
+- [ ] 42. 存储代码移动
+- [ ] 43. LoopUnroll
+- [ ] 44. LoopUnswitch
+- [ ] 45. LoopStrengthReduction
+- [ ] 46. Reassociate
+- [ ] 47. PeepHole
+- [ ] 48. InstrSchedule
+- [ ] 49. IPADCE
+- [ ] 50. Parallel and SIMD
 
