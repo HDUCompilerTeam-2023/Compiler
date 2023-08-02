@@ -4,6 +4,8 @@
 
 #include <symbol_gen.h>
 
+#include <ir/vreg.h>
+
 static inline p_ast_exp exp_ptr_to_val(p_ast_exp p_exp) {
     if (p_exp->p_type->ref_level == 0) {
         assert(list_head_alone(&p_exp->p_type->array));
@@ -363,14 +365,14 @@ p_ast_exp ast_exp_call_gen(p_symbol_func p_func, p_ast_param_list p_param_list) 
         .p_des = NULL,
     };
 
-    p_list_head p_node_Fparam = p_func->param.p_next;
+    p_list_head p_node_Fparam = p_func->param_reg_list.p_next;
     p_list_head p_node;
     list_for_each(p_node, &p_param_list->param) {
-        if (p_node_Fparam == &p_func->param) {
+        if (p_node_Fparam == &p_func->param_reg_list) {
             assert(p_func->is_va);
             break;
         }
-        p_symbol_type p_param_type = list_entry(p_node_Fparam, symbol_var, node)->p_type;
+        p_symbol_type p_param_type = list_entry(p_node_Fparam, ir_vreg, node)->p_type;
 
         p_ast_param p_param = list_entry(p_node, ast_param, node);
         p_ast_exp p_param_exp = p_param->p_exp;
@@ -380,7 +382,7 @@ p_ast_exp ast_exp_call_gen(p_symbol_func p_func, p_ast_param_list p_param_list) 
         assert(param_arr_check(p_param_type, p_param_exp->p_type));
         p_node_Fparam = p_node_Fparam->p_next;
     }
-    assert(p_node_Fparam == &p_func->param);
+    assert(p_node_Fparam == &p_func->param_reg_list);
     return p_exp;
 }
 

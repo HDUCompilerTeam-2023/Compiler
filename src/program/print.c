@@ -9,6 +9,7 @@
 #include <symbol/var.h>
 
 #include <ir/basic_block.h>
+#include <ir/vreg.h>
 
 void program_variable_print(p_program p_program) {
     assert(p_program);
@@ -43,11 +44,10 @@ void program_ir_print(p_program p_program) {
         symbol_func_init_print(p_func);
         printf("{\n");
         p_list_head p_node;
-        list_for_each(p_node, &p_func->param) {
-            p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        list_for_each(p_node, &p_func->param_reg_list) {
+            p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
             printf("param ");
-            symbol_name_print(p_var);
-            printf(" %%%ld", p_var->id);
+            printf(" %%%ld", p_vreg->id);
             printf("\n");
         }
         list_for_each(p_node, &p_func->variable) {

@@ -79,7 +79,11 @@ p_symbol_var symbol_func_param_reg_mem(p_symbol_func p_func, p_ir_vreg p_vreg) {
     list_del(&p_vreg->node);
     symbol_func_vreg_add(p_func, p_vreg);
     p_symbol_var p_vmem = symbol_temp_var_gen(symbol_type_copy(p_vreg->p_type));
-    symbol_func_add_param(p_func, p_vmem);
+    p_vmem->id = p_func->var_cnt++;
+    assert(!p_vmem->p_func && !p_vmem->p_program);
+    p_vmem->p_func = p_func;
+    p_vmem->is_global = false;
+    list_add_prev(&p_vmem->node, &p_func->param);
     --p_func->param_reg_cnt;
     return p_vmem;
 }
@@ -144,13 +148,6 @@ void symbol_func_add_call_param_vmem(p_symbol_func p_func, p_symbol_var p_vmem) 
         p_func->inner_stack_size = p_vmem->stack_offset + basic_type_get_size(p_vmem->p_type->basic);
     list_add_prev(&p_vmem->node, &p_func->call_param_vmem_list);
 }
-void symbol_func_add_param(p_symbol_func p_func, p_symbol_var p_var) {
-    p_var->id = p_func->var_cnt++;
-    assert(!p_var->p_func && !p_var->p_program);
-    p_var->p_func = p_func;
-    p_var->is_global = false;
-    list_add_prev(&p_var->node, &p_func->param);
-}
 
 void symbol_func_drop(p_symbol_func p_func) {
     if (!list_head_alone(&p_func->block))
@@ -197,10 +194,6 @@ void symbol_func_set_varible_id(p_symbol_func p_func) {
     p_list_head p_node, p_next;
     list_for_each_safe(p_node, p_next, &p_func->param) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        if (list_head_alone(&p_var->ref_list)) {
-            symbol_var_drop(p_var);
-            continue;
-        }
         p_var->id = id++;
     }
     list_for_each_safe(p_node, p_next, &p_func->variable) {

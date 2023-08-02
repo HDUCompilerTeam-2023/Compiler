@@ -15,7 +15,6 @@ struct symbol_func {
     uint64_t id;
 
     size_t var_cnt;
-    list_head param;
     list_head variable;
 
     size_t param_reg_cnt;
@@ -29,6 +28,7 @@ struct symbol_func {
     p_ir_basic_block p_ret_block;
     p_ir_basic_block p_entry_block;
 
+    list_head param;
     list_head call_param_vmem_list;
     size_t stack_size;
     size_t inner_stack_size;

@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <symbol_print.h>
+#include <ir_print/vreg.h>
 
 #include <symbol/func.h>
 #include <symbol/type.h>
-#include <symbol/var.h>
+#include <ir/vreg.h>
 
 void symbol_func_name_print(p_symbol_func p_func) {
     printf("%s", p_func->name);
@@ -16,10 +17,10 @@ void symbol_func_init_print(p_symbol_func p_func) {
     symbol_func_name_print(p_func);
     printf(" (");
     p_list_head p_node;
-    list_for_each(p_node, &p_func->param) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        symbol_name_print(p_var);
-        if (p_node != p_func->param.p_prev) printf(", ");
+    list_for_each(p_node, &p_func->param_reg_list) {
+        p_ir_vreg p_param_reg = list_entry(p_node, ir_vreg, node);
+        ir_vreg_print(p_param_reg);
+        if (p_node != p_func->param_reg_list.p_prev) printf(", ");
     }
     printf(")\n");
 }

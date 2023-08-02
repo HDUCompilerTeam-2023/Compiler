@@ -6,13 +6,15 @@
 #include <symbol_gen/var.h>
 
 static inline void ast2symbol_func_param_gen(p_ast2ir_info p_info, p_symbol_func p_func) {
-    p_list_head p_node;
-    list_for_each(p_node, &p_func->param) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+    p_list_head p_node, p_node_src = p_func->variable.p_next;
+    list_for_each(p_node, &p_func->param_reg_list) {
+        assert(p_node_src != &p_func->variable);
 
-        p_ir_vreg p_param = ir_vreg_gen(symbol_type_copy(p_var->p_type));
-        symbol_func_param_reg_add(p_func, p_param);
+        p_ir_vreg p_param = list_entry(p_node, ir_vreg, node);
+        p_symbol_var p_var = list_entry(p_node_src, symbol_var, node);
+
         ast2ir_info_add_instr(p_info, ir_store_instr_gen(ir_operand_addr_gen(p_var, NULL, 0), ir_operand_vreg_gen(p_param), true));
+        p_node_src = p_node_src->p_next;
     }
 }
 static inline void ast2symbol_func_retval_gen(p_ast2ir_info p_info, p_symbol_func p_func) {

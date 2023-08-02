@@ -45,7 +45,9 @@ void syntax_func_add_variable(p_syntax_info p_info, p_symbol_var p_var) {
 }
 void syntax_func_add_param(p_syntax_info p_info, p_symbol_var p_var) {
     symbol_table_var_add(p_info->p_table, p_var);
-    symbol_func_add_param(p_info->p_func, p_var);
+    symbol_func_add_variable(p_info->p_func, p_var);
+    p_ir_vreg p_param_reg = ir_vreg_gen(symbol_type_copy(p_var->p_type));
+    symbol_func_param_reg_add(p_info->p_func, p_param_reg);
 }
 
 p_symbol_str syntax_get_str(p_syntax_info p_info, const char *string) {
