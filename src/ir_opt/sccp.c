@@ -53,6 +53,7 @@ static inline p_ir_operand _pop_ssa_edge_from_worklist(p_WL p_wl) {
     p_ir_operand p_use = p_edge->p_use;
     list_del(&p_edge->node);
     free(p_edge);
+    printf("pop ssa edge def by %%%ld\n", p_use->p_vreg->id);
     return p_use;
 }
 
@@ -501,6 +502,32 @@ static inline void _ir_opt_sccp_func(p_symbol_func p_func) {
                 assert(p_target->p_block->p_branch->p_target_1);
                 assert(!p_target->p_block->p_branch->p_target_2);
                 _add_cfg_edge_to_worklist(p_wl, p_target->p_block->p_branch->p_target_1);
+            }
+            else if (p_target->p_block->p_branch->kind == ir_cond_branch) {
+                assert(p_block->p_branch->p_target_1);
+                assert(p_block->p_branch->p_target_2);
+                p_ir_operand p_cond = p_target->p_block->p_branch->p_exp;
+                assert(p_cond->kind == reg);
+                p_ir_vreg p_def = p_cond->p_vreg;
+                p_lattice p_lat = lattice_map + p_def->id;
+                if (p_lat->lat == lat_LUB)
+                    continue;
+                if (p_lat->lat == lat_NAC) {
+                    _add_cfg_edge_to_worklist(p_wl, p_block->p_branch->p_target_1);
+                    _add_cfg_edge_to_worklist(p_wl, p_block->p_branch->p_target_2);
+                    continue;
+                }
+                assert(p_lat->lat == lat_VAL);
+                assert(p_lat->p_const);
+                assert(p_lat->p_const->kind == imme);
+                assert(p_lat->p_const->p_type->ref_level == 0);
+                assert(list_head_alone(&p_lat->p_const->p_type->array));
+                assert(p_lat->p_const->p_type->basic == type_i32);
+                I32CONST_t val = p_lat->p_const->i32const;
+                if (val)
+                    _add_cfg_edge_to_worklist(p_wl, p_block->p_branch->p_target_1);
+                else
+                    _add_cfg_edge_to_worklist(p_wl, p_block->p_branch->p_target_2);
             }
         }
     }
