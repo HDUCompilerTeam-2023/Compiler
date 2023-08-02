@@ -5,6 +5,7 @@
 #include <ir_manager/builddomtree.h>
 #include <ir_manager/buildnestree.h>
 #include <ir_manager/call_graph.h>
+#include <ir_manager/side_effects.h>
 #include <symbol.h>
 struct symbol_func {
     // type info
@@ -36,6 +37,7 @@ struct symbol_func {
     p_nestedtree_node p_nestedtree_root;
 
     p_call_graph_node p_call_graph_node;
+    p_func_side_effects p_side_effects;
 
     size_t instr_num;
 
