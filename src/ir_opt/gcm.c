@@ -99,6 +99,15 @@ static inline void _move_instr(p_ir_instr p_instr, p_ir_basic_block p_bb) {
         ir_instr_add_prev(p_instr, p_first_use);
         return;
     }
+    if (p_bb->p_branch->kind == ir_cond_branch) {
+        assert(p_bb->p_branch->p_exp);
+        assert(p_bb->p_branch->p_exp->kind == reg);
+        assert(p_bb->p_branch->p_exp->p_vreg->def_type == instr_def);
+        assert(p_bb->p_branch->p_exp->p_vreg->p_instr_def->p_basic_block == p_bb);
+        p_ir_instr p_cond_instr = p_bb->p_branch->p_exp->p_vreg->p_instr_def;
+        ir_instr_add_prev(p_instr, p_cond_instr);
+        return;
+    }
     ir_basic_block_addinstr_tail(p_bb, p_instr);
 }
 
@@ -178,7 +187,9 @@ static inline void _ir_opt_gcm_schedule_early(p_ir_instr p_instr, instr_info *in
             p_early = _ir_opt_gcm_schedule_early_deal_src(p_src, p_early, instr_info_map);
         }
     }
-    if (p_instr->irkind == ir_load || p_instr->irkind == ir_store || p_instr->irkind == ir_call)
+    if (p_instr->irkind == ir_load || p_instr->irkind == ir_store)
+        return;
+    if (p_instr->irkind == ir_call && !p_instr->ir_call.p_func->p_side_effects->pure)
         return;
     if (p_instr->irkind == ir_binary && p_instr->ir_binary.p_des->if_cond)
         return;
@@ -253,7 +264,9 @@ static inline void _ir_opt_gcm_schedule_late(p_ir_instr p_instr, instr_info *ins
         }
         p_lca = _find_lca(p_lca, p_use_bb);
     }
-    if (p_instr->irkind == ir_load || p_instr->irkind == ir_store || p_instr->irkind == ir_call)
+    if (p_instr->irkind == ir_load || p_instr->irkind == ir_store)
+        return;
+    if (p_instr->irkind == ir_call && !p_instr->ir_call.p_func->p_side_effects->pure)
         return;
     if (!p_lca)
         return;

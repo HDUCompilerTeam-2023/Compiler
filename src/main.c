@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
         ir_opt_copy_propagation(p_program);
         ir_opt_sccp(p_program);
         if (is_opt) {
+            ir_side_effects(p_program);
             ir_opt_gvn(p_program);
             ir_opt_gcm(p_program);
         }

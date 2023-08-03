@@ -39,6 +39,7 @@ static inline size_t _operand_hash_tag(p_ir_operand p_src) {
 
 // op * hash_OP + sum(src * hash_SRC)
 static inline size_t _exp_hash_tag(p_ir_instr p_instr) {
+    p_list_head p_pl = NULL;
     p_ir_operand p_src1 = NULL, p_src2 = NULL;
     size_t hash = 0;
     switch (p_instr->irkind) {
@@ -57,9 +58,20 @@ static inline size_t _exp_hash_tag(p_ir_instr p_instr) {
         hash = (23 * hash_OP) % hash_MOD;
         break;
     case ir_call:
+        p_pl = &p_instr->ir_call.param_list;
+        break;
     case ir_load:
     case ir_store:
         break;
+    }
+
+    if (p_pl) {
+        p_list_head p_node;
+        list_for_each(p_node, p_pl) {
+            p_ir_operand p_use = list_entry(p_node, ir_param, node)->p_param;
+            hash += _operand_hash_tag(p_use);
+            hash %= hash_MOD;
+        }
     }
 
     hash += _operand_hash_tag(p_src1);
@@ -161,6 +173,24 @@ static inline bool _instr_cmp_gep(p_ir_gep_instr p_instr, p_ir_gep_instr p_cmp) 
     return _operand_cmp(p_instr->p_addr, p_cmp->p_addr) && _operand_cmp(p_instr->p_offset, p_cmp->p_offset);
 }
 
+static inline bool _instr_cmp_call(p_ir_call_instr p_instr, p_ir_call_instr p_cmp) {
+    if (p_instr->p_func != p_cmp->p_func)
+        return false;
+    p_list_head p_node, p_node_src = p_cmp->param_list.p_next;
+    list_for_each(p_node, &p_instr->param_list) {
+        if (p_node_src == &p_cmp->param_list)
+            return false;
+
+        p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
+        p_ir_operand p_param_src = list_entry(p_node_src, ir_param, node)->p_param;
+        if (!_operand_cmp(p_param, p_param_src))
+            return false;
+
+        p_node_src = p_node_src->p_next;
+    }
+    return p_node_src == &p_cmp->param_list;
+}
+
 static inline p_ir_vreg _hash_find(p_ir_instr p_instr, hlist_hash instr_hash) {
     size_t hash_tag = _exp_hash_tag(p_instr);
     p_hlist_head p_head = instr_hash + hash_tag;
@@ -191,6 +221,11 @@ static inline p_ir_vreg _hash_find(p_ir_instr p_instr, hlist_hash instr_hash) {
             }
             break;
         case ir_call:
+            if (_instr_cmp_call(&p_instr->ir_call, &p_find->ir_call)) {
+                printf("find sim instr %ld and %ld\n", p_instr->instr_id, p_find->instr_id);
+                return p_find->ir_call.p_des;
+            }
+            break;
         case ir_load:
         case ir_store:
             assert(0);
@@ -443,7 +478,26 @@ static inline void _execute_gep(p_ir_instr p_instr, hlist_hash instr_hash) {
 }
 
 // TODO need call graph
-static inline void _execute_call(p_ir_instr p_instr, hlist_hash instr_hash) {}
+static inline void _execute_call(p_ir_instr p_instr, hlist_hash instr_hash) {
+    assert(p_instr->irkind == ir_call);
+    p_ir_call_instr p_call_instr = &p_instr->ir_call;
+
+    if (!p_call_instr->p_func->p_side_effects->pure)
+        return;
+
+    // hsah & del
+    p_ir_vreg p_find = _hash_find(p_instr, instr_hash);
+    if (!p_find)
+        return;
+
+    p_list_head p_node, p_next;
+    list_for_each_safe(p_node, p_next, &p_call_instr->p_des->use_list) {
+        p_ir_operand p_use = list_entry(p_node, ir_operand, use_node);
+        assert(p_use->kind == reg);
+        assert(p_use->p_vreg == p_call_instr->p_des);
+        ir_operand_reset_vreg(p_use, p_find);
+    }
+}
 
 // TODO need memery info
 static inline void _execute_load(p_ir_instr p_instr, hlist_hash instr_hash) {}
