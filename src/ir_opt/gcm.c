@@ -13,6 +13,79 @@
 #include <ir_manager/buildnestree.h>
 #include <ir_manager/set_cond.h>
 
+typedef struct {
+    p_ir_instr p_instr;
+    list_head node;
+} instr_info, *p_instr_info;
+
+static inline p_instr_info _instr_rpo_node_gen(p_ir_instr p_instr) {
+    if (!p_instr)
+        return NULL;
+    p_instr_info p_info = malloc(sizeof(instr_info));
+    *p_info = (instr_info) {
+        .p_instr = p_instr,
+        .node = list_init_head(&p_info->node),
+    };
+    return p_info;
+}
+
+static inline void _postorder_walk_instr(p_list_head p_head, p_ir_instr p_instr, bool *visit_map) {
+    if (visit_map[p_instr->instr_id])
+        return;
+    visit_map[p_instr->instr_id] = true;
+
+    p_ir_vreg p_des = NULL;
+    switch (p_instr->irkind) {
+    case ir_binary:
+        p_des = p_instr->ir_binary.p_des;
+        break;
+    case ir_unary:
+        p_des = p_instr->ir_unary.p_des;
+        break;
+    case ir_gep:
+        p_des = p_instr->ir_gep.p_des;
+        break;
+    case ir_call:
+        p_des = p_instr->ir_call.p_des;
+        break;
+    case ir_load:
+        p_des = p_instr->ir_load.p_des;
+        break;
+    case ir_store:
+        break;
+    }
+    if (p_des) {
+        p_list_head p_node;
+        list_for_each(p_node, &p_des->use_list) {
+            p_ir_operand p_use = list_entry(p_node, ir_operand, use_node);
+            if (p_use->used_type != instr_ptr)
+                continue;
+            _postorder_walk_instr(p_head, p_use->p_instr, visit_map);
+        }
+    }
+
+    p_instr_info p_info = _instr_rpo_node_gen(p_instr);
+    list_add_next(&p_info->node, p_head);
+}
+
+static inline void _init_rpo_list(p_list_head p_head, p_symbol_func p_func) {
+    size_t instr_cnt = p_func->instr_num;
+    bool *visit_map = malloc(sizeof(bool) * instr_cnt);
+    memset(visit_map, 0, sizeof(bool) * instr_cnt);
+
+    p_list_head p_node;
+    list_for_each(p_node, &p_func->block) {
+        p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
+        p_list_head p_node;
+        list_for_each(p_node, &p_bb->instr_list) {
+            p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
+            _postorder_walk_instr(p_head, p_instr, visit_map);
+        }
+    }
+
+    free(visit_map);
+}
+
 static inline bool _is_input(p_ir_instr p_instr, p_ir_instr p_input) {
     assert(p_instr);
     assert(p_input);
@@ -78,9 +151,6 @@ static inline bool _is_input(p_ir_instr p_instr, p_ir_instr p_input) {
     }
     return false;
 }
-static inline bool _is_output(p_ir_instr p_instr, p_ir_instr p_output) {
-    return _is_input(p_output, p_instr);
-}
 
 static inline void _move_instr(p_ir_instr p_instr, p_ir_basic_block p_bb) {
     ir_instr_del(p_instr);
@@ -88,12 +158,10 @@ static inline void _move_instr(p_ir_instr p_instr, p_ir_basic_block p_bb) {
     p_ir_instr p_first_use = NULL;
     list_for_each(p_node, &p_bb->instr_list) {
         p_ir_instr p_check = list_entry(p_node, ir_instr, node);
-        if (_is_input(p_instr, p_check)) {
-            assert(!p_first_use);
-            continue;
-        }
-        if (!p_first_use && _is_output(p_instr, p_check))
+        if (_is_input(p_check, p_instr)) {
             p_first_use = p_check;
+            break;
+        }
     }
     if (p_first_use) {
         ir_instr_add_prev(p_instr, p_first_use);
@@ -111,14 +179,7 @@ static inline void _move_instr(p_ir_instr p_instr, p_ir_basic_block p_bb) {
     ir_basic_block_addinstr_tail(p_bb, p_instr);
 }
 
-typedef struct {
-    p_ir_instr p_instr;
-    bool is_visit_early, is_visit_late;
-} instr_info;
-
-static inline void _ir_opt_gcm_schedule_early(p_ir_instr p_instr, instr_info *instr_info_map);
-
-static inline p_ir_basic_block _ir_opt_gcm_schedule_early_deal_src(p_ir_operand p_src, p_ir_basic_block p_early, instr_info *instr_info_map) {
+static inline p_ir_basic_block _ir_opt_gcm_schedule_early_deal_src(p_ir_operand p_src, p_ir_basic_block p_early) {
     if (!p_src)
         return p_early;
     if (p_src->kind != reg)
@@ -130,7 +191,6 @@ static inline p_ir_basic_block _ir_opt_gcm_schedule_early_deal_src(p_ir_operand 
     p_ir_basic_block p_def_bb = NULL;
     switch (p_vreg->def_type) {
     case instr_def:
-        _ir_opt_gcm_schedule_early(p_vreg->p_instr_def, instr_info_map);
         p_def_bb = p_vreg->p_instr_def->p_basic_block;
         break;
     case bb_phi_def:
@@ -147,11 +207,7 @@ static inline p_ir_basic_block _ir_opt_gcm_schedule_early_deal_src(p_ir_operand 
     return p_early;
 }
 
-static inline void _ir_opt_gcm_schedule_early(p_ir_instr p_instr, instr_info *instr_info_map) {
-    if (instr_info_map[p_instr->instr_id].is_visit_early)
-        return;
-    instr_info_map[p_instr->instr_id].is_visit_early = true;
-
+static inline void _ir_opt_gcm_schedule_early(p_ir_instr p_instr) {
     p_ir_operand p_src1 = NULL, p_src2 = NULL;
     p_list_head  p_pl = NULL;
     switch(p_instr->irkind) {
@@ -178,13 +234,13 @@ static inline void _ir_opt_gcm_schedule_early(p_ir_instr p_instr, instr_info *in
         break;
     }
     p_ir_basic_block p_early = p_instr->p_basic_block->p_func->p_entry_block;
-    p_early = _ir_opt_gcm_schedule_early_deal_src(p_src1, p_early, instr_info_map);
-    p_early = _ir_opt_gcm_schedule_early_deal_src(p_src2, p_early, instr_info_map);
+    p_early = _ir_opt_gcm_schedule_early_deal_src(p_src1, p_early);
+    p_early = _ir_opt_gcm_schedule_early_deal_src(p_src2, p_early);
     if (p_pl) {
         p_list_head p_node;
         list_for_each(p_node, p_pl) {
             p_ir_operand p_src = list_entry(p_node, ir_param, node)->p_param;
-            p_early = _ir_opt_gcm_schedule_early_deal_src(p_src, p_early, instr_info_map);
+            p_early = _ir_opt_gcm_schedule_early_deal_src(p_src, p_early);
         }
     }
     if (p_instr->irkind == ir_load || p_instr->irkind == ir_store)
@@ -212,11 +268,7 @@ static inline p_ir_basic_block _find_lca(p_ir_basic_block p_last_lca, p_ir_basic
     return p_last_lca;
 }
 
-static inline void _ir_opt_gcm_schedule_late(p_ir_instr p_instr, instr_info *instr_info_map) {
-    if (instr_info_map[p_instr->instr_id].is_visit_late)
-        return;
-    instr_info_map[p_instr->instr_id].is_visit_late = true;
-
+static inline void _ir_opt_gcm_schedule_late(p_ir_instr p_instr) {
     p_ir_vreg p_des = NULL;
     switch (p_instr->irkind) {
     case ir_binary:
@@ -257,7 +309,6 @@ static inline void _ir_opt_gcm_schedule_late(p_ir_instr p_instr, instr_info *ins
             assert(p_use_bb);
             break;
         case instr_ptr:
-            _ir_opt_gcm_schedule_late(p_ir_use->p_instr, instr_info_map);
             p_use_bb = p_ir_use->p_instr->p_basic_block;
             assert(p_use_bb);
             break;
@@ -286,30 +337,25 @@ static inline void _ir_opt_gcm_schedule_late(p_ir_instr p_instr, instr_info *ins
 
 static inline void _ir_opt_gcm_func(p_symbol_func p_func) {
     symbol_func_set_block_id(p_func);
-    size_t instr_cnt = p_func->instr_num;
-    instr_info *instr_info_map = (instr_info *) malloc(sizeof(instr_info) * instr_cnt);
-    memset(instr_info_map, 0, sizeof(instr_info) * instr_cnt);
+    list_head rpo_instr_list = list_init_head(&rpo_instr_list);
+    _init_rpo_list(&rpo_instr_list, p_func);
+
     p_list_head p_node;
-    list_for_each(p_node, &p_func->block) {
-        p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
-        p_list_head p_node;
-        list_for_each(p_node, &p_bb->instr_list) {
-            p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
-            assert(!instr_info_map[p_instr->instr_id].p_instr);
-            instr_info_map[p_instr->instr_id].p_instr = p_instr;
-            instr_info_map[p_instr->instr_id].is_visit_early = false;
-            instr_info_map[p_instr->instr_id].is_visit_late = false;
-        }
+    list_for_each(p_node, &rpo_instr_list) {
+        p_instr_info p_info = list_entry(p_node, instr_info, node);
+        _ir_opt_gcm_schedule_early(p_info->p_instr);
+    }
+    list_for_each_tail(p_node, &rpo_instr_list) {
+        p_instr_info p_info = list_entry(p_node, instr_info, node);
+        _ir_opt_gcm_schedule_late(p_info->p_instr);
     }
 
-    for (size_t i = 0; i < instr_cnt; ++i) {
-        _ir_opt_gcm_schedule_early(instr_info_map[i].p_instr, instr_info_map);
+    p_list_head p_next;
+    list_for_each_safe(p_node, p_next, &rpo_instr_list) {
+        p_instr_info p_info = list_entry(p_node, instr_info, node);
+        list_del(&p_info->node);
+        free(p_info);
     }
-    for (size_t i = 0; i < instr_cnt; ++i) {
-        _ir_opt_gcm_schedule_late(instr_info_map[i].p_instr, instr_info_map);
-    }
-
-    free(instr_info_map);
 }
 
 void ir_opt_gcm(p_program p_ir) {
