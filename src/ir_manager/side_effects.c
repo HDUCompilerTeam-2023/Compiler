@@ -9,6 +9,92 @@
 #include <symbol/var.h>
 #include <symbol/type.h>
 
+static inline void _mem_info_gen(p_symbol_var p_var) {
+    p_mem_info p_info = malloc(sizeof(*p_info));
+    *p_info = (mem_info) {
+        .p_var = p_var,
+        .load_list = list_init_head(&p_info->load_list),
+        .store_list = list_init_head(&p_info->store_list),
+    };
+    p_var->p_visited = p_info;
+}
+
+static inline void _mem_info_drop(p_symbol_var p_var) {
+    assert(p_var->p_visited);
+    p_list_head p_node, p_next;
+    list_for_each_safe(p_node, p_next, &p_var->p_visited->load_list) {
+        p_mem_visit_instr_node p_in = list_entry(p_node, mem_visit_instr_node, node);
+        list_del(&p_in->node);
+        free(p_in);
+    }
+    list_for_each_safe(p_node, p_next, &p_var->p_visited->store_list) {
+        p_mem_visit_instr_node p_in = list_entry(p_node, mem_visit_instr_node, node);
+        list_del(&p_in->node);
+        free(p_in);
+    }
+    free(p_var->p_visited);
+}
+
+static inline p_mem_visit_instr_node _instr_node_gen(p_ir_instr p_instr) {
+    p_mem_visit_instr_node p_instr_node = malloc(sizeof(*p_instr_node));
+    *p_instr_node = (mem_visit_instr_node) {
+        .p_instr = p_instr,
+        .node = list_init_head(&p_instr_node->node),
+    };
+    return p_instr_node;
+}
+
+static inline void _add_load_instr_to_mem(p_symbol_var p_var, p_ir_instr p_instr) {
+    p_mem_visit_instr_node p_load = _instr_node_gen(p_instr);
+    list_add_prev(&p_load->node, &p_var->p_visited->load_list);
+}
+
+static inline void _add_store_instr_to_mem(p_symbol_var p_var, p_ir_instr p_instr) {
+    p_mem_visit_instr_node p_store = _instr_node_gen(p_instr);
+    list_add_prev(&p_store->node, &p_var->p_visited->store_list);
+}
+
+static inline void _mem_visit_info_print(p_symbol_var p_var) {
+    p_mem_info p_info = p_var->p_visited;
+    printf("  - %s\n", p_var->name);
+    p_list_head p_node;
+    list_for_each(p_node, &p_info->load_list) {
+        p_mem_visit_instr_node p_in = list_entry(p_node, mem_visit_instr_node, node);
+        if (p_in->p_instr->irkind == ir_call) {
+            printf("    - load by func call instr %ld", p_in->p_instr->instr_id);
+        }
+        else {
+            assert(p_in->p_instr->irkind == ir_load);
+            printf("    - load by instr %ld", p_in->p_instr->instr_id);
+        }
+        if (p_var->is_global) {
+            printf(" in func %s", p_in->p_instr->p_basic_block->p_func->name);
+        }
+        printf("\n");
+    }
+    list_for_each(p_node, &p_info->store_list) {
+        p_mem_visit_instr_node p_in = list_entry(p_node, mem_visit_instr_node, node);
+        if (p_in->p_instr->irkind == ir_call) {
+            printf("    - store by func call instr %ld", p_in->p_instr->instr_id);
+        }
+        else {
+            assert(p_in->p_instr->irkind == ir_store);
+            printf("    - store by instr %ld", p_in->p_instr->instr_id);
+        }
+        if (p_var->is_global) {
+            printf(" in func %s", p_in->p_instr->p_basic_block->p_func->name);
+        }
+        printf("\n");
+    }
+}
+
+void mem_visit_info_drop(p_symbol_var p_var) {
+    if (!p_var->p_visited)
+        return;
+    _mem_info_drop(p_var);
+    p_var->p_visited = NULL;
+}
+
 static inline void _fse_gen(p_symbol_func p_func) {
     p_func_side_effects p_side_effects = malloc(sizeof(*p_side_effects));
     *p_side_effects = (func_side_effects) {
@@ -188,9 +274,33 @@ static inline size_t _ref_side_effects(p_ir_operand p_ref, p_ref_info p_table) {
         case ir_call:
             return NONE_FLAG;
         case ir_load:
+            if (p_ref->kind == imme) {
+                assert(p_ref->p_type->ref_level);
+                _add_load_instr_to_mem(p_ref->p_vmem, p_ref->p_instr);
+            }
+            else {
+                p_ref_info p_src_info = p_table + p_ref->p_vreg->id;
+                assert(p_src_info->kind != not_ref);
+                assert(p_src_info->p_vreg == p_ref->p_vreg);
+                if (p_src_info->kind == global_ref) {
+                    _add_load_instr_to_mem(p_src_info->p_global, p_ref->p_instr);
+                }
+            }
             return LOAD_FLAG;
         case ir_store:
             assert(p_ref == p_ref->p_instr->ir_store.p_addr);
+            if (p_ref->kind == imme) {
+                assert(p_ref->p_type->ref_level);
+                _add_store_instr_to_mem(p_ref->p_vmem, p_ref->p_instr);
+            }
+            else {
+                p_ref_info p_src_info = p_table + p_ref->p_vreg->id;
+                assert(p_src_info->kind != not_ref);
+                assert(p_src_info->p_vreg == p_ref->p_vreg);
+                if (p_src_info->kind == global_ref) {
+                    _add_store_instr_to_mem(p_src_info->p_global, p_ref->p_instr);
+                }
+            }
             return STORE_FLAG;
         }
         break;
@@ -208,7 +318,6 @@ static inline size_t _ref_side_effects(p_ir_operand p_ref, p_ref_info p_table) {
 
     if (p_ref->kind == imme) {
         assert(p_ref->p_type->ref_level);
-        assert(p_ref->p_vmem->is_global);
         p_des_info->kind = global_ref;
         p_des_info->p_global = p_ref->p_vmem;
     }
@@ -292,6 +401,21 @@ void ir_side_effects_print(p_program p_ir) {
         _func_side_effects_print(p_func);
     }
     printf("\n");
+    printf("variable visited:\n");
+    printf("- global var\n");
+    list_for_each(p_node, &p_ir->variable) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        _mem_visit_info_print(p_var);
+    }
+    list_for_each(p_node, &p_ir->function) {
+        p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        printf("- %s\n", p_func->name);
+        p_list_head p_node;
+        list_for_each(p_node, &p_func->variable) {
+            p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+            _mem_visit_info_print(p_var);
+        }
+    }
 }
 
 static inline void _side_effects_init_for_extern_func_param(p_symbol_func p_func, p_list_head p_head) {
@@ -425,7 +549,7 @@ static inline bool _side_effects_init_for_normal_func_param(p_symbol_func p_func
     return has_effects;
 }
 
-static inline p_symbol_func _find_func_for_symbol_var_ref(p_ir_operand p_ref) {
+static inline p_symbol_func _find_func_for_symbol_var_ref(p_ir_operand p_ref, p_symbol_var p_var) {
     p_symbol_func p_func;
     switch (p_ref->used_type) {
     case instr_ptr:
@@ -439,6 +563,8 @@ static inline p_symbol_func _find_func_for_symbol_var_ref(p_ir_operand p_ref) {
         p_func = p_ref->p_basic_block->p_func;
         break;
     }
+    if (!p_var->is_global)
+        assert(p_var->p_func == p_func);
     return p_func;
 }
 
@@ -449,9 +575,11 @@ static inline void _side_effects_init_for_variable(p_symbol_var p_var, p_func_re
         assert(p_ref->kind == imme);
         assert(p_ref->p_type->ref_level);
         assert(p_ref->p_vmem == p_var);
-        p_symbol_func p_func = _find_func_for_symbol_var_ref(p_ref);
+        p_symbol_func p_func = _find_func_for_symbol_var_ref(p_ref, p_var);
         p_ref_info reg_table = func_ref_table[p_func->id].reg_table;
         size_t flag = _ref_side_effects(p_ref, reg_table);
+        if (!p_var->is_global)
+            continue;
         if (flag & LOAD_FLAG) {
             func_ref_table[p_func->id].has_effects = true;
             _fse_add_global(p_func, p_var, false);
@@ -487,6 +615,9 @@ void ir_side_effects(p_program p_ir) {
 
     list_for_each(p_node, &p_ir->variable) {
         p_symbol_var p_global = list_entry(p_node, symbol_var, node);
+        if (p_global->p_visited)
+            _mem_info_drop(p_global);
+        _mem_info_gen(p_global);
         assert(p_global->is_global);
         assert(p_global->p_program == p_ir);
         _side_effects_init_for_variable(p_global, func_ref_table);
@@ -494,6 +625,16 @@ void ir_side_effects(p_program p_ir) {
 
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        p_list_head p_node;
+        list_for_each(p_node, &p_func->variable) {
+            p_symbol_var p_local = list_entry(p_node, symbol_var, node);
+            if (p_local->p_visited)
+                _mem_info_drop(p_local);
+            _mem_info_gen(p_local);
+            assert(!p_local->is_global);
+            assert(p_local->p_func == p_func);
+            _side_effects_init_for_variable(p_local, func_ref_table);
+        }
         if (func_ref_table[p_func->id].has_effects)
             _add_wl_node(p_func, &wl_head);
     }
@@ -546,13 +687,18 @@ void ir_side_effects(p_program p_ir) {
 
                     if (p_param->kind == reg) {
                         p_ref_info p_info = func_ref_table[p_caller->id].reg_table + p_param->p_vreg->id;
-                        if (p_info->kind == not_ref)
-                            continue;
+                        assert(p_info->kind != not_ref);
                         if (p_info->kind == global_ref) {
-                            if (has_load)
-                                has_change |= _fse_add_global(p_caller, p_info->p_global, false);
-                            if (has_store)
-                                has_change |= _fse_add_global(p_caller, p_info->p_global, true);
+                            if (has_load) {
+                                _add_load_instr_to_mem(p_info->p_global, p_call);
+                                if (p_info->p_global->is_global)
+                                    has_change |= _fse_add_global(p_caller, p_info->p_global, false);
+                            }
+                            if (has_store) {
+                                _add_store_instr_to_mem(p_info->p_global, p_call);
+                                if (p_info->p_global->is_global)
+                                    has_change |= _fse_add_global(p_caller, p_info->p_global, true);
+                            }
                         }
                         else {
                             if (has_load)
@@ -562,12 +708,16 @@ void ir_side_effects(p_program p_ir) {
                         }
                     }
                     else {
-                        if (!p_param->p_vmem->is_global)
-                            continue;
-                        if (has_load)
-                            has_change |= _fse_add_global(p_caller, p_param->p_vmem, false);
-                        if (has_store)
-                            has_change |= _fse_add_global(p_caller, p_param->p_vmem, true);
+                        if (has_load) {
+                            _add_load_instr_to_mem(p_param->p_vmem, p_call);
+                            if (p_param->p_vmem->is_global)
+                                has_change |= _fse_add_global(p_caller, p_param->p_vmem, false);
+                        }
+                        if (has_store) {
+                            _add_store_instr_to_mem(p_param->p_vmem, p_call);
+                            if (p_param->p_vmem->is_global)
+                                has_change |= _fse_add_global(p_caller, p_param->p_vmem, true);
+                        }
                     }
                 }
             }

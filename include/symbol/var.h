@@ -4,6 +4,7 @@
 #include <ir.h>
 #include <symbol.h>
 #include <program/use.h>
+#include <ir_manager/side_effects.h>
 
 struct symbol_init_val {
     union {
@@ -38,6 +39,7 @@ struct symbol_var {
 
     size_t stack_offset;
     list_head node;
+    p_mem_info p_visited;
 };
 
 #endif
