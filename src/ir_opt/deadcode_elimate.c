@@ -44,6 +44,14 @@ static inline bool deal_instr_src(p_ir_instr p_instr, p_reg_info_table reg_info_
     p_list_head p_node;
     switch (p_instr->irkind) {
     case ir_call:
+        if (p_instr->ir_call.p_func->p_side_effects &&
+                (!p_instr->ir_call.p_func->p_side_effects->input &&
+                !p_instr->ir_call.p_func->p_side_effects->output &&
+                !p_instr->ir_call.p_func->p_side_effects->stored_param_cnt &&
+                list_head_alone(&p_instr->ir_call.p_func->p_side_effects->stored_global))) {
+            assert(p_instr->ir_call.p_des);
+            return false;
+        }
         list_for_each(p_node, &p_instr->ir_call.param_list) {
             deal_operand(list_entry(p_node, ir_param, node)->p_param, reg_info_table);
         }
@@ -132,9 +140,32 @@ static inline void deal_reg_info_table(p_reverse_dom_tree_info_list p_info_list,
         }
         else {
             p_ir_instr p_def = p_vreg->p_instr_def;
+            p_list_head p_node;
             p_useful_block = p_def->p_basic_block;
-            deal_operand(ir_instr_get_src1(p_def), reg_info_table);
-            deal_operand(ir_instr_get_src2(p_def), reg_info_table);
+            switch (p_def->irkind) {
+            case ir_binary:
+                deal_operand(p_def->ir_binary.p_src1, reg_info_table);
+                deal_operand(p_def->ir_binary.p_src2, reg_info_table);
+                break;
+            case ir_unary:
+                deal_operand(p_def->ir_unary.p_src, reg_info_table);
+                break;
+            case ir_load:
+                deal_operand(p_def->ir_load.p_addr, reg_info_table);
+                break;
+            case ir_gep:
+                deal_operand(p_def->ir_gep.p_addr, reg_info_table);
+                deal_operand(p_def->ir_gep.p_offset, reg_info_table);
+                break;
+            case ir_call:
+                list_for_each(p_node, &p_def->ir_call.param_list) {
+                    p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
+                    deal_operand(p_param, reg_info_table);
+                }
+                break;
+            case ir_store:
+                assert(0);
+            }
         }
         set_cdg_prev_useful(p_info_list, reg_info_table, p_useful_block);
     }
@@ -206,8 +237,8 @@ static inline void ir_dead_code_elimate_func(p_symbol_func p_func, bool if_aggre
         p_ir_basic_block p_block = list_entry(p_block_node, ir_basic_block, node);
 
         bool if_useful = false;
-        p_list_head p_instr_node;
-        list_for_each(p_instr_node, &p_block->instr_list) {
+        p_list_head p_instr_node, p_next;
+        list_for_each_safe(p_instr_node, p_next, &p_block->instr_list) {
             p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
             if_useful |= deal_instr_src(p_instr, reg_info_table, p_func);
         }
