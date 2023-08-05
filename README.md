@@ -101,7 +101,7 @@
 - [x] 36. 变量初始化
 - [x] 37. load store 指令的 sp 支持
 - [x] 38. 删掉 `add_at`
-- [ ] 39. Side Effects
+- [x] 39. Side Effects
 - [ ] 40. MemorySSA
 - [ ] 41. 冗余存储消除
 - [ ] 42. 存储代码移动
