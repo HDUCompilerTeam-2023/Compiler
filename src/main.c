@@ -16,6 +16,7 @@
 #include <ir_opt/simplify_cfg.h>
 #include <ir_opt/copy_propagation.h>
 #include <ir_opt/globalopt.h>
+#include <ir_opt/inline.h>
 #include <ir_opt/sccp.h>
 #include <ir_opt/gcm.h>
 #include <ir_opt/gvn.h>
@@ -56,6 +57,8 @@ int main(int argc, char *argv[]) {
     ir_deadcode_elimate_pass(p_program, true);
 
     do {
+        ir_opt_inline(p_program);
+
         ir_opt_globalopt(p_program);
         mem2reg_program_pass(p_program);
         ir_deadcode_elimate_pass(p_program, true);
