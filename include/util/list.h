@@ -26,6 +26,11 @@ struct list_head {
          (p_list_node) != (p_list_head);                                               \
          (p_list_node) = (p_list_next), (p_list_next) = (p_list_node)->p_next)
 
+#define list_for_each_tail_safe(p_list_node, p_list_prev, p_list_head)                      \
+    for ((p_list_node) = (p_list_head)->p_prev, (p_list_prev) = (p_list_node)->p_prev; \
+         (p_list_node) != (p_list_head);                                               \
+         (p_list_node) = (p_list_prev), (p_list_prev) = (p_list_node)->p_prev)
+
 bool list_add_next(p_list_head p_new, p_list_head p_pos);
 bool list_add_prev(p_list_head p_new, p_list_head p_pos);
 bool list_del(p_list_head p_del);
