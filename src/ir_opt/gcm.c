@@ -12,6 +12,7 @@
 #include <ir_manager/builddomtree.h>
 #include <ir_manager/buildnestree.h>
 #include <ir_manager/set_cond.h>
+#include <ir_opt/deadcode_elimate.h>
 
 typedef struct {
     p_ir_instr p_instr;
@@ -250,7 +251,6 @@ static inline void _ir_opt_gcm_schedule_early(p_ir_instr p_instr) {
     if (p_instr->irkind == ir_binary && p_instr->ir_binary.p_des->if_cond)
         return;
 
-    assert(ir_basic_block_dom_check(p_instr->p_basic_block, p_early));
     _move_instr(p_instr, p_early);
 }
 
@@ -359,9 +359,9 @@ static inline void _ir_opt_gcm_func(p_symbol_func p_func) {
 }
 
 void ir_opt_gcm(p_program p_ir) {
+    ir_deadcode_elimate_pass(p_ir, false);
     ir_cfg_set_program_dom(p_ir);
     ir_build_program_nestedtree(p_ir);
-    set_cond_pass(p_ir);
     p_list_head p_node;
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);

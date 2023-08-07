@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
     mem2reg_program_pass(p_program);
     ir_deadcode_elimate_pass(p_program, true);
 
+    size_t n = 3;
     do {
         ir_opt_inline(p_program);
 
@@ -64,17 +65,19 @@ int main(int argc, char *argv[]) {
         ir_deadcode_elimate_pass(p_program, true);
 
         // optimize - need keep block information
-        ir_opt_copy_propagation(p_program);
-        ir_opt_sccp(p_program);
         if (is_opt) {
             ir_side_effects(p_program);
+            set_cond_pass(p_program);
             ir_opt_gvn(p_program);
             ir_opt_gcm(p_program);
+            ir_deadcode_elimate_pass(p_program, true);
         }
+        ir_opt_copy_propagation(p_program);
+        ir_opt_sccp(p_program);
 
         // deadcode elimate
         ir_deadcode_elimate_pass(p_program, true);
-    } while(0);
+    } while(n--);
 
     // shared lir trans
     share_lir_trans_pass(p_program);
