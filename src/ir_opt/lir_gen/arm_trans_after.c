@@ -18,7 +18,7 @@ static inline void stack_alloc(p_symbol_func p_func) {
         stack_size += p_vmem->p_type->size * basic_type_get_size(p_vmem->p_type->basic);
     }
     size_t save_size = (p_func->save_reg_r_num + p_func->save_reg_s_num + 1) * basic_type_get_size(type_i32);
-    p_func->stack_size = alignTo(stack_size + save_size, 8) - save_size;
+    p_func->stack_size = alignTo(stack_size + save_size, 16) - save_size;
     stack_size = p_func->stack_size + save_size;
     list_for_each(p_node, &p_func->param) {
         p_symbol_var p_vmem = list_entry(p_node, symbol_var, node);

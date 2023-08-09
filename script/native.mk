@@ -10,7 +10,7 @@ CLEAN += $(OUTPUT_DIR)/
 TEST_ASM_SRC = $(shell find $(TEST_DIR) -name "*.s")
 TEST_EXE_SRC = $(shell find $(TEST_DIR) -name "*.exe")
 
-ARM_ASSEMBLER = arm-linux-gnueabihf-gcc -static
+ARM_ASSEMBLER = riscv64-unknown-linux-gnu-gcc -static
 
 # Test rules
 $(OUTPUT_DIR)/%.compiler_out: %.sy $(BINARY) ALWAYS
@@ -40,7 +40,7 @@ $(OUTPUT_DIR)/%.asm_out: %.s ALWAYS
 	@cat $< >> $@
 	@echo ''      >> $@
 	@echo '=====' >> $@
-	@$(ARM_ASSEMBLER) $< -o $(basename $<).exe -L$(LINK_DIR) -l$(LINK_FILE) >> $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
+	@$(ARM_ASSEMBLER) $< lib/sylib.s -o $(basename $<).exe >> $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
 
 $(OUTPUT_DIR)/%.run_out: %.exe ALWAYS
 		@./test_exe.sh $< > $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)

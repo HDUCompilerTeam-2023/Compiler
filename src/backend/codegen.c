@@ -23,7 +23,7 @@
 
 static inline void mov_reg2reg(FILE *out_file, size_t rd, size_t rs, bool s) {
     if (rd < R_NUM && rs < R_NUM)
-        arm_mov_gen(out_file, arm_mov, rd, rs, s, 0, false);
+        arm_mov_gen(out_file,  rd, rs);
     else {
         assert(!s);
         arm_vmov_gen(out_file, rd, rs);
@@ -98,12 +98,13 @@ static void swap_reg(p_arm_codegen_info p_info, size_t *r1, size_t *r2, size_t n
 }
 
 static inline void mov_imm32_gen(FILE *out_file, size_t rd, I32CONST_t i32const, bool s) {
-    uint32_t low = ((1 << 16) - 1) & (uint32_t) i32const;
-    uint32_t high = ((uint32_t) i32const >> 16);
-    arm_mov16_gen(out_file, arm_movw, rd, low, false);
-    arm_mov16_gen(out_file, arm_movt, rd, high, false);
-    if (s)
-        arm_compare_gen(out_file, arm_cmp, rd, 0, 0, true);
+    // uint32_t low = ((1 << 16) - 1) & (uint32_t) i32const;
+    // uint32_t high = ((uint32_t) i32const >> 16);
+    // arm_mov16_gen(out_file, arm_movw, rd, low, false);
+    // arm_mov16_gen(out_file, arm_movt, rd, high, false);
+    // if (s)
+    //     arm_compare_gen(out_file, arm_cmp, rd, 0, 0, true);
+    arm_li_gen(out_file, rd, i32const);
 }
 
 static void mov_int2reg(FILE *out_file, size_t rd, I32CONST_t i32const, bool s) {
@@ -116,19 +117,19 @@ static void mov_int2reg(FILE *out_file, size_t rd, I32CONST_t i32const, bool s) 
     {
         I32CONST_t neg = -i32const - 1;
         if (if_legal_rotate_imme12(neg)) {
-            arm_mov_gen(out_file, arm_mvn, rd, neg, s, 0, true);
+            arm_mvn_gen(out_file,  rd, neg);
             return;
         }
         mov_imm32_gen(out_file, rd, i32const, s);
         return;
     }
     // movs 和 mov 的立即数范围不同
-    if (s && !if_legal_rotate_imme12(i32const)) {
-        mov_int2reg(out_file, rd, i32const, false);
-        arm_compare_gen(out_file, arm_cmp, rd, 0, 0, true);
-        return;
-    }
-    arm_mov_gen(out_file, arm_mov, rd, i32const, s, 0, true);
+    // if (s && !if_legal_rotate_imme12(i32const)) {
+    //     mov_int2reg(out_file, rd, i32const, false);
+    //     arm_compare_gen(out_file, arm_cmp, rd, 0, 0, true);
+    //     return;
+    // }
+    arm_li_gen(out_file, rd, i32const);
 }
 
 static void mov_float2reg(p_arm_codegen_info p_info, size_t rd, F32CONST_t floatconst) {
@@ -145,7 +146,7 @@ static void mov_imme2reg(p_arm_codegen_info p_info, size_t rd, p_ir_operand p_op
         arm_get_global_addr(p_info->out_file, rd, p_operand->p_vmem->name, p_operand->offset);
         if (p_operand->offset >= 32768) {
             mov_int2reg(p_info->out_file, TMP, p_operand->offset, false);
-            arm_data_process_gen(p_info->out_file, arm_add, rd, rd, TMP, false, 0, false);
+            arm_data_process_gen(p_info->out_file, arm_add, rd, rd, TMP);
         }
         return;
     }
@@ -160,6 +161,55 @@ static void mov_imme2reg(p_arm_codegen_info p_info, size_t rd, p_ir_operand p_op
         assert(0);
         break;
     }
+}
+void arm_push_gen(FILE *out_file, size_t *reg_id, size_t num) {
+    if (num == 0) return;
+    size_t i = 0;
+    mov_int2reg(out_file, TMP, num << 4, false);
+    arm_data_process_gen(out_file, arm_sub, SP, SP, TMP);
+    while (i < num) {
+        mov_int2reg(out_file, TMP, i << 4, false);
+        arm_data_process_gen(out_file, arm_add, TMP, SP, TMP);
+        arm_store_gen(out_file, reg_id[i], TMP, 0);
+        i++;
+    }
+}
+void arm_pop_gen(FILE *out_file, size_t *reg_id, size_t num) {
+    if (num == 0) return;
+    size_t i = 0;
+    while (i < num) {
+        mov_int2reg(out_file, TMP, i << 4, false);
+        arm_data_process_gen(out_file, arm_add, TMP, SP, TMP);
+        arm_load_gen(out_file, reg_id[i], TMP, 0);
+        i++;
+    }
+    mov_int2reg(out_file, TMP, num << 4, false);
+    arm_data_process_gen(out_file, arm_add, SP, SP, TMP);
+}
+
+void arm_vpush_gen(FILE *out_file, size_t *reg_id, size_t num) {
+    if (num == 0) return;
+    size_t i = 0;
+    mov_int2reg(out_file, TMP, num << 4, false);
+    arm_data_process_gen(out_file, arm_sub, SP, SP, TMP);
+    while (i < num) {
+        mov_int2reg(out_file, TMP, i << 4, false);
+        arm_data_process_gen(out_file, arm_add, TMP, SP, TMP);
+        arm_vstore_gen(out_file, reg_id[i], TMP, 0);
+        i++;
+    }
+}
+void arm_vpop_gen(FILE *out_file, size_t *reg_id, size_t num) {
+    if (num == 0) return;
+    size_t i = 0;
+    while (i < num) {
+        mov_int2reg(out_file, TMP, i << 4, false);
+        arm_data_process_gen(out_file, arm_add, TMP, SP, TMP);
+        arm_vload_gen(out_file, reg_id[i], TMP, 0);
+        i++;
+    }
+    mov_int2reg(out_file, TMP, num << 4, false);
+    arm_data_process_gen(out_file, arm_add, SP, SP, TMP);
 }
 
 static inline arm_cond_type get_cond_type(ir_binary_op op) {
@@ -181,30 +231,30 @@ static inline arm_cond_type get_cond_type(ir_binary_op op) {
     }
 }
 
-static inline arm_cond_type get_opposite_type(arm_cond_type type) {
-    switch (type) {
-    case arm_eq:
-        return arm_ne;
-    case arm_ne:
-        return arm_eq;
-    case arm_ge:
-        return arm_lt;
-    case arm_gt:
-        return arm_le;
-    case arm_le:
-        return arm_gt;
-    case arm_lt:
-        return arm_ge;
-    case arm_al:
-        return arm_al;
-    }
-}
+// static inline arm_cond_type get_opposite_type(arm_cond_type type) {
+//     switch (type) {
+//     case arm_eq:
+//         return arm_ne;
+//     case arm_ne:
+//         return arm_eq;
+//     case arm_ge:
+//         return arm_lt;
+//     case arm_gt:
+//         return arm_le;
+//     case arm_le:
+//         return arm_gt;
+//     case arm_lt:
+//         return arm_ge;
+//     case arm_al:
+//         return arm_al;
+//     }
+// }
 static void arm_global_sym_gen(FILE *out_file, p_symbol_var p_sym) {
     if (!p_sym->p_init) {
         fprintf(out_file, "\n.comm %s,%ld,4\n", p_sym->name, symbol_type_get_size(p_sym->p_type) << 2);
         return;
     }
-    arm_global_sym_declare_gen(out_file, p_sym->name, p_sym->p_type->size << 2);
+    arm_global_sym_declare_gen(out_file, p_sym->name, p_sym->p_type->size << 4);
     arm_label_gen(out_file, p_sym->name);
     size_t i = 0;
     while (i < p_sym->p_init->size) {
@@ -229,28 +279,26 @@ static void arm_global_sym_gen(FILE *out_file, p_symbol_var p_sym) {
 static void arm_into_func_gen(p_arm_codegen_info p_info, p_symbol_func p_func, size_t stack_size) {
     arm_func_sym_declare_gen(p_info->out_file, p_func->name);
     arm_label_gen(p_info->out_file, p_func->name);
-    p_info->save_reg_r[p_info->save_reg_r_num] = LR;
-    arm_push_gen(p_info->out_file, p_info->save_reg_r, p_info->save_reg_r_num + 1);
+    arm_push_gen(p_info->out_file, p_info->save_reg_r, p_info->save_reg_r_num );
     arm_vpush_gen(p_info->out_file, p_info->save_reg_s, p_info->save_reg_s_num);
     if (!if_legal_rotate_imme12(stack_size)) {
         mov_int2reg(p_info->out_file, 12, stack_size, false);
-        arm_data_process_gen(p_info->out_file, arm_sub, SP, SP, 12, false, 0, false);
+        arm_data_process_gen(p_info->out_file, arm_sub, SP, SP, 12);
     }
     else
-        arm_data_process_gen(p_info->out_file, arm_sub, SP, SP, stack_size, false, 0, true);
+        arm_addi_gen(p_info->out_file, SP, SP, stack_size);
 }
 
 static void arm_out_func_gen(p_arm_codegen_info p_info, size_t stack_size) {
     if (!if_legal_rotate_imme12(stack_size)) {
         mov_int2reg(p_info->out_file, TMP, stack_size, false);
-        arm_data_process_gen(p_info->out_file, arm_add, SP, SP, TMP, false, 0, false);
+        arm_data_process_gen(p_info->out_file, arm_add, SP, SP, TMP);
     }
     else
-        arm_data_process_gen(p_info->out_file, arm_add, SP, SP, stack_size, false, 0, true);
-    p_info->save_reg_r[p_info->save_reg_r_num] = PC;
+        arm_addi_gen(p_info->out_file, SP, SP, stack_size);
     arm_vpop_gen(p_info->out_file, p_info->save_reg_s, p_info->save_reg_s_num);
-    arm_pop_gen(p_info->out_file, p_info->save_reg_r, p_info->save_reg_r_num + 1);
-    arm_jump_reg_gen(p_info->out_file, arm_bx, arm_al, LR);
+    arm_pop_gen(p_info->out_file, p_info->save_reg_r, p_info->save_reg_r_num);
+    fprintf(p_info->out_file, "   ret\n");
 }
 
 static inline char *get_block_label(p_ir_basic_block p_basic_block) {
@@ -265,9 +313,9 @@ static inline void arm_block_label_gen(FILE *out_file, p_ir_basic_block p_basic_
     arm_label_gen(out_file, tmp);
     free(tmp);
 }
-static inline void arm_block_jump_label_gen(FILE *out_file, arm_instr_type instr_type, arm_cond_type cond_type, p_ir_basic_block p_basic_block) {
+static inline void arm_block_jump_label_gen(FILE *out_file, arm_instr_type instr_type, arm_cond_type cond_type, size_t rs1, size_t rs2,p_ir_basic_block p_basic_block) {
     char *tmp = get_block_label(p_basic_block);
-    arm_jump_label_gen(out_file, instr_type, cond_type, tmp);
+    arm_jump_label_gen(out_file, instr_type, cond_type, rs1, rs2, tmp);
     free(tmp);
 }
 
@@ -380,7 +428,7 @@ static void arm_unary_instr_codegen(p_arm_codegen_info p_info, p_ir_unary_instr 
         if (p_des->if_float)
             arm_vneg_gen(out_file, p_des->reg_id, p_src->p_vreg->reg_id);
         else
-            arm_data_process_gen(out_file, arm_rsb, p_des->reg_id, p_src->p_vreg->reg_id, 0, s, 0, true);
+            arm_neg_gen(out_file, p_des->reg_id, p_src->p_vreg->reg_id);
         break;
     case ir_val_assign:
         if (p_unary_instr->p_src->kind == imme) {
@@ -397,10 +445,11 @@ static void arm_unary_instr_codegen(p_arm_codegen_info p_info, p_ir_unary_instr 
         break;
     case ir_ptr_add_sp:
         if (p_unary_instr->p_src->kind == imme) {
-            arm_data_process_gen(out_file, arm_add, p_des->reg_id, SP, p_src->i32const, s, 0, true);
+            arm_mov_gen(out_file, TMP, p_src->i32const);
+            arm_data_process_gen(out_file, arm_add, p_des->reg_id, SP, TMP);
             break;
         }
-        arm_data_process_gen(out_file, arm_add, p_des->reg_id, SP, p_src->p_vreg->reg_id, s, 0, false);
+        arm_data_process_gen(out_file, arm_add, p_des->reg_id, SP, p_src->p_vreg->reg_id);
         break;
     }
 }
@@ -412,48 +461,54 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
     FILE *out_file = p_info->out_file;
     switch (p_binary_instr->op) {
     case ir_add_op:
+        // assert(p_src1->kind == reg);
+        // assert(p_src2->kind == reg);
         if (p_src1->kind == imme) {
             assert(p_src2->kind == reg);
             assert(p_src1->p_type->ref_level == 0 && p_src1->p_type->basic == type_i32);
-            arm_data_process_gen(out_file, arm_add, p_des->reg_id, p_src2->p_vreg->reg_id, p_src1->i32const, s, 0, true);
+            arm_mov_gen(out_file, TMP, p_src1->i32const);
+            arm_data_process_gen(out_file, arm_add, p_des->reg_id, p_src2->p_vreg->reg_id, TMP);
             break;
         }
         if (p_src2->kind == imme) {
             assert(p_src1->kind == reg);
             assert(p_src2->p_type->ref_level == 0 && p_src2->p_type->basic == type_i32);
-            arm_data_process_gen(out_file, arm_add, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->i32const, s, 0, true);
+            arm_mov_gen(out_file, TMP, p_src2->i32const);
+            arm_data_process_gen(out_file, arm_add, p_des->reg_id, p_src1->p_vreg->reg_id, TMP);
             break;
         }
         if (p_des->if_float) {
             arm_vdata_process_gen(out_file, arm_add, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
             break;
         }
-        arm_data_process_gen(out_file, arm_add, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id, s, 0, false);
+        arm_data_process_gen(out_file, arm_add, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
         break;
     case ir_sub_op:
-        if (p_src1->kind == imme) {
-            assert(p_src2->kind == reg);
-            assert(p_src1->p_type->ref_level == 0 && p_src1->p_type->basic == type_i32);
-            arm_data_process_gen(out_file, arm_rsb, p_des->reg_id, p_src2->p_vreg->reg_id, p_src1->i32const, s, 0, true);
-            break;
-        }
-        if (p_src2->kind == imme) {
-            assert(p_src1->kind == reg);
-            assert(p_src2->p_type->ref_level == 0 && p_src2->p_type->basic == type_i32);
-            arm_data_process_gen(out_file, arm_sub, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->i32const, s, 0, true);
-            break;
-        }
+        assert (p_src1->kind == reg); 
+        // {
+        //     assert(p_src2->kind == reg);
+        //     assert(p_src1->p_type->ref_level == 0 && p_src1->p_type->basic == type_i32);
+        //     arm_data_process_gen(out_file, arm_rsb, p_des->reg_id, p_src2->p_vreg->reg_id, p_src1->i32const, s, 0, true);
+        //     break;
+        // }
+        assert (p_src2->kind == reg);
+        //  {
+        //     assert(p_src1->kind == reg);
+        //     assert(p_src2->p_type->ref_level == 0 && p_src2->p_type->basic == type_i32);
+        //     arm_data_process_gen(out_file, arm_sub, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->i32const, s, 0, true);
+        //     break;
+        // }
         if (p_des->if_float) {
             arm_vdata_process_gen(out_file, arm_sub, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
             break;
         }
-        arm_data_process_gen(out_file, arm_sub, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id, s, 0, false);
+        arm_data_process_gen(out_file, arm_sub, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
         break;
     case ir_mul_op:
         if (p_des->if_float)
             arm_vdata_process_gen(out_file, arm_mul, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
         else
-            arm_mul_gen(out_file, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id, s);
+            arm_mul_gen(out_file, p_des->reg_id, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
         break;
     case ir_div_op:
         assert(!s);
@@ -469,24 +524,37 @@ static void arm_binary_instr_codegen(p_arm_codegen_info p_info, p_ir_binary_inst
     case ir_g_op:
     case ir_geq_op:
         // can pointer compare ?
-        assert(p_src1->kind == reg);
-        if (p_src2->kind == imme) {
-            assert(p_src2->p_type->basic == type_i32);
-            if (p_src2->i32const < 0)
-                arm_compare_gen(out_file, arm_cmn, p_src1->p_vreg->reg_id, p_src2->i32const, 0, true);
-            else
-                arm_compare_gen(out_file, arm_cmp, p_src1->p_vreg->reg_id, p_src2->i32const, 0, true);
-        }
-        else {
-            if (p_src1->p_vreg->reg_id >= R_NUM)
-                arm_vcompare_gen(out_file, arm_cmp, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
-            else
-                arm_compare_gen(out_file, arm_cmp, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id, 0, false);
-        }
+        // assert(p_src1->kind == reg);
+        // if (p_src2->kind == imme) {
+        //     assert(p_src2->p_type->basic == type_i32);
+        //     if (p_src2->i32const < 0)
+        //         arm_compare_gen(out_file, arm_cmn, p_src1->p_vreg->reg_id, p_src2->i32const, 0, true);
+        //     else
+        //         arm_compare_gen(out_file, arm_cmp, p_src1->p_vreg->reg_id, p_src2->i32const, 0, true);
+        // }
+        // else {
+        //     if (p_src1->p_vreg->reg_id >= R_NUM)
+        //         arm_vcompare_gen(out_file, arm_cmp, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id);
+        //     else
+        //         arm_compare_gen(out_file, arm_cmp, p_src1->p_vreg->reg_id, p_src2->p_vreg->reg_id, 0, false);
+        // }
         if (!s) {
             arm_cond_type type = get_cond_type(p_binary_instr->op);
-            arm_movcond_gen(out_file, type, p_des->reg_id, 1, 0, true);
-            arm_movcond_gen(out_file, get_opposite_type(type), p_des->reg_id, 0, 0, true);
+            switch (type) {
+                case arm_al:
+                    break;
+                case arm_eq:
+                    // arm_set_gen(out_file, p_des->reg_id, rs, , arm_eq);
+                    break;
+                case arm_ge:
+                case arm_gt:
+                case arm_le:
+                case arm_lt:
+                case arm_ne:
+                    break;
+            }
+            // arm_movcond_gen(out_file, type, p_des->reg_id, 1, 0, true);
+            // arm_movcond_gen(out_file, get_opposite_type(type), p_des->reg_id, 0, 0, true);
         }
         break;
     case ir_mod_op:
@@ -501,7 +569,7 @@ static void arm_call_instr_codegen(p_arm_codegen_info p_info, p_ir_instr p_instr
     if (p_call_instr->p_des && p_call_instr->p_func->ret_type == type_f32)
         rs = R_NUM;
     swap_in_call(p_info, p_call_instr);
-    arm_jump_label_gen(p_info->out_file, arm_bl, arm_al, p_call_instr->p_func->name);
+    arm_call_gen(p_info->out_file, p_call_instr->p_func->name);
     if (p_call_instr->p_des) {
         if (rs != p_call_instr->p_des->reg_id)
             mov_reg2reg(p_info->out_file, p_call_instr->p_des->reg_id, rs, false);
@@ -518,15 +586,17 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
             if (p_addr->kind == imme)
                 arm_vstore_gen(out_file, p_src->reg_id, SP, p_addr->i32const);
             else {
-                arm_data_process_gen(out_file, arm_add, TMP, SP, p_addr->p_vreg->reg_id, false, 0, false);
+                arm_data_process_gen(out_file, arm_add, TMP, SP, p_addr->p_vreg->reg_id);
                 arm_vstore_gen(out_file, p_src->reg_id, TMP, 0);
             }
         }
         else {
             if (p_addr->kind == imme)
-                arm_store_gen(out_file, p_src->reg_id, SP, p_addr->i32const, 0, true);
-            else
-                arm_store_gen(out_file, p_src->reg_id, SP, p_addr->p_vreg->reg_id, 0, false);
+                arm_store_gen(out_file, p_src->reg_id, SP, p_addr->i32const);
+            else{
+                arm_data_process_gen(out_file, arm_add, TMP, SP, p_addr->p_vreg->reg_id);
+                arm_store_gen(out_file, p_src->reg_id, TMP, 0);
+            }
         }
     }
     else {
@@ -534,7 +604,7 @@ static void arm_store_instr_gen(p_arm_codegen_info p_info, p_ir_store_instr p_st
         if (p_src->if_float)
             arm_vstore_gen(out_file, p_src->reg_id, p_addr->p_vreg->reg_id, 0);
         else
-            arm_store_gen(out_file, p_src->reg_id, p_addr->p_vreg->reg_id, 0, 0, true);
+            arm_store_gen(out_file, p_src->reg_id, p_addr->p_vreg->reg_id, 0);
     }
 }
 
@@ -547,15 +617,17 @@ static void arm_load_instr_gen(p_arm_codegen_info p_info, p_ir_load_instr p_load
             if (p_addr->kind == imme)
                 arm_vload_gen(out_file, p_des->reg_id, SP, p_addr->i32const);
             else {
-                arm_data_process_gen(out_file, arm_add, TMP, SP, p_addr->p_vreg->reg_id, false, 0, false);
+                arm_data_process_gen(out_file, arm_add, TMP, SP, p_addr->p_vreg->reg_id);
                 arm_vload_gen(out_file, p_des->reg_id, TMP, 0);
             }
         }
         else {
             if (p_addr->kind == imme)
-                arm_load_gen(out_file, p_des->reg_id, SP, p_addr->i32const, 0, true);
-            else
-                arm_load_gen(out_file, p_des->reg_id, SP, p_addr->p_vreg->reg_id, 0, false);
+                arm_load_gen(out_file, p_des->reg_id, SP, p_addr->i32const);
+            else{
+                arm_data_process_gen(out_file, arm_add, TMP, SP, p_addr->p_vreg->reg_id);
+                arm_load_gen(out_file, p_des->reg_id, TMP, 0);
+            }
         }
     }
     else {
@@ -563,7 +635,7 @@ static void arm_load_instr_gen(p_arm_codegen_info p_info, p_ir_load_instr p_load
         if (p_des->if_float)
             arm_vload_gen(out_file, p_des->reg_id, p_addr->p_vreg->reg_id, 0);
         else
-            arm_load_gen(out_file, p_des->reg_id, p_addr->p_vreg->reg_id, 0, 0, true);
+            arm_load_gen(out_file, p_des->reg_id, p_addr->p_vreg->reg_id, 0);
     }
 }
 static void arm_instr_codegen(p_arm_codegen_info p_info, p_ir_instr p_instr) {
@@ -607,14 +679,16 @@ static void arm_basic_block_codegen(p_arm_codegen_info p_info, p_ir_basic_block 
     case ir_br_branch:
         swap_in_phi(p_info, p_block->p_branch->p_target_1->p_block, p_block->p_branch->p_target_1);
         if (p_block->p_branch->p_target_1->p_block != p_next_block)
-            arm_block_jump_label_gen(p_info->out_file, arm_b, arm_al, p_block->p_branch->p_target_1->p_block);
+            arm_block_jump_label_gen(p_info->out_file, arm_bl, arm_al, 0, 0, p_block->p_branch->p_target_1->p_block);
         break;
     case ir_cond_branch:
         assert(p_block->p_branch->p_exp->kind == reg);
         arm_cond_type type = get_jump_type(p_info, p_block->p_branch->p_exp->p_vreg);
-        arm_block_jump_label_gen(p_info->out_file, arm_b, type, p_block->p_branch->p_target_1->p_block);
+        p_ir_instr p_instr = p_block->p_branch->p_exp->p_vreg->p_instr_def;
+        assert(p_instr->irkind == ir_binary);
+        arm_block_jump_label_gen(p_info->out_file, arm_b, type, p_instr->ir_binary.p_src2->p_vreg->reg_id, p_instr->ir_binary.p_src1->p_vreg->reg_id, p_block->p_branch->p_target_1->p_block);
         if (p_block->p_branch->p_target_2->p_block != p_next_block)
-            arm_block_jump_label_gen(p_info->out_file, arm_b, arm_al, p_block->p_branch->p_target_2->p_block);
+            arm_block_jump_label_gen(p_info->out_file, arm_bl, arm_al, 0, 0, p_block->p_branch->p_target_2->p_block);
         break;
     case ir_ret_branch:
         if (!p_block->p_branch->p_exp) {
@@ -676,9 +750,9 @@ void arm_func_codegen(p_symbol_func p_func, FILE *out_file) {
 void arm_codegen_pass(p_program p_ir) {
     FILE *out_file = fopen(p_ir->output, "w");
     fprintf(out_file, ".file \"%s\"\n", p_ir->input);
-    fprintf(out_file, "   .arch armv7ve\n");
-    fprintf(out_file, "   .arm\n");
-    fprintf(out_file, "   .fpu neon-vfpv4\n");
+    // fprintf(out_file, "   .arch armv7ve\n");
+    // fprintf(out_file, "   .arm\n");
+     fprintf(out_file, "   	.option nopic\n");
 
     p_list_head p_node;
     list_for_each(p_node, &p_ir->variable) {
