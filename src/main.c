@@ -15,6 +15,7 @@
 #include <ir_opt/reg_alloca/reg_alloca.h>
 #include <ir_opt/simplify_cfg.h>
 #include <ir_opt/copy_propagation.h>
+#include <ir_opt/reassociate.h>
 #include <ir_opt/globalopt.h>
 #include <ir_opt/inline.h>
 #include <ir_opt/sccp.h>
@@ -68,6 +69,7 @@ int main(int argc, char *argv[]) {
         if (is_opt) {
             ir_side_effects(p_program);
             set_cond_pass(p_program);
+            ir_reassociate(p_program);
             ir_opt_gvn(p_program);
             ir_opt_gcm(p_program);
             ir_deadcode_elimate_pass(p_program, true);
