@@ -129,7 +129,7 @@ static inline void _ir_operand_addr_set(p_ir_operand p_operand, p_symbol_var p_v
             p_node_vmem = p_node_vmem->p_prev;
         }
     }
-    assert(p_type->ref_level = p_vmem->p_type->ref_level + 1);
+    assert(p_type->ref_level == p_vmem->p_type->ref_level + 1);
     *p_operand = (ir_operand) {
         .kind = imme,
         .p_vmem = p_vmem,
