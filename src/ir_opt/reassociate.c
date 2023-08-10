@@ -647,6 +647,100 @@ static inline void _rewrite_mul_expr(p_expr_info p_expr, p_symbol_func p_func) {
     ir_basic_block_addinstr_tail(p_func->p_entry_block, p_instr);
 }
 
+static inline I32CONST_t _gcd(I32CONST_t a, I32CONST_t b) {
+    if (!b) return a;
+    I32CONST_t rem = a % b;
+    return _gcd(b, rem);
+}
+
+static inline void _rewrite_instr(p_vreg_info vreg_info_map, size_t vreg_cnt) {
+    for (size_t i = 0; i < vreg_cnt; ++i) {
+        p_ir_vreg p_vreg = vreg_info_map[i].p_vreg;
+        if (!vreg_info_map[i].p_instr)
+            continue;
+        p_ir_instr p_instr = vreg_info_map[i].p_instr;
+        if (p_instr->irkind != ir_binary)
+            continue;
+        p_ir_operand p_src1 = p_instr->ir_binary.p_src1, p_src2 = p_instr->ir_binary.p_src2;
+        if (p_src1->kind == reg &&  p_src1->p_vreg->use_list.p_next != p_src1->p_vreg->use_list.p_prev)
+            continue;
+        if (p_src2->kind == reg &&  p_src2->p_vreg->use_list.p_next != p_src2->p_vreg->use_list.p_prev)
+            continue;
+
+        p_vreg_info p_info1 = NULL, p_info2 = NULL;
+        if (p_src1->kind == reg)
+            p_info1 = vreg_info_map + p_src1->p_vreg->id;
+        if (p_src2->kind == reg)
+            p_info2 = vreg_info_map + p_src2->p_vreg->id;
+
+        assert(!p_info1 || p_info1->kind == root);
+        assert(!p_info2 || p_info2->kind == root);
+
+        if (p_info1 && !p_info1->p_expr)
+            continue;
+        if (p_info2 && !p_info2->p_expr)
+            continue;
+
+        p_ir_operand p_const1 = p_src1, p_const2 = p_src2;
+        I32CONST_t gcd;
+        switch (p_instr->ir_binary.op) {
+        case ir_add_op:
+        case ir_sub_op:
+        case ir_mul_op:
+            assert(0);
+        case ir_mod_op:
+            break;
+        case ir_div_op:
+            if (p_vreg->p_type->basic == type_f32 && !p_vreg->p_type->ref_level)
+                break;
+            if (p_info1) {
+                if (p_info1->p_expr->kind != mul)
+                    break;
+                p_const1 = p_info1->p_expr->p_const;
+            }
+            if (p_info2) {
+                if (p_info2->p_expr->kind != mul)
+                    break;
+                p_const2 = p_info2->p_expr->p_const;
+            }
+            gcd = _gcd(p_const1->i32const, p_const2->i32const);
+            p_const1->i32const /= gcd;
+            p_const2->i32const /= gcd;
+            break;
+        case ir_g_op:
+        case ir_geq_op:
+        case ir_l_op:
+        case ir_leq_op:
+        case ir_eq_op:
+        case ir_neq_op:
+            if (p_info1 && p_info2 && p_info1->p_expr->kind != p_info2->p_expr->kind)
+                break;
+            if (!p_info1 && !p_info2)
+                break;
+            expr_kind e_kind;
+            if (p_info1) {
+                e_kind = p_info1->p_expr->kind;
+                p_const1 = p_info1->p_expr->p_const;
+            }
+            if (p_info2) {
+                e_kind = p_info2->p_expr->kind;
+                p_const2 = p_info2->p_expr->p_const;
+            }
+            if (e_kind == add) {
+                I32CONST_t max = p_const1->i32const > p_const2->i32const ? p_const1->i32const : p_const2->i32const;
+                p_const1->i32const -= max;
+                p_const2->i32const -= max;
+                break;
+            }
+            gcd = _gcd(p_const1->i32const, p_const2->i32const);
+            p_const1->i32const /= gcd;
+            p_const2->i32const /= gcd;
+            break;
+            break;
+        }
+    }
+}
+
 static inline void _rewrite(p_vreg_info vreg_info_map, size_t vreg_cnt, p_symbol_func p_func) {
     for (size_t i = 0; i < vreg_cnt; ++i) {
         p_ir_vreg p_vreg = vreg_info_map[i].p_vreg;
@@ -690,6 +784,8 @@ static inline void _reassociate_func(p_symbol_func p_func) {
 
     _sort_all_expr(vreg_info_map, vreg_cnt);
     _reg_info_print(vreg_info_map, vreg_cnt);
+
+    _rewrite_instr(vreg_info_map, vreg_cnt);
 
     _rewrite(vreg_info_map, vreg_cnt, p_func);
 
