@@ -95,3 +95,11 @@ void ir_vreg_list_del(p_ir_vreg_list p_list, p_ir_vreg p_vreg) {
         }
     }
 }
+void ir_vreg_list_clear(p_ir_vreg_list p_list){
+    p_list_head p_node, p_next;
+    list_for_each_safe(p_node, p_next, &p_list->vreg_list){
+        p_ir_vreg_list_node p_list_node = list_entry(p_node, ir_vreg_list_node, node);
+        list_del(&p_list_node->node);
+        free(p_list_node);
+    }
+}

@@ -19,4 +19,5 @@ void ir_vreg_list_node_set_vreg(p_ir_vreg_list_node p_vreg_list_node, p_ir_vreg 
 void copy_vreg_list(p_ir_vreg_list p_des, p_ir_vreg_list p_src);
 bool if_in_vreg_list(p_ir_vreg_list p_list, p_ir_vreg p_vreg);
 void ir_vreg_list_del(p_ir_vreg_list p_list, p_ir_vreg p_vreg);
+void ir_vreg_list_clear(p_ir_vreg_list p_list);
 #endif

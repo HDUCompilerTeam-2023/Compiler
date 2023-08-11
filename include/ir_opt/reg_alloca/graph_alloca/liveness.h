@@ -13,6 +13,7 @@ struct liveness_info{
     size_t instr_num;
     p_ir_vreg *p_vregs;
     size_t vreg_num;
+    p_ir_vreg_list *graph_list;
     bool **graph_table;
     bool use_table;
 };

@@ -404,6 +404,26 @@ static inline void delete_no_use_vreg(p_conflict_graph p_graph) {
         }
     }
 }
+void liveness_info_gen_graph(p_liveness_info p_live_info)
+{
+    if(p_live_info->use_table){
+        for (size_t i = 0; i < p_live_info->vreg_num; i++) {
+            for (size_t j = i + 1; j < p_live_info->vreg_num; j++)
+                if (p_live_info->graph_table[i][j])
+                    add_reg_graph_edge(p_live_info->p_vregs[i], p_live_info->p_vregs[j]);
+        }
+    }
+    else {
+        for(size_t i =0; i < p_live_info->vreg_num; i++){
+            p_list_head p_node;
+            list_for_each(p_node, &p_live_info->graph_list[i]->vreg_list){
+                p_ir_vreg p_vreg = list_entry(p_node, ir_vreg_list_node, node)->p_vreg;
+                assert(!if_in_vreg_list(p_live_info->graph_list[p_vreg->id], p_live_info->p_vregs[i]));
+                add_reg_graph_edge(p_live_info->p_vregs[i], p_vreg);
+            }
+        }
+    }
+}
 
 #include <stdio.h>
 static inline void cal_spill_num(p_conflict_graph p_graph) {
@@ -433,7 +453,7 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     p_conflict_graph p_graph = conflict_graph_gen(reg_num_r, reg_num_s, p_func);
     p_liveness_info p_live_info = liveness_info_gen(p_func);
     liveness_analysis(p_live_info);
-
+    liveness_info_gen_graph(p_live_info);
     mcs_get_seqs(p_graph);
     check_chordal(p_graph);
     maximum_clique(p_graph);

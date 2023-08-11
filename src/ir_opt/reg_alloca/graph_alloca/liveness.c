@@ -1,5 +1,4 @@
 #include <ir_gen.h>
-#include <ir_opt/reg_alloca/graph_alloca/conflict_graph.h>
 #include <ir_opt/reg_alloca/graph_alloca/liveness.h>
 #include <symbol_gen.h>
 
@@ -10,16 +9,12 @@ static inline void p_live_in_block(p_liveness_info p_info, p_ir_basic_block p_ba
 static inline void p_live_in_branch(p_liveness_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg);
 
 static inline void set_graph_table_edge(p_liveness_info p_info, p_ir_vreg r1, p_ir_vreg r2) {
-    if (p_info->use_table){
-        if(!p_info->graph_table[r1->id][r2->id]){
-            assert(!p_info->graph_table[r2->id][r1->id]);
-            add_reg_graph_edge(r1, r2);
-            p_info->graph_table[r1->id][r2->id] = p_info->graph_table[r2->id][r1->id] = true;
-        }
-    }
+    if (p_info->use_table)
+        p_info->graph_table[r1->id][r2->id] = p_info->graph_table[r2->id][r1->id] = true;
     else {
-        if (!if_in_neighbors((p_graph_node) r1->p_info, (p_graph_node) (r2->p_info)))
-            add_reg_graph_edge(r1, r2);
+        if (!if_in_vreg_list(p_info->graph_list[r1->id], r2)
+            && !if_in_vreg_list(p_info->graph_list[r2->id], r1))
+            ir_vreg_list_add(p_info->graph_list[r1->id], r2);
     }
 }
 static inline bool in_bb_phi_list(p_liveness_info p_info, p_ir_basic_block p_basic_block, p_ir_vreg p_vreg) {
@@ -205,12 +200,25 @@ p_liveness_info liveness_info_gen(p_symbol_func p_func) {
     p_info->p_func = p_func;
     size_t vreg_num = p_func->vreg_cnt + p_func->param_reg_cnt;
     p_info->vreg_num = vreg_num;
+    p_list_head p_node;
+    p_info->p_vregs = malloc(sizeof(*p_info->p_vregs) * vreg_num);
+    list_for_each(p_node, &p_func->param_reg_list) {
+        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
+        p_info->p_vregs[p_vreg->id] = p_vreg;
+    }
+    list_for_each(p_node, &p_func->vreg_list) {
+        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
+        p_info->p_vregs[p_vreg->id] = p_vreg;
+    }
     if (p_func->vreg_cnt > 10000) {
         p_info->use_table = false;
+        p_info->graph_list = malloc(sizeof(void *) * vreg_num);
+        for (size_t i = 0; i < vreg_num; i++) {
+            p_info->graph_list[i] = ir_vreg_list_init();
+        }
         return p_info;
     }
     p_info->use_table = true;
-    p_list_head p_node;
 
     p_info->block_live_in = malloc(sizeof(void *) * p_func->block_cnt);
     p_info->block_live_out = malloc(sizeof(void *) * p_func->block_cnt);
@@ -233,15 +241,6 @@ p_liveness_info liveness_info_gen(p_symbol_func p_func) {
         p_info->instr_live_out[i] = bitmap_gen(vreg_num);
         bitmap_set_empty(p_info->instr_live_out[i]);
     }
-    p_info->p_vregs = malloc(sizeof(*p_info->p_vregs) * vreg_num);
-    list_for_each(p_node, &p_func->param_reg_list) {
-        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        p_info->p_vregs[p_vreg->id] = p_vreg;
-    }
-    list_for_each(p_node, &p_func->vreg_list) {
-        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        p_info->p_vregs[p_vreg->id] = p_vreg;
-    }
     p_info->graph_table = malloc(sizeof(*p_info->graph_table) * vreg_num);
     for (size_t i = 0; i < vreg_num; i++) {
         p_info->graph_table[i] = malloc(sizeof(*p_info->graph_table[i]) * vreg_num);
@@ -251,6 +250,7 @@ p_liveness_info liveness_info_gen(p_symbol_func p_func) {
 }
 
 void liveness_info_drop(p_liveness_info p_info) {
+    free(p_info->p_vregs);
     if (p_info->use_table) {
         for (size_t i = 0; i < p_info->p_func->block_cnt; i++) {
             bitmap_drop(p_info->block_live_in[i]);
@@ -271,7 +271,12 @@ void liveness_info_drop(p_liveness_info p_info) {
         free(p_info->block_branch_live_in);
         free(p_info->instr_live_in);
         free(p_info->instr_live_out);
-        free(p_info->p_vregs);
+    }
+    else {
+        for (size_t i = 0; i < p_info->vreg_num; i++) {
+            ir_vreg_list_drop(p_info->graph_list[i]);
+        }
+        free(p_info->graph_list);
     }
     free(p_info);
 }
@@ -295,8 +300,24 @@ static inline void deal_vreg(p_liveness_info p_info, p_ir_vreg p_vreg) {
         }
     }
 }
+static inline void liveness_set_clear(p_symbol_func p_func) {
+    p_list_head p_block_node;
+    list_for_each(p_block_node, &p_func->block) {
+        p_ir_basic_block p_block = list_entry(p_block_node, ir_basic_block, node);
+        ir_vreg_list_clear(p_block->p_live_in);
+        p_list_head p_instr_node;
+        list_for_each(p_instr_node, &p_block->instr_list) {
+            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            ir_vreg_list_clear(p_instr->p_live_in);
+            ir_vreg_list_clear(p_instr->p_live_out);
+        }
+        ir_vreg_list_clear(p_block->p_branch->p_live_in);
+        ir_vreg_list_clear(p_block->p_live_out);
+    }
+}
 // 活跃性分析，如果用变量的使用列表效率可以更高
 void liveness_analysis(p_liveness_info p_info) {
+    liveness_set_clear(p_info->p_func);
     p_list_head p_vreg_node;
     list_for_each(p_vreg_node, &p_info->p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_vreg_node, ir_vreg, node);
