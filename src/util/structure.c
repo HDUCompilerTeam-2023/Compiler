@@ -2,6 +2,85 @@
 #include <stdlib.h>
 #include <util/structure.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// 哈希表
+
+unsigned int hash(uint64_t key, unsigned int size) {
+    return (key * 233) % size;
+}
+
+HashTable *initHashTable(unsigned int size) {
+    HashTable *ht = (HashTable *) malloc(sizeof(HashTable));
+    ht->size = size;
+    ht->table = (HashNode **) malloc(sizeof(HashNode *) * ht->size);
+    for (int i = 0; i < ht->size; i++) {
+        ht->table[i] = NULL;
+    }
+    return ht;
+}
+
+void hashinsert(HashTable *ht, uint64_t key, uint64_t val) {
+    unsigned int index = hash(key, ht->size);
+    HashNode *newNode = (HashNode *) malloc(sizeof(HashNode));
+    if (newNode == NULL) {
+        printf("malloc failed\n");
+        return;
+    }
+    newNode->key = key;
+    newNode->val = val;
+    newNode->next = ht->table[index];
+    ht->table[index] = newNode;
+}
+
+uint64_t hashfind(HashTable *ht, uint64_t key) {
+    unsigned int index = hash(key, ht->size);
+    HashNode *current = ht->table[index];
+    while (current != NULL) {
+        if (current->key == key) {
+            return current->val;
+        }
+        current = current->next;
+    }
+    return 0;
+}
+
+void hashremoveNode(HashTable *ht, uint64_t key) {
+    unsigned int index = hash(key, ht->size);
+    HashNode *current = ht->table[index];
+    HashNode *prev = NULL;
+
+    while (current != NULL) {
+        if (current->key == key) {
+            if (prev == NULL) {
+                ht->table[index] = current->next;
+            }
+            else {
+                prev->next = current->next;
+            }
+            free(current);
+            return;
+        }
+        prev = current;
+        current = current->next;
+    }
+}
+
+void destroyHashTable(HashTable *ht) {
+    for (int i = 0; i < ht->size; i++) {
+        HashNode *current = ht->table[i];
+        while (current != NULL) {
+            HashNode *temp = current;
+            current = current->next;
+            free(temp);
+        }
+    }
+    free(ht->table);
+    free(ht);
+}
+
 // tree
 
 Node *createNode(uint64_t key, Color color) {

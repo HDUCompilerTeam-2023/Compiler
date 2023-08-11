@@ -5,6 +5,24 @@
 #include <stdint.h>
 #include <stdio.h>
 
+typedef struct HashNode {
+    uint64_t key;
+    uint64_t val;
+    struct HashNode *next;
+} HashNode;
+
+typedef struct HashTable {
+    HashNode **table;
+    unsigned int size;
+} HashTable;
+
+void destroyHashTable(HashTable *ht);
+void hashremoveNode(HashTable *ht, uint64_t key);
+uint64_t hashfind(HashTable *ht, uint64_t key);
+void hashinsert(HashTable *ht, uint64_t key, uint64_t val);
+HashTable *initHashTable(uint32_t size);
+unsigned int hash(uint64_t key, unsigned int size);
+
 typedef struct {
     int stacktop;
     int stacksize;
