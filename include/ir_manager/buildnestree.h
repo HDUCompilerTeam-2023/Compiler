@@ -9,6 +9,28 @@
 
 typedef struct nested_list_node nested_list_node, *p_nested_list_node;
 typedef struct nestedtree_node nestedtree_node, *p_nestedtree_node;
+typedef struct basic_var_info basic_var_info, *p_basic_var_info;
+typedef struct loop_step_info loop_step_info, *p_loop_step_info;
+typedef struct prev_loop prev_loop, *p_prev_loop;
+
+struct prev_loop {
+    p_ir_basic_block head;
+    list_head tail_list;
+    p_ir_instr p_step_add;
+    p_ir_instr p_step_mul;
+};
+struct loop_step_info {
+    p_ir_instr p_cond_instr;
+    p_basic_var_info p_basic_var;
+    bool is_xeq;
+};
+
+struct basic_var_info {
+    p_ir_vreg var_start;
+    p_ir_vreg basic_var;
+    p_ir_instr p_step_instr;
+    list_head node;
+};
 
 struct nestedtree_node {
     p_ir_basic_block head;
@@ -16,7 +38,16 @@ struct nestedtree_node {
     list_head tail_list;
     list_head son_list;
     RedBlackTree *rbtree;
+    list_head p_var_table;
+    p_loop_step_info p_loop_step;
     size_t depth;
+
+    p_ir_basic_block p_loop_pre_block;
+    p_ir_basic_block p_loop_latch_block;
+    list_head loop_exit_block;
+
+    size_t unrolling_time;
+    p_prev_loop p_prev_loop;
 };
 
 struct nested_list_node {

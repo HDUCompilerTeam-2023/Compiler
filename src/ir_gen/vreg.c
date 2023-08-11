@@ -12,6 +12,9 @@ p_ir_vreg ir_vreg_gen(p_symbol_type p_type) {
         .reg_id = -1,
         .if_float = false,
         .if_cond = false,
+        .is_loop_inv = false,
+        .scev_kind = scev_unknown,
+        .p_scevexp = NULL,
     };
     return p_vreg;
 }
@@ -22,12 +25,16 @@ p_ir_vreg ir_vreg_copy(p_ir_vreg p_vreg) {
     p_copy->node = list_head_init(&p_copy->node);
     p_copy->use_list = list_head_init(&p_copy->use_list);
     p_copy->p_type = symbol_type_copy(p_vreg->p_type);
+    p_copy->scev_kind = scev_unknown;
+    p_copy->p_scevexp = NULL;
+    p_copy->is_loop_inv = false;
     return p_copy;
 }
 
 void ir_vreg_drop(p_ir_vreg p_vreg) {
     list_del(&p_vreg->node);
     symbol_type_drop(p_vreg->p_type);
+    if (p_vreg->p_scevexp) free(p_vreg->p_scevexp), p_vreg->p_scevexp = NULL;
     assert(list_head_alone(&p_vreg->use_list));
     free(p_vreg);
 }

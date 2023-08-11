@@ -136,14 +136,14 @@ void ast2ir_stmt_while_gen(p_ast2ir_info p_info, p_ast_exp p_exp, p_ast_stmt p_s
     p_ir_basic_block p_inner_cond_block = ir_basic_block_gen();
 
     // 当前块添加跳转
-    ir_basic_block_set_br(p_info->p_current_basic_block, p_inner_cond_block);
-
-    // 条件跳转块
-    ast2ir_info_add_basic_block(p_info, p_inner_cond_block);
     ast2ir_exp_cond_gen(p_info, p_true_block, p_next_block, p_exp);
     // 解析 while 循环体
     ast2ir_info_add_basic_block(p_info, p_true_block);
     ast2ir_stmt_gen(p_info, p_inner_cond_block, p_next_block, p_stmt_1);
+    ir_basic_block_set_br(p_info->p_current_basic_block, p_inner_cond_block);
+
+    // 条件跳转块
+    ast2ir_info_add_basic_block(p_info, p_inner_cond_block);
     ast2ir_exp_cond_gen(p_info, p_true_block, p_next_block, p_exp);
 
     // 置当前写的块为下一块
