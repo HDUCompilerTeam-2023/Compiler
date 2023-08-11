@@ -1,6 +1,6 @@
 #include <ir_opt/reg_alloca/graph_alloca/conflict_graph.h>
 #include <ir_opt/reg_alloca/graph_alloca/graph_alloca.h>
-#include <ir_opt/reg_alloca/graph_alloca/liveness.h>
+#include <ir_manager/liveness.h>
 
 #include <ir_gen.h>
 #include <symbol_gen.h>

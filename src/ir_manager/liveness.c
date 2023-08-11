@@ -1,5 +1,5 @@
 #include <ir_gen.h>
-#include <ir_opt/reg_alloca/graph_alloca/liveness.h>
+#include <ir_manager/liveness.h>
 #include <symbol_gen.h>
 
 static inline void p_live_in_statments(p_liveness_info p_info, p_ir_instr p_instr, p_ir_vreg p_vreg);
