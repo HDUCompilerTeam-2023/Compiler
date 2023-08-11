@@ -168,6 +168,7 @@ static inline void deal_binary_instr(p_ir_instr p_instr, p_symbol_func p_func) {
 static inline void deal_store_instr(p_ir_instr p_instr, p_symbol_func p_func) {
     p_ir_store_instr p_store_instr = &p_instr->ir_store;
     p_ir_operand p_addr = p_store_instr->p_addr;
+    assert(p_store_instr->p_src->kind == reg);
     p_ir_vreg p_des = p_store_instr->p_src->p_vreg;
     if (p_store_instr->is_stack_ptr) {
         size_t offset;

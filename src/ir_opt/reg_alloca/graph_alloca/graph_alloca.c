@@ -192,8 +192,9 @@ void graph_spill(p_conflict_graph p_graph, p_symbol_func p_func) {
                 break;
             case ir_call:
                 list_for_each(p_node, &p_instr->ir_call.param_list) {
-                    p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
-                    new_load_in_instr(p_graph, p_param, p_instr, p_func);
+                    p_ir_param p_param = list_entry(p_node, ir_param, node);
+                    if(!p_param->is_in_mem)
+                        new_load_in_instr(p_graph, p_param->p_param, p_instr, p_func);
                 }
                 if (p_instr->ir_call.p_des)
                     new_store_middle(p_graph, p_instr->ir_call.p_des, p_instr, p_func);

@@ -6,7 +6,8 @@
 #include <backend/arm/ir_arm_asm.h>
 #include <ir_manager/set_cond.h>
 #include <ir_opt/deadcode_elimate.h>
-#include <ir_opt/lir_gen/arm_trans.h>
+#include <ir_opt/lir_gen/arm_imme_trans.h>
+#include <ir_opt/lir_gen/arm_param_trans.h>
 #include <ir_opt/lir_gen/arm_trans_after.h>
 #include <ir_opt/lir_gen/critical_edge_cut.h>
 #include <ir_opt/lir_gen/delete_cmp.h>
@@ -85,7 +86,8 @@ int main(int argc, char *argv[]) {
     share_lir_trans_pass(p_program);
 
     // arm lir trans
-    arm_lir_trans_pass(p_program);
+    arm_param_trans_pass(p_program);
+    arm_imme_trans_pass(p_program);
     set_cond_pass(p_program);
     reg_alloca_pass(alloca_color_graph, 13, 32, p_program);
     arm_trans_after_pass(p_program);
