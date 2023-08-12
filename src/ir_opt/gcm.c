@@ -319,10 +319,14 @@ static inline void _ir_opt_gcm_schedule_late(p_ir_instr p_instr) {
         return;
     if (p_instr->irkind == ir_call && !p_instr->ir_call.p_func->p_side_effects->pure)
         return;
-    if (!p_lca)
-        return;
     if (p_instr->irkind == ir_binary && p_instr->ir_binary.p_des->if_cond)
         return;
+    if (!p_lca) {
+        p_symbol_func p_func = p_instr->p_basic_block->p_func;
+        ir_instr_drop(p_instr);
+        symbol_func_vreg_del(p_func, p_des);
+        return;
+    }
 
     p_ir_basic_block p_best = p_lca;
     while(p_lca != p_instr->p_basic_block->p_dom_parent) {
@@ -359,7 +363,6 @@ static inline void _ir_opt_gcm_func(p_symbol_func p_func) {
 }
 
 void ir_opt_gcm(p_program p_ir) {
-    ir_deadcode_elimate_pass(p_ir, false);
     ir_cfg_set_program_dom(p_ir);
     ir_build_program_nestedtree(p_ir);
     p_list_head p_node;
