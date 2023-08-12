@@ -8,6 +8,7 @@
 #include <symbol_gen/type.h>
 #include <symbol/func.h>
 #include <ir_opt/code_copy.h>
+#include <symbol_gen/func.h>
 
 #define hash_P 83
 
@@ -144,6 +145,7 @@ static inline p_ir_vreg _copy_map_get_reg(p_ir_vreg p_key, p_copy_map p_map) {
         if (p_rm->p_key == p_key)
             return p_rm->p_val;
     }
+    return p_key;
     assert(0);
 }
 
@@ -157,6 +159,7 @@ static inline p_ir_basic_block _copy_map_get_bb(p_ir_basic_block p_key, p_copy_m
         if (p_bm->p_key == p_key)
             return p_bm->p_val;
     }
+    return p_key;
     assert(0);
 }
 
@@ -170,6 +173,7 @@ static inline p_symbol_var _copy_map_get_var(p_symbol_var p_key, p_copy_map p_ma
         if (p_vm->p_key == p_key)
             return p_vm->p_val;
     }
+    return p_key;
     assert(0);
 }
 
@@ -342,5 +346,40 @@ void ir_code_copy_instr_of_block_inline(p_ir_basic_block p_src, p_copy_map p_map
         break;
     case ir_abort_branch:
         break;
+    }
+}
+
+void loop_block_vreg_copy(p_ir_basic_block p_block, p_copy_map p_map) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_block->basic_block_phis) {
+        p_ir_vreg p_vreg = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
+        p_ir_vreg p_vreg_copy = ir_code_copy_vreg(p_vreg, p_map);
+        symbol_func_vreg_add(p_block->p_func, p_vreg_copy);
+    }
+    list_for_each(p_node, &p_block->instr_list) {
+        p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
+        p_ir_vreg p_vreg = NULL;
+        switch (p_instr->irkind) {
+        case ir_binary:
+            p_vreg = p_instr->ir_binary.p_des;
+            break;
+        case ir_unary:
+            p_vreg = p_instr->ir_unary.p_des;
+            break;
+        case ir_gep:
+            p_vreg = p_instr->ir_gep.p_des;
+            break;
+        case ir_load:
+            p_vreg = p_instr->ir_load.p_des;
+            break;
+        case ir_call:
+            p_vreg = p_instr->ir_call.p_des;
+            break;
+        default:
+            break;
+        }
+        if (!p_vreg) continue;
+        p_ir_vreg p_vreg_copy = ir_code_copy_vreg(p_vreg, p_map);
+        symbol_func_vreg_add(p_block->p_func, p_vreg_copy);
     }
 }
