@@ -40,6 +40,7 @@ struct ir_basic_block {
     bool is_loop_head;
     bool is_loop_back;
     bool is_loop_exit;
+    size_t nestred_depth;
 
     p_ir_vreg_list p_live_in;
     p_ir_vreg_list p_live_out;

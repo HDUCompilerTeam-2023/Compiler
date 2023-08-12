@@ -94,11 +94,11 @@ void loop_var_analysis(p_nestedtree_node root, bool if_opt) {
     invariant_analysis(root);
     basic_var_analysis(root);
     induction_var_analysis(root);
-    loop_info_analysis(root);
     // loop opt
 
     // loop opt
     if (if_opt) {
+        loop_info_analysis(root);
         var_strength_reduction(root);
         if (root->p_loop_step) {
             accumulation_analysis(root);
@@ -127,7 +127,6 @@ void loop_info_analysis(p_nestedtree_node root) {
         if (p_instr->irkind != ir_binary) continue;
         if (p_instr->ir_binary.p_des->if_cond) {
             if (p_instr->ir_binary.op != ir_l_op && p_instr->ir_binary.op != ir_leq_op && p_instr->ir_binary.op != ir_g_op && p_instr->ir_binary.op != ir_geq_op) return;
-            assert(p_instr->ir_binary.p_src1->p_vreg);
             p_list_head p_list_node;
             list_for_each(p_list_node, &root->p_var_table) {
                 p_basic_var_info p_info = list_entry(p_list_node, basic_var_info, node);

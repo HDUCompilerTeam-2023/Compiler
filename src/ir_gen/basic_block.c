@@ -89,6 +89,7 @@ p_ir_basic_block ir_basic_block_gen() {
         .loop_check = initializeRedBlackTree(),
         .is_loop_back = false,
         .is_loop_head = false,
+        .nestred_depth = 0,
         .is_loop_exit = false,
         .p_nestree_node = NULL,
         .if_visited = false,

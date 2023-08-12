@@ -40,12 +40,31 @@ void ir_build_func_nestedtree(p_symbol_func p_func) {
         insert(root->rbtree, (uint64_t) p_basic_block);
     }
     p_func->p_nestedtree_root = root;
+    for(int i = 0, flag = true; flag; ++i)
+    {
+        flag = false;
+        list_for_each(p_node, &p_func->block) {
+            p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
+            if(p_basic_block->nestred_depth != i) continue;
+            flag = true;
+            if (!p_basic_block->is_loop_head) continue;
+            nestedtree_insert(p_basic_block, p_func->p_nestedtree_root);
+            p_ir_basic_block_branch_target p_true_block = p_basic_block->p_branch->p_target_1;
+            p_ir_basic_block_branch_target p_false_block = p_basic_block->p_branch->p_target_2;
+            if (p_true_block) {
+                if (!search(p_basic_block->p_nestree_node->rbtree->root, (uint64_t) p_true_block->p_block))
+                    p_basic_block->is_loop_exit = true;
+            }
+            if (p_false_block) {
+                if (!search(p_basic_block->p_nestree_node->rbtree->root, (uint64_t) p_false_block->p_block))
+                    p_basic_block->is_loop_exit = true;
+            }
+        }
+    }
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
-        if (p_basic_block->is_loop_head)
-            nestedtree_insert(p_basic_block, p_func->p_nestedtree_root);
-        else
-            nestedtree_tail_list_insert(p_basic_block, p_func->p_nestedtree_root);
+        if (p_basic_block->is_loop_head) continue;
+        nestedtree_tail_list_insert(p_basic_block, p_func->p_nestedtree_root);
         p_ir_basic_block_branch_target p_true_block = p_basic_block->p_branch->p_target_1;
         p_ir_basic_block_branch_target p_false_block = p_basic_block->p_branch->p_target_2;
         if (p_true_block) {
@@ -60,9 +79,7 @@ void ir_build_func_nestedtree(p_symbol_func p_func) {
 }
 
 void nestedtree_insert(p_ir_basic_block p_basic_block, p_nestedtree_node p_root) {
-    p_list_head p_head = &p_basic_block->loop_node_list;
     p_list_head p_node;
-
     list_for_each(p_node, &p_root->son_list) {
         p_nestedtree_node p_son_node = list_entry(p_node, nested_list_node, node)->p_nested_node;
         if (search(p_son_node->rbtree->root, (uint64_t) p_basic_block)) {
@@ -87,11 +104,10 @@ void nestedtree_insert(p_ir_basic_block p_basic_block, p_nestedtree_node p_root)
         .unrolling_time = 1,
         .p_prev_loop = NULL,
     };
-    list_for_each(p_node, p_head) {
+    list_for_each(p_node, &p_basic_block->loop_node_list) {
         p_ir_basic_block p_scc_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
         insert(p_new_node->rbtree, (uint64_t) p_scc_block);
     }
-
     p_nested_list_node p_son_node = malloc(sizeof(*p_son_node));
     *p_son_node = (nested_list_node) {
         .p_nested_node = p_new_node,
@@ -124,12 +140,13 @@ void program_nestedtree_drop(p_program p_program) {
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
         p_nestedtree_node p_del = list_entry(p_node, symbol_func, node)->p_nestedtree_root;
-        if (p_del != NULL) nestedtree_node_drop(p_del);
+        if (p_del != NULL) nestedtree_node_drop(p_del), list_entry(p_node, symbol_func, node)->p_nestedtree_root = NULL;
     }
 }
 
 void nestedtree_node_drop(p_nestedtree_node root) {
     p_list_head p_node;
+    if(root == NULL) return;
     if (!list_head_alone(&root->son_list)) {
         list_for_each(p_node, &root->son_list) {
             p_nestedtree_node p_son_node = list_entry(p_node, nested_list_node, node)->p_nested_node;
@@ -215,6 +232,7 @@ void scc_info_target1_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
                 .p_basic_block = p_block,
                 .node = list_head_init(&p_new_node->node),
             };
+            to->nestred_depth++;
             list_add_next(&p_new_node->node, &to->loop_node_list);
         }
 
@@ -242,6 +260,7 @@ void scc_info_target1_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
                 .p_basic_block = p_top_block,
                 .node = list_head_init(&p_new_node->node),
             };
+            p_top_block->nestred_depth++;
             list_add_next(&p_new_node->node, &to->loop_node_list);
         }
 
@@ -265,6 +284,7 @@ void scc_info_target1_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
             .p_basic_block = to,
             .node = list_head_init(&p_new_node->node),
         };
+        to->nestred_depth++;
         list_add_next(&p_new_node->node, &to->loop_node_list);
     }
 
@@ -288,6 +308,7 @@ void scc_info_target2_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
                 .p_basic_block = p_block,
                 .node = list_head_init(&p_new_node->node),
             };
+            to->nestred_depth++;
             list_add_next(&p_new_node->node, &to->loop_node_list);
         }
         return;
@@ -314,6 +335,7 @@ void scc_info_target2_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
                 .p_basic_block = p_top_block,
                 .node = list_head_init(&p_new_node->node),
             };
+            p_top_block->nestred_depth++;
             list_add_next(&p_new_node->node, &to->loop_node_list);
         }
 
@@ -336,6 +358,7 @@ void scc_info_target2_gen(p_ir_basic_block p_block, p_ir_basic_block to) {
             .p_basic_block = to,
             .node = list_head_init(&p_new_node->node),
         };
+        to->nestred_depth++;
         list_add_next(&p_new_node->node, &to->loop_node_list);
     }
 
@@ -397,7 +420,7 @@ void ir_func_scc_info_print(p_symbol_func p_func) {
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
         if (!list_head_alone(&p_basic_block->loop_node_list)) {
-            printf("loop: ");
+            printf("head block %ld loop: ", p_basic_block->block_id);
             p_list_head p_block;
             list_for_each(p_block, &p_basic_block->loop_node_list) {
                 p_ir_basic_block p_scc_block = list_entry(p_block, ir_basic_block_list_node, node)->p_basic_block;
@@ -458,6 +481,10 @@ void program_naturaloop_drop(p_program p_program) {
         p_list_head p_func_list_node;
         list_for_each(p_func_list_node, &p_func->block) {
             p_ir_basic_block p_basic_block = list_entry(p_func_list_node, ir_basic_block, node);
+            p_basic_block->nestred_depth = 0;
+            p_basic_block->is_loop_back = false;
+            p_basic_block->is_loop_exit = false;
+            p_basic_block->is_loop_head = false;
             ir_natual_loop_bb_drop(p_basic_block);
         }
     }
