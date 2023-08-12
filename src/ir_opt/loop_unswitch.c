@@ -9,9 +9,19 @@
 #include <symbol_gen.h>
 #include <symbol_gen/func.h>
 
+const size_t MAX_INSTR_NUM = 6000;
+
+size_t program_instr_cnt = 0;
+
 void ir_opt_loop_unswitch(p_program p_program) {
     printf("\n loop unswitch begin\n");
+    program_instr_cnt = 0;
     p_list_head p_node;
+    list_for_each(p_node, &p_program->function) {
+        p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        program_instr_cnt += p_func->instr_num;
+    }
+
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         if (list_head_alone(&p_func->block)) continue;
@@ -24,6 +34,22 @@ void ir_opt_loop_unswitch(p_program p_program) {
     ir_simplify_cfg_pass(p_program);
     ir_opt_gcm(p_program);
     printf("\n loop unswitch end\n");
+}
+
+static inline size_t _unswitch_cost_cal(p_nestedtree_node root, p_ir_basic_block switch_block) {
+    p_ir_basic_block p_block1 = switch_block->p_branch->p_target_1->p_block;
+    p_ir_basic_block p_block2 = switch_block->p_branch->p_target_2->p_block;
+    if (!ir_basic_block_dom_check(p_block1, switch_block)) p_block1 = NULL;
+    if (!ir_basic_block_dom_check(p_block2, switch_block)) p_block2 = NULL;
+    size_t ret = 0;
+    p_list_head p_node;
+    list_for_each(p_node, &root->head->loop_node_list) {
+        p_ir_basic_block p_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
+        ret += p_block->instr_num;
+        if (p_block1 && ir_basic_block_dom_check(p_block, p_block1)) ret -= p_block->instr_num;
+        if (p_block2 && ir_basic_block_dom_check(p_block, p_block2)) ret -= p_block->instr_num;
+    }
+    return ret;
 }
 
 void loop_unswitch_try(p_nestedtree_node root) {
@@ -45,20 +71,17 @@ void loop_unswitch_try(p_nestedtree_node root) {
             }
         }
     }
-    int cnt = 0;
-    list_for_each(p_node, &root->head->loop_node_list) {
-        p_ir_basic_block p_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
-        cnt = cnt + p_block->instr_num;
-    }
-    if (cnt > 88) return;
 
     if (root->head->p_branch->kind == ir_cond_branch) {
-
         if (search(root->rbtree->root, (uint64_t) root->head->p_branch->p_target_1->p_block) && search(root->rbtree->root, (uint64_t) root->head->p_branch->p_target_2->p_block)) {
             p_ir_instr p_cond_instr = root->head->p_branch->p_exp->p_vreg->p_instr_def;
             if (check_operand(p_cond_instr->ir_binary.p_src1) && check_operand(p_cond_instr->ir_binary.p_src2)) {
                 ir_instr_print(p_cond_instr);
-                loop_unswitch(root, root->head);
+                size_t cnt = _unswitch_cost_cal(root, root->head);
+                if ((cnt <= 88 && program_instr_cnt + cnt <= MAX_INSTR_NUM) || (cnt < 300 && program_instr_cnt + cnt <= MAX_INSTR_NUM / 2)) {
+                    loop_unswitch(root, root->head);
+                    program_instr_cnt += cnt;
+                }
                 return;
             }
         }
@@ -71,7 +94,11 @@ void loop_unswitch_try(p_nestedtree_node root) {
                 p_ir_instr p_cond_instr = p_block->p_branch->p_exp->p_vreg->p_instr_def;
                 if (check_operand(p_cond_instr->ir_binary.p_src1) && check_operand(p_cond_instr->ir_binary.p_src2)) {
                     ir_instr_print(p_cond_instr);
-                    loop_unswitch(root, p_block);
+                    size_t cnt = _unswitch_cost_cal(root, p_block);
+                    if ((cnt <= 88 && program_instr_cnt + cnt <= MAX_INSTR_NUM) || (cnt < 300 && program_instr_cnt + cnt <= MAX_INSTR_NUM / 2)) {
+                        loop_unswitch(root, p_block);
+                        program_instr_cnt += cnt;
+                    }
                     return;
                 }
             }
