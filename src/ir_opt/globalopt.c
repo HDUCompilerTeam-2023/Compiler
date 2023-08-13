@@ -1,10 +1,13 @@
 #include <ir/basic_block.h>
+#include <ir/bb_param.h>
 #include <ir/operand.h>
 #include <ir/param.h>
 #include <ir/varray.h>
 #include <ir/vreg.h>
+#include <ir_gen/basic_block.h>
 #include <ir_gen/bb_param.h>
 #include <ir_gen/instr.h>
+#include <ir_gen/operand.h>
 #include <ir_gen/varray.h>
 #include <ir_opt/deadcode_elimate.h>
 #include <program/gen.h>
@@ -131,6 +134,8 @@ static inline void _global_variable_localize(p_symbol_var p_var) {
         if (p_func != p_use_func)
             break;
     }
+    if (!p_func)
+        return;
     if (p_node == &p_var->ref_list) {
         if (strcmp(p_func->name, "main"))
             return;
