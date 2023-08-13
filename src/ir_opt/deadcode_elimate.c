@@ -3,11 +3,16 @@
 #include <ir_opt/simplify_cfg.h>
 #include <program/def.h>
 #include <program/gen.h>
-#include <symbol_gen/func.h>
+#include <symbol_gen.h>
 
 typedef struct reg_info reg_info, *p_reg_info;
 typedef struct reg_info_table reg_info_table, *p_reg_info_table;
+typedef struct varray_info varray_info, *p_varray_info;
 
+struct varray_info {
+    p_ir_varray p_varray;
+    p_varray_info p_prev;
+};
 struct reg_info {
     p_ir_vreg p_vreg;
     p_reg_info p_prev;
@@ -16,13 +21,22 @@ struct reg_info {
 struct reg_info_table {
     p_reg_info p_top;
     p_reg_info p_base;
+    p_varray_info p_varray_top;
+    p_varray_info p_varray_base;
     bool if_aggressive;
 };
 static inline void reg_info_gen(p_reg_info p_info, p_ir_vreg p_vreg) {
     p_info->p_prev = NULL;
     p_info->p_vreg = p_vreg;
 }
-
+static inline void varray_info_gen(p_varray_info p_info, p_ir_varray p_varray) {
+    p_info->p_prev = NULL;
+    p_info->p_varray = p_varray;
+    p_varray->p_info = p_info;
+}
+static inline void varray_info_set_useful(p_varray_info p_info) {
+    p_info->p_prev = p_info;
+}
 static inline void push(p_ir_vreg p_vreg, p_reg_info_table reg_info_table) {
     if (!reg_info_table->p_top) {
         (reg_info_table->p_base + p_vreg->id)->p_prev = reg_info_table->p_base + p_vreg->id;
@@ -33,7 +47,17 @@ static inline void push(p_ir_vreg p_vreg, p_reg_info_table reg_info_table) {
         reg_info_table->p_top = reg_info_table->p_base + p_vreg->id;
     }
 }
-
+static inline void push_varray(p_ir_varray p_varray, p_reg_info_table reg_info_table) {
+    p_varray_info p_info = p_varray->p_info;
+    if (!reg_info_table->p_varray_top) {
+        p_info->p_prev = p_info;
+        reg_info_table->p_varray_top = p_info;
+    }
+    else if (!p_info->p_prev) {
+        p_info->p_prev = reg_info_table->p_varray_top;
+        reg_info_table->p_varray_top = p_info;
+    }
+}
 static inline void deal_operand(p_ir_operand p_operand, p_reg_info_table reg_info_table) {
     if (p_operand && p_operand->kind == reg) {
         if (p_operand->p_vreg->def_type == func_param_def) {
@@ -43,27 +67,51 @@ static inline void deal_operand(p_ir_operand p_operand, p_reg_info_table reg_inf
         push(p_operand->p_vreg, reg_info_table);
     }
 }
+static inline void deal_varray_use(p_ir_varray_use p_varray_use, p_reg_info_table reg_info_table) {
+    if (!p_varray_use) return;
+    if (p_varray_use->p_varray_use->varray_def_type == varray_func_def) {
+        varray_info_set_useful(p_varray_use->p_varray_use->p_info);
+        return;
+    }
+    if (p_varray_use->p_varray_use->varray_def_type == varray_global_def) {
+        varray_info_set_useful(p_varray_use->p_varray_use->p_info);
+        return;
+    }
+    push_varray(p_varray_use->p_varray_use, reg_info_table);
+}
 static inline bool deal_instr_src(p_ir_instr p_instr, p_reg_info_table reg_info_table, p_symbol_func p_func) {
     p_list_head p_node;
     switch (p_instr->irkind) {
     case ir_call:
-        if (p_instr->ir_call.p_func->p_side_effects &&
-                (!p_instr->ir_call.p_func->p_side_effects->input &&
-                !p_instr->ir_call.p_func->p_side_effects->output &&
-                !p_instr->ir_call.p_func->p_side_effects->stored_param_cnt &&
-                list_head_alone(&p_instr->ir_call.p_func->p_side_effects->stored_global))) {
+        if (p_instr->ir_call.p_func->p_side_effects
+            && (!p_instr->ir_call.p_func->p_side_effects->input
+                && !p_instr->ir_call.p_func->p_side_effects->output
+                && !p_instr->ir_call.p_func->p_side_effects->stored_param_cnt
+                && list_head_alone(&p_instr->ir_call.p_func->p_side_effects->stored_global))) {
             assert(p_instr->ir_call.p_des);
             return false;
         }
         list_for_each(p_node, &p_instr->ir_call.param_list) {
-            deal_operand(list_entry(p_node, ir_param, node)->p_param, reg_info_table);
+            p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
+            deal_operand(p_param, reg_info_table);
         }
-        if (p_instr->ir_call.p_des)
-            (reg_info_table->p_base + p_instr->ir_call.p_des->id)->p_prev = (reg_info_table->p_base + p_instr->ir_call.p_des->id);
+        list_for_each(p_node, &p_instr->ir_call.varray_defs) {
+            p_ir_varray_def_pair p_pair = list_entry(p_node, ir_varray_def_pair, node);
+            deal_varray_use(p_pair->p_src, reg_info_table);
+            push_varray(p_pair->p_des, reg_info_table);
+        }
         return true;
     case ir_store:
-        deal_operand(p_instr->ir_store.p_addr, reg_info_table);
-        deal_operand(p_instr->ir_store.p_src, reg_info_table);
+        if (!p_instr->ir_store.p_array_des) {
+            deal_operand(p_instr->ir_store.p_addr, reg_info_table);
+            deal_operand(p_instr->ir_store.p_src, reg_info_table);
+            return true;
+        }
+        if (!p_instr->ir_store.p_array_des || !p_instr->ir_store.p_array_des->p_base->is_vmem || p_instr->ir_store.p_array_des->p_base->p_vmem_base->is_global) {
+            deal_operand(p_instr->ir_store.p_addr, reg_info_table);
+            deal_operand(p_instr->ir_store.p_src, reg_info_table);
+            deal_varray_use(p_instr->ir_store.p_array_src, reg_info_table);
+        }
         return true;
     default:
         if (!reg_info_table->if_aggressive) {
@@ -128,86 +176,194 @@ static inline void delete_block_call(p_ir_basic_block_branch_target p_target, si
     }
 }
 
+static inline void deal_varray_block_param(p_reverse_dom_tree_info_list p_info_list, p_ir_varray_bb_phi p_varray_bb_phi, p_reg_info_table reg_info_table) {
+    p_list_head p_param_node;
+    list_for_each(p_param_node, &p_varray_bb_phi->varray_param_list) {
+        p_ir_varray_bb_param p_varray_param = list_entry(p_param_node, ir_varray_bb_param, phi_node);
+        deal_varray_use(p_varray_param->p_varray_bb_param, reg_info_table);
+        p_ir_basic_block p_source_block = p_varray_param->p_target->p_source_block;
+        if (p_source_block->p_branch->kind == ir_cond_branch)
+            deal_operand(p_source_block->p_branch->p_exp, reg_info_table);
+        set_cdg_prev_useful(p_info_list, reg_info_table, p_source_block);
+    }
+}
+static inline void deal_useful_instr(p_ir_instr p_instr, p_reg_info_table reg_info_table) {
+    p_list_head p_node;
+    switch (p_instr->irkind) {
+    case ir_binary:
+        deal_operand(p_instr->ir_binary.p_src1, reg_info_table);
+        deal_operand(p_instr->ir_binary.p_src2, reg_info_table);
+        break;
+    case ir_unary:
+        deal_operand(p_instr->ir_unary.p_src, reg_info_table);
+        break;
+    case ir_load:
+        deal_operand(p_instr->ir_load.p_addr, reg_info_table);
+        if (p_instr->ir_load.p_array_src)
+            deal_varray_use(p_instr->ir_load.p_array_src, reg_info_table);
+        break;
+    case ir_gep:
+        deal_operand(p_instr->ir_gep.p_addr, reg_info_table);
+        deal_operand(p_instr->ir_gep.p_offset, reg_info_table);
+        break;
+    case ir_call:
+        list_for_each(p_node, &p_instr->ir_call.param_list) {
+            p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
+            deal_operand(p_param, reg_info_table);
+        }
+        list_for_each(p_node, &p_instr->ir_call.varray_defs) {
+            p_ir_varray_def_pair p_pair = list_entry(p_node, ir_varray_def_pair, node);
+            deal_varray_use(p_pair->p_src, reg_info_table);
+        }
+        break;
+    case ir_store:
+        deal_operand(p_instr->ir_store.p_addr, reg_info_table);
+        deal_operand(p_instr->ir_store.p_src, reg_info_table);
+        deal_varray_use(p_instr->ir_store.p_array_src, reg_info_table);
+        break;
+    }
+}
 static inline void deal_reg_info_table(p_reverse_dom_tree_info_list p_info_list, p_reg_info_table reg_info_table) {
-    bool if_visited_root = false;
-    while (reg_info_table->p_top && !(reg_info_table->p_top->p_prev == reg_info_table->p_top && if_visited_root)) {
-        if (reg_info_table->p_top->p_prev == reg_info_table->p_top) if_visited_root = true;
-        p_reg_info p_new_top = reg_info_table->p_top->p_prev;
-        reg_info_table->p_top->p_prev = reg_info_table->p_top;
-        p_ir_vreg p_vreg = reg_info_table->p_top->p_vreg;
-        reg_info_table->p_top = p_new_top;
-        p_ir_basic_block p_useful_block = NULL;
-        if (p_vreg->def_type == bb_phi_def) {
-            deal_block_param(p_info_list, p_vreg, reg_info_table);
-            p_useful_block = p_vreg->p_bb_phi->p_basic_block;
-        }
-        else {
-            p_ir_instr p_def = p_vreg->p_instr_def;
-            p_list_head p_node;
-            p_useful_block = p_def->p_basic_block;
-            switch (p_def->irkind) {
-            case ir_binary:
-                deal_operand(p_def->ir_binary.p_src1, reg_info_table);
-                deal_operand(p_def->ir_binary.p_src2, reg_info_table);
-                break;
-            case ir_unary:
-                deal_operand(p_def->ir_unary.p_src, reg_info_table);
-                break;
-            case ir_load:
-                deal_operand(p_def->ir_load.p_addr, reg_info_table);
-                break;
-            case ir_gep:
-                deal_operand(p_def->ir_gep.p_addr, reg_info_table);
-                deal_operand(p_def->ir_gep.p_offset, reg_info_table);
-                break;
-            case ir_call:
-                list_for_each(p_node, &p_def->ir_call.param_list) {
-                    p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
-                    deal_operand(p_param, reg_info_table);
+    while (reg_info_table->p_top || reg_info_table->p_varray_top) {
+        if (reg_info_table->p_top) {
+            bool if_visited_root = false;
+            while (!(reg_info_table->p_top->p_prev == reg_info_table->p_top && if_visited_root)) {
+                if (reg_info_table->p_top->p_prev == reg_info_table->p_top) if_visited_root = true;
+                p_reg_info p_new_top = reg_info_table->p_top->p_prev;
+                reg_info_table->p_top->p_prev = reg_info_table->p_top;
+                p_ir_vreg p_vreg = reg_info_table->p_top->p_vreg;
+                reg_info_table->p_top = p_new_top;
+                p_ir_basic_block p_useful_block = NULL;
+                if (p_vreg->def_type == bb_phi_def) {
+                    deal_block_param(p_info_list, p_vreg, reg_info_table);
+                    p_useful_block = p_vreg->p_bb_phi->p_basic_block;
                 }
-                break;
-            case ir_store:
-                assert(0);
-            }
-        }
-        set_cdg_prev_useful(p_info_list, reg_info_table, p_useful_block);
-    }
-}
-
-static inline void delete_phi_and_instr(p_reg_info_table reg_info_table, p_symbol_func p_func) {
-    for (size_t j = p_func->param_reg_cnt; j < p_func->vreg_cnt + p_func->param_reg_cnt; j++) {
-        if (!(reg_info_table->p_base + j)->p_prev) {
-            if ((reg_info_table->p_base + j)->p_vreg->def_type == bb_phi_def) {
-                p_ir_basic_block p_def_block = (reg_info_table->p_base + j)->p_vreg->p_bb_phi->p_basic_block;
-                size_t param_index = 0;
-                p_list_head p_param_node;
-                list_for_each(p_param_node, &p_def_block->basic_block_phis) {
-                    param_index++;
-                    p_ir_bb_phi p_bb_phi = list_entry(p_param_node, ir_bb_phi, node);
-                    if (p_bb_phi->p_bb_phi == (reg_info_table->p_base + j)->p_vreg) {
-                        p_list_head p_prev_node;
-                        list_for_each(p_prev_node, &p_def_block->prev_branch_target_list) {
-                            p_ir_basic_block_branch_target p_prev_target = list_entry(p_prev_node, ir_branch_target_node, node)->p_target;
-                            delete_block_call(p_prev_target, param_index);
-                        }
-                        ir_basic_block_del_phi(p_def_block, p_bb_phi);
-                        break;
-                    }
+                else {
+                    p_ir_instr p_def = p_vreg->p_instr_def;
+                    p_useful_block = p_def->p_basic_block;
+                    deal_useful_instr(p_def, reg_info_table);
                 }
+                set_cdg_prev_useful(p_info_list, reg_info_table, p_useful_block);
             }
-            else {
-                ir_instr_drop((reg_info_table->p_base + j)->p_vreg->p_instr_def);
+            reg_info_table->p_top = NULL;
+        }
+        if (reg_info_table->p_varray_top) {
+            bool if_visited_root = false;
+            while (!(reg_info_table->p_varray_top->p_prev == reg_info_table->p_varray_top && if_visited_root)) {
+                if (reg_info_table->p_varray_top->p_prev == reg_info_table->p_varray_top) if_visited_root = true;
+                p_varray_info p_new_top = reg_info_table->p_varray_top->p_prev;
+                reg_info_table->p_varray_top->p_prev = reg_info_table->p_varray_top;
+                p_ir_varray p_varray = reg_info_table->p_varray_top->p_varray;
+                reg_info_table->p_varray_top = p_new_top;
+                p_ir_basic_block p_useful_block = NULL;
+                if (p_varray->varray_def_type == varray_bb_phi_def) {
+                    deal_varray_block_param(p_info_list, p_varray->p_varray_bb_phi, reg_info_table);
+                    p_useful_block = p_varray->p_varray_bb_phi->p_basic_block;
+                }
+                else {
+                    p_ir_instr p_def = p_varray->p_instr_def;
+                    p_useful_block = p_def->p_basic_block;
+                    deal_useful_instr(p_def, reg_info_table);
+                }
+                set_cdg_prev_useful(p_info_list, reg_info_table, p_useful_block);
             }
+            reg_info_table->p_varray_top = NULL;
         }
     }
 }
-static inline void delete_block_cond_branch(p_reverse_dom_tree_info_list p_info_list, p_reg_info_table reg_info_table, p_symbol_func p_func) {
+static inline bool if_vreg_useful(p_ir_vreg p_vreg, p_reg_info_table reg_info_table) {
+    return (reg_info_table->p_base + p_vreg->id)->p_prev != NULL;
+}
+static inline bool if_varray_useful(p_ir_varray p_varray) {
+    return ((p_varray_info) p_varray->p_info)->p_prev != NULL;
+}
+static inline void delete_all(p_reverse_dom_tree_info_list p_info_list, p_reg_info_table reg_info_table, p_symbol_func p_func) {
     p_list_head p_block_node;
     list_for_each(p_block_node, &p_func->block) {
         p_ir_basic_block p_block = list_entry(p_block_node, ir_basic_block, node);
+        p_list_head p_node, p_node_next;
+        size_t param_index = 0;
+        list_for_each_safe(p_node, p_node_next, &p_block->basic_block_phis) {
+            param_index++;
+            p_ir_bb_phi p_phi = list_entry(p_node, ir_bb_phi, node);
+            if (!(if_vreg_useful(p_phi->p_bb_phi, reg_info_table))) {
+                p_list_head p_prev_node;
+                list_for_each(p_prev_node, &p_block->prev_branch_target_list) {
+                    p_ir_basic_block_branch_target p_prev_target = list_entry(p_prev_node, ir_branch_target_node, node)->p_target;
+                    delete_block_call(p_prev_target, param_index);
+                }
+                param_index--;
+                ir_basic_block_del_phi(p_block, p_phi);
+            }
+        }
+        list_for_each_safe(p_node, p_node_next, &p_block->varray_basic_block_phis) {
+            p_ir_varray_bb_phi p_phi = list_entry(p_node, ir_varray_bb_phi, node);
+            if (!if_varray_useful(p_phi->p_varray_phi))
+                ir_basic_block_del_varray_phi(p_block, p_phi);
+        }
+        list_for_each_safe(p_node, p_node_next, &p_block->instr_list) {
+            p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
+            bool if_useful = false;
+            switch (p_instr->irkind) {
+            case ir_store:
+                if (!p_instr->ir_store.p_array_des) {
+                    if_useful = true;
+                    break;
+                }
+                if (if_varray_useful(p_instr->ir_store.p_array_des))
+                    if_useful = true;
+                if (!p_instr->ir_store.p_array_des->p_base->is_vmem || p_instr->ir_store.p_array_des->p_base->p_vmem_base->is_global) {
+                    if_useful = true;
+                    varray_info_set_useful(p_instr->ir_store.p_array_des->p_info);
+                }
+                break;
+            case ir_call:
+                if_useful = true;
+                if (p_instr->ir_call.p_des) {
+                    if (!if_vreg_useful(p_instr->ir_call.p_des, reg_info_table)) {
+                        ir_set_call_instr_des(p_instr, NULL);
+                    }
+                    else {
+                        if_useful = true;
+                        // break;
+                    }
+                }
+                p_list_head p_node;
+                list_for_each(p_node, &p_instr->ir_call.varray_defs) {
+                    p_ir_varray_def_pair p_pair = list_entry(p_node, ir_varray_def_pair, node);
+                    if (if_varray_useful(p_pair->p_des)) {
+                        if_useful = true;
+                    }
+                    else {
+                        varray_info_set_useful(p_pair->p_des->p_info);
+                    }
+                }
+                break;
+            case ir_load:
+                if (if_vreg_useful(p_instr->ir_load.p_des, reg_info_table))
+                    if_useful = true;
+                break;
+            case ir_binary:
+                if (if_vreg_useful(p_instr->ir_binary.p_des, reg_info_table))
+                    if_useful = true;
+                break;
+            case ir_unary:
+                if (if_vreg_useful(p_instr->ir_unary.p_des, reg_info_table))
+                    if_useful = true;
+                break;
+            case ir_gep:
+                if (if_vreg_useful(p_instr->ir_gep.p_des, reg_info_table))
+                    if_useful = true;
+                break;
+            }
+            if (!if_useful) {
+                ir_instr_drop(p_instr);
+            }
+        }
         if (p_block->p_branch->p_exp) { // 需要删除条件语句
             if (p_block->p_branch->p_exp->kind == reg && !(reg_info_table->p_base + p_block->p_branch->p_exp->p_vreg->id)->p_prev) {
                 assert(p_block->p_branch->kind == ir_cond_branch);
+                assert(reg_info_table->if_aggressive);
                 assert(list_head_alone(&p_block->p_branch->p_target_1->block_param));
                 assert(list_head_alone(&p_block->p_branch->p_target_2->block_param));
                 ir_basic_block_branch_target_drop(p_block, p_block->p_branch->p_target_1);
@@ -220,19 +376,58 @@ static inline void delete_block_cond_branch(p_reverse_dom_tree_info_list p_info_
         }
     }
 }
-
+static inline p_reg_info_table reg_info_table_gen(bool if_aggressive, size_t vreg_num, size_t varray_num) {
+    p_reg_info_table reg_info_table = malloc(sizeof(*reg_info_table));
+    reg_info_table->if_aggressive = if_aggressive;
+    reg_info_table->p_base = malloc(sizeof(*reg_info_table->p_base) * vreg_num);
+    reg_info_table->p_top = NULL;
+    reg_info_table->p_varray_base = malloc(sizeof(*reg_info_table->p_varray_base) * varray_num);
+    reg_info_table->p_varray_top = NULL;
+    return reg_info_table;
+}
 static inline void ir_dead_code_elimate_func(p_symbol_func p_func, bool if_aggressive) {
     p_reverse_dom_tree_info_list p_info_list = ir_build_cdg_func(p_func);
     size_t vreg_num = p_func->vreg_cnt + p_func->param_reg_cnt;
-    p_reg_info_table reg_info_table = malloc(sizeof(*reg_info_table));
-    reg_info_table->p_base = malloc(sizeof(*reg_info_table->p_base) * vreg_num);
-    reg_info_table->p_top = NULL;
-    reg_info_table->if_aggressive = if_aggressive;
+    size_t varray_num = p_func->varray_num;
+    p_reg_info_table reg_info_table = reg_info_table_gen(if_aggressive, vreg_num, varray_num);
     p_list_head p_node;
     list_for_each(p_node, &p_func->vreg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
         reg_info_gen(reg_info_table->p_base + p_vreg->id, p_vreg);
     }
+    size_t i = 0;
+    list_for_each(p_node, &p_func->param_vmem_base) {
+        p_ir_vmem_base p_vmem_base = list_entry(p_node, ir_param_vmem_base, node)->p_param_base;
+        p_list_head p_vmem_node;
+        list_for_each(p_vmem_node, &p_vmem_base->varray_list) {
+            p_ir_varray p_varray = list_entry(p_vmem_node, ir_varray, node);
+            varray_info_gen(reg_info_table->p_varray_base + i, p_varray);
+            i++;
+            assert(p_varray);
+        }
+    }
+    list_for_each(p_node, &p_func->param) {
+        p_ir_vmem_base p_vmem_base = list_entry(p_node, symbol_var, node)->p_base;
+        p_list_head p_vmem_node;
+        list_for_each(p_vmem_node, &p_vmem_base->varray_list) {
+            p_ir_varray p_varray = list_entry(p_vmem_node, ir_varray, node);
+            varray_info_gen(reg_info_table->p_varray_base + i, p_varray);
+            i++;
+            assert(p_varray);
+        }
+    }
+    list_for_each(p_node, &p_func->variable) {
+        p_ir_vmem_base p_vmem_base = list_entry(p_node, symbol_var, node)->p_base;
+        p_list_head p_vmem_node;
+        list_for_each(p_vmem_node, &p_vmem_base->varray_list) {
+            p_ir_varray p_varray = list_entry(p_vmem_node, ir_varray, node);
+            varray_info_gen(reg_info_table->p_varray_base + i, p_varray);
+            assert(p_varray);
+            i++;
+        }
+    }
+
+    assert(i == p_func->varray_num);
     p_list_head p_block_node;
     list_for_each(p_block_node, &p_func->block) {
         p_ir_basic_block p_block = list_entry(p_block_node, ir_basic_block, node);
@@ -254,22 +449,36 @@ static inline void ir_dead_code_elimate_func(p_symbol_func p_func, bool if_aggre
 
     deal_reg_info_table(p_info_list, reg_info_table);
 
-    delete_phi_and_instr(reg_info_table, p_func);
-
-    delete_block_cond_branch(p_info_list, reg_info_table, p_func);
-
+    delete_all(p_info_list, reg_info_table, p_func);
     for (size_t j = p_func->param_reg_cnt; j < vreg_num; j++) {
         if (!(reg_info_table->p_base + j)->p_prev) {
             symbol_func_vreg_del(p_func, (reg_info_table->p_base + j)->p_vreg);
         }
     }
+    for (size_t j = 0; j < varray_num; j++) {
+        if (!(reg_info_table->p_varray_base + j)->p_prev) {
+            ir_varray_drop((reg_info_table->p_varray_base + j)->p_varray);
+        }
+    }
     symbol_func_set_block_id(p_func);
     free(reg_info_table->p_base);
+    free(reg_info_table->p_varray_base);
     free(reg_info_table);
     reverse_dom_tree_info_list_drop(p_info_list);
 }
 static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive) {
     p_list_head p_node;
+    p_varray_info varray_info_base = malloc(sizeof(*varray_info_base) * p_ir->varray_num);
+    size_t i = 0;
+    list_for_each(p_node, &p_ir->variable) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        p_list_head p_vmem_node;
+        list_for_each(p_vmem_node, &p_var->p_base->varray_list) {
+            p_ir_varray p_varray = list_entry(p_vmem_node, ir_varray, node);
+            varray_info_gen(varray_info_base + i, p_varray);
+            i++;
+        }
+    }
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         assert(p_func->p_entry_block);
@@ -277,7 +486,13 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
         ir_dead_code_elimate_func(p_func, if_aggressive);
         symbol_func_set_varible_id(p_func);
     }
-    program_global_set_id(p_ir);
+
+    for (size_t j = 0; j < p_ir->varray_num; j++) {
+        if (!(varray_info_base + j)->p_prev) {
+            ir_varray_drop((varray_info_base + j)->p_varray);
+        }
+    }
+    free(varray_info_base);
 }
 
 void ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive) {
