@@ -481,6 +481,6 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     cal_spill_num(p_graph);
     conflict_graph_drop(p_graph);
     symbol_func_set_block_id(p_func);
-    printf("before alloca instr num %ld\n", before_instr_num);
-    printf("after alloca instr num %ld\n", p_func->instr_num);
+    printf("before alloca instr num %s: %ld\n", p_func->name, before_instr_num);
+    printf("after alloca instr num %s: %ld\n", p_func->name, p_func->instr_num);
 }
