@@ -1,13 +1,14 @@
-#include <program/use.h>
-#include <program/def.h>
-#include <ir_manager/builddomtree.h>
-#include <ir_manager/buildnestree.h>
-#include <ir_manager/set_cond.h>
-#include <symbol_gen/func.h>
 #include <ir/bb_param.h>
 #include <ir_gen/basic_block.h>
 #include <ir_gen/operand.h>
+#include <ir_gen/varray.h>
 #include <ir_gen/vreg.h>
+#include <ir_manager/builddomtree.h>
+#include <ir_manager/buildnestree.h>
+#include <ir_manager/set_cond.h>
+#include <program/def.h>
+#include <program/use.h>
+#include <symbol_gen/func.h>
 
 static inline void _ir_opt_loop_pre_head_loop(p_symbol_func p_func, p_nestedtree_node p_loop) {
     p_list_head p_node;
@@ -47,6 +48,17 @@ static inline void _ir_opt_loop_pre_head_loop(p_symbol_func p_func, p_nestedtree
         symbol_func_vreg_add(p_func, p_new_vreg);
         ir_basic_block_add_phi(p_prev_head, p_new_vreg);
         ir_basic_block_branch_target_add_param(p_prev_head->p_branch->p_target_1, ir_operand_vreg_gen(p_new_vreg));
+    }
+
+    list_for_each(p_node, &p_loop_head->varray_basic_block_phis) {
+        p_ir_varray_bb_phi p_des_phi = list_entry(p_node, ir_varray_bb_phi, node);
+        assert(p_des_phi->p_basic_block == p_loop_head);
+        p_ir_varray p_des_varray = p_des_phi->p_varray_phi;
+        assert(p_des_varray->varray_def_type == varray_bb_phi_def);
+        assert(p_des_varray->p_varray_bb_phi == p_des_phi);
+        p_ir_varray p_new_varray = ir_varray_copy(p_des_varray);
+        p_ir_varray_bb_phi p_varray_phi = ir_basic_block_add_varray_phi(p_prev_head, p_new_varray);
+        ir_basic_block_branch_target_add_varray_param(p_prev_head->p_branch->p_target_1, p_varray_phi, ir_varray_use_gen(p_new_varray));
     }
 
     for (size_t i = 0; i < target_node_cnt; ++i) {
