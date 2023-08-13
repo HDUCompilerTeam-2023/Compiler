@@ -55,6 +55,8 @@ void program_drop(p_program p_program) {
 
     while (!list_head_alone(&p_program->variable)) {
         p_symbol_var p_del = list_entry(p_program->variable.p_next, symbol_var, node);
+        assert(p_del->is_global);
+        assert(p_del->p_program == p_program);
         symbol_var_drop(p_del);
     }
 
@@ -66,6 +68,7 @@ void program_drop(p_program p_program) {
         p_arm_func p_del = list_entry(p_program->arm_function.p_next, arm_func, node);
         arm_func_drop(p_del);
     }
+    assert(p_program->variable_cnt == 0);
     free(p_program->input);
     free(p_program->output);
     free(p_program);
