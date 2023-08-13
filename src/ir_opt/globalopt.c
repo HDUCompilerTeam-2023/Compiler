@@ -1,16 +1,17 @@
-#include <ir_print.h>
-#include <program/use.h>
+#include <ir/basic_block.h>
+#include <ir/operand.h>
+#include <ir/param.h>
+#include <ir/varray.h>
+#include <ir/vreg.h>
+#include <ir_gen/bb_param.h>
+#include <ir_gen/instr.h>
+#include <ir_gen/varray.h>
+#include <ir_opt/deadcode_elimate.h>
 #include <program/gen.h>
+#include <program/use.h>
+#include <symbol/type.h>
 #include <symbol_gen/func.h>
 #include <symbol_gen/var.h>
-#include <symbol/type.h>
-#include <ir_gen/basic_block.h>
-#include <ir_gen/instr.h>
-#include <ir_gen/operand.h>
-#include <ir/vreg.h>
-#include <ir/param.h>
-#include <ir/bb_param.h>
-#include <ir_opt/deadcode_elimate.h>
 
 static inline void _global_opt_var_list(p_list_head p_list) {
     p_list_head p_node;
@@ -28,6 +29,35 @@ static inline void _global_opt_var_list(p_list_head p_list) {
                     continue;
                 assert(p_instr->irkind == ir_store);
                 ir_instr_drop(p_instr);
+            }
+            list_for_each_safe(p_node, p_next, &p_var->p_base->varray_list) {
+                p_ir_varray p_varray = list_entry(p_node, ir_varray, node);
+                switch (p_varray->varray_def_type) {
+                case varray_instr_def:
+                    if (p_varray->p_instr_def) {
+                        assert(p_varray->p_instr_def->irkind == ir_call);
+                        p_list_head p_node;
+                        list_for_each(p_node, &p_varray->p_instr_def->ir_call.varray_defs) {
+                            p_ir_varray_def_pair p_pair = list_entry(p_node, ir_varray_def_pair, node);
+                            if (p_pair->p_des == p_varray) {
+                                ir_varray_def_pair_drop(p_pair);
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                case varray_bb_phi_def:
+                    ir_varray_bb_phi_drop(p_varray->p_varray_bb_phi);
+                    break;
+                case varray_func_def:
+                case varray_global_def:
+                    break;
+                }
+            }
+            list_for_each_safe(p_node, p_next, &p_var->p_base->varray_list) {
+                p_ir_varray p_varray = list_entry(p_node, ir_varray, node);
+                assert(list_head_alone(&p_varray->use_list));
+                ir_varray_drop(p_varray);
             }
         }
         else if (list_head_alone(&p_info->store_list)) {
