@@ -461,6 +461,7 @@ static inline void ir_dead_code_elimate_func(p_symbol_func p_func, bool if_aggre
         }
     }
     symbol_func_set_block_id(p_func);
+    symbol_func_clear_varible(p_func);
     free(reg_info_table->p_base);
     free(reg_info_table->p_varray_base);
     free(reg_info_table);
@@ -492,6 +493,7 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
             ir_varray_drop((varray_info_base + j)->p_varray);
         }
     }
+    program_clear_varible(p_ir);
     free(varray_info_base);
 }
 
