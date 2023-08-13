@@ -76,6 +76,7 @@ p_ir_basic_block ir_basic_block_gen() {
     *p_ir_block = (ir_basic_block) {
         .instr_list = list_head_init(&p_ir_block->instr_list),
         .prev_branch_target_list = list_head_init(&p_ir_block->prev_branch_target_list),
+        .prev_num = 0,
         .p_branch = ir_basic_block_branch_gen(),
         .block_id = 0,
         .node = list_head_init(&p_ir_block->node),
@@ -112,9 +113,11 @@ p_ir_basic_block ir_basic_block_add_prev_target(p_ir_basic_block_branch_target p
         .node = list_head_init(&node->node),
     };
     list_add_prev(&node->node, &p_des->prev_branch_target_list);
+    p_des->prev_num++;
     return p_des;
 }
 void ir_basic_block_branch_del_prev_target(p_ir_basic_block_branch_target p_target) {
+    assert(p_target->p_block);
     p_ir_basic_block p_des = p_target->p_block;
     p_list_head p_node;
     list_for_each(p_node, &p_des->prev_branch_target_list) {
@@ -270,10 +273,6 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
         assert(p_instr->p_basic_block == p_basic_block);
         ir_instr_drop(p_instr);
     }
-    while (!list_head_alone(&p_basic_block->prev_branch_target_list)) {
-        p_ir_branch_target_node p_branch_target_node = list_entry(p_basic_block->prev_branch_target_list.p_next, ir_branch_target_node, node);
-        ir_branch_target_node_drop(p_branch_target_node);
-    }
     ir_natual_loop_bb_drop(p_basic_block);
     destroyRedBlackTree(p_basic_block->loop_check);
     ir_basic_block_list_drop(p_basic_block->dom_son_list);
@@ -281,6 +280,11 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
     ir_basic_block_clear_phi(p_basic_block);
     ir_vreg_list_drop(p_basic_block->p_live_in);
     ir_vreg_list_drop(p_basic_block->p_live_out);
+    while (!list_head_alone(&p_basic_block->prev_branch_target_list)) {
+        p_ir_branch_target_node p_branch_target_node = list_entry(p_basic_block->prev_branch_target_list.p_next, ir_branch_target_node, node);
+        ir_branch_target_node_drop(p_branch_target_node);
+    }
+    assert(p_basic_block->prev_num == 0);
     p_basic_block->p_func->block_cnt--;
     assert(p_basic_block->instr_num == 0);
     free(p_basic_block);
@@ -289,6 +293,8 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
 void ir_basic_block_branch_target_drop(p_ir_basic_block p_source_block, p_ir_basic_block_branch_target p_branch_target) {
     assert(p_branch_target->p_source_block == p_source_block);
     ir_basic_block_branch_target_clear_param(p_branch_target);
+    if (p_branch_target->p_block)
+        ir_basic_block_branch_del_prev_target(p_branch_target);
     free(p_branch_target);
 }
 
@@ -358,6 +364,8 @@ void ir_basic_block_list_del(p_ir_basic_block_list p_list, p_ir_basic_block p_bl
 }
 
 void ir_branch_target_node_drop(p_ir_branch_target_node p_del) {
+    p_del->p_target->p_block->prev_num--;
+    p_del->p_target->p_block = NULL;
     list_del(&p_del->node);
     free(p_del);
 }
