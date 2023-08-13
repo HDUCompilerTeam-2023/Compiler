@@ -18,6 +18,7 @@ void ir_varray_bb_phi_drop(p_ir_varray_bb_phi p_varray_bb_phi) {
         assert(p_param->p_des_phi == p_varray_bb_phi);
         ir_varray_bb_param_drop(p_param);
     }
+    ir_varray_set_instr_def(p_varray_bb_phi->p_varray_phi, NULL);
     list_del(&p_varray_bb_phi->node);
     free(p_varray_bb_phi);
 }

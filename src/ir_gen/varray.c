@@ -51,7 +51,6 @@ p_ir_varray ir_varray_copy(p_ir_varray p_src) {
     p_ir_varray p_varray = malloc(sizeof(*p_varray));
     return ir_varray_gen(p_src->p_base);
 }
-#include <ir_print.h>
 p_ir_varray_use ir_varray_use_gen(p_ir_varray p_varray) {
     p_ir_varray_use p_use = malloc(sizeof(*p_use));
     p_use->node = list_head_init(&p_use->node);
@@ -120,9 +119,10 @@ void ir_varray_use_drop(p_ir_varray_use p_use) {
     list_del(&p_use->node);
     free(p_use);
 }
-#include <ir_print.h>
-#include <stdio.h>
 void ir_varray_drop(p_ir_varray p_varray) {
+    assert(p_varray->varray_def_type != varray_bb_phi_def);
+    if (p_varray->varray_def_type == varray_instr_def)
+        assert(!p_varray->p_instr_def);
     assert(list_head_alone(&p_varray->use_list));
     list_del(&p_varray->node);
     p_varray->p_base->num--;
