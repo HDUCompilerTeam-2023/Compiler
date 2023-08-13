@@ -23,7 +23,7 @@
 #include <ir_opt/gcm.h>
 #include <ir_opt/gvn.h>
 #include <stdio.h>
-
+#include <ir_opt/mem_copy_propagation.h>
 int main(int argc, char *argv[]) {
     char *in_file = NULL, *out_file = NULL;
     bool is_opt = false;
