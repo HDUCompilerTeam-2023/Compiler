@@ -17,7 +17,15 @@ static inline void ir_simplify_cfg_dfs_basic_block(p_ir_basic_block p_bb) {
         ir_simplify_cfg_dfs_basic_block(p_target_2->p_block);
     }
 }
-
+static inline void ir_simplify_cfg_anti_dfs_basic_block(p_ir_basic_block p_bb) {
+    if (p_bb->if_visited) return;
+    p_bb->if_visited = true;
+    p_list_head p_node;
+    list_for_each(p_node, &p_bb->prev_branch_target_list) {
+        p_ir_basic_block p_prev = list_entry(p_node, ir_branch_target_node, node)->p_target->p_source_block;
+        ir_simplify_cfg_anti_dfs_basic_block(p_prev);
+    }
+}
 static inline void ir_simplify_cfg_func_remove_no_predesessor_bb(p_symbol_func p_func) {
     symbol_func_basic_block_init_visited(p_func);
     p_ir_basic_block p_entry_bb = p_func->p_entry_block;
@@ -25,6 +33,64 @@ static inline void ir_simplify_cfg_func_remove_no_predesessor_bb(p_symbol_func p
 
     p_ir_vreg *need_del = (p_ir_vreg *) malloc(sizeof(p_ir_vreg) * p_func->vreg_cnt);
     size_t del_reg_cnt = 0;
+    p_list_head p_node;
+    list_for_each(p_node, &p_func->block) {
+        p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
+        if (p_bb->if_visited) continue;
+        assert(p_bb != p_func->p_ret_block);
+        assert(p_bb != p_func->p_entry_block);
+
+        p_list_head p_instr_node;
+        list_for_each(p_instr_node, &p_bb->instr_list) {
+            p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            p_ir_vreg p_des = NULL;
+            switch (p_instr->irkind) {
+            case ir_binary:
+                p_des = p_instr->ir_binary.p_des;
+                break;
+            case ir_unary:
+                p_des = p_instr->ir_unary.p_des;
+                break;
+            case ir_call:
+                p_des = p_instr->ir_call.p_des;
+                break;
+            case ir_gep:
+                p_des = p_instr->ir_gep.p_des;
+                break;
+            case ir_load:
+                p_des = p_instr->ir_load.p_des;
+            case ir_store:
+                break;
+            }
+            if (p_des) {
+                need_del[del_reg_cnt++] = p_des;
+            }
+        }
+    }
+    p_list_head p_next;
+    list_for_each_safe(p_node, p_next, &p_func->block) {
+        p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
+        if (p_bb->if_visited) continue;
+
+        p_list_head p_node;
+        list_for_each(p_node, &p_bb->basic_block_phis) {
+            p_ir_vreg p_del = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
+            need_del[del_reg_cnt++] = p_del;
+        }
+        symbol_func_bb_del(p_func, p_bb);
+    }
+    for (size_t i = 0; i < del_reg_cnt; ++i) {
+        symbol_func_vreg_del(p_func, need_del[i]);
+    }
+    free(need_del);
+}
+static inline void ir_simplify_cfg_func_remove_anti_no_predesessor_bb(p_symbol_func p_func) {
+    symbol_func_basic_block_init_visited(p_func);
+    ir_simplify_cfg_anti_dfs_basic_block(p_func->p_ret_block);
+
+    p_ir_vreg *need_del = (p_ir_vreg *) malloc(sizeof(p_ir_vreg) * p_func->vreg_cnt);
+    size_t del_reg_cnt = 0;
+
     p_list_head p_node;
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
@@ -259,6 +325,7 @@ static inline bool ir_simplify_cfg_func_pass(p_symbol_func p_func) {
 
     bool if_del;
     ir_simplify_cfg_func_remove_no_predesessor_bb(p_func);
+    ir_simplify_cfg_func_remove_anti_no_predesessor_bb(p_func);
     ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_func);
 
     ir_simplify_cfg_func_merge_single_predecessor_bb(p_func);
