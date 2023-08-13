@@ -32,7 +32,9 @@ static inline void ir_simplify_cfg_func_remove_no_predesessor_bb(p_symbol_func p
     ir_simplify_cfg_dfs_basic_block(p_entry_bb);
 
     p_ir_vreg *need_del = (p_ir_vreg *) malloc(sizeof(p_ir_vreg) * p_func->vreg_cnt);
+    p_ir_varray *need_del_varray = (p_ir_varray *) malloc(sizeof(p_ir_varray) * (p_func->varray_num + p_func->p_program->varray_num));
     size_t del_reg_cnt = 0;
+    size_t del_varray_cnt = 0;
     p_list_head p_node;
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
@@ -53,13 +55,20 @@ static inline void ir_simplify_cfg_func_remove_no_predesessor_bb(p_symbol_func p
                 break;
             case ir_call:
                 p_des = p_instr->ir_call.p_des;
+                p_list_head p_node;
+                list_for_each(p_node, &p_instr->ir_call.varray_defs) {
+                    need_del_varray[del_varray_cnt++] = list_entry(p_node, ir_varray_def_pair, node)->p_des;
+                }
                 break;
             case ir_gep:
                 p_des = p_instr->ir_gep.p_des;
                 break;
             case ir_load:
                 p_des = p_instr->ir_load.p_des;
+                break;
             case ir_store:
+                if (p_instr->ir_store.p_array_des)
+                    need_del_varray[del_varray_cnt++] = p_instr->ir_store.p_array_des;
                 break;
             }
             if (p_des) {
@@ -77,20 +86,29 @@ static inline void ir_simplify_cfg_func_remove_no_predesessor_bb(p_symbol_func p
             p_ir_vreg p_del = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
             need_del[del_reg_cnt++] = p_del;
         }
+        list_for_each(p_node, &p_bb->varray_basic_block_phis) {
+            p_ir_varray p_del = list_entry(p_node, ir_varray_bb_phi, node)->p_varray_phi;
+            need_del_varray[del_varray_cnt++] = p_del;
+        }
         symbol_func_bb_del(p_func, p_bb);
     }
     for (size_t i = 0; i < del_reg_cnt; ++i) {
         symbol_func_vreg_del(p_func, need_del[i]);
     }
+    for (size_t i = 0; i < del_varray_cnt; ++i) {
+        ir_varray_drop(need_del_varray[i]);
+    }
     free(need_del);
+    free(need_del_varray);
 }
 static inline void ir_simplify_cfg_func_remove_anti_no_predesessor_bb(p_symbol_func p_func) {
     symbol_func_basic_block_init_visited(p_func);
     ir_simplify_cfg_anti_dfs_basic_block(p_func->p_ret_block);
 
     p_ir_vreg *need_del = (p_ir_vreg *) malloc(sizeof(p_ir_vreg) * p_func->vreg_cnt);
+    p_ir_varray *need_del_varray = (p_ir_varray *) malloc(sizeof(p_ir_varray) * (p_func->varray_num + p_func->p_program->varray_num));
     size_t del_reg_cnt = 0;
-
+    size_t del_varray_cnt = 0;
     p_list_head p_node;
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
@@ -111,13 +129,20 @@ static inline void ir_simplify_cfg_func_remove_anti_no_predesessor_bb(p_symbol_f
                 break;
             case ir_call:
                 p_des = p_instr->ir_call.p_des;
+                p_list_head p_node;
+                list_for_each(p_node, &p_instr->ir_call.varray_defs) {
+                    need_del_varray[del_varray_cnt++] = list_entry(p_node, ir_varray_def_pair, node)->p_des;
+                }
                 break;
             case ir_gep:
                 p_des = p_instr->ir_gep.p_des;
                 break;
             case ir_load:
                 p_des = p_instr->ir_load.p_des;
+                break;
             case ir_store:
+                if (p_instr->ir_store.p_array_des)
+                    need_del_varray[del_varray_cnt++] = p_instr->ir_store.p_array_des;
                 break;
             }
             if (p_des) {
@@ -135,17 +160,27 @@ static inline void ir_simplify_cfg_func_remove_anti_no_predesessor_bb(p_symbol_f
             p_ir_vreg p_del = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
             need_del[del_reg_cnt++] = p_del;
         }
+        list_for_each(p_node, &p_bb->varray_basic_block_phis) {
+            p_ir_varray p_del = list_entry(p_node, ir_varray_bb_phi, node)->p_varray_phi;
+            need_del_varray[del_varray_cnt++] = p_del;
+        }
         symbol_func_bb_del(p_func, p_bb);
     }
     for (size_t i = 0; i < del_reg_cnt; ++i) {
         symbol_func_vreg_del(p_func, need_del[i]);
     }
+    for (size_t i = 0; i < del_varray_cnt; ++i) {
+        ir_varray_drop(need_del_varray[i]);
+    }
     free(need_del);
+    free(need_del_varray);
 }
 
 static inline void ir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_func p_func) {
     p_ir_vreg *need_del = (p_ir_vreg *) malloc(sizeof(p_ir_vreg) * p_func->vreg_cnt);
+    p_ir_varray *need_del_varray = (p_ir_varray *) malloc(sizeof(p_ir_varray) * (p_func->varray_num + p_func->p_program->varray_num));
     size_t del_reg_cnt = 0;
+    size_t del_varray_cnt = 0;
     p_list_head p_node;
     p_list_head p_next;
     list_for_each_safe(p_node, p_next, &p_func->block) {
@@ -176,6 +211,21 @@ static inline void ir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_fun
         }
         assert(p_node_src == &p_prev_bb->p_branch->p_target_1->block_param);
 
+        p_node_src = p_prev_bb->p_branch->p_target_1->varray_bb_param.p_next;
+        list_for_each(p_node, &p_bb->varray_basic_block_phis) {
+            assert(p_node_src != &p_prev_bb->p_branch->p_target_1->varray_bb_param);
+            p_ir_varray p_des = list_entry(p_node, ir_varray_bb_phi, node)->p_varray_phi;
+            p_ir_varray p_src = list_entry(p_node_src, ir_varray_bb_param, node)->p_varray_bb_param->p_varray_use;
+            p_list_head p_node, p_next;
+            list_for_each_safe(p_node, p_next, &p_des->use_list) {
+                p_ir_varray_use p_use = list_entry(p_node, ir_varray_use, node);
+                ir_varray_use_reset_varray(p_use, p_src);
+            }
+            need_del_varray[del_varray_cnt++] = p_des;
+            p_node_src = p_node_src->p_next;
+        }
+        assert(p_node_src == &p_prev_bb->p_branch->p_target_1->varray_bb_param);
+
         ir_basic_block_add_instr_list(p_prev_bb, p_bb);
         p_bb->instr_list.p_next = &p_bb->instr_list;
         p_bb->instr_list.p_prev = &p_bb->instr_list;
@@ -189,7 +239,11 @@ static inline void ir_simplify_cfg_func_merge_single_predecessor_bb(p_symbol_fun
     for (size_t i = 0; i < del_reg_cnt; ++i) {
         symbol_func_vreg_del(p_func, need_del[i]);
     }
+    for (size_t i = 0; i < del_varray_cnt; ++i) {
+        ir_varray_drop(need_del_varray[i]);
+    }
     free(need_del);
+    free(need_del_varray);
 }
 
 static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_func) {
@@ -201,6 +255,7 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
         p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
         if (!list_head_alone(&p_bb->instr_list)) continue;
         if (!list_head_alone(&p_bb->basic_block_phis)) continue;
+        if (!list_head_alone(&p_bb->varray_basic_block_phis)) continue;
 
         p_ir_basic_block_branch_target p_target = p_bb->p_branch->p_target_1;
         if (!p_target || p_bb->p_branch->p_target_2) continue;
@@ -274,14 +329,16 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
 
 static inline void ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_symbol_func p_func) {
     p_ir_vreg *need_del = (p_ir_vreg *) malloc(sizeof(p_ir_vreg) * p_func->vreg_cnt);
+    p_ir_varray *need_del_varray = (p_ir_varray *) malloc(sizeof(p_ir_varray) * (p_func->varray_num + p_func->p_program->varray_num));
     size_t del_reg_cnt = 0;
+    size_t del_array_cnt = 0;
     p_list_head p_node;
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
         if ((&p_bb->prev_branch_target_list)->p_next->p_next != &p_bb->prev_branch_target_list) continue;
         if (p_node == p_func->block.p_next) continue;
         assert(!list_head_alone(&p_bb->prev_branch_target_list));
-        if (list_head_alone(&p_bb->basic_block_phis))
+        if (list_head_alone(&p_bb->basic_block_phis) && list_head_alone(&p_bb->varray_basic_block_phis))
             continue;
 
         p_ir_basic_block p_prev_bb = list_entry(p_bb->prev_branch_target_list.p_next, ir_branch_target_node, node)->p_target->p_source_block;
@@ -310,11 +367,33 @@ static inline void ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_symbo
 
         ir_basic_block_clear_phi(p_bb);
         ir_basic_block_branch_target_clear_param(p_target);
+
+        p_node_src = p_target->varray_bb_param.p_next;
+        list_for_each(p_node, &p_bb->varray_basic_block_phis) {
+            assert(p_node_src != &p_target->block_param);
+            p_ir_varray p_des = list_entry(p_node, ir_varray_bb_phi, node)->p_varray_phi;
+            p_ir_varray_use p_src = list_entry(p_node_src, ir_varray_bb_param, node)->p_varray_bb_param;
+            p_list_head p_node, p_next;
+            list_for_each_safe(p_node, p_next, &p_des->use_list) {
+                p_ir_varray_use p_use = list_entry(p_node, ir_varray_use, node);
+                ir_varray_use_reset_varray(p_use, p_src->p_varray_use);
+            }
+            need_del_varray[del_array_cnt++] = p_des;
+            p_node_src = p_node_src->p_next;
+        }
+        assert(p_node_src == &p_target->varray_bb_param);
+
+        ir_basic_block_clear_varray_phi(p_bb);
+        ir_basic_block_branch_target_clear_varray_param(p_target);
     }
     for (size_t i = 0; i < del_reg_cnt; ++i) {
         symbol_func_vreg_del(p_func, need_del[i]);
     }
+    for (size_t i = 0; i < del_array_cnt; ++i) {
+        ir_varray_drop(need_del_varray[i]);
+    }
     free(need_del);
+    free(need_del_varray);
 }
 
 static inline bool ir_simplify_cfg_func_pass(p_symbol_func p_func) {
