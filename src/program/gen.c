@@ -45,6 +45,7 @@ p_program program_gen(const char *input, const char *output) {
 void program_drop(p_program p_program) {
     while (!list_head_alone(&p_program->function)) {
         p_symbol_func p_del = list_entry(p_program->function.p_next, symbol_func, node);
+        assert(p_del->p_program == p_program);
         symbol_func_drop(p_del);
     }
     while (!list_head_alone(&p_program->ext_function)) {
@@ -85,6 +86,7 @@ bool program_add_global(p_program p_program, p_symbol_var p_var) {
 
 bool program_add_function(p_program p_program, p_symbol_func p_func) {
     p_func->id = p_program->function_cnt++;
+    p_func->p_program = p_program;
     return list_add_prev(&p_func->node, &p_program->function);
 }
 
