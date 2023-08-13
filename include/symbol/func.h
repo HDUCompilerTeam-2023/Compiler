@@ -8,6 +8,7 @@
 #include <ir_manager/side_effects.h>
 #include <symbol.h>
 struct symbol_func {
+    p_program p_program;
     // type info
     bool is_va;
     basic_type ret_type;
