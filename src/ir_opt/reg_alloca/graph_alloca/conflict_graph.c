@@ -198,7 +198,7 @@ static inline void print_node_list(p_graph_node_list p_list) {
 }
 
 static inline void print_conflict_node(p_graph_node p_g_node) {
-    printf("%ld: ", p_g_node->node_id);
+    printf("%ld(%ld): ", p_g_node->node_id, p_g_node->p_vreg->id);
     print_node_list(p_g_node->p_neighbors);
 }
 void print_conflict_graph(p_conflict_graph p_graph) {
@@ -504,6 +504,8 @@ static inline bool is_load_imme_def(p_symbol_func p_func, p_ir_vreg p_vreg) {
     if (p_vreg->p_instr_def->ir_load.p_addr->kind != imme) return false;
     return true;
 }
+#include<ir_print.h>
+
 static inline void set_vmem(p_conflict_graph p_graph, p_origin_graph_node p_o_node) {
     p_ir_vreg p_src = p_o_node->p_def_node->p_vreg;
     p_symbol_var p_vmem;
@@ -512,6 +514,8 @@ static inline void set_vmem(p_conflict_graph p_graph, p_origin_graph_node p_o_no
         ir_instr_drop(p_o_node->p_def_node->p_vreg->p_instr_def);
         neighbors_clear(p_o_node->p_def_node);
         p_o_node->need_delete = true;
+        printf("sss\n");
+        ir_vreg_print(p_src);
     }
     else {
         p_vmem = symbol_temp_var_gen(symbol_type_copy(p_o_node->p_def_node->p_vreg->p_type));
@@ -521,7 +525,6 @@ static inline void set_vmem(p_conflict_graph p_graph, p_origin_graph_node p_o_no
     p_o_node->p_vmem = p_vmem;
     p_o_node->spl_type = reg_mem;
 }
-
 static inline void set_spill_node(p_conflict_graph p_graph, p_origin_graph_node p_o_node) {
     p_ir_vreg p_src = p_o_node->p_def_node->p_vreg;
     p_ir_vreg p_vreg = ir_vreg_copy(p_src);
