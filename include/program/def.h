@@ -10,6 +10,7 @@ struct program {
     list_head string;
 
     list_head arm_function;
+    size_t varray_num;
 
     uint64_t variable_cnt;
     uint64_t function_cnt;

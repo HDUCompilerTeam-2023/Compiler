@@ -31,6 +31,7 @@ struct ir_basic_block {
     list_head seqs_node;
     // SSA 相关
     list_head basic_block_phis; // 基本块参数列表
+    list_head varray_basic_block_phis;
     p_ir_basic_block p_dom_parent; // 支配树上的父亲
     p_ir_basic_block_list dom_son_list; // 支配树上的儿子
     size_t dom_depth; // 支配树深度
@@ -68,5 +69,6 @@ struct ir_basic_block_branch_target {
     p_ir_basic_block p_source_block;
     p_ir_basic_block p_block;
     list_head block_param;
+    list_head varray_bb_param;
 };
 #endif

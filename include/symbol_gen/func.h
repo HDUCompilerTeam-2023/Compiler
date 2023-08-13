@@ -7,11 +7,15 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va);
 
 void symbol_func_add_variable(p_symbol_func p_func, p_symbol_var p_var);
 
+void symbol_func_clear_varible(p_symbol_func p_func);
 void symbol_func_drop(p_symbol_func p_func);
 
 void symbol_func_bb_add_head(p_symbol_func p_func, p_ir_basic_block p_basic_block);
 void symbol_func_bb_add_tail(p_symbol_func p_func, p_ir_basic_block p_basic_block);
 void symbol_func_bb_del(p_symbol_func p_func, p_ir_basic_block p_basic_block);
+void symbol_func_param_vmem_base_add(p_symbol_func p_func, p_ir_param_vmem_base p_vmem_base);
+p_ir_param_vmem_base symbol_func_get_param_vmem_base(p_symbol_func p_func, p_ir_vreg p_vreg);
+void symbol_func_param_vmem_base_drop(p_symbol_func p_func, p_ir_param_vmem_base p_base);
 void symbol_func_param_reg_add(p_symbol_func p_func, p_ir_vreg p_vreg);
 void symbol_func_param_reg_del(p_symbol_func p_func, p_ir_vreg p_vreg);
 p_symbol_var symbol_func_param_reg_mem(p_symbol_func p_func, p_ir_vreg p_vreg);

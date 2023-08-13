@@ -1,5 +1,6 @@
 #include <symbol_gen/var.h>
 
+#include <ir_gen.h>
 #include <symbol_gen.h>
 
 p_symbol_init symbol_init_gen(size_t size, basic_type basic) {
@@ -35,6 +36,8 @@ p_symbol_var symbol_var_gen(const char *name, p_symbol_type p_type, bool is_cons
         .p_init = p_data,
         .ref_list = list_init_head(&p_var->ref_list),
         .p_visited = NULL,
+        .p_func = NULL,
+        .p_base = ir_vmem_base_vmem_gen(p_var),
     };
     strcpy(p_var->name, name);
     return p_var;
@@ -50,6 +53,8 @@ p_symbol_var symbol_temp_var_gen(p_symbol_type p_type) {
         .p_init = NULL,
         .ref_list = list_init_head(&p_var->ref_list),
         .p_visited = NULL,
+        .is_global = false,
+        .p_base = ir_vmem_base_vmem_gen(p_var),
     };
     return p_var;
 }
@@ -68,6 +73,7 @@ void symbol_var_del(p_symbol_var p_var) {
 }
 void symbol_var_drop(p_symbol_var p_var) {
     assert(list_head_alone(&p_var->ref_list));
+    ir_vmem_base_drop(p_var->p_base);
     symbol_var_del(p_var);
     symbol_init_drop(p_var->p_init);
     symbol_type_drop(p_var->p_type);

@@ -44,16 +44,32 @@ void ir_basic_block_print(p_ir_basic_block p_basic_block) {
     assert(p_basic_block);
 
     printf("    b%ld", p_basic_block->block_id);
-    if (!list_head_alone(&p_basic_block->basic_block_phis)) {
-        p_list_head p_node;
-        printf("(");
-        list_for_each(p_node, &p_basic_block->basic_block_phis) {
-            p_ir_bb_phi p_bb_phi = list_entry(p_node, ir_bb_phi, node);
-            ir_bb_phi_print(p_bb_phi);
-            if (p_node->p_next != &p_basic_block->basic_block_phis)
-                printf(", ");
+    if (!list_head_alone(&p_basic_block->basic_block_phis) || !list_head_alone(&p_basic_block->varray_basic_block_phis)) {
+        printf("[");
+        if (!list_head_alone(&p_basic_block->basic_block_phis)) {
+            p_list_head p_node;
+            printf("(");
+            list_for_each(p_node, &p_basic_block->basic_block_phis) {
+                p_ir_bb_phi p_bb_phi = list_entry(p_node, ir_bb_phi, node);
+                ir_bb_phi_print(p_bb_phi);
+                if (p_node->p_next != &p_basic_block->basic_block_phis)
+                    printf(", ");
+            }
+            printf(")");
         }
-        printf(")");
+        printf(", ");
+        if (!list_head_alone(&p_basic_block->varray_basic_block_phis)) {
+            p_list_head p_node;
+            printf("(");
+            list_for_each(p_node, &p_basic_block->varray_basic_block_phis) {
+                p_ir_varray_bb_phi p_varray_bb_phi = list_entry(p_node, ir_varray_bb_phi, node);
+                ir_varray_bb_phi_print(p_varray_bb_phi);
+                if (p_node->p_next != &p_basic_block->varray_basic_block_phis)
+                    printf(", ");
+            }
+            printf(")");
+        }
+        printf("]");
     }
     printf(":");
 
@@ -61,7 +77,7 @@ void ir_basic_block_print(p_ir_basic_block p_basic_block) {
         printf("                        ; preds = ");
         p_list_head p_node;
         list_for_each(p_node, &p_basic_block->prev_branch_target_list) {
-           size_t id = list_entry(p_node, ir_branch_target_node, node)->p_target->p_source_block->block_id;
+            size_t id = list_entry(p_node, ir_branch_target_node, node)->p_target->p_source_block->block_id;
             printf("b%ld", id);
             if (p_node->p_next != &p_basic_block->prev_branch_target_list)
                 printf(", ");
@@ -80,6 +96,9 @@ void ir_basic_block_print(p_ir_basic_block p_basic_block) {
 
 void ir_basic_block_branch_target_print(p_ir_basic_block_branch_target p_branch_target) {
     printf("b%ld", p_branch_target->p_block->block_id);
+    if (list_head_alone(&p_branch_target->varray_bb_param) && list_head_alone(&p_branch_target->block_param))
+        return;
+    printf("[");
     if (!list_head_alone(&p_branch_target->block_param)) {
         p_list_head p_node;
         printf("(");
@@ -91,6 +110,19 @@ void ir_basic_block_branch_target_print(p_ir_basic_block_branch_target p_branch_
         }
         printf(")");
     }
+    printf(", ");
+    if (!list_head_alone(&p_branch_target->varray_bb_param)) {
+        p_list_head p_node;
+        printf("(");
+        list_for_each(p_node, &p_branch_target->varray_bb_param) {
+            p_ir_varray_bb_param p_varray_bb_param = list_entry(p_node, ir_varray_bb_param, node);
+            ir_varray_bb_param_print(p_varray_bb_param);
+            if (p_node->p_next != &p_branch_target->varray_bb_param)
+                printf(", ");
+        }
+        printf(")");
+    }
+    printf("]");
 }
 
 void ir_basic_block_dom_info_print(p_ir_basic_block p_basic_block) {

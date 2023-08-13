@@ -58,6 +58,7 @@ struct ir_call_instr {
     list_head param_list;
     p_ir_vreg p_des;
     p_call_instr_node p_ci_node;
+    list_head varray_defs;
 };
 
 struct ir_gep_instr {
@@ -70,11 +71,14 @@ struct ir_load_instr {
     bool is_stack_ptr;
     p_ir_operand p_addr;
     p_ir_vreg p_des;
+    p_ir_varray_use p_array_src;
 };
 struct ir_store_instr {
     bool is_stack_ptr;
     p_ir_operand p_addr;
     p_ir_operand p_src;
+    p_ir_varray p_array_des;
+    p_ir_varray_use p_array_src;
 };
 
 struct ir_instr {

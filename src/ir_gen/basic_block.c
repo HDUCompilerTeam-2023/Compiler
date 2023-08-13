@@ -13,6 +13,18 @@ static inline p_ir_bb_param ir_bb_param_gen(p_ir_operand p_operand) {
     }
     return p_ir_bb_param;
 }
+static inline p_ir_varray_bb_param ir_varray_bb_param_gen(p_ir_varray_use p_varray_use) {
+    p_ir_varray_bb_param p_ir_varray_bb_param = malloc(sizeof(*p_ir_varray_bb_param));
+    *p_ir_varray_bb_param = (ir_varray_bb_param) {
+        .node = list_head_init(&p_ir_varray_bb_param->node),
+        .p_des_phi = NULL,
+        .phi_node = list_head_init(&p_ir_varray_bb_param->phi_node),
+        .p_varray_bb_param = p_varray_use,
+    };
+    ir_varray_set_bb_parram_use(p_varray_use, p_ir_varray_bb_param);
+
+    return p_ir_varray_bb_param;
+}
 static inline void ir_bb_param_drop(p_ir_bb_param p_param) {
     if (p_param->p_bb_param) {
         assert(p_param->p_bb_param->used_type == bb_param_ptr);
@@ -33,6 +45,15 @@ static inline p_ir_bb_phi ir_bb_phi_gen(p_ir_vreg p_vreg) {
     };
     ir_bb_phi_set_vreg(p_bb_phi, p_vreg);
     return p_bb_phi;
+}
+static inline p_ir_varray_bb_phi ir_varray_bb_phi_gen(p_ir_varray p_varray) {
+    p_ir_varray_bb_phi p_varray_bb_phi = malloc(sizeof(*p_varray_bb_phi));
+    *p_varray_bb_phi = (ir_varray_bb_phi) {
+        .node = list_head_init(&p_varray_bb_phi->node),
+        .varray_param_list = list_head_init(&p_varray_bb_phi->varray_param_list),
+    };
+    ir_varray_bb_phi_set_varry(p_varray_bb_phi, p_varray);
+    return p_varray_bb_phi;
 }
 static inline void ir_bb_phi_drop(p_ir_bb_phi p_bb_phi) {
     assert(p_bb_phi->p_bb_phi->def_type == bb_phi_def);
@@ -81,6 +102,7 @@ p_ir_basic_block ir_basic_block_gen() {
         .block_id = 0,
         .node = list_head_init(&p_ir_block->node),
         .basic_block_phis = list_head_init(&p_ir_block->basic_block_phis),
+        .varray_basic_block_phis = list_head_init(&p_ir_block->varray_basic_block_phis),
         .dom_son_list = ir_basic_block_list_init(),
         .p_dom_parent = NULL,
         .dom_depth = 0,
@@ -224,11 +246,18 @@ void ir_basic_block_branch_target_clear_param(p_ir_basic_block_branch_target p_t
         ir_basic_block_branch_target_del_param(p_target, p_bb_param);
     }
 }
+void ir_basic_block_branch_target_clear_varray_param(p_ir_basic_block_branch_target p_target) {
+    while (!list_head_alone(&p_target->varray_bb_param)) {
+        p_ir_varray_bb_param p_varray_bb_param = list_entry(p_target->varray_bb_param.p_next, ir_varray_bb_param, node);
+        ir_basic_block_branch_target_del_varray_param(p_target, p_varray_bb_param);
+    }
+}
 
 p_ir_basic_block_branch_target ir_basic_block_branch_target_gen(p_ir_basic_block p_target_block) {
     p_ir_basic_block_branch_target p_branch_target = malloc(sizeof(*p_branch_target));
     *p_branch_target = (ir_basic_block_branch_target) {
         .block_param = list_head_init(&p_branch_target->block_param),
+        .varray_bb_param = list_head_init(&p_branch_target->varray_bb_param),
         .p_block = p_target_block,
     };
     return p_branch_target;
@@ -241,6 +270,18 @@ void ir_basic_block_branch_target_add_param(p_ir_basic_block_branch_target p_bra
 void ir_basic_block_branch_target_del_param(p_ir_basic_block_branch_target p_branch_target, p_ir_bb_param p_param) {
     assert(p_param->p_target == p_branch_target);
     ir_bb_param_drop(p_param);
+}
+p_ir_varray_bb_param ir_basic_block_branch_target_add_varray_param(p_ir_basic_block_branch_target p_branch_target, p_ir_varray_bb_phi p_phi, p_ir_varray_use p_varray_use) {
+    p_ir_varray_bb_param p_varray_param = ir_varray_bb_param_gen(p_varray_use);
+    p_varray_param->p_target = p_branch_target;
+    p_varray_param->p_des_phi = p_phi;
+    list_add_prev(&p_varray_param->node, &p_branch_target->varray_bb_param);
+    list_add_prev(&p_varray_param->phi_node, &p_phi->varray_param_list);
+    return p_varray_param;
+}
+void ir_basic_block_branch_target_del_varray_param(p_ir_basic_block_branch_target p_branch_target, p_ir_varray_bb_param p_varray_param) {
+    assert(p_varray_param->p_target == p_branch_target);
+    ir_varray_bb_param_drop(p_varray_param);
 }
 void ir_basic_block_add_dom_son(p_ir_basic_block p_basic_block, p_ir_basic_block p_son) {
     ir_basic_block_list_add(p_basic_block->dom_son_list, p_son);
@@ -264,6 +305,25 @@ void ir_basic_block_clear_phi(p_ir_basic_block p_basic_block) {
         ir_basic_block_del_phi(p_basic_block, p_bb_phi);
     }
 }
+p_ir_varray_bb_phi ir_basic_block_add_varray_phi(p_ir_basic_block p_basic_block, p_ir_varray p_varray) {
+    p_ir_varray_bb_phi p_varray_bb_phi = ir_varray_bb_phi_gen(p_varray);
+    p_varray_bb_phi->p_basic_block = p_basic_block;
+    list_add_prev(&p_varray_bb_phi->node, &p_basic_block->varray_basic_block_phis);
+    ir_varray_set_bb_phi_def(p_varray, p_varray_bb_phi);
+    return p_varray_bb_phi;
+}
+
+void ir_basic_block_del_varray_phi(p_ir_basic_block p_basic_block, p_ir_varray_bb_phi p_varray_bb_phi) {
+    assert(p_varray_bb_phi->p_basic_block == p_basic_block);
+    ir_varray_bb_phi_drop(p_varray_bb_phi);
+}
+void ir_basic_block_clear_varray_phi(p_ir_basic_block p_basic_block) {
+    while (!list_head_alone(&p_basic_block->varray_basic_block_phis)) {
+        p_ir_varray_bb_phi p_varray_bb_phi = list_entry(p_basic_block->varray_basic_block_phis.p_next, ir_varray_bb_phi, node);
+        assert(p_varray_bb_phi->p_basic_block == p_basic_block);
+        ir_basic_block_del_varray_phi(p_basic_block, p_varray_bb_phi);
+    }
+}
 
 void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
     assert(p_basic_block);
@@ -278,6 +338,7 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
     ir_basic_block_list_drop(p_basic_block->dom_son_list);
     ir_basic_block_branch_drop(p_basic_block, p_basic_block->p_branch);
     ir_basic_block_clear_phi(p_basic_block);
+    ir_basic_block_clear_varray_phi(p_basic_block);
     ir_vreg_list_drop(p_basic_block->p_live_in);
     ir_vreg_list_drop(p_basic_block->p_live_out);
     while (!list_head_alone(&p_basic_block->prev_branch_target_list)) {
@@ -293,6 +354,7 @@ void ir_basic_block_drop(p_ir_basic_block p_basic_block) {
 void ir_basic_block_branch_target_drop(p_ir_basic_block p_source_block, p_ir_basic_block_branch_target p_branch_target) {
     assert(p_branch_target->p_source_block == p_source_block);
     ir_basic_block_branch_target_clear_param(p_branch_target);
+    ir_basic_block_branch_target_clear_varray_param(p_branch_target);
     if (p_branch_target->p_block)
         ir_basic_block_branch_del_prev_target(p_branch_target);
     free(p_branch_target);

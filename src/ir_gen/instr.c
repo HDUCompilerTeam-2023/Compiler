@@ -31,6 +31,14 @@ static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
         ir_vreg_set_instr_def(p_instr->ir_unary.p_des, NULL);
         break;
     case ir_call:
+        while (!list_head_alone(&p_instr->ir_call.varray_defs)) {
+            p_ir_varray_def_pair p_def_pair = list_entry(p_instr->ir_call.varray_defs.p_next, ir_varray_def_pair, node);
+            assert(p_def_pair->p_des->varray_def_type == varray_instr_def);
+            assert(p_def_pair->p_des->p_instr_def == p_instr);
+            assert(p_def_pair->p_src->varray_use_type == varray_instr_use);
+            assert(p_def_pair->p_src->p_instr == p_instr);
+            ir_varray_def_pair_drop(p_def_pair);
+        }
         while (!list_head_alone(&p_instr->ir_call.param_list)) {
             p_ir_param p_param = list_entry(p_instr->ir_call.param_list.p_next, ir_param, node);
             if (!p_param->is_in_mem) {
@@ -68,6 +76,15 @@ static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
         assert(p_instr->ir_store.p_addr->p_instr == p_instr);
         assert(p_instr->ir_store.p_src->used_type == instr_ptr);
         assert(p_instr->ir_store.p_src->p_instr == p_instr);
+        if (p_instr->ir_store.p_array_des) {
+            assert(p_instr->ir_store.p_src);
+            assert(p_instr->ir_store.p_array_des->varray_def_type == varray_instr_def);
+            assert(p_instr->ir_store.p_array_des->p_instr_def == p_instr);
+            assert(p_instr->ir_store.p_array_src->varray_use_type == varray_instr_use);
+            assert(p_instr->ir_store.p_array_src->p_instr == p_instr);
+            ir_varray_set_instr_def(p_instr->ir_store.p_array_des, NULL);
+            ir_varray_use_drop(p_instr->ir_store.p_array_src);
+        }
         ir_operand_drop(p_instr->ir_store.p_addr);
         ir_operand_drop(p_instr->ir_store.p_src);
         break;
@@ -78,6 +95,11 @@ static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
         assert(p_instr->ir_load.p_des->def_type == instr_def);
         assert(p_instr->ir_load.p_des->p_instr_def == p_instr);
         ir_vreg_set_instr_def(p_instr->ir_load.p_des, NULL);
+        if (p_instr->ir_load.p_array_src) {
+            assert(p_instr->ir_load.p_array_src->varray_use_type == varray_instr_use);
+            assert(p_instr->ir_load.p_array_src->p_instr == p_instr);
+            ir_varray_use_drop(p_instr->ir_load.p_array_src);
+        }
         break;
     }
 }
@@ -170,6 +192,7 @@ static inline void _ir_instr_call_set(p_ir_instr p_instr, p_symbol_func p_func, 
             .p_des = p_des,
             .param_list = list_head_init(&p_instr->ir_call.param_list),
             .p_ci_node = NULL,
+            .varray_defs = list_head_init(&p_instr->ir_call.varray_defs),
         },
         .node = p_instr->node,
         .instr_id = p_instr->instr_id,
@@ -190,7 +213,11 @@ p_ir_instr ir_call_instr_gen(p_symbol_func p_func, p_ir_vreg p_des) {
     _ir_instr_call_set(p_instr, p_func, p_des);
     return p_instr;
 }
-
+void ir_call_instr_add_varray_def_pair(p_ir_instr p_instr, p_ir_varray_def_pair p_def_pair) {
+    ir_varray_set_instr_def(p_def_pair->p_des, p_instr);
+    ir_varray_set_instr_use(p_def_pair->p_src, p_instr);
+    list_add_prev(&p_def_pair->node, &p_instr->ir_call.varray_defs);
+}
 void ir_call_param_list_add(p_ir_instr p_instr, p_ir_operand p_param) {
     p_ir_param p_ir_param = ir_param_gen(p_param);
     ir_operand_set_instr_use(p_param, p_instr);
@@ -262,6 +289,8 @@ static inline void _ir_instr_store_set(p_ir_instr p_instr, p_ir_operand p_addr, 
             .p_addr = p_addr,
             .p_src = p_src,
             .is_stack_ptr = is_stack_ptr,
+            .p_array_des = NULL,
+            .p_array_src = NULL,
         },
         .node = p_instr->node,
         .instr_id = p_instr->instr_id,
@@ -276,11 +305,32 @@ void ir_instr_reset_store(p_ir_instr p_instr, p_ir_operand p_addr, p_ir_operand 
     _ir_instr_inner_drop(p_instr);
     _ir_instr_store_set(p_instr, p_addr, p_src, is_stack_ptr);
 }
+void ir_load_instr_set_varray_src(p_ir_instr p_load, p_ir_varray_use p_src) {
+    if (p_load->ir_load.p_array_src)
+        ir_varray_use_drop(p_load->ir_load.p_array_src);
+    p_load->ir_load.p_array_src = p_src;
+    if (p_src)
+        ir_varray_set_instr_use(p_src, p_load);
+}
 p_ir_instr ir_store_instr_gen(p_ir_operand p_addr, p_ir_operand p_src, bool is_stack_ptr) {
     p_ir_instr p_instr = malloc(sizeof(*p_instr));
     _ir_instr_init(p_instr);
     _ir_instr_store_set(p_instr, p_addr, p_src, is_stack_ptr);
     return p_instr;
+}
+void ir_store_instr_set_varray_des(p_ir_instr p_store, p_ir_varray p_des) {
+    if (p_store->ir_store.p_array_des)
+        ir_varray_set_instr_def(p_store->ir_store.p_array_des, NULL);
+    p_store->ir_store.p_array_des = p_des;
+    if (p_des)
+        ir_varray_set_instr_def(p_des, p_store);
+}
+void ir_store_instr_set_varray_src(p_ir_instr p_store, p_ir_varray_use p_src) {
+    if (p_store->ir_store.p_array_src)
+        ir_varray_use_drop(p_store->ir_store.p_array_src);
+    p_store->ir_store.p_array_src = p_src;
+    if (p_src)
+        ir_varray_set_instr_use(p_src, p_store);
 }
 void ir_instr_add_prev(p_ir_instr p_prev, p_ir_instr p_next) {
     p_prev->p_basic_block = p_next->p_basic_block;
@@ -394,7 +444,8 @@ void ir_set_gep_instr_offset(p_ir_instr p_gep, p_ir_operand p_offset) {
 }
 void ir_set_call_instr_des(p_ir_instr p_call, p_ir_vreg p_des) {
     p_call->ir_call.p_des = p_des;
-    ir_vreg_set_instr_def(p_des, p_call);
+    if (p_des)
+        ir_vreg_set_instr_def(p_des, p_call);
 }
 void ir_set_store_instr_src(p_ir_instr p_store, p_ir_operand p_src) {
     p_store->ir_store.p_src = p_src;

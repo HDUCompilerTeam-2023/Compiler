@@ -33,6 +33,10 @@ struct symbol_func {
     list_head param;
     size_t stack_size;
 
+    list_head param_vmem_base;
+    size_t param_vmem_base_num;
+    size_t varray_num;
+
     p_nestedtree_node p_nestedtree_root;
 
     p_call_graph_node p_call_graph_node;

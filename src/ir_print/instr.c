@@ -1,6 +1,7 @@
 #include <ir/basic_block.h>
 #include <ir/instr.h>
 #include <ir/param.h>
+#include <ir/varray.h>
 #include <ir_print.h>
 #include <stdio.h>
 #include <symbol_print.h>
@@ -111,6 +112,17 @@ void ir_call_instr_print(p_ir_call_instr p_instr) {
             printf(", ");
     }
     printf(")");
+    if (!list_head_alone(&p_instr->varray_defs)) {
+        printf("\n        <");
+        p_list_head p_node;
+        list_for_each(p_node, &p_instr->varray_defs) {
+            p_ir_varray_def_pair p_pair = list_entry(p_node, ir_varray_def_pair, node);
+            ir_varray_def_pair_print(p_pair);
+            if (p_node->p_next != &p_instr->varray_defs)
+                printf(", ");
+        }
+        printf(">");
+    }
 }
 
 void ir_gep_instr_print(p_ir_gep_instr p_instr) {
@@ -127,6 +139,11 @@ void ir_load_instr_print(p_ir_load_instr p_instr) {
     ir_vreg_print(p_instr->p_des);
     printf(" = load ");
     ir_operand_print(p_instr->p_addr);
+    if (p_instr->p_array_src) {
+        printf("[");
+        ir_varray_use_print(p_instr->p_array_src);
+        printf("]");
+    }
 }
 
 void ir_store_instr_print(p_ir_store_instr p_instr) {
@@ -134,4 +151,11 @@ void ir_store_instr_print(p_ir_store_instr p_instr) {
     ir_operand_print(p_instr->p_addr);
     printf(" = ");
     ir_operand_print(p_instr->p_src);
+    if (p_instr->p_array_des) {
+        printf("\n        <");
+        ir_varray_print(p_instr->p_array_des);
+        printf(" = update ");
+        ir_varray_use_print(p_instr->p_array_src);
+        printf(">");
+    }
 }

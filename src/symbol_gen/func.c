@@ -5,6 +5,7 @@
 #include <ir_gen/instr.h>
 #include <ir_gen/operand.h>
 #include <ir_gen/param.h>
+#include <ir_gen/varray.h>
 #include <ir_gen/vreg.h>
 #include <ir_manager/buildnestree.h>
 
@@ -28,12 +29,30 @@ p_symbol_func symbol_func_gen(const char *name, basic_type b_type, bool is_va) {
         .stack_size = 0,
         .instr_num = 0,
         .if_updated_graph = true,
+        .param_vmem_base_num = 0,
+        .param_vmem_base = list_head_init(&p_func->param_vmem_base),
+        .varray_num = 0,
     };
     ir_call_graph_node_gen(p_func);
     strcpy(p_func->name, name);
     return p_func;
 }
-
+void symbol_func_param_vmem_base_add(p_symbol_func p_func, p_ir_param_vmem_base p_vmem_base) {
+    p_func->varray_num += p_vmem_base->p_param_base->num;
+    assert(list_add_prev(&p_vmem_base->node, &p_func->param_vmem_base));
+}
+p_ir_param_vmem_base symbol_func_get_param_vmem_base(p_symbol_func p_func, p_ir_vreg p_vreg) {
+    assert(p_vreg->def_type == func_param_def);
+    assert(p_vreg->p_func == p_func);
+    p_list_head p_node;
+    list_for_each(p_node, &p_func->param_vmem_base) {
+        p_ir_param_vmem_base p_base = list_entry(p_node, ir_param_vmem_base, node);
+        assert(!p_base->p_param_base->is_vmem);
+        if (p_vreg == p_base->p_vreg)
+            return p_base;
+    }
+    assert(0);
+}
 void symbol_func_bb_add_tail(p_symbol_func p_func, p_ir_basic_block p_basic_block) {
     p_basic_block->p_func = p_func;
     if (p_basic_block->p_branch->kind == ir_ret_branch)
@@ -61,12 +80,18 @@ void symbol_func_bb_del(p_symbol_func p_func, p_ir_basic_block p_basic_block) {
     ir_basic_block_drop(p_basic_block);
     p_func->if_updated_graph = true;
 }
-
+void symbol_func_param_vmem_base_drop(p_symbol_func p_func, p_ir_param_vmem_base p_base) {
+    p_func->param_vmem_base_num--;
+    ir_param_vmem_base_drop(p_base);
+}
 void symbol_func_param_reg_add(p_symbol_func p_func, p_ir_vreg p_vreg) {
     list_add_prev(&p_vreg->node, &p_func->param_reg_list);
     p_vreg->def_type = func_param_def;
     p_vreg->p_func = p_func;
     ++p_func->param_reg_cnt;
+    if (p_vreg->p_type->ref_level) {
+        symbol_func_param_vmem_base_add(p_func, ir_param_vmem_base_gen(p_vreg, p_func));
+    }
 }
 void symbol_func_param_reg_del(p_symbol_func p_func, p_ir_vreg p_vreg) {
     assert(p_vreg->p_func == p_func);
@@ -136,6 +161,8 @@ void symbol_func_add_variable(p_symbol_func p_func, p_symbol_var p_var) {
     assert(!p_var->p_func && !p_var->p_program);
     p_var->p_func = p_func;
     p_var->is_global = false;
+    assert(p_var->p_base);
+    p_func->varray_num += p_var->p_base->num;
     list_add_prev(&p_var->node, &p_func->variable);
 }
 
@@ -148,6 +175,10 @@ void symbol_func_drop(p_symbol_func p_func) {
     while (!list_head_alone(&p_func->block)) {
         p_ir_basic_block p_del = list_entry(p_func->block.p_next, ir_basic_block, node);
         symbol_func_bb_del(p_func, p_del);
+    }
+    while (!list_head_alone(&p_func->param_vmem_base)) {
+        p_ir_param_vmem_base p_del = list_entry(p_func->param_vmem_base.p_next, ir_param_vmem_base, node);
+        symbol_func_param_vmem_base_drop(p_func, p_del);
     }
     while (!list_head_alone(&p_func->param)) {
         p_symbol_var p_del = list_entry(p_func->param.p_next, symbol_var, node);
@@ -174,6 +205,8 @@ void symbol_func_drop(p_symbol_func p_func) {
     ir_side_effects_drop(p_func);
     func_loop_info_drop(p_func);
     assert(p_func->var_cnt == 0);
+    assert(p_func->param_vmem_base_num == 0);
+    assert(p_func->varray_num == 0);
     assert(p_func->block_cnt == 0);
     assert(p_func->instr_num == 0);
     assert(p_func->vreg_cnt == 0);
@@ -182,20 +215,55 @@ void symbol_func_drop(p_symbol_func p_func) {
     free(p_func);
 }
 
+void symbol_func_clear_varible(p_symbol_func p_func) {
+    if (!p_func->var_cnt)
+        return;
+    p_list_head p_node, p_next;
+    list_for_each_safe(p_node, p_next, &p_func->param_vmem_base) {
+        p_ir_param_vmem_base p_base = list_entry(p_node, ir_param_vmem_base, node);
+        if (p_base->p_param_base->num == 0)
+            symbol_func_param_vmem_base_drop(p_func, p_base);
+    }
+    list_for_each_safe(p_node, p_next, &p_func->param) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        if (p_var->p_base->num == 0)
+            symbol_var_drop(p_var);
+    }
+    list_for_each_safe(p_node, p_next, &p_func->variable) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        if (p_var->p_base->num == 0)
+            symbol_var_drop(p_var);
+    }
+    symbol_func_set_varible_id(p_func);
+}
+
 void symbol_func_set_varible_id(p_symbol_func p_func) {
     size_t id = 0;
     p_list_head p_node, p_next;
-    list_for_each_safe(p_node, p_next, &p_func->param) {
+    size_t param_vmem_num = 0;
+    size_t varray_num = 0;
+    list_for_each(p_node, &p_func->param_vmem_base) {
+        p_ir_param_vmem_base p_param_base = list_entry(p_node, ir_param_vmem_base, node);
+        ir_vmem_base_set_varray_id(p_param_base->p_param_base);
+        p_param_base->id = param_vmem_num;
+        varray_num += p_param_base->p_param_base->num;
+        param_vmem_num++;
+    }
+    list_for_each(p_node, &p_func->param) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        assert(p_var->p_base);
+        ir_vmem_base_set_varray_id(p_var->p_base);
+        varray_num += p_var->p_base->num;
         p_var->id = id++;
     }
     list_for_each_safe(p_node, p_next, &p_func->variable) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        if (list_head_alone(&p_var->ref_list)) {
-            symbol_var_drop(p_var);
-            continue;
-        }
+        assert(p_var->p_base);
+        ir_vmem_base_set_varray_id(p_var->p_base);
+        varray_num += p_var->p_base->num;
         p_var->id = id++;
     }
     assert(id == p_func->var_cnt);
+    assert(param_vmem_num == p_func->param_vmem_base_num);
+    assert(varray_num == p_func->varray_num);
 }
