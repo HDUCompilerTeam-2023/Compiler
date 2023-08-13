@@ -13,6 +13,7 @@ bool program_add_global(p_program p_program, p_symbol_var p_var);
 bool program_add_function(p_program p_program, p_symbol_func p_func);
 bool program_add_ext_function(p_program p_program, p_symbol_func p_func);
 
+void program_clear_varible(p_program p_program);
 void program_del_global(p_program p_program, p_symbol_var p_var);
 void program_global_set_id(p_program p_program);
 

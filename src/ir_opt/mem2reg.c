@@ -335,7 +335,6 @@ void mem2reg_func_pass(p_symbol_func p_func) {
     convert_ssa_dfs_seq_drop(p_convert_list);
     ssa_var_list_info_drop(p_var_list);
 
-    symbol_func_set_varible_id(p_func);
     symbol_func_set_block_id(p_func);
 }
 

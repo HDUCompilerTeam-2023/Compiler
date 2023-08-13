@@ -8,6 +8,9 @@ typedef struct ir_basic_block_branch_target ir_basic_block_branch_target, *p_ir_
 typedef struct ir_branch_target_node ir_branch_target_node, *p_ir_branch_target_node;
 typedef struct ir_bb_param ir_bb_param, *p_ir_bb_param;
 typedef struct ir_bb_phi ir_bb_phi, *p_ir_bb_phi;
+typedef struct ir_varray_bb_param ir_varray_bb_param, *p_ir_varray_bb_param;
+typedef struct ir_varray_bb_phi ir_varray_bb_phi, *p_ir_varray_bb_phi;
+
 typedef struct ir_vreg_list ir_vreg_list, *p_ir_vreg_list;
 typedef struct ir_vreg_list_node ir_vreg_list_node, *p_ir_vreg_list_node;
 
@@ -34,7 +37,14 @@ typedef struct ir_alloca_instr ir_alloca_instr, *p_ir_alloca_instr;
 typedef struct ir_gep_instr ir_gep_instr, *p_ir_gep_instr;
 typedef struct ir_load_instr ir_load_instr, *p_ir_load_instr;
 typedef struct ir_store_instr ir_store_instr, *p_ir_store_instr;
+
+typedef struct ir_varray_def_pair ir_varray_def_pair, *p_ir_varray_def_pair;
 typedef struct ir_call_instr ir_call_instr, *p_ir_call_instr;
 typedef struct ir_ret_instr ir_ret_instr, *p_ir_ret_instr;
 typedef struct ir_br_instr ir_br_instr, *p_ir_br_instr;
 typedef struct ir_condbr_instr ir_condbr_instr, *p_ir_condbr_instr;
+
+typedef struct ir_param_vmem_base ir_param_vmem_base, *p_ir_param_vmem_base;
+typedef struct ir_vmem_base ir_vmem_base, *p_ir_vmem_base;
+typedef struct ir_varray ir_varray, *p_ir_varray;
+typedef struct ir_varray_use ir_varray_use, *p_ir_varray_use;

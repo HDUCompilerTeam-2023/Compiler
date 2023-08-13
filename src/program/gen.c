@@ -13,6 +13,7 @@ p_program program_gen(const char *input, const char *output) {
         .function = list_head_init(&p_program->function),
         .ext_function = list_head_init(&p_program->ext_function),
         .string = list_head_init(&p_program->string),
+        .varray_num = 0,
         .variable_cnt = 0,
         .function_cnt = 0,
         .ext_function_cnt = 0,
@@ -42,6 +43,15 @@ p_program program_gen(const char *input, const char *output) {
     }
     return p_program;
 }
+void program_clear_varible(p_program p_program) {
+    p_list_head p_node, p_next;
+    list_for_each_safe(p_node, p_next, &p_program->variable) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        if (p_var->p_base->num == 0)
+            symbol_var_drop(p_var);
+    }
+    program_global_set_id(p_program);
+}
 void program_drop(p_program p_program) {
     while (!list_head_alone(&p_program->function)) {
         p_symbol_func p_del = list_entry(p_program->function.p_next, symbol_func, node);
@@ -69,6 +79,8 @@ void program_drop(p_program p_program) {
         arm_func_drop(p_del);
     }
     assert(p_program->variable_cnt == 0);
+    assert(p_program->varray_num == 0);
+
     free(p_program->input);
     free(p_program->output);
     free(p_program);
@@ -100,14 +112,14 @@ bool program_add_ext_function(p_program p_program, p_symbol_func p_func) {
 
 void program_global_set_id(p_program p_program) {
     size_t id = 0;
-    p_list_head p_node, p_next;
-    list_for_each_safe(p_node, p_next, &p_program->variable) {
+    size_t varray_num = 0;
+    p_list_head p_node;
+    list_for_each(p_node, &p_program->variable) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        if (list_head_alone(&p_var->ref_list)) {
-            symbol_var_drop(p_var);
-            continue;
-        }
+        ir_vmem_base_set_varray_id(p_var->p_base);
+        varray_num += p_var->p_base->num;
         p_var->id = id++;
     }
     assert(id == p_program->variable_cnt);
+    assert(varray_num == p_program->varray_num);
 }

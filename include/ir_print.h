@@ -5,6 +5,6 @@
 #include <ir_print/instr.h>
 #include <ir_print/operand.h>
 #include <ir_print/param.h>
+#include <ir_print/varray.h>
 #include <ir_print/vreg.h>
-
 #endif

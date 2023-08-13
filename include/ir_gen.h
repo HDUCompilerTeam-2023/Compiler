@@ -7,5 +7,5 @@
 #include <ir_gen/operand.h>
 #include <ir_gen/param.h>
 #include <ir_gen/vreg.h>
-
+#include <ir_gen/varray.h>
 #endif

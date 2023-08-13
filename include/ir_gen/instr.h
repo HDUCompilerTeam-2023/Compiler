@@ -6,11 +6,16 @@ p_ir_instr ir_binary_instr_gen(ir_binary_op op, p_ir_operand p_src1, p_ir_operan
 p_ir_instr ir_unary_instr_gen(ir_unary_op op, p_ir_operand p_src, p_ir_vreg p_des);
 
 p_ir_instr ir_call_instr_gen(p_symbol_func p_func, p_ir_vreg p_des);
+void ir_call_instr_add_varray_def_pair(p_ir_instr p_instr, p_ir_varray_def_pair p_def_pair);
 void ir_call_param_list_add(p_ir_instr p_instr, p_ir_operand p_param);
 
 p_ir_instr ir_gep_instr_gen(p_ir_operand p_addr, p_ir_operand p_offset, p_ir_vreg p_des, bool is_element);
 p_ir_instr ir_load_instr_gen(p_ir_operand p_addr, p_ir_vreg p_des, bool is_stack_ptr);
+void ir_load_instr_set_varray_src(p_ir_instr p_load, p_ir_varray_use p_src);
+
 p_ir_instr ir_store_instr_gen(p_ir_operand p_addr, p_ir_operand p_src, bool is_stack_ptr);
+void ir_store_instr_set_varray_des(p_ir_instr p_store, p_ir_varray p_des);
+void ir_store_instr_set_varray_src(p_ir_instr p_store, p_ir_varray_use p_src);
 
 void ir_instr_reset_binary(p_ir_instr p_instr, ir_binary_op op, p_ir_operand p_src1, p_ir_operand p_src2, p_ir_vreg p_des);
 void ir_instr_reset_unary(p_ir_instr p_instr, ir_unary_op op, p_ir_operand p_src, p_ir_vreg p_des);
