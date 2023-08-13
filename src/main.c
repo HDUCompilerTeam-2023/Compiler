@@ -24,7 +24,7 @@
 #include <ir_opt/gvn.h>
 #include <backend/arm/arm_delete_non_use_block.h>
 #include <stdio.h>
-
+#include <ir_opt/mem_copy_propagation.h>
 int main(int argc, char *argv[]) {
     char *in_file = NULL, *out_file = NULL;
     bool is_opt = false;
