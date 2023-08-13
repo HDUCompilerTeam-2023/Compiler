@@ -151,10 +151,14 @@ void symbol_func_drop(p_symbol_func p_func) {
     }
     while (!list_head_alone(&p_func->param)) {
         p_symbol_var p_del = list_entry(p_func->param.p_next, symbol_var, node);
+        assert(!p_del->is_global);
+        assert(p_del->p_func == p_func);
         symbol_var_drop(p_del);
     }
     while (!list_head_alone(&p_func->variable)) {
         p_symbol_var p_del = list_entry(p_func->variable.p_next, symbol_var, node);
+        assert(!p_del->is_global);
+        assert(p_del->p_func == p_func);
         symbol_var_drop(p_del);
     }
     while (!list_head_alone(&p_func->param_reg_list)) {
@@ -169,6 +173,7 @@ void symbol_func_drop(p_symbol_func p_func) {
     ir_call_graph_node_drop(p_func);
     ir_side_effects_drop(p_func);
     func_loop_info_drop(p_func);
+    assert(p_func->var_cnt == 0);
     assert(p_func->block_cnt == 0);
     assert(p_func->instr_num == 0);
     assert(p_func->vreg_cnt == 0);
