@@ -25,6 +25,7 @@ struct ir_basic_block {
     p_ir_basic_block_branch p_branch;
 
     list_head prev_branch_target_list;
+    size_t prev_num;
     list_head node;
 
     // SSA 相关

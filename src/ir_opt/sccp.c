@@ -602,7 +602,6 @@ static inline void _ir_opt_sccp_func(p_symbol_func p_func) {
                     else {
                         assert(p_const->i32const);
                     }
-                    ir_basic_block_branch_del_prev_target(p_bb->p_branch->p_target_2);
                     ir_basic_block_branch_target_drop(p_bb, p_bb->p_branch->p_target_2);
                     p_bb->p_branch->p_target_2 = NULL;
 
