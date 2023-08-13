@@ -168,7 +168,7 @@ void symbol_func_drop(p_symbol_func p_func) {
     }
     ir_call_graph_node_drop(p_func);
     ir_side_effects_drop(p_func);
-    nestedtree_node_drop(p_func->p_nestedtree_root);
+    fun_loop_info_drop(p_func);
     assert(p_func->block_cnt == 0);
     assert(p_func->instr_num == 0);
     assert(p_func->vreg_cnt == 0);

@@ -43,7 +43,6 @@ p_program program_gen(const char *input, const char *output) {
     return p_program;
 }
 void program_drop(p_program p_program) {
-    program_nestedtree_drop(p_program);
     while (!list_head_alone(&p_program->function)) {
         p_symbol_func p_del = list_entry(p_program->function.p_next, symbol_func, node);
         symbol_func_drop(p_del);
