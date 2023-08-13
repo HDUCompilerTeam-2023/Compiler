@@ -28,6 +28,7 @@ struct ir_basic_block {
     size_t prev_num;
     list_head node;
 
+    list_head seqs_node;
     // SSA 相关
     list_head basic_block_phis; // 基本块参数列表
     p_ir_basic_block p_dom_parent; // 支配树上的父亲
@@ -48,6 +49,8 @@ struct ir_basic_block {
 
     p_symbol_func p_func;
     bool if_visited;
+
+    void *p_info;
 };
 struct ir_branch_target_node {
     p_ir_basic_block_branch_target p_target;
