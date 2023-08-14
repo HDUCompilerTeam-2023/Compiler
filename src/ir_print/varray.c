@@ -24,9 +24,14 @@ void ir_varray_print(p_ir_varray p_varray) {
         printf("%%A%ld.%ld", p_varray->p_base->p_param_base->id, p_varray->id);
 }
 void ir_varray_def_pair_print(p_ir_varray_def_pair p_pair) {
-    assert(p_pair->p_des);
     assert(p_pair->p_src);
-    ir_varray_print(p_pair->p_des);
-    printf(" = update ");
-    ir_varray_use_print(p_pair->p_src);
+    if (p_pair->p_des) {
+        ir_varray_print(p_pair->p_des);
+        printf(" = update ");
+        ir_varray_use_print(p_pair->p_src);
+    }
+    else{
+        printf(" use ");
+        ir_varray_use_print(p_pair->p_src);
+    }
 }

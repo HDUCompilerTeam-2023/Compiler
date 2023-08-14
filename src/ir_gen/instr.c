@@ -33,10 +33,7 @@ static inline void _ir_instr_inner_drop(p_ir_instr p_instr) {
     case ir_call:
         while (!list_head_alone(&p_instr->ir_call.varray_defs)) {
             p_ir_varray_def_pair p_def_pair = list_entry(p_instr->ir_call.varray_defs.p_next, ir_varray_def_pair, node);
-            assert(p_def_pair->p_des->varray_def_type == varray_instr_def);
-            assert(p_def_pair->p_des->p_instr_def == p_instr);
-            assert(p_def_pair->p_src->varray_use_type == varray_instr_use);
-            assert(p_def_pair->p_src->p_instr == p_instr);
+            assert(p_def_pair->p_instr == p_instr);
             ir_varray_def_pair_drop(p_def_pair);
         }
         while (!list_head_alone(&p_instr->ir_call.param_list)) {
@@ -214,8 +211,7 @@ p_ir_instr ir_call_instr_gen(p_symbol_func p_func, p_ir_vreg p_des) {
     return p_instr;
 }
 void ir_call_instr_add_varray_def_pair(p_ir_instr p_instr, p_ir_varray_def_pair p_def_pair) {
-    ir_varray_set_instr_def(p_def_pair->p_des, p_instr);
-    ir_varray_set_instr_use(p_def_pair->p_src, p_instr);
+    p_def_pair->p_instr = p_instr;
     list_add_prev(&p_def_pair->node, &p_instr->ir_call.varray_defs);
 }
 void ir_call_param_list_add(p_ir_instr p_instr, p_ir_operand p_param) {

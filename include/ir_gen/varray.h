@@ -12,13 +12,17 @@ p_ir_varray_use ir_varray_use_gen(p_ir_varray p_varray);
 void ir_varray_use_reset_varray(p_ir_varray_use p_use, p_ir_varray p_varray);
 p_ir_varray_def_pair ir_varray_def_pair_gen(p_ir_varray p_des, p_ir_varray_use p_src);
 void ir_varray_set_instr_def(p_ir_varray p_varray, p_ir_instr p_instr);
+void ir_varray_set_def_pair_def(p_ir_varray p_varray, p_ir_varray_def_pair p_pair);
 void ir_varray_set_func_def(p_ir_varray p_varray, p_symbol_func p_func);
 void ir_varray_set_bb_phi_def(p_ir_varray p_varray, p_ir_varray_bb_phi p_varray_bb_phi);
 void ir_varray_set_global_def(p_ir_varray p_varray);
 void ir_varray_set_instr_use(p_ir_varray_use p_varray_use, p_ir_instr p_instr);
+void ir_varray_set_def_pair_use(p_ir_varray_use p_varray_use, p_ir_varray_def_pair p_pair);
 void ir_varray_set_bb_parram_use(p_ir_varray_use p_varray_use, p_ir_varray_bb_param p_ir_varray_bb_param);
-
 void ir_vmem_base_set_varray_id(p_ir_vmem_base p_base);
+
+void ir_varray_def_pair_set_des(p_ir_varray_def_pair p_def_pair, p_ir_varray p_varray);
+void ir_varray_def_pair_set_src(p_ir_varray_def_pair p_def_pair, p_ir_varray_use p_varray_use);
 
 void ir_varray_use_drop(p_ir_varray_use p_use);
 void ir_vmem_base_clear(p_ir_vmem_base p_base);

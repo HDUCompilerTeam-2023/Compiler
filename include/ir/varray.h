@@ -27,12 +27,14 @@ struct ir_varray {
     enum {
         varray_func_def,
         varray_bb_phi_def,
+        varray_def_pair_def,
         varray_instr_def,
         varray_global_def,
     } varray_def_type;
     union {
         p_ir_instr p_instr_def;
         p_ir_varray_bb_phi p_varray_bb_phi;
+        p_ir_varray_def_pair p_pair;
         p_symbol_func p_func;
     };
     list_head use_list;
@@ -46,10 +48,12 @@ struct ir_varray_use {
     enum {
         varray_bb_param_use,
         varray_instr_use,
+        varray_def_pair_use,
     } varray_use_type;
     union {
         p_ir_instr p_instr;
         p_ir_varray_bb_param p_varray_param;
+        p_ir_varray_def_pair p_pair;
     };
     list_head node;
 };
@@ -57,6 +61,7 @@ struct ir_varray_use {
 struct ir_varray_def_pair {
     p_ir_varray p_des;
     p_ir_varray_use p_src;
+    p_ir_instr p_instr;
     list_head node;
 };
 #endif
