@@ -570,7 +570,10 @@ void accumulation_analysis(p_nestedtree_node root) {
                 else
                     p2 = ir_operand_float_gen(1.0);
                 p_count = ir_vreg_copy(p_count);
-                instr_insert(ir_add_op, p1, p2, p_count, p_exit_block);
+                if (root->p_loop_step->p_cond_instr->ir_binary.op == ir_leq_op)
+                    instr_insert(ir_add_op, p1, p2, p_count, p_exit_block);
+                else if (root->p_loop_step->p_cond_instr->ir_binary.op == ir_geq_op)
+                    instr_insert(ir_sub_op, p1, p2, p_count, p_exit_block);
                 // list_add_prev(&p_add_instr->node, &p_info->instr_list);
             }
 
