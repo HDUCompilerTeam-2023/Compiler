@@ -70,6 +70,9 @@ void scc_info_target1_gen(p_ir_basic_block p_block, p_ir_basic_block to);
 void scc_info_target2_gen(p_ir_basic_block p_block, p_ir_basic_block to);
 void ir_natual_loop_bb_drop(p_ir_basic_block p_basic_block);
 
+void ir_endless_loop_check(p_program p_program);
+void endless_loop_check(p_nestedtree_node p_root);
+
 void program_ir_scc_info_print(p_program p_program);
 void program_ir_nestree_print(p_program p_program);
 #endif

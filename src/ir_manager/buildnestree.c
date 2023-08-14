@@ -15,6 +15,35 @@ void ir_build_program_nestedtree(p_program p_program) {
     program_ir_nestree_print(p_program);
 }
 
+void ir_endless_loop_check(p_program p_program) {
+    ir_build_program_nestedtree(p_program);
+    p_list_head p_node;
+    list_for_each(p_node, &p_program->function) {
+        p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        if (p_func->p_nestedtree_root) endless_loop_check(p_func->p_nestedtree_root);
+    }
+}
+
+void endless_loop_check(p_nestedtree_node root) {
+    p_list_head p_node;
+    list_for_each(p_node, &root->son_list) {
+        p_nestedtree_node p_son_node = list_entry(p_node, nested_list_node, node)->p_nested_node;
+        endless_loop_check(p_son_node);
+    }
+    if (!root->head) return;
+    bool flag = false;
+    list_for_each(p_node, &root->head->loop_node_list) {
+        p_ir_basic_block p_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
+        p_ir_basic_block_branch_target p_target1 = p_block->p_branch->p_target_1;
+        p_ir_basic_block_branch_target p_target2 = p_block->p_branch->p_target_2;
+        if (p_target1 && !search(root->rbtree->root, (uint64_t) p_target1->p_block)) flag = true;
+        if (p_target2 && !search(root->rbtree->root, (uint64_t) p_target2->p_block)) flag = true;
+        if (flag) return;
+    }
+    printf("endless loop head: %ld\n", root->head->block_id);
+    assert(0);
+}
+
 void ir_build_func_nestedtree(p_symbol_func p_func) {
     if (list_head_alone(&p_func->block)) return;
     func_loop_info_drop(p_func);
