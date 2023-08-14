@@ -364,8 +364,6 @@ static inline void delete_all(p_reverse_dom_tree_info_list p_info_list, p_reg_in
             if (p_block->p_branch->p_exp->kind == reg && !(reg_info_table->p_base + p_block->p_branch->p_exp->p_vreg->id)->p_prev) {
                 assert(p_block->p_branch->kind == ir_cond_branch);
                 assert(reg_info_table->if_aggressive);
-                assert(list_head_alone(&p_block->p_branch->p_target_1->block_param));
-                assert(list_head_alone(&p_block->p_branch->p_target_2->block_param));
                 ir_basic_block_branch_target_drop(p_block, p_block->p_branch->p_target_1);
                 ir_basic_block_branch_target_drop(p_block, p_block->p_branch->p_target_2);
                 ir_operand_drop(p_block->p_branch->p_exp);
