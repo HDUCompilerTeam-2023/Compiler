@@ -139,6 +139,7 @@ static inline void _global_variable_localize(p_symbol_var p_var) {
     if (p_node == &p_var->ref_list) {
         if (strcmp(p_func->name, "main"))
             return;
+        ir_vmem_base_clear_all(p_var->p_base);
         symbol_var_del(p_var);
         symbol_func_add_variable(p_func, p_var);
         assert(p_var->p_type->ref_level > 0 || list_head_alone(&p_var->p_type->array));

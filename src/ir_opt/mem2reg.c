@@ -431,8 +431,25 @@ static inline void print_dom_frontier(p_convert_ssa_list p_convert_list) {
     }
     printf("--- dom_frontier end---\n");
 }
-
+static inline void clear_var_varray(p_list_head p_head) {
+    p_list_head p_node;
+    list_for_each(p_node, p_head) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        assert(p_var->p_base);
+        ir_vmem_base_clear_all(p_var->p_base);
+    }
+}
+static inline void clear_param_varray(p_symbol_func p_func) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_func->param_vmem_base) {
+        p_ir_param_vmem_base p_param = list_entry(p_node, ir_param_vmem_base, node);
+        assert(p_param->p_param_base);
+        ir_vmem_base_clear_all(p_param->p_param_base);
+    }
+}
 void mem2reg_func_pass(p_symbol_func p_func, p_program p_program) {
+    clear_var_varray(&p_func->variable);
+    clear_param_varray(p_func);
     // 初始化变量集合
     p_ssa_var_list_info p_var_list = mem2reg_init_var_list(p_func, p_program);
     p_convert_ssa_list p_convert_list = mem2reg_info_gen(p_func, p_var_list->vmem_base_num);
@@ -457,6 +474,7 @@ void mem2reg_func_pass(p_symbol_func p_func, p_program p_program) {
 }
 
 void mem2reg_program_pass(p_program p_program) {
+    clear_var_varray(&p_program->variable);
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);

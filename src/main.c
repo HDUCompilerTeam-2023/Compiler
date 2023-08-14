@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
     // into ssa
     ir_simplify_cfg_pass(p_program);
     mem2reg_program_pass(p_program);
+    ir_opt_mem_copy_propagation(p_program);
     ir_deadcode_elimate_pass(p_program, true);
 
     size_t n = 3;

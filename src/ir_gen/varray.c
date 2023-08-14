@@ -105,14 +105,56 @@ void ir_vmem_base_set_varray_id(p_ir_vmem_base p_base) {
     }
     assert(id == p_base->num);
 }
-
-void ir_vmem_base_drop(p_ir_vmem_base p_base) {
+void ir_vmem_base_clear(p_ir_vmem_base p_base) {
     assert(p_base);
     p_list_head p_node, p_next;
     list_for_each_safe(p_node, p_next, &p_base->varray_list) {
         p_ir_varray p_varray = list_entry(p_node, ir_varray, node);
         ir_varray_drop(p_varray);
     }
+}
+void ir_vmem_base_clear_all(p_ir_vmem_base p_base) {
+    p_list_head p_node, p_next;
+    list_for_each_safe(p_node, p_next, &p_base->varray_list) {
+        p_ir_varray p_varray = list_entry(p_node, ir_varray, node);
+        p_list_head p_node, p_next;
+        list_for_each_safe(p_node, p_next, &p_varray->use_list) {
+            p_ir_varray_use p_use = list_entry(p_node, ir_varray_use, node);
+            p_list_head p_call_node, p_call_next;
+            p_ir_instr p_use_instr;
+            switch (p_use->varray_use_type) {
+            case varray_instr_use:
+                p_use_instr = p_use->p_instr;
+                switch (p_use->p_instr->irkind) {
+                case ir_load:
+                    ir_load_instr_set_varray_src(p_use_instr, NULL);
+                    break;
+                case ir_call:
+                    list_for_each_safe(p_call_node, p_call_next, &p_use_instr->ir_call.varray_defs) {
+                        ir_varray_def_pair_drop(list_entry(p_call_node, ir_varray_def_pair, node));
+                    }
+                    break;
+                case ir_store:
+                    ir_store_instr_set_varray_des(p_use_instr, NULL);
+                    ir_store_instr_set_varray_src(p_use_instr, NULL);
+                    break;
+                default:
+                    assert(0);
+                    break;
+                }
+            case varray_bb_param_use:
+                break;
+            }
+        }
+        if (p_varray->varray_def_type == varray_bb_phi_def) {
+            assert(p_varray->p_varray_bb_phi);
+            ir_varray_bb_phi_drop(p_varray->p_varray_bb_phi);
+        }
+    }
+    ir_vmem_base_clear(p_base);
+}
+void ir_vmem_base_drop(p_ir_vmem_base p_base) {
+    ir_vmem_base_clear(p_base);
     free(p_base);
 }
 void ir_varray_use_drop(p_ir_varray_use p_use) {

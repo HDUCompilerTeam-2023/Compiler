@@ -470,6 +470,7 @@ static inline void ir_dead_code_elimate_func(p_symbol_func p_func, bool if_aggre
 static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive) {
     p_list_head p_node;
     p_varray_info varray_info_base = malloc(sizeof(*varray_info_base) * p_ir->varray_num);
+    size_t varray_num = p_ir->varray_num;
     size_t i = 0;
     list_for_each(p_node, &p_ir->variable) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
@@ -487,8 +488,7 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
         ir_dead_code_elimate_func(p_func, if_aggressive);
         symbol_func_set_varible_id(p_func);
     }
-
-    for (size_t j = 0; j < p_ir->varray_num; j++) {
+    for (size_t j = 0; j < varray_num; j++) {
         if (!(varray_info_base + j)->p_prev) {
             ir_varray_drop((varray_info_base + j)->p_varray);
         }

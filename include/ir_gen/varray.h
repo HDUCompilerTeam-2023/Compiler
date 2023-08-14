@@ -21,6 +21,8 @@ void ir_varray_set_bb_parram_use(p_ir_varray_use p_varray_use, p_ir_varray_bb_pa
 void ir_vmem_base_set_varray_id(p_ir_vmem_base p_base);
 
 void ir_varray_use_drop(p_ir_varray_use p_use);
+void ir_vmem_base_clear(p_ir_vmem_base p_base);
+void ir_vmem_base_clear_all(p_ir_vmem_base p_base);
 void ir_vmem_base_drop(p_ir_vmem_base p_base);
 void ir_varray_drop(p_ir_varray p_varray);
 void ir_varray_def_pair_drop(p_ir_varray_def_pair p_def_pair);
