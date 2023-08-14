@@ -24,6 +24,9 @@
 #include <ir_opt/mem_copy_propagation.h>
 #include <ir_opt/reassociate.h>
 #include <ir_opt/reg_alloca/reg_alloca.h>
+#include <ir_opt/globalopt.h>
+#include <ir_opt/inline.h>
+#include <ir_opt/cssa.h>
 #include <ir_opt/sccp.h>
 #include <ir_opt/simplify_cfg.h>
 #include <stdio.h>
@@ -94,6 +97,7 @@ int main(int argc, char *argv[]) {
     arm_imme_trans_pass(p_program);
     set_cond_pass(p_program);
     critical_edge_cut_pass(p_program);
+    ir_opt_cssa_no_pcc(p_program);
     reg_alloca_pass(alloca_color_graph, 13, 32, p_program);
     arm_trans_after_pass(p_program);
     set_cond_pass(p_program);
