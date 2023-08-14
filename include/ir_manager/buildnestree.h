@@ -63,7 +63,7 @@ void ir_nestree_print(p_nestedtree_node p_root, size_t depth);
 void ir_build_func_nestedtree(p_symbol_func p_func);
 void nestedtree_insert(p_ir_basic_block p_basic_block, p_nestedtree_node p_root);
 void nestedtree_tail_list_insert(p_ir_basic_block p_basic_block, p_nestedtree_node root);
-void fun_loop_info_drop(p_symbol_func p_func);
+void func_loop_info_drop(p_symbol_func p_func);
 void nestedtree_node_drop(p_nestedtree_node root);
 
 void scc_info_target1_gen(p_ir_basic_block p_block, p_ir_basic_block to);

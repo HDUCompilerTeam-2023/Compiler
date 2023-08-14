@@ -9,7 +9,6 @@ void ir_build_program_nestedtree(p_program p_program) {
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
-        fun_loop_info_drop(p_func);
         symbol_func_set_block_id(p_func);
         ir_build_func_nestedtree(p_func);
     }
@@ -18,6 +17,7 @@ void ir_build_program_nestedtree(p_program p_program) {
 
 void ir_build_func_nestedtree(p_symbol_func p_func) {
     if (list_head_alone(&p_func->block)) return;
+    func_loop_info_drop(p_func);
     p_list_head p_node;
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
@@ -152,7 +152,7 @@ void nestedtree_tail_list_insert(p_ir_basic_block p_basic_block, p_nestedtree_no
     p_basic_block->p_nestree_node = p_root;
 }
 
-void fun_loop_info_drop(p_symbol_func p_func) {
+void func_loop_info_drop(p_symbol_func p_func) {
     p_list_head p_func_list_node;
     list_for_each(p_func_list_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_func_list_node, ir_basic_block, node);
