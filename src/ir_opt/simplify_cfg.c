@@ -57,7 +57,9 @@ static inline void ir_simplify_cfg_func_remove_no_predesessor_bb(p_symbol_func p
                 p_des = p_instr->ir_call.p_des;
                 p_list_head p_node;
                 list_for_each(p_node, &p_instr->ir_call.varray_defs) {
-                    need_del_varray[del_varray_cnt++] = list_entry(p_node, ir_varray_def_pair, node)->p_des;
+                    p_ir_varray p_des = list_entry(p_node, ir_varray_def_pair, node)->p_des;
+                    if (p_des)
+                        need_del_varray[del_varray_cnt++] = p_des;
                 }
                 break;
             case ir_gep:
@@ -131,7 +133,9 @@ static inline void ir_simplify_cfg_func_remove_anti_no_predesessor_bb(p_symbol_f
                 p_des = p_instr->ir_call.p_des;
                 p_list_head p_node;
                 list_for_each(p_node, &p_instr->ir_call.varray_defs) {
-                    need_del_varray[del_varray_cnt++] = list_entry(p_node, ir_varray_def_pair, node)->p_des;
+                    p_ir_varray p_des = list_entry(p_node, ir_varray_def_pair, node)->p_des;
+                    if (p_des)
+                        need_del_varray[del_varray_cnt++] = p_des;
                 }
                 break;
             case ir_gep:
@@ -289,6 +293,15 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
                 p_ir_vreg p_param_reg = p_param->p_vreg;
                 ir_basic_block_branch_target_add_param(p_prev_target_new, ir_operand_vreg_gen(p_param_reg));
             }
+            p_list_head p_node_phi = p_target->p_block->varray_basic_block_phis.p_next;
+            list_for_each(p_node, &p_target->varray_bb_param) {
+                p_ir_varray_bb_phi p_phi = list_entry(p_node_phi, ir_varray_bb_phi, node);
+                p_ir_varray_use p_varray_param = list_entry(p_node, ir_varray_bb_param, node)->p_varray_bb_param;
+                p_ir_varray p_param_varray = p_varray_param->p_varray_use;
+                ir_basic_block_branch_target_add_varray_param(p_prev_target_new, p_phi, ir_varray_use_gen(p_param_varray));
+                p_node_phi = p_node_phi->p_next;
+            }
+            assert(p_node_phi == &p_target->p_block->varray_basic_block_phis);
             ir_basic_block_branch_target_drop(p_prev_bb, p_prev_target_del);
             *pp_prev_target_del = p_prev_target_new;
             // it's dangerous
@@ -370,8 +383,8 @@ static inline void ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_symbo
 
         p_node_src = p_target->varray_bb_param.p_next;
         list_for_each(p_node, &p_bb->varray_basic_block_phis) {
-            assert(p_node_src != &p_target->block_param);
             p_ir_varray p_des = list_entry(p_node, ir_varray_bb_phi, node)->p_varray_phi;
+            assert(p_node_src != &p_target->varray_bb_param);
             p_ir_varray_use p_src = list_entry(p_node_src, ir_varray_bb_param, node)->p_varray_bb_param;
             p_list_head p_node, p_next;
             list_for_each_safe(p_node, p_next, &p_des->use_list) {
