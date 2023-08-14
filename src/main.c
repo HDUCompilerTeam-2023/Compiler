@@ -3,28 +3,30 @@
 #include <program/gen.h>
 #include <program/print.h>
 
+#include <backend/arm/arm_delete_non_use_block.h>
 #include <backend/arm/ir_arm_asm.h>
+#include <ir_manager/memssa.h>
 #include <ir_manager/set_cond.h>
+#include <ir_opt/copy_propagation.h>
 #include <ir_opt/deadcode_elimate.h>
+#include <ir_opt/gcm.h>
+#include <ir_opt/globalopt.h>
+#include <ir_opt/gvn.h>
+#include <ir_opt/inline.h>
 #include <ir_opt/lir_gen/arm_imme_trans.h>
 #include <ir_opt/lir_gen/arm_param_trans.h>
+#include <ir_opt/lir_gen/arm_trans.h>
 #include <ir_opt/lir_gen/arm_trans_after.h>
 #include <ir_opt/lir_gen/critical_edge_cut.h>
 #include <ir_opt/lir_gen/delete_cmp.h>
 #include <ir_opt/lir_gen/share_trans.h>
 #include <ir_opt/mem2reg.h>
-#include <ir_opt/reg_alloca/reg_alloca.h>
-#include <ir_opt/simplify_cfg.h>
-#include <ir_opt/copy_propagation.h>
-#include <ir_opt/reassociate.h>
-#include <ir_opt/globalopt.h>
-#include <ir_opt/inline.h>
-#include <ir_opt/sccp.h>
-#include <ir_opt/gcm.h>
-#include <ir_opt/gvn.h>
-#include <backend/arm/arm_delete_non_use_block.h>
-#include <stdio.h>
 #include <ir_opt/mem_copy_propagation.h>
+#include <ir_opt/reassociate.h>
+#include <ir_opt/reg_alloca/reg_alloca.h>
+#include <ir_opt/sccp.h>
+#include <ir_opt/simplify_cfg.h>
+#include <stdio.h>
 int main(int argc, char *argv[]) {
     char *in_file = NULL, *out_file = NULL;
     bool is_opt = false;
@@ -57,7 +59,6 @@ int main(int argc, char *argv[]) {
     // into ssa
     ir_simplify_cfg_pass(p_program);
     mem2reg_program_pass(p_program);
-    ir_opt_mem_copy_propagation(p_program);
     ir_deadcode_elimate_pass(p_program, true);
 
     size_t n = 3;
@@ -65,7 +66,7 @@ int main(int argc, char *argv[]) {
         ir_opt_inline(p_program);
 
         ir_opt_globalopt(p_program);
-        mem2reg_program_pass(p_program);
+        memssa_program_pass(p_program);
         ir_deadcode_elimate_pass(p_program, true);
 
         // optimize - need keep block information
@@ -78,11 +79,12 @@ int main(int argc, char *argv[]) {
             ir_deadcode_elimate_pass(p_program, true);
         }
         ir_opt_copy_propagation(p_program);
+        ir_opt_mem_copy_propagation(p_program);
         ir_opt_sccp(p_program);
 
         // deadcode elimate
         ir_deadcode_elimate_pass(p_program, true);
-    } while(n--);
+    } while (n--);
 
     // shared lir trans
     share_lir_trans_pass(p_program);

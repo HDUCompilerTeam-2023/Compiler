@@ -16,20 +16,19 @@ struct convert_ssa {
     p_bitmap p_phi_var; // phi 函数变量集合
     p_bitmap p_def_var; // 定值集合
 
-    bool if_create_phi;
+    p_convert_ssa p_prev;
     bool if_in; // 是否在工作表中
 };
 
 struct ssa_var_info {
-    p_ir_vmem_base p_vmem_base;
-    p_ir_varray p_current_varray;
+    p_symbol_var p_vmem;
+    p_ir_vreg p_current_vreg;
     list_head sym_stack; // 保存进入基本块时的信息
-    size_t id;
 };
 
 struct sym_stack_node {
     list_head node;
-    p_ir_varray p_varray;
+    p_ir_vreg p_vreg;
 };
 
 struct convert_ssa_list {
@@ -39,13 +38,12 @@ struct convert_ssa_list {
 
 struct ssa_var_list_info {
     p_ssa_var_info p_base;
-    size_t vmem_base_num;
+    size_t vmem_num;
     p_symbol_func p_func;
-    p_program p_program;
 };
 
-p_convert_ssa_list mem2reg_info_gen(p_symbol_func p_func, size_t vmem_base_num);
-p_ssa_var_list_info mem2reg_init_var_list(p_symbol_func p_func, p_program p_ir);
+p_convert_ssa_list mem2reg_info_gen(p_symbol_func p_func);
+p_ssa_var_list_info mem2reg_init_var_list(p_symbol_func p_func);
 
 void mem2reg_compute_dom_frontier(p_convert_ssa_list p_convert_list);
 
@@ -53,7 +51,7 @@ void mem2reg_insert_phi(p_convert_ssa_list p_convert_list, p_ssa_var_list_info p
 
 void mem2reg_rename_var(p_ssa_var_list_info p_var_list, p_convert_ssa_list p_convert_list, p_ir_basic_block p_entry);
 
-void mem2reg_func_pass(p_symbol_func p_func, p_program p_program);
+void mem2reg_func_pass(p_symbol_func p_func);
 void mem2reg_program_pass(p_program p_program);
 
 void convert_ssa_dfs_seq_drop(p_convert_ssa_list p_convert_list);

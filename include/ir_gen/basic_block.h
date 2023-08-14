@@ -35,6 +35,7 @@ void ir_basic_block_clear_phi(p_ir_basic_block p_basic_block);
 p_ir_varray_bb_phi ir_basic_block_add_varray_phi(p_ir_basic_block p_basic_block, p_ir_varray p_varray);
 void ir_basic_block_del_varray_phi(p_ir_basic_block p_basic_block, p_ir_varray_bb_phi p_varray_bb_phi);
 void ir_basic_block_clear_varray_phi(p_ir_basic_block p_basic_block);
+void ir_varray_bb_param_reset_phi(p_ir_varray_bb_param p_param, p_ir_varray_bb_phi p_phi);
 
 void ir_basic_block_drop(p_ir_basic_block p_basic_block);
 void ir_basic_block_branch_target_drop(p_ir_basic_block p_source_block, p_ir_basic_block_branch_target p_branch_target);

@@ -88,7 +88,6 @@ static inline bool deal_instr_src(p_ir_instr p_instr, p_reg_info_table reg_info_
                 && !p_instr->ir_call.p_func->p_side_effects->output
                 && !p_instr->ir_call.p_func->p_side_effects->stored_param_cnt
                 && list_head_alone(&p_instr->ir_call.p_func->p_side_effects->stored_global))) {
-            assert(p_instr->ir_call.p_des);
             return false;
         }
         list_for_each(p_node, &p_instr->ir_call.param_list) {
@@ -305,8 +304,9 @@ static inline void delete_all(p_reverse_dom_tree_info_list p_info_list, p_reg_in
         }
         list_for_each_safe(p_node, p_node_next, &p_block->varray_basic_block_phis) {
             p_ir_varray_bb_phi p_phi = list_entry(p_node, ir_varray_bb_phi, node);
-            if (!if_varray_useful(p_phi->p_varray_phi))
+            if (!if_varray_useful(p_phi->p_varray_phi)) {
                 ir_basic_block_del_varray_phi(p_block, p_phi);
+            }
         }
         list_for_each_safe(p_node, p_node_next, &p_block->instr_list) {
             p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
@@ -325,7 +325,13 @@ static inline void delete_all(p_reverse_dom_tree_info_list p_info_list, p_reg_in
                 }
                 break;
             case ir_call:
-                if_useful = true;
+                if (!p_instr->ir_call.p_func->p_side_effects
+                    || (p_instr->ir_call.p_func->p_side_effects->input
+                        || p_instr->ir_call.p_func->p_side_effects->output
+                        || p_instr->ir_call.p_func->p_side_effects->stored_param_cnt
+                        || !list_head_alone(&p_instr->ir_call.p_func->p_side_effects->stored_global))) {
+                    if_useful = true;
+                }
                 if (p_instr->ir_call.p_des) {
                     if (!if_vreg_useful(p_instr->ir_call.p_des, reg_info_table)) {
                         ir_set_call_instr_des(p_instr, NULL);
@@ -468,7 +474,8 @@ static inline void ir_dead_code_elimate_func(p_symbol_func p_func, bool if_aggre
         }
     }
     symbol_func_set_block_id(p_func);
-    symbol_func_clear_varible(p_func);
+    if (varray_num)
+        symbol_func_clear_varible(p_func);
     free(reg_info_table->p_base);
     free(reg_info_table->p_varray_base);
     free(reg_info_table);
@@ -500,7 +507,8 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
             ir_varray_drop((varray_info_base + j)->p_varray);
         }
     }
-    program_clear_varible(p_ir);
+    if (varray_num)
+        program_clear_varible(p_ir);
     free(varray_info_base);
 }
 
