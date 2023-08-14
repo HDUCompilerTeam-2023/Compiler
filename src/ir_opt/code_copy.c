@@ -342,7 +342,6 @@ void ir_code_copy_instr_of_block_inline(p_ir_basic_block p_src, p_copy_map p_map
             break;
         }
         ir_instr_drop(p_call);
-        assert(!p_src->p_branch->p_exp);
         break;
     case ir_abort_branch:
         break;

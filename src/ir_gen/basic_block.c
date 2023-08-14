@@ -312,6 +312,11 @@ p_ir_varray_bb_phi ir_basic_block_add_varray_phi(p_ir_basic_block p_basic_block,
     ir_varray_set_bb_phi_def(p_varray, p_varray_bb_phi);
     return p_varray_bb_phi;
 }
+void ir_varray_bb_param_reset_phi(p_ir_varray_bb_param p_param, p_ir_varray_bb_phi p_phi) {
+    p_param->p_des_phi = p_phi;
+    assert(list_del(&p_param->phi_node));
+    assert(list_add_prev(&p_param->phi_node, &p_phi->varray_param_list));
+}
 
 void ir_basic_block_del_varray_phi(p_ir_basic_block p_basic_block, p_ir_varray_bb_phi p_varray_bb_phi) {
     assert(p_varray_bb_phi->p_basic_block == p_basic_block);

@@ -1,17 +1,19 @@
-#include <program/use.h>
-#include <program/def.h>
-#include <symbol_gen/var.h>
-#include <symbol_gen/func.h>
-#include <ir/param.h>
 #include <ir/bb_param.h>
-#include <ir_gen/vreg.h>
-#include <ir_gen/operand.h>
-#include <ir_gen/instr.h>
+#include <ir/param.h>
 #include <ir_gen/basic_block.h>
+#include <ir_gen/instr.h>
+#include <ir_gen/operand.h>
+#include <ir_gen/vreg.h>
+#include <ir_gen/varray.h>
 #include <ir_manager/call_graph.h>
-#include <ir_opt/deadcode_elimate.h>
+#include <ir_manager/memssa.h>
 #include <ir_opt/code_copy.h>
+#include <ir_opt/deadcode_elimate.h>
+#include <program/def.h>
 #include <program/print.h>
+#include <program/use.h>
+#include <symbol_gen/func.h>
+#include <symbol_gen/var.h>
 
 typedef struct {
     p_ir_instr p_call;
@@ -94,6 +96,19 @@ static inline void _inline_call_node(p_call_node p_cn) {
         p_ir_vreg p_vreg = p_phi->p_bb_phi;
         ir_basic_block_del_phi(p_next_block, p_phi);
         ir_basic_block_add_phi(p_prev_block, p_vreg);
+    }
+    list_for_each_safe(p_node, p_next, &p_next_block->varray_basic_block_phis) {
+        p_ir_varray_bb_phi p_varray_phi = list_entry(p_node, ir_varray_bb_phi, node);
+        p_ir_varray p_varray = p_varray_phi->p_varray_phi;
+        p_ir_varray_bb_phi p_phi = ir_basic_block_add_varray_phi(p_prev_block, p_varray);
+        p_list_head p_node, p_next;
+        list_for_each_safe(p_node, p_next, &p_varray_phi->varray_param_list) {
+            p_ir_varray_bb_param p_param = list_entry(p_node, ir_varray_bb_param, phi_node);
+            ir_varray_bb_param_reset_phi(p_param, p_phi);
+        }
+        ir_varray_set_bb_phi_def(p_varray, p_varray_phi);
+        ir_basic_block_del_varray_phi(p_next_block, p_varray_phi);
+        ir_varray_set_bb_phi_def(p_varray, p_phi);
     }
 
     p_copy_map p_map = ir_code_copy_map_gen();
