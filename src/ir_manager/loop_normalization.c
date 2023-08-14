@@ -10,7 +10,8 @@
 #include <symbol_gen/type.h>
 
 void program_loop_normalization(p_program p_program) {
-    program_var_analysis(p_program, false);
+    ir_cfg_set_program_dom(p_program);
+    ir_build_program_nestedtree(p_program);
     printf("\nLoop Normalization\n");
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
@@ -106,6 +107,8 @@ p_ir_basic_block loop_latch_block_add(p_nestedtree_node root) {
     list_head list = list_init_head(&list);
     p_ir_basic_block_branch_target p_target1, p_target2;
     p_list_head p_node;
+    p_ir_basic_block p_ret;
+    int cnt = 0;
     list_for_each(p_node, &root->head->loop_node_list) {
         p_ir_basic_block p_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
         if (p_block->p_nestree_node != root) continue;
@@ -118,6 +121,8 @@ p_ir_basic_block loop_latch_block_add(p_nestedtree_node root) {
                 .node = list_init_head(&p_target_node->node),
             };
             list_add_next(&p_target_node->node, &list);
+            cnt++;
+            p_ret = p_block;
         }
         else if (p_target2 && p_target2->p_block == root->head) {
             p_ir_branch_target_node p_target_node = malloc(sizeof(*p_target_node));
@@ -126,8 +131,11 @@ p_ir_basic_block loop_latch_block_add(p_nestedtree_node root) {
                 .node = list_init_head(&p_target_node->node),
             };
             list_add_next(&p_target_node->node, &list);
+            cnt++;
+            p_ret = p_block;
         }
     }
+    assert(!list_head_alone(&list));
     return ir_basic_block_target_split(&list, root->head, false);
 }
 
