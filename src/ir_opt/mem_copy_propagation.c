@@ -400,6 +400,7 @@ static inline void deal_call(p_ir_instr p_instr) {
     p_list_head p_node;
     list_for_each(p_node, &p_call_instr->varray_defs) {
         p_ir_varray_def_pair p_pair = list_entry(p_node, ir_varray_def_pair, node);
+        if (!p_pair->p_des) continue;
         p_whole_value des_info = get_whole_value(p_pair->p_des, p_instr->p_basic_block);
         p_whole_value src_info = get_whole_value(p_pair->p_src->p_varray_use, p_instr->p_basic_block);
         assert(des_info == src_info);

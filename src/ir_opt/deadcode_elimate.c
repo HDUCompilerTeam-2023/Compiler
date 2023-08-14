@@ -98,7 +98,6 @@ static inline bool deal_instr_src(p_ir_instr p_instr, p_reg_info_table reg_info_
         list_for_each(p_node, &p_instr->ir_call.varray_defs) {
             p_ir_varray_def_pair p_pair = list_entry(p_node, ir_varray_def_pair, node);
             deal_varray_use(p_pair->p_src, reg_info_table);
-            push_varray(p_pair->p_des, reg_info_table);
         }
         return true;
     case ir_store:
@@ -256,14 +255,22 @@ static inline void deal_reg_info_table(p_reverse_dom_tree_info_list p_info_list,
                 p_ir_varray p_varray = reg_info_table->p_varray_top->p_varray;
                 reg_info_table->p_varray_top = p_new_top;
                 p_ir_basic_block p_useful_block = NULL;
-                if (p_varray->varray_def_type == varray_bb_phi_def) {
+                switch (p_varray->varray_def_type) {
+                case varray_bb_phi_def:
                     deal_varray_block_param(p_info_list, p_varray->p_varray_bb_phi, reg_info_table);
                     p_useful_block = p_varray->p_varray_bb_phi->p_basic_block;
-                }
-                else {
-                    p_ir_instr p_def = p_varray->p_instr_def;
-                    p_useful_block = p_def->p_basic_block;
-                    deal_useful_instr(p_def, reg_info_table);
+                    break;
+                case varray_instr_def:
+                    p_useful_block = p_varray->p_instr_def->p_basic_block;
+                    deal_useful_instr(p_varray->p_instr_def, reg_info_table);
+                    break;
+                case varray_def_pair_def:
+                    assert(p_varray->p_pair->p_instr->irkind == ir_call);
+                    p_useful_block = p_varray->p_pair->p_instr->p_basic_block;
+                    deal_useful_instr(p_varray->p_pair->p_instr, reg_info_table);
+                    break;
+                default:
+                    assert(0);
                 }
                 set_cdg_prev_useful(p_info_list, reg_info_table, p_useful_block);
             }
@@ -331,11 +338,13 @@ static inline void delete_all(p_reverse_dom_tree_info_list p_info_list, p_reg_in
                 p_list_head p_node;
                 list_for_each(p_node, &p_instr->ir_call.varray_defs) {
                     p_ir_varray_def_pair p_pair = list_entry(p_node, ir_varray_def_pair, node);
+                    if (!p_pair->p_des)
+                        continue;
                     if (if_varray_useful(p_pair->p_des)) {
                         if_useful = true;
                     }
                     else {
-                        varray_info_set_useful(p_pair->p_des->p_info);
+                        ir_varray_def_pair_set_des(p_pair, NULL);
                     }
                 }
                 break;

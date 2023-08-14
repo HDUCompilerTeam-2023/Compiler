@@ -24,44 +24,7 @@ static inline void _global_opt_var_list(p_list_head p_list) {
 
         if (list_head_alone(&p_info->load_list)) {
             printf("%s hasent be load\n", p_var->name);
-            p_list_head p_node, p_next;
-            list_for_each_safe(p_node, p_next, &p_info->store_list) {
-                p_mem_visit_instr_node p_instr_node = list_entry(p_node, mem_visit_instr_node, node);
-                p_ir_instr p_instr = p_instr_node->p_instr;
-                if (p_instr->irkind == ir_call)
-                    continue;
-                assert(p_instr->irkind == ir_store);
-                ir_instr_drop(p_instr);
-            }
-            list_for_each_safe(p_node, p_next, &p_var->p_base->varray_list) {
-                p_ir_varray p_varray = list_entry(p_node, ir_varray, node);
-                switch (p_varray->varray_def_type) {
-                case varray_instr_def:
-                    if (p_varray->p_instr_def) {
-                        assert(p_varray->p_instr_def->irkind == ir_call);
-                        p_list_head p_node;
-                        list_for_each(p_node, &p_varray->p_instr_def->ir_call.varray_defs) {
-                            p_ir_varray_def_pair p_pair = list_entry(p_node, ir_varray_def_pair, node);
-                            if (p_pair->p_des == p_varray) {
-                                ir_varray_def_pair_drop(p_pair);
-                                break;
-                            }
-                        }
-                    }
-                    break;
-                case varray_bb_phi_def:
-                    ir_varray_bb_phi_drop(p_varray->p_varray_bb_phi);
-                    break;
-                case varray_func_def:
-                case varray_global_def:
-                    break;
-                }
-            }
-            list_for_each_safe(p_node, p_next, &p_var->p_base->varray_list) {
-                p_ir_varray p_varray = list_entry(p_node, ir_varray, node);
-                assert(list_head_alone(&p_varray->use_list));
-                ir_varray_drop(p_varray);
-            }
+            ir_vmem_base_clear_all(p_var->p_base);
         }
         else if (list_head_alone(&p_info->store_list)) {
             printf("%s hasent be store\n", p_var->name);

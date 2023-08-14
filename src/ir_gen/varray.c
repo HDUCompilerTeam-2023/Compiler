@@ -68,13 +68,22 @@ void ir_varray_use_reset_varray(p_ir_varray_use p_use, p_ir_varray p_varray) {
 p_ir_varray_def_pair ir_varray_def_pair_gen(p_ir_varray p_des, p_ir_varray_use p_src) {
     p_ir_varray_def_pair p_pair = malloc(sizeof(*p_pair));
     p_pair->node = list_head_init(&p_pair->node);
-    p_pair->p_des = p_des;
+    p_pair->p_des = NULL;
+    p_pair->p_src = NULL;
+    if (p_des)
+        ir_varray_def_pair_set_des(p_pair, p_des);
+    assert(p_src);
+    ir_varray_set_def_pair_use(p_src, p_pair);
     p_pair->p_src = p_src;
     return p_pair;
 }
 void ir_varray_set_instr_def(p_ir_varray p_varray, p_ir_instr p_instr) {
     p_varray->varray_def_type = varray_instr_def;
     p_varray->p_instr_def = p_instr;
+}
+void ir_varray_set_def_pair_def(p_ir_varray p_varray, p_ir_varray_def_pair p_pair) {
+    p_varray->varray_def_type = varray_def_pair_def;
+    p_varray->p_pair = p_pair;
 }
 void ir_varray_set_func_def(p_ir_varray p_varray, p_symbol_func p_func) {
     p_varray->varray_def_type = varray_func_def;
@@ -90,6 +99,10 @@ void ir_varray_set_global_def(p_ir_varray p_varray) {
 void ir_varray_set_instr_use(p_ir_varray_use p_varray_use, p_ir_instr p_instr) {
     p_varray_use->varray_use_type = varray_instr_use;
     p_varray_use->p_instr = p_instr;
+}
+void ir_varray_set_def_pair_use(p_ir_varray_use p_varray_use, p_ir_varray_def_pair p_pair) {
+    p_varray_use->varray_use_type = varray_def_pair_use;
+    p_varray_use->p_pair = p_pair;
 }
 void ir_varray_set_bb_parram_use(p_ir_varray_use p_varray_use, p_ir_varray_bb_param p_ir_varray_bb_param) {
     p_varray_use->varray_use_type = varray_bb_param_use;
@@ -120,19 +133,14 @@ void ir_vmem_base_clear_all(p_ir_vmem_base p_base) {
         p_list_head p_node, p_next;
         list_for_each_safe(p_node, p_next, &p_varray->use_list) {
             p_ir_varray_use p_use = list_entry(p_node, ir_varray_use, node);
-            p_list_head p_call_node, p_call_next;
             p_ir_instr p_use_instr;
             switch (p_use->varray_use_type) {
             case varray_instr_use:
                 p_use_instr = p_use->p_instr;
+                assert(p_use_instr);
                 switch (p_use->p_instr->irkind) {
                 case ir_load:
                     ir_load_instr_set_varray_src(p_use_instr, NULL);
-                    break;
-                case ir_call:
-                    list_for_each_safe(p_call_node, p_call_next, &p_use_instr->ir_call.varray_defs) {
-                        ir_varray_def_pair_drop(list_entry(p_call_node, ir_varray_def_pair, node));
-                    }
                     break;
                 case ir_store:
                     ir_store_instr_set_varray_des(p_use_instr, NULL);
@@ -143,6 +151,10 @@ void ir_vmem_base_clear_all(p_ir_vmem_base p_base) {
                     break;
                 }
             case varray_bb_param_use:
+                break;
+            case varray_def_pair_use:
+                assert(p_use->p_pair);
+                ir_varray_def_pair_drop(p_use->p_pair);
                 break;
             }
         }
@@ -180,9 +192,31 @@ void ir_varray_drop(p_ir_varray p_varray) {
     }
     free(p_varray);
 }
+void ir_varray_def_pair_set_des(p_ir_varray_def_pair p_def_pair, p_ir_varray p_varray) {
+    if (p_def_pair->p_des)
+        ir_varray_set_instr_def(p_def_pair->p_des, NULL);
+    if (p_varray)
+        ir_varray_set_def_pair_def(p_varray, p_def_pair);
+    p_def_pair->p_des = p_varray;
+}
+void ir_varray_def_pair_set_src(p_ir_varray_def_pair p_def_pair, p_ir_varray_use p_varray_use) {
+    assert(p_def_pair->p_src);
+    assert(p_varray_use);
+    ir_varray_use_drop(p_def_pair->p_src);
+    ir_varray_set_def_pair_use(p_varray_use, p_def_pair);
+    p_def_pair->p_src = p_varray_use;
+}
 void ir_varray_def_pair_drop(p_ir_varray_def_pair p_def_pair) {
     list_del(&p_def_pair->node);
-    ir_varray_set_instr_def(p_def_pair->p_des, NULL);
+    // def_pair des 为空时表示调用函数内只有 load 或者 有store 但在之后未被使用, 但src必定存在
+    assert(p_def_pair->p_src);
+    if (p_def_pair->p_des) {
+        assert(p_def_pair->p_des->varray_def_type == varray_def_pair_def);
+        assert(p_def_pair->p_des->p_pair == p_def_pair);
+        ir_varray_set_instr_def(p_def_pair->p_des, NULL);
+    }
+    assert(p_def_pair->p_src->varray_use_type == varray_def_pair_use);
+    assert(p_def_pair->p_src->p_pair == p_def_pair);
     ir_varray_use_drop(p_def_pair->p_src);
     free(p_def_pair);
 }
