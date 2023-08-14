@@ -93,10 +93,10 @@ int main(int argc, char *argv[]) {
     arm_param_trans_pass(p_program);
     arm_imme_trans_pass(p_program);
     set_cond_pass(p_program);
+    critical_edge_cut_pass(p_program);
     reg_alloca_pass(alloca_color_graph, 13, 32, p_program);
     arm_trans_after_pass(p_program);
     set_cond_pass(p_program);
-    critical_edge_cut_pass(p_program);
 
     ir_arm_asm_pass(p_program);
     arm_delete_non_use_block(p_program);

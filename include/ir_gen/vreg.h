@@ -10,9 +10,9 @@ void ir_vreg_del(p_ir_vreg p_vreg);
 void ir_vreg_drop(p_ir_vreg p_vreg);
 
 p_ir_vreg_list ir_vreg_list_init(void);
-p_ir_vreg_list ir_vreg_list_add(p_ir_vreg_list p_bb_phi_list, p_ir_vreg p_bb_phi);
+p_ir_vreg_list ir_vreg_list_add(p_ir_vreg_list p_bb_phi_list, p_ir_vreg p_bb_phi, uint32_t next_use);
 void ir_vreg_list_drop(p_ir_vreg_list p_bb_phi_list);
-p_ir_vreg_list_node ir_vreg_list_node_gen(p_ir_vreg p_vreg);
+p_ir_vreg_list_node ir_vreg_list_node_gen(p_ir_vreg p_vreg, uint32_t next_use);
 void ir_vreg_list_node_drop(p_ir_vreg_list_node p_vreg_list_node);
 void ir_vreg_list_node_set_vreg(p_ir_vreg_list_node p_vreg_list_node, p_ir_vreg p_vreg);
 

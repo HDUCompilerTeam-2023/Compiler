@@ -45,8 +45,8 @@ p_ir_vreg_list ir_vreg_list_init(void) {
     };
     return p_vreg_list;
 }
-p_ir_vreg_list ir_vreg_list_add(p_ir_vreg_list p_bb_phi_list, p_ir_vreg p_vreg) {
-    p_ir_vreg_list_node p_vreg_list_node = ir_vreg_list_node_gen(p_vreg);
+p_ir_vreg_list ir_vreg_list_add(p_ir_vreg_list p_bb_phi_list, p_ir_vreg p_vreg, uint32_t next_use) {
+    p_ir_vreg_list_node p_vreg_list_node = ir_vreg_list_node_gen(p_vreg, next_use);
     list_add_prev(&p_vreg_list_node->node, &p_bb_phi_list->vreg_list);
     return p_bb_phi_list;
 }
@@ -58,10 +58,11 @@ void ir_vreg_list_drop(p_ir_vreg_list p_vreg_list) {
     }
     free(p_vreg_list);
 }
-p_ir_vreg_list_node ir_vreg_list_node_gen(p_ir_vreg p_vreg) {
+p_ir_vreg_list_node ir_vreg_list_node_gen(p_ir_vreg p_vreg, uint32_t next_use) {
     p_ir_vreg_list_node p_vreg_list_node = malloc(sizeof(*p_vreg_list_node));
     *p_vreg_list_node = (ir_vreg_list_node) {
         .p_vreg = p_vreg,
+        .next_use = next_use,
         .node = list_head_init(&p_vreg_list_node->node),
     };
     return p_vreg_list_node;
@@ -77,8 +78,8 @@ void ir_vreg_list_node_set_vreg(p_ir_vreg_list_node p_vreg_list_node, p_ir_vreg 
 void copy_vreg_list(p_ir_vreg_list p_des, p_ir_vreg_list p_src) {
     p_list_head p_node;
     list_for_each(p_node, &p_src->vreg_list) {
-        p_ir_vreg p_param = list_entry(p_node, ir_vreg_list_node, node)->p_vreg;
-        ir_vreg_list_add(p_des, p_param);
+        p_ir_vreg_list_node p_vn = list_entry(p_node, ir_vreg_list_node, node);
+        ir_vreg_list_add(p_des, p_vn->p_vreg, p_vn->next_use);
     }
 }
 

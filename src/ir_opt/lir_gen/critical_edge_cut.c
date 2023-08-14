@@ -4,19 +4,15 @@
 #include <symbol_gen.h>
 
 static inline bool if_need_cut(p_ir_basic_block_branch_target p_target) {
-    p_list_head p_node1 = p_target->block_param.p_next;
-    p_list_head p_node2 = p_target->p_block->basic_block_phis.p_next;
-    while (p_node1 != &p_target->block_param) {
-        p_ir_operand p_param = list_entry(p_node1, ir_bb_param, node)->p_bb_param;
-        if (p_param->kind == imme)
-            return true;
-        p_ir_vreg p_phi = list_entry(p_node2, ir_bb_phi, node)->p_bb_phi;
-        if (p_param->p_vreg->reg_id != p_phi->reg_id)
-            return true;
-        p_node1 = p_node1->p_next;
-        p_node2 = p_node2->p_next;
+    if (p_target->p_source_block->p_branch->kind != ir_cond_branch) {
+        assert(p_target->p_source_block->p_branch->kind == ir_br_branch);
+        return false;
     }
-    return false;
+    if (p_target->p_block->prev_branch_target_list.p_prev == p_target->p_block->prev_branch_target_list.p_next) {
+        assert(!list_head_alone(&p_target->p_block->prev_branch_target_list));
+        return false;
+    }
+    return true;
 }
 static inline p_ir_basic_block cut_edge(p_ir_basic_block p_basic_block, p_ir_basic_block_branch_target p_target, p_symbol_func p_func) {
     p_ir_basic_block p_new_basic_block = ir_basic_block_gen();

@@ -58,6 +58,7 @@ struct ir_vreg {
 
 struct ir_vreg_list_node {
     p_ir_vreg p_vreg;
+    size_t next_use;
     list_head node;
 };
 struct ir_vreg_list {
