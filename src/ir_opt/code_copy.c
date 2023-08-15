@@ -238,7 +238,7 @@ p_ir_vreg ir_code_copy_vreg(p_ir_vreg p_vreg, p_copy_map p_map) {
 
 p_symbol_var ir_code_copy_var(p_symbol_var p_var, p_copy_map p_map) {
     assert(p_var);
-    assert(!p_var->p_init);
+
     p_symbol_var p_var_copy;
     if (!p_var->name) {
         assert(!p_var->is_const);
