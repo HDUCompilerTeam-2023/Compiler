@@ -56,7 +56,6 @@ static inline p_offset_value offset_value_gen(size_t offset, p_ir_vreg p_base, p
     p_sure->h_node = hlist_init_node;
     p_sure->node = list_head_init(&p_sure->node);
     p_sure->p_value = p_value;
-    // p_sure->hash_tag = get_tag(offset);
     p_sure->offset = offset;
     p_sure->p_vreg_base = p_base;
     p_sure->if_created_phi = false;
@@ -180,6 +179,7 @@ static inline void set_varray_not_sure(p_whole_value p_whole, p_ir_varray p_varr
         p_offset_value p_offset = list_entry(p_node, offset_value, node);
         offset_value_drop(p_offset);
     }
+    p_whole->is_zero = false;
 }
 static inline void set_whole_not_sure(p_whole_value p_whole) {
     if (p_whole->is_array)
@@ -346,8 +346,6 @@ static inline void deal_load(p_ir_instr p_instr) {
     p_ir_vreg p_vreg_base = NULL;
     if (!src_info->is_array) {
         if (src_info->p_vreg) {
-            ir_instr_print(p_instr);
-            printf("reset load %p\n", src_info);
             ir_instr_reset_unary(p_instr, ir_val_assign, ir_operand_vreg_gen(src_info->p_vreg), p_load->p_des);
         }
         src_info->p_vreg = p_load->p_des;
@@ -362,7 +360,7 @@ static inline void deal_load(p_ir_instr p_instr) {
             p_varray_value->p_value = p_load->p_des;
         }
         else {
-            if (src_info->is_zero) {
+            if (src_info->is_zero && list_head_alone(&src_info->offset_value_list)) { // 没有任何确定的值
                 ir_instr_reset_unary(p_instr, ir_val_assign, ir_operand_int_gen(0), p_load->p_des);
             }
             else {
@@ -396,6 +394,17 @@ static inline void deal_call(p_ir_instr p_instr) {
     p_ir_call_instr p_call_instr = &p_instr->ir_call;
     if (!strcmp(p_call_instr->p_func->name, "memset")) {
         // set_zero
+        assert(!list_head_alone(&p_instr->ir_call.varray_defs));
+        assert(p_instr->ir_call.varray_defs.p_next == p_instr->ir_call.varray_defs.p_prev);
+        p_ir_varray_def_pair p_pair = list_entry(p_instr->ir_call.varray_defs.p_next, ir_varray_def_pair, node);
+        if (!p_pair->p_des) return;
+        p_whole_value des_info = get_whole_value(p_pair->p_des, p_instr->p_basic_block);
+        p_whole_value src_info = get_whole_value(p_pair->p_src->p_varray_use, p_instr->p_basic_block);
+        assert(des_info == src_info);
+        assert(des_info->is_array);
+        set_varray_not_sure(des_info, NULL);
+        des_info->is_zero = true;
+        return;
     }
     p_list_head p_node;
     list_for_each(p_node, &p_call_instr->varray_defs) {
@@ -404,8 +413,6 @@ static inline void deal_call(p_ir_instr p_instr) {
         p_whole_value des_info = get_whole_value(p_pair->p_des, p_instr->p_basic_block);
         p_whole_value src_info = get_whole_value(p_pair->p_src->p_varray_use, p_instr->p_basic_block);
         assert(des_info == src_info);
-        ir_varray_def_pair_print(p_pair);
-        printf("aa%d %p\n", des_info->is_array, des_info);
         // whole not sure
         if (des_info->is_array)
             set_varray_not_sure(des_info, p_pair->p_des);
@@ -438,35 +445,19 @@ struct whole_zero {
 struct param_value_pair {
     p_ir_varray_bb_param p_varray_param;
     p_ir_vreg p_value;
-    bool is_zero;
     list_head node;
 };
 struct offset_value_tmp {
-    // bool if_useful; // 取交集时使用
     size_t offset;
     p_ir_vreg p_vreg;
-    // hlist_node h_node;
     list_head node;
     list_head param_value_list;
 };
 struct whole_value_tmp {
-    // hlist_hash hash;
     p_symbol_type p_type;
+    bool is_stack_ptr;
     list_head offset_value_list;
 };
-// static inline void whole_zero_add(p_whole_value_tmp p_tmp, p_ir_varray_bb_param p_param){
-//     p_whole_zero p_zero = malloc(sizeof(*p_zero));
-//     p_zero->p_varray_param = p_param;
-//     p_zero->node = list_head_init(&p_zero->node);
-//     list_add_prev(&p_zero->node, &p_tmp->zero_list);
-// }
-// static inline void whole_zero_clear(p_whole_value_tmp p_tmp){
-//     p_list_head p_node, p_next;
-//     list_for_each_safe(p_node, p_next, &p_tmp->zero_list){
-//         p_whole_zero p_zero = list_entry(p_node, whole_zero, node);
-//         free(p_zero);
-//     }
-// }
 static inline p_whole_value_tmp whole_info_tmp_gen(p_whole_value p_whole_phi) {
     p_whole_value_tmp p_info_tmp = malloc(sizeof(*p_info_tmp));
     p_info_tmp->offset_value_list = list_head_init(&p_info_tmp->offset_value_list);
@@ -485,33 +476,15 @@ static inline p_offset_value_tmp offset_value_tmp_gen(size_t offset, p_ir_vreg p
     p_tmp->param_value_list = list_head_init(&p_tmp->param_value_list);
     return p_tmp;
 }
-// static inline p_offset_value_tmp offset_value_tmp_cp_offset_value(p_offset_value p_offset){
-//     p_offset_value_tmp p_tmp_value = malloc(sizeof(*p_tmp_value));
-//     p_tmp_value->offset = p_offset->offset;
-//     p_tmp_value->p_vreg = p_offset->p_vreg_base;
-//     // p_tmp_value->h_node = hlist_init_node;
-//     p_tmp_value->node = list_head_init(&p_tmp_value->node);
-//     p_tmp_value->param_value_list = list_head_init(&p_tmp_value->param_value_list);
-//     return p_tmp_value;
-// }
 static inline p_param_value_pair param_value_pair_vreg_gen(p_ir_varray_bb_param p_param, p_ir_vreg p_vreg) {
     p_param_value_pair p_pair = malloc(sizeof(*p_pair));
     p_pair->node = list_head_init(&p_pair->node);
     p_pair->p_varray_param = p_param;
-    p_pair->is_zero = false;
     p_pair->p_value = p_vreg;
-    return p_pair;
-}
-static inline p_param_value_pair param_value_pair_zero_gen(p_ir_varray_bb_param p_param) {
-    p_param_value_pair p_pair = malloc(sizeof(*p_pair));
-    p_pair->node = list_head_init(&p_pair->node);
-    p_pair->p_varray_param = p_param;
-    p_pair->is_zero = true;
     return p_pair;
 }
 static inline void offset_value_tmp_drop(p_offset_value_tmp p_value_tmp) {
     list_del(&p_value_tmp->node);
-    // hlist_node_del(&p_value_tmp->h_node);
     p_list_head p_node, p_next;
     list_for_each_safe(p_node, p_next, &p_value_tmp->param_value_list) {
         p_param_value_pair p_pair = list_entry(p_node, param_value_pair, node);
@@ -525,52 +498,21 @@ static inline void whole_info_tmp_drop(p_whole_value_tmp p_info) {
         p_offset_value_tmp p_value_tmp = list_entry(p_node, offset_value_tmp, node);
         offset_value_tmp_drop(p_value_tmp);
     }
-    // whole_zero_clear(p_info);
-    // free(p_info->hash);
     free(p_info);
 }
-static inline bool if_have_in_tmp(p_whole_value_tmp p_whole_tmp, size_t offset, p_ir_vreg p_base){
+static inline bool if_have_in_tmp(p_whole_value_tmp p_whole_tmp, size_t offset, p_ir_vreg p_base) {
     p_list_head p_node;
-    list_for_each(p_node, &p_whole_tmp->offset_value_list){
+    list_for_each(p_node, &p_whole_tmp->offset_value_list) {
         p_offset_value_tmp p_value = list_entry(p_node, offset_value_tmp, node);
-        if(p_value->offset == offset && p_value->p_vreg == p_base)
+        if (p_value->offset == offset && p_value->p_vreg == p_base)
             return true;
     }
     return false;
 }
-// static inline p_offset_value_tmp find_offset_value_tmp(hlist_hash hash, size_t offset, p_ir_vreg p_vreg){
-//     size_t tag = get_tag(offset, p_vreg);
-//     p_hlist_node p_node;
-//     hlist_for_each(p_node, hash + tag){
-//         p_offset_value_tmp p_varray_value = hlist_entry(p_node, offset_value_tmp, h_node);
-//         if(p_varray_value->p_vreg == p_vreg && p_varray_value->offset == offset)
-//             return p_varray_value;
-//     }
-//     return NULL;
-// }
-// static inline void whole_value_tmp_init_useful(p_whole_value_tmp p_tmp){
-//     p_list_head p_node;
-//     list_for_each(p_node, &p_tmp->offset_value_list){
-//         p_offset_value_tmp p_value_tmp = list_entry(p_node, offset_value_tmp, node);
-//         p_value_tmp->if_useful = false;
-//     }
-// }
-// static inline void whole_value_tmp_del_non_useful(p_whole_value_tmp p_tmp)
-// {
-//     p_list_head p_node, p_next;
-//     list_for_each_safe(p_node, p_next, &p_tmp->offset_value_list){
-//         p_offset_value_tmp p_value_tmp = list_entry(p_node, offset_value_tmp, node);
-//         if(!p_value_tmp->if_useful){
-//             offset_value_tmp_drop(p_value_tmp);
-//         }
-//     }
-// }
 static inline void whole_value_tmp_init(p_whole_value_tmp p_tmp, p_ir_varray_bb_phi p_bb_phi) {
     p_whole_value p_whole = get_whole_value(p_bb_phi->p_varray_phi, p_bb_phi->p_basic_block);
     assert(p_whole->is_array);
     p_list_head p_node;
-    ir_varray_bb_phi_print(p_bb_phi);
-    printf("phi\n");
     list_for_each(p_node, &p_bb_phi->p_varray_phi->use_list) {
         p_ir_varray_use p_use = list_entry(p_node, ir_varray_use, node);
         if (p_use->varray_use_type == varray_instr_use) {
@@ -585,45 +527,20 @@ static inline void whole_value_tmp_init(p_whole_value_tmp p_tmp, p_ir_varray_bb_
                     offset = p_use->p_instr->ir_load.p_addr->offset;
                 }
                 p_offset_value p_find = find_offset_value(p_whole->hash, offset, p_base);
-                // assert(p_find);
                 if (p_find && p_find->if_created_phi) continue;
                 if (if_have_in_tmp(p_tmp, offset, p_base)) continue;
-                printf("%p %ld %p %p\n", p_whole->hash, offset, p_base, p_find);
                 p_tmp->p_type = p_use->p_instr->ir_load.p_des->p_type;
+                p_tmp->is_stack_ptr = p_use->p_instr->ir_load.is_stack_ptr;
                 p_offset_value_tmp p_value_tmp = offset_value_tmp_gen(offset, p_base);
                 offset_value_tmp_add(p_tmp, p_value_tmp);
             }
         }
     }
 }
-// static inline void whole_value_tmp_add(p_whole_value_tmp p_tmp, p_ir_varray_bb_param p_param, p_offset_value p_offset)
-// {
-//     p_offset_value_tmp p_value_tmp = find_offset_value_tmp(p_tmp->hash, p_offset->offset, p_offset->p_vreg_base);
-//     if(p_value_tmp){
-//         p_value_tmp->if_useful = true;
-//         p_param_value_pair p_pair = param_value_pair_vreg_gen(p_param, p_offset->p_value);
-//         list_add_prev(&p_pair->node, &p_value_tmp->param_value_list);
-//     }
-//     else{
-//         if(p_tmp->is_zero){
-//             p_offset_value_tmp p_value_tmp = offset_value_tmp_cp_offset_value(p_offset);
-//             offset_value_tmp_add(p_tmp, p_value_tmp);
-//             p_list_head p_node;
-//             list_for_each(p_node, &p_tmp->zero_list){
-//                 p_whole_zero p_zero = list_entry(p_node, whole_zero, node);
-//                 p_param_value_pair p_pair = param_value_pair_zero_gen(p_zero->p_varray_param);
-//                 list_add_prev(&p_pair->node, &p_value_tmp->param_value_list);
-//             }
-//             p_value_tmp->if_useful = true;
-//             p_param_value_pair p_pair = param_value_pair_vreg_gen(p_param, p_offset->p_value);
-//             list_add_prev(&p_pair->node, &p_value_tmp->param_value_list);
-//         }
-//     }
-// }
 static inline bool if_stack(p_ir_varray p_varray) {
-    if (p_varray->p_base->is_vmem)
-        return !p_varray->p_base->p_vmem_base->is_global;
-    return false;
+
+    assert(p_varray->p_base->is_vmem);
+    return !p_varray->p_base->p_vmem_base->is_global;
 }
 static inline bool if_dom_tail(p_ir_vreg p_vreg, p_ir_basic_block p_block) {
     p_ir_basic_block p_def_block = NULL;
@@ -645,8 +562,6 @@ static inline bool if_dom_tail(p_ir_vreg p_vreg, p_ir_basic_block p_block) {
     }
 }
 static inline void whole_value_tmp_merge_bb_param(p_whole_value_tmp p_tmp, p_ir_varray_bb_param p_param) {
-    ir_varray_bb_param_print(p_param);
-    printf("sss\n");
     p_whole_value p_whole = get_whole_value(p_param->p_varray_bb_param->p_varray_use, p_param->p_target->p_source_block);
     p_ir_basic_block p_source_block = p_param->p_target->p_source_block;
     p_list_head p_node, p_next;
@@ -657,42 +572,45 @@ static inline void whole_value_tmp_merge_bb_param(p_whole_value_tmp p_tmp, p_ir_
         bool is_zero = false;
         bool is_success;
         p_offset_value p_find = find_offset_value(p_whole->hash, p_offset->offset, p_offset->p_vreg);
-        printf("cg%p %ld %p %p\n", p_whole->hash, p_offset->offset, p_offset->p_vreg, p_find);
         if (p_find) {
-            printf("if%d\n", p_find->if_created_phi);
             p_value = p_find->p_value;
             is_success = true;
         }
         else {
-            if (p_whole->is_zero) {
-                is_zero = true;
-                is_success = true;
+
+            // 尝试能否 load
+            if (p_offset->p_vreg) {
+                if (p_whole->is_zero && list_head_alone(&p_whole->offset_value_list)) { // 值全为0
+                    is_zero = true;
+                    is_success = true;
+                }
+                // 必须被地址定义支配
+                else if (if_dom_tail(p_offset->p_vreg, p_source_block)) {
+                    p_ir_vreg p_new = ir_vreg_gen(symbol_type_copy(p_tmp->p_type));
+                    symbol_func_vreg_add(p_source_block->p_func, p_new);
+                    p_ir_instr p_new_load = ir_load_instr_gen(ir_operand_vreg_gen(p_offset->p_vreg), p_new, p_tmp->is_stack_ptr);
+                    ir_load_instr_set_varray_src(p_new_load, ir_varray_use_gen(p_param->p_varray_bb_param->p_varray_use));
+                    ir_basic_block_addinstr_tail(p_source_block, p_new_load);
+                    p_offset_value p_new_offset = offset_value_gen(p_offset->offset, p_offset->p_vreg, p_new);
+                    offset_value_add(p_new_offset, p_whole);
+                    p_value = p_new;
+                    is_success = true;
+                }
+                else {
+                    is_success = false;
+                }
             }
             else {
-                // 尝试能否 load
-                if (p_offset->p_vreg) {
-                    // 必须被地址定义支配
-                    if (if_dom_tail(p_offset->p_vreg, p_source_block)) {
-                        p_ir_vreg p_new = ir_vreg_gen(symbol_type_copy(p_tmp->p_type));
-                        symbol_func_vreg_add(p_source_block->p_func, p_new);
-                        p_ir_instr p_new_load = ir_load_instr_gen(ir_operand_vreg_gen(p_offset->p_vreg), p_new, if_stack(p_param->p_varray_bb_param->p_varray_use));
-                        ir_load_instr_set_varray_src(p_new_load, ir_varray_use_gen(p_param->p_varray_bb_param->p_varray_use));
-                        ir_basic_block_addinstr_tail(p_source_block, p_new_load);
-                        p_offset_value p_new_offset = offset_value_gen(p_offset->offset, p_offset->p_vreg, p_new);
-                        offset_value_add(p_new_offset, p_whole);
-                        p_value = p_new;
-                        is_success = true;
-                    }
-                    else {
-                        is_success = false;
-                    }
+                if (p_whole->is_zero) { // 值全为0
+                    is_zero = true;
+                    is_success = true;
                 }
                 else {
                     assert(p_param->p_varray_bb_param->p_varray_use->p_base->is_vmem);
                     p_symbol_var p_vmem_base = p_param->p_varray_bb_param->p_varray_use->p_base->p_vmem_base;
                     p_ir_vreg p_new = ir_vreg_gen(symbol_type_copy(p_tmp->p_type));
                     symbol_func_vreg_add(p_source_block->p_func, p_new);
-                    p_ir_instr p_new_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem_base, NULL, p_offset->offset), p_new, if_stack(p_param->p_varray_bb_param->p_varray_use));
+                    p_ir_instr p_new_load = ir_load_instr_gen(ir_operand_addr_gen(p_vmem_base, NULL, p_offset->offset), p_new, p_tmp->is_stack_ptr);
                     ir_load_instr_set_varray_src(p_new_load, ir_varray_use_gen(p_param->p_varray_bb_param->p_varray_use));
                     ir_basic_block_addinstr_tail(p_source_block, p_new_load);
                     p_offset_value p_new_offset = offset_value_gen(p_offset->offset, p_offset->p_vreg, p_new);
@@ -711,7 +629,11 @@ static inline void whole_value_tmp_merge_bb_param(p_whole_value_tmp p_tmp, p_ir_
             p_param_value_pair p_pair = NULL;
             if (is_zero) {
                 assert(!p_value);
-                p_pair = param_value_pair_zero_gen(p_param);
+                p_ir_vreg p_value = ir_vreg_gen(symbol_type_var_gen(type_i32));
+                p_ir_instr p_assign = ir_unary_instr_gen(ir_val_assign, ir_operand_int_gen(0), p_value);
+                ir_basic_block_addinstr_tail(p_source_block, p_assign);
+                symbol_func_vreg_add(p_source_block->p_func, p_value);
+                p_pair = param_value_pair_vreg_gen(p_param, p_value);
             }
             else {
                 assert(p_value);
@@ -731,7 +653,6 @@ static inline void whole_value_tmp_whole_value(p_whole_value p_des, p_whole_valu
         symbol_func_vreg_add(p_bb_phi->p_basic_block->p_func, p_phi);
         ir_basic_block_add_phi(p_bb_phi->p_basic_block, p_phi);
         p_offset_value p_offset = find_offset_value(p_des->hash, p_value_tmp->offset, p_value_tmp->p_vreg);
-        printf("cc%p %ld %p\n", p_des->hash, p_value_tmp->offset, p_value_tmp->p_vreg);
         if (p_offset) {
             assert(!p_offset->if_created_phi);
             p_offset->p_value = p_phi;
@@ -743,13 +664,7 @@ static inline void whole_value_tmp_whole_value(p_whole_value p_des, p_whole_valu
         p_list_head p_pair_node;
         list_for_each(p_pair_node, &p_value_tmp->param_value_list) {
             p_param_value_pair p_pair = list_entry(p_pair_node, param_value_pair, node);
-            p_ir_operand p_operand = NULL;
-            if (p_pair->is_zero) {
-                p_operand = ir_operand_int_gen(0);
-            }
-            else {
-                p_operand = ir_operand_vreg_gen(p_pair->p_value);
-            }
+            p_ir_operand p_operand = ir_operand_vreg_gen(p_pair->p_value);
             print_phi_param_array(p_bb_phi, p_pair->p_varray_param, p_phi, p_offset, p_operand);
             ir_basic_block_branch_target_add_param(p_pair->p_varray_param->p_target, p_operand);
         }
@@ -757,8 +672,6 @@ static inline void whole_value_tmp_whole_value(p_whole_value p_des, p_whole_valu
     }
 }
 static inline bool deal_phi_not_array(p_ir_varray_bb_phi p_varray_phi, p_whole_value p_whole) {
-    ir_varray_bb_phi_print((p_varray_phi));
-    printf("sss\n");
     assert(!p_whole->is_array);
     if (p_whole->if_created_phi) return false; // 已经生成过 phi
     p_ir_varray p_varray = p_varray_phi->p_varray_phi;
@@ -775,7 +688,7 @@ static inline bool deal_phi_not_array(p_ir_varray_bb_phi p_varray_phi, p_whole_v
             p_ir_vreg p_new = ir_vreg_gen(symbol_type_copy(p_varray->p_base->p_vmem_base->p_type));
             symbol_func_vreg_add(p_basic_block->p_func, p_new);
             p_param_info->p_vreg = p_new;
-            p_ir_instr p_new_load = ir_load_instr_gen(ir_operand_addr_gen(p_varray->p_base->p_vmem_base, NULL, 0), p_new, if_stack(p_varray_phi->p_varray_phi));
+            p_ir_instr p_new_load = ir_load_instr_gen(ir_operand_addr_gen(p_varray->p_base->p_vmem_base, NULL, 0), p_new, if_stack(p_varray));
             ir_load_instr_set_varray_src(p_new_load, ir_varray_use_gen(p_param->p_varray_bb_param->p_varray_use));
             ir_basic_block_addinstr_tail(p_param->p_target->p_source_block, p_new_load);
         }
