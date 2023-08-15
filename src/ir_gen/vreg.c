@@ -27,7 +27,7 @@ p_ir_vreg ir_vreg_copy(p_ir_vreg p_vreg) {
     p_copy->p_type = symbol_type_copy(p_vreg->p_type);
     p_copy->scev_kind = scev_unknown;
     p_copy->p_scevexp = NULL;
-    p_copy->is_loop_inv = false;
+    p_copy->is_loop_inv = p_vreg->is_loop_inv;
     return p_copy;
 }
 

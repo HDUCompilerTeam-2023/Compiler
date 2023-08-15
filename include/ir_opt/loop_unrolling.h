@@ -11,4 +11,7 @@ void prev_loop_add(p_nestedtree_node root, int k);
 
 void ir_opt_loop_full_unrolling(p_program p_program);
 void loop_full_unrolling(p_nestedtree_node root);
+
+void ir_opt_loop_unrolling(p_program p_program, int unrolling_time);
+void heap_loop_add(p_nestedtree_node root);
 #endif

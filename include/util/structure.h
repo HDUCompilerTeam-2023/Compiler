@@ -65,4 +65,23 @@ void clearRedBlackTreeNode(Node *root);
 void clearRedBlackTree(RedBlackTree *tree);
 void destroyRedBlackTree(RedBlackTree *tree);
 
+typedef struct {
+    uint64_t addr;
+    int goal;
+} heap_node;
+
+typedef struct {
+    heap_node *arr;
+    int size;
+    int capacity;
+} MaxHeap;
+
+MaxHeap *createMaxHeap(int capacity);
+void destroyMaxHeap(MaxHeap *heap);
+void heapify(MaxHeap *heap, int idx);
+void heap_push(MaxHeap *heap, heap_node value);
+uint64_t heap_pop(MaxHeap *heap);
+uint64_t heap_top(MaxHeap *heap);
+void destroyMaxHeap(MaxHeap *heap);
+
 #endif

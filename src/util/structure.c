@@ -6,6 +6,85 @@
 #include <stdlib.h>
 #include <string.h>
 
+MaxHeap *createMaxHeap(int capacity) {
+    MaxHeap *heap = (MaxHeap *) malloc(sizeof(MaxHeap));
+    heap->arr = (heap_node *) malloc(sizeof(int) * capacity);
+    heap->size = 0;
+    heap->capacity = capacity;
+    return heap;
+}
+
+static inline void _swap(heap_node *a, heap_node *b) {
+    heap_node temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+void heapify(MaxHeap *heap, int idx) {
+    int largest = idx;
+    int left = 2 * idx + 1;
+    int right = 2 * idx + 2;
+
+    if (left < heap->size && heap->arr[left].goal > heap->arr[largest].goal)
+        largest = left;
+    if (right < heap->size && heap->arr[right].goal > heap->arr[largest].goal)
+        largest = right;
+
+    if (largest != idx) {
+        _swap(&heap->arr[idx], &heap->arr[largest]);
+        heapify(heap, largest);
+    }
+}
+
+void heap_push(MaxHeap *heap, heap_node value) {
+    if (heap->size == heap->capacity) {
+        printf("Heap is full, cannot insert more elements.\n");
+        exit(0);
+        return;
+    }
+
+    int idx = heap->size;
+    heap->arr[idx] = value;
+    heap->size++;
+
+    int parent = (idx - 1) / 2;
+    while (idx > 0 && heap->arr[idx].goal > heap->arr[parent].goal) {
+        _swap(&heap->arr[idx], &heap->arr[parent]);
+        idx = parent;
+        parent = (idx - 1) / 2;
+    }
+}
+
+uint64_t heap_pop(MaxHeap *heap) {
+    if (heap->size == 0) {
+        printf("Heap is empty, cannot extract maximum element.\n");
+        return -1;
+    }
+
+    uint64_t max = heap->arr[0].addr;
+    heap->arr[0] = heap->arr[heap->size - 1];
+    heap->size--;
+
+    heapify(heap, 0);
+
+    return max;
+}
+
+uint64_t heap_top(MaxHeap *heap) {
+    if (heap->size == 0) {
+        printf("Heap is empty.\n");
+        return -1;
+    }
+
+    return heap->arr[0].addr;
+}
+void destroyMaxHeap(MaxHeap *heap) {
+    if (heap) {
+        free(heap->arr);
+        free(heap);
+    }
+}
+
 // 哈希表
 
 unsigned int hash(uint64_t key, unsigned int size) {
