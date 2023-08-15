@@ -152,27 +152,53 @@ static inline void p_live_in_block(p_liveness_info p_info, p_ir_basic_block p_ba
     }
 }
 
-static inline void set_live(p_liveness_info p_info, p_ir_vreg_list p_list, vreg_uint_map p_b) {
+static inline void set_live(p_liveness_info p_info, p_ir_vreg_list p_list, vreg_uint_map p_b, p_ir_basic_block p_bb) {
+    size_t reg_pres_r = 0;
+    size_t reg_pres_s = 0;
     for (size_t i = 0; i < p_info->p_func->param_reg_cnt + p_info->p_func->vreg_cnt; i++) {
         uint32_t next_use = _join_vreg_uint_map(p_b, i, -1);
-        if (next_use != -1)
+        if (next_use != -1) {
             ir_vreg_list_add(p_list, p_info->p_vregs[i], next_use);
+            if (p_info->p_vregs[i]->if_float)
+                ++reg_pres_s;
+            else
+                ++reg_pres_r;
+        }
     }
+    if (reg_pres_r > p_bb->max_reg_pres_r)
+        p_bb->max_reg_pres_r = reg_pres_r;
+    if (reg_pres_s > p_bb->max_reg_pres_s)
+        p_bb->max_reg_pres_s = reg_pres_s;
 }
 
 // 将 info中的 bitmap 转为链表
 static inline void set_func_live(p_liveness_info p_info) {
+    assert(!p_info->p_func->p_nestedtree_root->max_reg_pres_r);
+    assert(!p_info->p_func->p_nestedtree_root->max_reg_pres_s);
     p_list_head p_block_node;
     list_for_each(p_block_node, &p_info->p_func->block) {
         p_ir_basic_block p_block = list_entry(p_block_node, ir_basic_block, node);
-        set_live(p_info, p_block->p_live_in, p_info->block_live_in[p_block->block_id]);
-        set_live(p_info, p_block->p_live_out, p_info->block_live_out[p_block->block_id]);
-        set_live(p_info, p_block->p_branch->p_live_in, p_info->block_branch_live_in[p_block->block_id]);
+        p_block->max_reg_pres_r = 0;
+        p_block->max_reg_pres_s = 0;
+        set_live(p_info, p_block->p_live_in, p_info->block_live_in[p_block->block_id], p_block);
+        set_live(p_info, p_block->p_live_out, p_info->block_live_out[p_block->block_id], p_block);
+        set_live(p_info, p_block->p_branch->p_live_in, p_info->block_branch_live_in[p_block->block_id], p_block);
         p_list_head p_instr_node;
         list_for_each(p_instr_node, &p_block->instr_list) {
             p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
-            set_live(p_info, p_instr->p_live_in, p_info->instr_live_in[p_instr->instr_id]);
-            set_live(p_info, p_instr->p_live_out, p_info->instr_live_out[p_instr->instr_id]);
+            set_live(p_info, p_instr->p_live_in, p_info->instr_live_in[p_instr->instr_id], p_block);
+            set_live(p_info, p_instr->p_live_out, p_info->instr_live_out[p_instr->instr_id], p_block);
+        }
+
+        p_nestedtree_node p_loop = p_block->p_nestree_node;
+        while(p_loop && p_block->max_reg_pres_r > p_loop->max_reg_pres_r) {
+            p_loop->max_reg_pres_r = p_block->max_reg_pres_r;
+            p_loop = p_loop->parent;
+        }
+        p_loop = p_block->p_nestree_node;
+        while(p_loop && p_block->max_reg_pres_s > p_loop->max_reg_pres_s) {
+            p_loop->max_reg_pres_s = p_block->max_reg_pres_s;
+            p_loop = p_loop->parent;
         }
     }
 }

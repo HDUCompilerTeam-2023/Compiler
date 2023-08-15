@@ -119,6 +119,8 @@ p_ir_basic_block ir_basic_block_gen() {
         .p_live_in = ir_vreg_list_init(),
         .p_live_out = ir_vreg_list_init(),
         .instr_num = 0,
+        .max_reg_pres_r = 0,
+        .max_reg_pres_s = 0,
     };
     return p_ir_block;
 }

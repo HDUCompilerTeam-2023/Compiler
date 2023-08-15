@@ -52,6 +52,8 @@ struct ir_basic_block {
     bool if_visited;
 
     void *p_info;
+    size_t max_reg_pres_r;
+    size_t max_reg_pres_s;
 };
 struct ir_branch_target_node {
     p_ir_basic_block_branch_target p_target;

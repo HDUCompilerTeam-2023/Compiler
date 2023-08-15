@@ -81,6 +81,8 @@ void ir_build_func_nestedtree(p_symbol_func p_func) {
         .p_loop_pre_block = NULL,
         .unrolling_time = 1,
         .p_prev_loop = NULL,
+        .max_reg_pres_r = 0,
+        .max_reg_pres_s = 0,
     };
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);

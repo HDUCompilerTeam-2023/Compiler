@@ -48,6 +48,9 @@ struct nestedtree_node {
 
     size_t unrolling_time;
     p_prev_loop p_prev_loop;
+
+    size_t max_reg_pres_r;
+    size_t max_reg_pres_s;
 };
 
 struct nested_list_node {
