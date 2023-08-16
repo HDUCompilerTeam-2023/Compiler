@@ -25,13 +25,6 @@ void ir_opt_loop_unswitch(p_program p_program) {
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         if (list_head_alone(&p_func->block)) continue;
-        p_list_head p_vreg_node;
-        list_for_each(p_vreg_node, &p_func->param_reg_list) {
-            list_entry(p_vreg_node, ir_vreg, node)->is_loop_inv = true;
-        }
-        list_for_each(p_vreg_node, &p_func->vreg_list) {
-            list_entry(p_vreg_node, ir_vreg, node)->is_loop_inv = true;
-        }
         flag = false;
         p_list_head p_son_node;
         list_for_each(p_son_node, &p_func->p_nestedtree_root->son_list) {
@@ -60,6 +53,25 @@ static inline size_t _unswitch_cost_cal(p_nestedtree_node root, p_ir_basic_block
     return ret;
 }
 
+static inline bool _check_inv_operand(p_ir_basic_block loop_head, p_ir_operand p_operand) {
+    assert(p_operand->used_type == instr_ptr);
+    if (p_operand->kind == imme) return true;
+    assert(p_operand->p_vreg);
+    p_ir_vreg p_vreg = p_operand->p_vreg;
+    switch (p_vreg->def_type) {
+    case instr_def:
+        if (ir_basic_block_dom_check(loop_head, p_vreg->p_instr_def->p_basic_block))
+            return true;
+        return false;
+    case bb_phi_def:
+        if (ir_basic_block_dom_check(loop_head, p_vreg->p_bb_phi->p_basic_block))
+            return true;
+        return false;
+    case func_param_def:
+        return true;
+    }
+}
+
 bool loop_unswitch_try(p_nestedtree_node root) {
     p_list_head p_node;
     bool flag = false;
@@ -81,11 +93,10 @@ bool loop_unswitch_try(p_nestedtree_node root) {
             }
         }
     }
-    invariant_analysis(root);
     if (root->head->p_branch->kind == ir_cond_branch) {
         if (search(root->rbtree->root, (uint64_t) root->head->p_branch->p_target_1->p_block) && search(root->rbtree->root, (uint64_t) root->head->p_branch->p_target_2->p_block)) {
             p_ir_instr p_cond_instr = root->head->p_branch->p_exp->p_vreg->p_instr_def;
-            if (check_operand(p_cond_instr->ir_binary.p_src1) && check_operand(p_cond_instr->ir_binary.p_src2)) {
+            if (_check_inv_operand(root->p_loop_pre_block, p_cond_instr->ir_binary.p_src1) && _check_inv_operand(root->p_loop_pre_block, p_cond_instr->ir_binary.p_src2)) {
                 ir_instr_print(p_cond_instr);
                 size_t cnt = _unswitch_cost_cal(root, root->head);
                 if ((cnt <= 88 && program_instr_cnt + cnt <= MAX_INSTR_NUM) || (cnt < 300 && program_instr_cnt + cnt <= MAX_INSTR_NUM / 2)) {
@@ -102,7 +113,7 @@ bool loop_unswitch_try(p_nestedtree_node root) {
         if (p_block->p_branch->kind == ir_cond_branch) {
             if (search(root->rbtree->root, (uint64_t) p_block->p_branch->p_target_1->p_block) && search(root->rbtree->root, (uint64_t) p_block->p_branch->p_target_2->p_block)) {
                 p_ir_instr p_cond_instr = p_block->p_branch->p_exp->p_vreg->p_instr_def;
-                if (check_operand(p_cond_instr->ir_binary.p_src1) && check_operand(p_cond_instr->ir_binary.p_src2)) {
+                if (_check_inv_operand(root->p_loop_pre_block, p_cond_instr->ir_binary.p_src1) && _check_inv_operand(root->p_loop_pre_block, p_cond_instr->ir_binary.p_src2)) {
                     ir_instr_print(p_cond_instr);
                     size_t cnt = _unswitch_cost_cal(root, p_block);
                     if ((cnt <= 88 && program_instr_cnt + cnt <= MAX_INSTR_NUM) || (cnt < 300 && program_instr_cnt + cnt <= MAX_INSTR_NUM / 2)) {
@@ -153,6 +164,7 @@ void loop_unswitch(p_nestedtree_node root, p_ir_basic_block p_switch_block) {
     assert(p_switch_block->p_branch->kind == ir_cond_branch);
     assert(search(root->rbtree->root, (uint64_t) p_switch_block->p_branch->p_target_1->p_block));
     assert(search(root->rbtree->root, (uint64_t) p_switch_block->p_branch->p_target_2->p_block));
+    p_ir_basic_block p_prev = root->p_loop_pre_block;
     p_copy_map p_map = ir_code_copy_map_gen();
     p_list_head p_node;
     list_head add_list = list_init_head(&add_list);
@@ -163,7 +175,8 @@ void loop_unswitch(p_nestedtree_node root, p_ir_basic_block p_switch_block) {
         p_ir_basic_block p_bb_copy = ir_code_copy_bb(p_block, p_map);
         if (p_block == root->head) p_head_copy = p_bb_copy;
         if (p_block == p_switch_block) p_switch_copy = p_bb_copy;
-        ir_basic_block_insert_next(p_bb_copy, root->head);
+        ir_basic_block_insert_next(p_bb_copy, p_prev);
+        p_prev = p_bb_copy;
         p_ir_basic_block_list_node p_new_node = malloc(sizeof(*p_new_node));
         *p_new_node = (ir_basic_block_list_node) {
             .p_basic_block = p_bb_copy,
@@ -178,7 +191,7 @@ void loop_unswitch(p_nestedtree_node root, p_ir_basic_block p_switch_block) {
     }
 
     p_ir_basic_block p_contrl_block = ir_basic_block_gen();
-    ir_basic_block_insert_prev(p_contrl_block, root->head);
+    ir_basic_block_insert_next(p_contrl_block, root->p_loop_pre_block);
     p_ir_instr p_cond_instr = p_switch_block->p_branch->p_exp->p_vreg->p_instr_def;
 
     p_ir_operand p1 = ir_operand_copy(p_cond_instr->ir_binary.p_src1);
