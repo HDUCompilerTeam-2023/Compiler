@@ -396,15 +396,14 @@ void accumulation_analysis(p_nestedtree_node root) {
         }
         if (cnt + is_param != 1) flag = true;
 
-        bool tag = true;
-        for (int i = root->head->dom_depth; tag && !flag; ++i) {
-            tag = false;
+        int max_depth = root->head->dom_depth;
+        for (int i = root->head->dom_depth; i <= max_depth && !flag; ++i) {
             p_list_head p_block_node;
             list_for_each(p_block_node, &root->head->loop_node_list) {
                 if (flag) break;
                 p_ir_basic_block p_block = list_entry(p_block_node, ir_basic_block_list_node, node)->p_basic_block;
+                max_depth = p_block->dom_depth > max_depth ? p_block->dom_depth : max_depth;
                 if (p_block->p_nestree_node != root || p_block->dom_depth != i) continue;
-                tag = true;
                 list_for_each(p_instr_node, &p_block->instr_list) {
                     p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
                     if (hashfind(hashtable_instr, (uint64_t) p_instr)) continue;
@@ -857,13 +856,12 @@ void accumulation_analysis(p_nestedtree_node root) {
 
 void invariant_analysis(p_nestedtree_node root) {
     p_list_head p_node;
-    bool flag = true;
-    for (int i = root->head->dom_depth; flag; ++i) {
-        flag = false;
+    int max_depth = root->head->dom_depth;
+    for (int i = root->head->dom_depth; i <= max_depth; ++i) {
         list_for_each(p_node, &root->head->loop_node_list) {
             p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
+            max_depth = p_basic_block->dom_depth > max_depth ? p_basic_block->dom_depth : max_depth;
             if (p_basic_block->p_nestree_node != root || p_basic_block->dom_depth != i) continue;
-            flag = true;
             p_list_head p_list_node;
             list_for_each(p_list_node, &p_basic_block->basic_block_phis) {
                 list_entry(p_list_node, ir_bb_phi, node)->p_bb_phi->is_loop_inv = false;
@@ -876,6 +874,10 @@ void invariant_analysis(p_nestedtree_node root) {
                         p_instr->ir_binary.p_des->is_loop_inv = false;
                     break;
                 case ir_unary:
+                    if (p_instr->ir_unary.op != ir_val_assign && p_instr->ir_unary.op != ir_minus_op) {
+                        p_instr->ir_unary.p_des->is_loop_inv = false;
+                        break;
+                    }
                     if (!check_operand(p_instr->ir_unary.p_src))
                         p_instr->ir_unary.p_des->is_loop_inv = false;
                     break;
@@ -1090,13 +1092,12 @@ void basic_var_analysis(p_nestedtree_node root) {
 
 void induction_var_analysis(p_nestedtree_node root) {
     p_list_head p_node;
-    bool tag = true;
-    for (int i = root->head->dom_depth; tag; ++i) {
-        tag = false;
+    int max_depth = root->head->dom_depth;
+    for (int i = root->head->dom_depth; i <= max_depth; ++i) {
         list_for_each(p_node, &root->head->loop_node_list) {
             p_ir_basic_block p_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
+            max_depth = p_block->dom_depth > max_depth ? p_block->dom_depth : max_depth;
             if (p_block->p_nestree_node != root || p_block->dom_depth != i) continue;
-            tag = true;
             p_list_head p_instr_node;
             list_for_each(p_instr_node, &p_block->instr_list) {
                 p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
