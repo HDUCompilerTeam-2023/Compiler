@@ -349,6 +349,7 @@ void loop_unrolling(p_nestedtree_node root, int k, bool is_full) {
     //     prev_loop_add(root, k);
     //  return;
     p_copy_map p_map[k];
+    p_ir_basic_block p_prev = root->head;
     p_ir_basic_block p_latch_copy[k], p_cond_copy[k], p_head_copy[k];
     for (int i = 1; i < k; ++i) {
         p_map[i] = ir_code_copy_map_gen();
@@ -363,7 +364,8 @@ void loop_unrolling(p_nestedtree_node root, int k, bool is_full) {
                 p_cond_copy[i] = p_bb_copy;
             if (p_block == root->head)
                 p_head_copy[i] = p_bb_copy;
-            ir_basic_block_insert_next(p_bb_copy, root->head);
+            ir_basic_block_insert_next(p_bb_copy, p_prev);
+            p_prev = p_bb_copy;
         }
         list_for_each(p_node, &root->head->loop_node_list) {
             p_ir_basic_block p_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
@@ -381,7 +383,8 @@ void loop_unrolling(p_nestedtree_node root, int k, bool is_full) {
             p_ir_basic_block p_bb_copy = ir_code_copy_bb(p_block, p_prev_map);
             if (p_block == root->head)
                 p_prev_head = p_bb_copy;
-            ir_basic_block_insert_next(p_bb_copy, root->head);
+            ir_basic_block_insert_next(p_bb_copy, p_prev);
+            p_prev = p_bb_copy;
         }
         list_for_each(p_node, &root->head->loop_node_list) {
             p_ir_basic_block p_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
