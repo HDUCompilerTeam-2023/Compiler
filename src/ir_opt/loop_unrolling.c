@@ -61,6 +61,13 @@ void ir_opt_loop_unrolling(p_program p_program, int unrolling_time) {
         p_list_head p_node;
         list_for_each(p_node, &p_program->function) {
             p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+            p_list_head p_vreg_node;
+            list_for_each(p_vreg_node, &p_func->param_reg_list) {
+                list_entry(p_vreg_node, ir_vreg, node)->is_loop_inv = true;
+            }
+            list_for_each(p_vreg_node, &p_func->vreg_list) {
+                list_entry(p_vreg_node, ir_vreg, node)->is_loop_inv = true;
+            }
             heap_loop_add(p_func->p_nestedtree_root);
             symbol_func_set_block_id(p_func);
         }
@@ -120,6 +127,7 @@ void heap_loop_add(p_nestedtree_node root) {
         heap_loop_add(p_son->p_nested_node);
     }
     if (!root->head) return;
+    invariant_analysis(root);
     int goal = 0;
     list_for_each(p_node, &root->p_var_table) goal = goal + 10;
     list_for_each(p_node, &root->head->loop_node_list) {
