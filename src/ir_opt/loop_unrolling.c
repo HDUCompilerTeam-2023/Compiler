@@ -176,11 +176,11 @@ void loop_full_unrolling(p_nestedtree_node root) {
     if (root->p_loop_step->p_basic_var->var_start->p_instr_def->ir_unary.op != ir_val_assign) return;
     if (root->p_loop_step->p_basic_var->var_start->p_instr_def->ir_unary.p_src->kind != imme) return;
     if (root->p_loop_step->p_basic_var->var_start->p_instr_def->ir_unary.p_src->p_type->basic != type_i32) return;
-    int step_cnt = 0;
-    if (root->p_loop_step->p_cond_instr->ir_binary.op == ir_leq_op)
-        step_cnt = 1;
-    else if (root->p_loop_step->p_cond_instr->ir_binary.op == ir_geq_op)
-        step_cnt = -1;
+    int step_cnt = div;
+    if (root->p_loop_step->p_cond_instr->ir_binary.op == ir_l_op)
+        step_cnt--;
+    else if (root->p_loop_step->p_cond_instr->ir_binary.op == ir_g_op)
+        step_cnt++;
     step_cnt = (step_cnt + root->p_loop_step->p_cond_instr->ir_binary.p_src2->i32const - root->p_loop_step->p_basic_var->var_start->p_instr_def->ir_unary.p_src->i32const) / div;
     if (step_cnt > 64) return;
     int add_instr = _loop_instr_cnt(root) * (step_cnt - 1);

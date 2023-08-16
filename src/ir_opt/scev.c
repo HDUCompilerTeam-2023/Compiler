@@ -345,6 +345,7 @@ void accumulation_analysis(p_nestedtree_node root) {
         if (++cnt > 1) return;
     }
     assert(cnt == 1);
+
     p_ir_basic_block_branch_target p_back_target = NULL;
     list_for_each(p_node, &root->p_loop_latch_block->prev_branch_target_list) {
         if (p_back_target) return;
@@ -358,7 +359,7 @@ void accumulation_analysis(p_nestedtree_node root) {
         if (!search(root->rbtree->root, (uint64_t) p_entry_target->p_source_block)) break;
     }
     // printf("entry %ld\n", p_entry_target->p_source_block->block_id);
-    // printf("\nhead %ld\n", root->head->block_id);
+    // printf("head %ld\n", root->head->block_id);
     // printf("barck %ld\n", p_back_target->p_source_block->block_id);
     for (p_list_head p_node1 = (&p_entry_target->block_param)->p_next,
                      p_node2 = (&root->head->basic_block_phis)->p_next,
@@ -376,6 +377,7 @@ void accumulation_analysis(p_nestedtree_node root) {
         p_list_head p_instr_node;
         p_list_head p_param_node;
         HashTable *hashtable = initHashTable(19777);
+        HashTable *hashtable_instr = initHashTable(19777);
         // printf("vreg %ld\n", p_vreg1->id);
         if (p_vreg1->p_type->basic != type_i32) flag = true;
         hashinsert(hashtable, (uint64_t) p_vreg1, 1);
@@ -393,6 +395,7 @@ void accumulation_analysis(p_nestedtree_node root) {
                 flag = true;
         }
         if (cnt + is_param != 1) flag = true;
+
         bool tag = true;
         for (int i = root->head->dom_depth; tag && !flag; ++i) {
             tag = false;
@@ -404,26 +407,33 @@ void accumulation_analysis(p_nestedtree_node root) {
                 tag = true;
                 list_for_each(p_instr_node, &p_block->instr_list) {
                     p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+                    if (hashfind(hashtable_instr, (uint64_t) p_instr)) continue;
                     switch (p_instr->irkind) {
                     case ir_unary:
                         if (p_instr->ir_unary.p_src->kind == reg && hashfind(hashtable, (uint64_t) p_instr->ir_unary.p_src->p_vreg))
                             flag = true;
+
                         break;
                     case ir_load:
                         if (p_instr->ir_load.p_addr->kind == reg && hashfind(hashtable, (uint64_t) p_instr->ir_load.p_addr->p_vreg))
                             flag = true;
+
                         break;
                     case ir_gep:
                         if (p_instr->ir_gep.p_offset->kind == reg && hashfind(hashtable, (uint64_t) p_instr->ir_gep.p_offset->p_vreg))
                             flag = true;
+
                         if (p_instr->ir_gep.p_addr->kind == reg && hashfind(hashtable, (uint64_t) p_instr->ir_gep.p_addr->p_vreg))
                             flag = true;
+
                         break;
                     case ir_store:
                         if (p_instr->ir_store.p_src->kind == reg && hashfind(hashtable, (uint64_t) p_instr->ir_store.p_src->p_vreg))
                             flag = true;
+
                         if (p_instr->ir_store.p_addr->kind == reg && hashfind(hashtable, (uint64_t) p_instr->ir_store.p_addr->p_vreg))
                             flag = true;
+
                         break;
                     case ir_call:
                         list_for_each(p_param_node, &p_instr->ir_call.param_list) {
@@ -431,6 +441,7 @@ void accumulation_analysis(p_nestedtree_node root) {
                             if (p_param->is_in_mem || p_param->p_param->kind != reg) continue;
                             if (hashfind(hashtable, (uint64_t) p_param->p_param->p_vreg)) {
                                 flag = true;
+
                                 break;
                             }
                         }
@@ -443,6 +454,7 @@ void accumulation_analysis(p_nestedtree_node root) {
                         if (cmp_vreg(p_instr->ir_binary.p_src1, p_vreg1)) {
                             if (p_instr->ir_binary.p_src1 == p_instr->ir_binary.p_src2) {
                                 flag = true;
+
                                 break;
                             }
                             if (p_instr->ir_binary.p_src2->kind == imme || (p_instr->ir_binary.p_src2->kind == reg && (p_instr->ir_binary.p_src2->p_vreg->is_loop_inv || p_instr->ir_binary.p_src2->p_vreg->scev_kind != scev_unknown))) {
@@ -456,6 +468,7 @@ void accumulation_analysis(p_nestedtree_node root) {
                                 p_vreg1 = p_instr->ir_binary.p_des;
                                 // printf("vreg %ld\n", p_vreg1->id);
                                 hashinsert(hashtable, (uint64_t) p_vreg1, 1);
+                                hashinsert(hashtable_instr, (uint64_t) p_instr, 1);
                                 int cnt = 0, is_param = 0;
                                 p_list_head p_operand_node;
                                 list_for_each(p_operand_node, &p_vreg1->use_list) {
@@ -470,13 +483,16 @@ void accumulation_analysis(p_nestedtree_node root) {
                                         flag = true;
                                 }
                                 if (cnt + is_param != 1) flag = true;
+
                                 if (p_vreg1->p_type->basic != type_i32) flag = true;
+
                                 continue;
                             }
                         }
                         else if (cmp_vreg(p_instr->ir_binary.p_src2, p_vreg1)) {
                             if (p_instr->ir_binary.p_src1 == p_instr->ir_binary.p_src2) {
                                 flag = true;
+
                                 break;
                             }
                             if (p_instr->ir_binary.p_src1->kind == imme || (p_instr->ir_binary.p_src1->kind == reg && (p_instr->ir_binary.p_src1->p_vreg->is_loop_inv || p_instr->ir_binary.p_src1->p_vreg->scev_kind != scev_unknown))) {
@@ -490,6 +506,7 @@ void accumulation_analysis(p_nestedtree_node root) {
                                 p_vreg1 = p_instr->ir_binary.p_des;
                                 // printf("vreg %ld\n", p_vreg1->id);
                                 hashinsert(hashtable, (uint64_t) p_vreg1, 1);
+                                hashinsert(hashtable_instr, (uint64_t) p_instr, 1);
                                 int cnt = 0, is_param = 0;
                                 p_list_head p_operand_node;
                                 list_for_each(p_operand_node, &p_vreg1->use_list) {
@@ -504,29 +521,20 @@ void accumulation_analysis(p_nestedtree_node root) {
                                         flag = true;
                                 }
                                 if (cnt + is_param != 1) flag = true;
+
                                 if (p_vreg1->p_type->basic != type_i32) flag = true;
+
                                 continue;
                             }
                         }
-                    }
-                    if (p_instr->ir_binary.p_src1->kind == reg && hashfind(hashtable, (uint64_t) p_instr->ir_binary.p_src1->p_vreg))
-                        flag = true;
-                    if (p_instr->ir_binary.p_src2->kind == reg && hashfind(hashtable, (uint64_t) p_instr->ir_binary.p_src2->p_vreg))
-                        flag = true;
-                    int cnt = 0, is_param = 0;
-                    p_list_head p_operand_node;
-                    list_for_each(p_operand_node, &p_vreg1->use_list) {
-                        p_ir_operand p_operand = list_entry(p_operand_node, ir_operand, use_node);
+                        else {
+                            if (p_instr->ir_binary.p_src1->kind == reg && hashfind(hashtable, (uint64_t) p_instr->ir_binary.p_src1->p_vreg))
+                                flag = true;
 
-                        if (p_operand->used_type == instr_ptr && search(root->rbtree->root, (uint64_t) p_operand->p_instr->p_basic_block))
-                            cnt = cnt + 1;
-
-                        else if (p_operand->used_type == bb_param_ptr)
-                            is_param = 1;
-                        else if (search(root->rbtree->root, (uint64_t) p_operand->p_basic_block))
-                            flag = true;
+                            if (p_instr->ir_binary.p_src2->kind == reg && hashfind(hashtable, (uint64_t) p_instr->ir_binary.p_src2->p_vreg))
+                                flag = true;
+                        }
                     }
-                    if (cnt + is_param != 1) flag = true;
                 }
             }
         }
@@ -563,17 +571,22 @@ void accumulation_analysis(p_nestedtree_node root) {
             instr_insert(ir_sub_op, p1, p2, p_count, p_exit_block);
             // else
             //    instr_insert(ir_sub_op, p2, p1, p_count, p_exit_block);
-            if (root->p_loop_step->is_xeq) {
+            p1 = ir_operand_vreg_gen(p_count);
+            p2 = ir_operand_copy(root->p_loop_step->p_basic_var->p_step_instr->ir_binary.p_src2);
+            p_count = ir_vreg_copy(p_count);
+            instr_insert(ir_add_op, p1, p2, p_count, p_exit_block);
+
+            if (!root->p_loop_step->is_xeq) {
                 p1 = ir_operand_vreg_gen(p_count);
                 if (p_count->p_type->basic == type_i32)
                     p2 = ir_operand_int_gen(1);
                 else
                     p2 = ir_operand_float_gen(1.0);
                 p_count = ir_vreg_copy(p_count);
-                if (root->p_loop_step->p_cond_instr->ir_binary.op == ir_leq_op)
-                    instr_insert(ir_add_op, p1, p2, p_count, p_exit_block);
-                else if (root->p_loop_step->p_cond_instr->ir_binary.op == ir_geq_op)
+                if (root->p_loop_step->p_cond_instr->ir_binary.op == ir_l_op)
                     instr_insert(ir_sub_op, p1, p2, p_count, p_exit_block);
+                else if (root->p_loop_step->p_cond_instr->ir_binary.op == ir_g_op)
+                    instr_insert(ir_add_op, p1, p2, p_count, p_exit_block);
                 // list_add_prev(&p_add_instr->node, &p_info->instr_list);
             }
 
@@ -838,6 +851,7 @@ void accumulation_analysis(p_nestedtree_node root) {
             free(p_sum_instr);
         }
         destroyHashTable(hashtable);
+        destroyHashTable(hashtable_instr);
     }
 }
 
