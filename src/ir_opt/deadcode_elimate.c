@@ -254,6 +254,7 @@ static inline void deal_reg_info_table(p_reverse_dom_tree_info_list p_info_list,
                 p_ir_varray p_varray = reg_info_table->p_varray_top->p_varray;
                 reg_info_table->p_varray_top = p_new_top;
                 p_ir_basic_block p_useful_block = NULL;
+                if (!p_varray->p_instr_def) continue; // 在某些时候删指令而不能删varray
                 switch (p_varray->varray_def_type) {
                 case varray_bb_phi_def:
                     deal_varray_block_param(p_info_list, p_varray->p_varray_bb_phi, reg_info_table);
