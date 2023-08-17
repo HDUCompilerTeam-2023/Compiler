@@ -20,8 +20,12 @@
 #include <ir_opt/lir_gen/critical_edge_cut.h>
 #include <ir_opt/lir_gen/delete_cmp.h>
 #include <ir_opt/lir_gen/share_trans.h>
-#include <ir_opt/mem2reg.h>
 #include <ir_opt/mem_copy_propagation.h>
+#include <ir_opt/mem2reg.h>
+#include <ir_opt/reg_alloca/reg_alloca.h>
+#include <ir_opt/reg_alloca/min_spill.h>
+#include <ir_opt/simplify_cfg.h>
+#include <ir_opt/copy_propagation.h>
 #include <ir_opt/reassociate.h>
 #include <ir_opt/reg_alloca/reg_alloca.h>
 #include <ir_opt/globalopt.h>
@@ -29,6 +33,7 @@
 #include <ir_opt/cssa.h>
 #include <ir_opt/sccp.h>
 #include <ir_opt/simplify_cfg.h>
+#include <ir_gen/varray.h>
 #include <stdio.h>
 int main(int argc, char *argv[]) {
     char *in_file = NULL, *out_file = NULL;
@@ -92,12 +97,14 @@ int main(int argc, char *argv[]) {
     // shared lir trans
     share_lir_trans_pass(p_program);
 
+    memssa_program_out(p_program);
+
     // arm lir trans
     arm_param_trans_pass(p_program);
     arm_imme_trans_pass(p_program);
     set_cond_pass(p_program);
     critical_edge_cut_pass(p_program);
-    ir_opt_cssa_no_pcc(p_program);
+    ir_opt_min_spill(p_program);
     reg_alloca_pass(alloca_color_graph, 13, 32, p_program);
     arm_trans_after_pass(p_program);
     set_cond_pass(p_program);

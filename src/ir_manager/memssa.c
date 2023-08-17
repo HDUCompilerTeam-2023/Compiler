@@ -522,6 +522,15 @@ static inline void clear_param_varray(p_symbol_func p_func) {
         ir_vmem_base_clear_all(p_param->p_param_base);
     }
 }
+void memssa_program_out(p_program p_ir) {
+    clear_var_varray(&p_ir->variable);
+    p_list_head p_node;
+    list_for_each(p_node, &p_ir->function) {
+        p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        clear_var_varray(&p_func->variable);
+        clear_param_varray(p_func);
+    }
+}
 static inline void mem_ssa_dfs_seq_drop(p_mem_ssa_list p_convert_list) {
     for (size_t i = 0; i < p_convert_list->p_func->block_cnt; i++) {
         bitmap_drop((p_convert_list->p_base + i)->dom_frontier);

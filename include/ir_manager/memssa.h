@@ -6,5 +6,6 @@
 
 void memssa_func_pass(p_symbol_func p_func, p_program p_program);
 void memssa_program_pass(p_program p_program);
+void memssa_program_out(p_program p_ir);
 
 #endif
