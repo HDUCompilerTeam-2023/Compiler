@@ -67,13 +67,20 @@ p_arm_instr arm_cmp_instr_gen(arm_cmp_op op, arm_reg rs1, p_arm_operand op2) {
     p_instr->cmp_instr.op2 = op2;
     return p_instr;
 }
-p_arm_instr arm_jump_instr_gen(arm_jump_op op, arm_cond_type cond_type, arm_label label) {
+p_arm_instr arm_jump_instr_gen(arm_jump_op op, arm_cond_type cond_type, p_arm_block p_target) {
     p_arm_instr p_instr = malloc(sizeof(*p_instr));
     p_instr->node = list_head_init(&p_instr->node);
     p_instr->type = arm_jump_type;
     p_instr->jump_instr.op = op;
     p_instr->jump_instr.cond_type = cond_type;
-    p_instr->jump_instr.label_target = label;
+    p_instr->jump_instr.p_block_target = p_target;
+    return p_instr;
+}
+p_arm_instr arm_call_instr_gen(char *name) {
+    p_arm_instr p_instr = malloc(sizeof(*p_instr));
+    p_instr->node = list_head_init(&p_instr->node);
+    p_instr->type = arm_call_type;
+    p_instr->call_instr.func_name = name;
     return p_instr;
 }
 p_arm_instr arm_mem_instr_gen(arm_mem_op op, arm_reg rd, arm_reg base, p_arm_operand offset) {
@@ -227,15 +234,8 @@ void arm_instr_drop(p_arm_instr p_instr) {
         arm_operand_drop(p_instr->binary_instr.op2);
         break;
     case arm_jump_type:
-        switch (p_instr->jump_instr.op) {
-        case arm_b:
-        case arm_bl:
-            arm_label_drop(p_instr->jump_instr.label_target);
-            break;
-        case arm_bx:
-        case arm_blx:
-            break;
-        }
+        break;
+    case arm_call_type:
         break;
     case arm_cmp_type:
         arm_operand_drop(p_instr->cmp_instr.op2);

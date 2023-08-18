@@ -45,6 +45,8 @@ struct symbol_func {
     size_t save_reg_s_num;
     list_head node;
 
+    void *p_info;
+
     bool if_updated_graph;
 };
 

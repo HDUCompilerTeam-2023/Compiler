@@ -47,6 +47,8 @@ struct ir_basic_block {
 
     p_symbol_func p_func;
     bool if_visited;
+
+    void *p_info;
 };
 struct ir_branch_target_node {
     p_ir_basic_block_branch_target p_target;

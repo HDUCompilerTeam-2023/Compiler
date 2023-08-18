@@ -9,7 +9,7 @@ INCLUDE=sylib.h
 cp "$1" ./tmp.c || exit 1
 
 if [ $# -eq 1 ]; then
-    ./build/SysYParser-debug ./tmp.c -o ./tmp.s || exit 1
+    ./build/SysYParser-debug ./tmp.c -O1 -o ./tmp.s || exit 1
 elif [[ $# -eq 2 && $2 = "arm1" ]]; then
     arm-linux-gnueabihf-gcc -march=armv7-a -mfpu=neon-vfpv4 -S -O1 ./tmp.c -include $LIB_DIR/sylib.h -o ./tmp.s || exit 1
 elif [[ $# -eq 2 && $2 = "arm2" ]]; then

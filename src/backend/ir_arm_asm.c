@@ -623,8 +623,8 @@ static void arm_call_instr_asm_gen(p_arm_asm_gen_info p_info, p_ir_instr p_instr
     swap_in_call(p_info, p_call_instr);
     size_t size = get_size(p_call_instr);
     deal_sp_stack_size(p_info, arm_sub, size);
-    p_arm_instr p_jump = arm_jump_instr_gen(arm_bl, arm_al, arm_label_gen(p_call_instr->p_func->name));
-    arm_block_add_instr_tail(p_info->p_current_block, p_jump);
+    p_arm_instr p_call = arm_call_instr_gen(p_call_instr->p_func->name);
+    arm_block_add_instr_tail(p_info->p_current_block, p_call);
     if (p_call_instr->p_des) {
         if (rs != p_call_instr->p_des->reg_id)
             mov_reg2reg(p_info, vreg_arm_reg(p_call_instr->p_des), rs);
@@ -730,8 +730,7 @@ static arm_cond_type get_jump_type(p_arm_asm_gen_info p_info, p_ir_vreg p_vreg) 
 }
 
 static void arm_basic_block_asm_gen(p_arm_asm_gen_info p_info, p_ir_basic_block p_block, p_ir_basic_block p_next_block, p_symbol_func p_func) {
-    p_info->p_current_block = arm_block_gen(arm_block_label_gen(p_block->p_func->name, p_block->block_id));
-    arm_func_add_block_tail(p_info->p_current_func, p_info->p_current_block);
+    p_info->p_current_block = p_block->p_info;
     p_list_head p_node;
     list_for_each(p_node, &p_block->instr_list) {
         p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
@@ -741,17 +740,17 @@ static void arm_basic_block_asm_gen(p_arm_asm_gen_info p_info, p_ir_basic_block 
     case ir_br_branch:
         swap_in_phi(p_info, p_block->p_branch->p_target_1->p_block, p_block->p_branch->p_target_1);
         if (p_block->p_branch->p_target_1->p_block != p_next_block) {
-            p_arm_instr p_jump = arm_jump_instr_gen(arm_b, arm_al, arm_block_label_gen(p_block->p_func->name, p_block->p_branch->p_target_1->p_block->block_id));
+            p_arm_instr p_jump = arm_jump_instr_gen(arm_b, arm_al, p_block->p_branch->p_target_1->p_block->p_info);
             arm_block_add_instr_tail(p_info->p_current_block, p_jump);
         }
         break;
     case ir_cond_branch:
         assert(p_block->p_branch->p_exp->kind == reg);
         arm_cond_type type = get_jump_type(p_info, p_block->p_branch->p_exp->p_vreg);
-        p_arm_instr p_jump = arm_jump_instr_gen(arm_b, type, arm_block_label_gen(p_block->p_func->name, p_block->p_branch->p_target_1->p_block->block_id));
+        p_arm_instr p_jump = arm_jump_instr_gen(arm_b, type, p_block->p_branch->p_target_1->p_block->p_info);
         arm_block_add_instr_tail(p_info->p_current_block, p_jump);
         if (p_block->p_branch->p_target_2->p_block != p_next_block) {
-            p_arm_instr p_jump = arm_jump_instr_gen(arm_b, arm_al, arm_block_label_gen(p_block->p_func->name, p_block->p_branch->p_target_2->p_block->block_id));
+            p_arm_instr p_jump = arm_jump_instr_gen(arm_b, arm_al, p_block->p_branch->p_target_2->p_block->p_info);
             arm_block_add_instr_tail(p_info->p_current_block, p_jump);
         }
         break;
@@ -783,6 +782,7 @@ static p_arm_asm_gen_info arm_asm_gen_info_gen(p_program p_program, p_symbol_fun
     p_info->p_func = p_func;
     p_arm_func p_a_func = arm_func_gen(p_func->name);
     list_add_prev(&p_a_func->node, &p_info->p_program->arm_function);
+    p_func->p_info = p_a_func;
     p_info->save_reg_r = malloc(sizeof(*p_info->save_reg_r) * R_NUM);
     p_info->save_reg_s = malloc(sizeof(*p_info->save_reg_s) * S_NUM);
     p_info->save_reg_r_num = p_func->save_reg_r_num;
@@ -792,6 +792,13 @@ static p_arm_asm_gen_info arm_asm_gen_info_gen(p_program p_program, p_symbol_fun
     for (size_t i = 0; i < p_func->save_reg_s_num; i++)
         p_info->save_reg_s[i] = callee_save_reg_s[i];
     p_info->p_current_func = p_a_func;
+    p_list_head p_node;
+    list_for_each(p_node, &p_func->block){
+        p_ir_basic_block p_block = list_entry(p_node, ir_basic_block, node);
+        p_arm_block p_a_block = arm_block_gen(arm_block_label_gen(p_func->name, p_block->block_id));
+        arm_func_add_block_tail(p_a_func, p_a_block);
+        p_block->p_info = p_a_block;
+    }
     p_info->mov_num = p_info->swap_num = 0;
     return p_info;
 }

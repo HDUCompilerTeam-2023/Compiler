@@ -160,12 +160,14 @@ static inline void arm_jump_instr_output(FILE *out_file, p_arm_jump_instr p_jump
     }
     arm_cond_type_output(out_file, p_jump_instr->cond_type);
     if (if_label)
-        fprintf(out_file, "%s", p_jump_instr->label_target);
+        fprintf(out_file, "%s", p_jump_instr->p_block_target->label);
     else
         arm_reg_output(out_file, p_jump_instr->reg_target);
     fprintf(out_file, "\n");
 }
-
+static inline void arm_call_instr_output(FILE *out_file, p_arm_call_instr p_call_instr) {
+    fprintf(out_file, "   bl %s\n", p_call_instr->func_name);
+}
 static inline void arm_cmp_instr_output(FILE *out_file, p_arm_cmp_instr p_cmp_instr) {
     switch (p_cmp_instr->op) {
     case arm_cmp:
@@ -430,6 +432,9 @@ static inline void arm_instr_output(FILE *out_file, p_arm_instr p_instr) {
         break;
     case arm_jump_type:
         arm_jump_instr_output(out_file, &p_instr->jump_instr);
+        break;
+    case arm_call_type:
+        arm_call_instr_output(out_file, &p_instr->call_instr);
         break;
     case arm_cmp_type:
         arm_cmp_instr_output(out_file, &p_instr->cmp_instr);

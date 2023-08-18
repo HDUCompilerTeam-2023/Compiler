@@ -11,6 +11,7 @@ typedef struct arm_mov_instr arm_mov_instr, *p_arm_mov_instr;
 typedef struct arm_mov32_instr arm_mov32_instr, *p_arm_mov32_instr;
 typedef struct arm_cmp_instr arm_cmp_instr, *p_arm_cmp_instr;
 typedef struct arm_jump_instr arm_jump_instr, *p_arm_jump_instr;
+typedef struct arm_call_instr arm_call_instr, *p_arm_call_instr;
 typedef struct arm_mul_instr arm_mul_instr, *p_arm_mul_instr;
 typedef struct arm_sdiv_instr arm_sdiv_instr, *p_arm_sdiv_instr;
 typedef struct arm_push_pop_instr arm_push_pop_instr, *p_arm_push_pop_instr;
@@ -70,6 +71,7 @@ enum arm_instr_type {
     arm_cmp_type,
     arm_mem_type,
     arm_jump_type,
+    arm_call_type,
     arm_mov_type,
     arm_mov32_type,
     arm_mul_type,
@@ -176,11 +178,14 @@ struct arm_jump_instr {
     arm_jump_op op;
     arm_cond_type cond_type;
     union {
-        arm_label label_target;
+        p_arm_block p_block_target;
         arm_reg reg_target;
     };
 };
 
+struct arm_call_instr {
+    arm_label func_name;
+};
 struct arm_mov_instr {
     arm_cond_type type;
     arm_mov_op op;
@@ -189,7 +194,6 @@ struct arm_mov_instr {
     p_arm_operand operand;
 };
 struct arm_mov32_instr {
-
     arm_label label;
     arm_imme imme;
     arm_reg rd;
@@ -267,6 +271,7 @@ struct arm_instr {
         arm_binary_instr binary_instr;
         arm_mem_instr mem_instr;
         arm_jump_instr jump_instr;
+        arm_call_instr call_instr;
         arm_mov_instr mov_instr;
         arm_cmp_instr cmp_instr;
         arm_mov32_instr mov32_instr;
