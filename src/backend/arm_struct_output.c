@@ -481,22 +481,35 @@ static inline void arm_instr_output(FILE *out_file, p_arm_instr p_instr) {
     }
 }
 
-static inline void arm_block_output(FILE *out_file, p_arm_block p_block) {
+static inline void arm_block_output(FILE *out_file, p_arm_block p_block, p_arm_block p_next) {
     arm_label_output(out_file, p_block->label);
     p_list_head p_node;
     list_for_each(p_node, &p_block->instr_list) {
         p_arm_instr p_instr = list_entry(p_node, arm_instr, node);
         arm_instr_output(out_file, p_instr);
     }
+    if (p_block->p_target1) {
+        if (p_block->p_target1->jump_instr.cond_type != arm_al || p_block->p_target1->jump_instr.p_block_target != p_next) {
+            arm_instr_output(out_file, p_block->p_target1);
+        }
+    }
+    if (p_block->p_target2) {
+        assert(p_block->p_target2->jump_instr.cond_type == arm_al);
+        if (p_block->p_target2->jump_instr.p_block_target != p_next)
+            arm_instr_output(out_file, p_block->p_target2);
+    }
 }
 
 void arm_func_output(FILE *out_file, p_arm_func p_func) {
     arm_func_sym_declare_output(out_file, p_func->func_name);
-    arm_block_output(out_file, p_func->p_into_func_block);
+    arm_block_output(out_file, p_func->p_into_func_block, NULL);
     p_list_head p_node;
     list_for_each(p_node, &p_func->block_list) {
         p_arm_block p_block = list_entry(p_node, arm_block, node);
-        arm_block_output(out_file, p_block);
+        if (p_node->p_next != &p_func->block_list)
+            arm_block_output(out_file, p_block, list_entry(p_node->p_next, arm_block, node));
+        else
+            arm_block_output(out_file, p_block, NULL);
     }
 }
 void arm_global_sym_output(FILE *out_file, p_symbol_var p_sym) {

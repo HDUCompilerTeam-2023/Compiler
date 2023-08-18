@@ -23,6 +23,8 @@ typedef struct arm_vcvt_instr arm_vcvt_instr, *p_arm_vcvt_instr;
 typedef struct arm_vneg_instr arm_vneg_instr, *p_arm_vneg_instr;
 typedef struct arm_vpush_vpop_instr arm_vpush_vpop_instr, *p_arm_vpush_vpop_instr;
 
+typedef struct arm_block_edge_node arm_block_edge_node, *p_arm_block_edge_node;
+
 typedef enum arm_arch arm_arch;
 typedef enum arm_mode arm_mode;
 typedef enum arm_fpu arm_fpu;
@@ -162,7 +164,10 @@ struct arm_func {
 };
 struct arm_block {
     arm_label label;
+    list_head arm_block_prevs;
     list_head instr_list;
+    p_arm_instr p_target1;
+    p_arm_instr p_target2;
     list_head node;
 };
 
@@ -177,6 +182,7 @@ struct arm_binary_instr {
 struct arm_jump_instr {
     arm_jump_op op;
     arm_cond_type cond_type;
+    p_arm_block p_source_block;
     union {
         p_arm_block p_block_target;
         arm_reg reg_target;
@@ -289,5 +295,9 @@ struct arm_instr {
     list_head node;
 };
 
+struct arm_block_edge_node {
+    p_arm_instr p_jump_instr;
+    list_head node;
+};
 extern size_t R_NUM, S_NUM;
 #endif

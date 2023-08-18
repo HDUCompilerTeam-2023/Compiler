@@ -23,6 +23,9 @@ p_arm_block arm_block_gen(arm_label label) {
     p_block->instr_list = list_head_init(&p_block->instr_list);
     p_block->label = label;
     p_block->node = list_head_init(&p_block->node);
+    p_block->p_target1 = NULL;
+    p_block->p_target2 = NULL;
+    p_block->arm_block_prevs = list_head_init(&p_block->arm_block_prevs);
     return p_block;
 }
 void arm_func_add_block_tail(p_arm_func p_func, p_arm_block p_block) {
@@ -67,14 +70,31 @@ p_arm_instr arm_cmp_instr_gen(arm_cmp_op op, arm_reg rs1, p_arm_operand op2) {
     p_instr->cmp_instr.op2 = op2;
     return p_instr;
 }
-p_arm_instr arm_jump_instr_gen(arm_jump_op op, arm_cond_type cond_type, p_arm_block p_target) {
+p_arm_instr arm_jump_instr_gen(arm_jump_op op, arm_cond_type cond_type, p_arm_block p_sour_block, p_arm_block p_target) {
     p_arm_instr p_instr = malloc(sizeof(*p_instr));
     p_instr->node = list_head_init(&p_instr->node);
     p_instr->type = arm_jump_type;
     p_instr->jump_instr.op = op;
     p_instr->jump_instr.cond_type = cond_type;
     p_instr->jump_instr.p_block_target = p_target;
+    p_instr->jump_instr.p_source_block = p_sour_block;
     return p_instr;
+}
+void arm_block_add_prev(p_arm_block p_source, p_arm_instr p_instr) {
+    p_arm_block_edge_node p_a_block_node = malloc(sizeof(*p_a_block_node));
+    p_a_block_node->node = list_head_init(&p_a_block_node->node);
+    p_a_block_node->p_jump_instr = p_instr;
+    list_add_prev(&p_a_block_node->node, &p_instr->jump_instr.p_block_target->arm_block_prevs);
+}
+void arm_block_set_br1(p_arm_block p_a_block, p_arm_instr p_instr) {
+    assert(p_instr->type == arm_jump_type);
+    p_a_block->p_target1 = p_instr;
+    arm_block_add_prev(p_a_block, p_instr);
+}
+void arm_block_set_br2(p_arm_block p_a_block, p_arm_instr p_instr) {
+    assert(p_instr->type == arm_jump_type);
+    p_a_block->p_target2 = p_instr;
+    arm_block_add_prev(p_a_block, p_instr);
 }
 p_arm_instr arm_call_instr_gen(char *name) {
     p_arm_instr p_instr = malloc(sizeof(*p_instr));
@@ -274,13 +294,21 @@ void arm_instr_drop(p_arm_instr p_instr) {
     }
     free(p_instr);
 }
-void arm_block_drop(p_arm_block p_block) {
+void arm_block_drop(p_arm_block p_a_block) {
     p_list_head p_node, p_next;
-    list_for_each_safe(p_node, p_next, &p_block->instr_list) {
+    list_for_each_safe(p_node, p_next, &p_a_block->arm_block_prevs) {
+        p_arm_block_edge_node p_edge_node = list_entry(p_node, arm_block_edge_node, node);
+        free(p_edge_node);
+    }
+    list_for_each_safe(p_node, p_next, &p_a_block->instr_list) {
         arm_instr_drop(list_entry(p_node, arm_instr, node));
     }
-    arm_label_drop(p_block->label);
-    free(p_block);
+    if (p_a_block->p_target1)
+        arm_instr_drop(p_a_block->p_target1);
+    if (p_a_block->p_target2)
+        arm_instr_drop(p_a_block->p_target2);
+    arm_label_drop(p_a_block->label);
+    free(p_a_block);
 }
 void arm_func_drop(p_arm_func p_func) {
     list_del(&p_func->node);

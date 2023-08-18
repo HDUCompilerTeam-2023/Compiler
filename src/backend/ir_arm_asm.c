@@ -736,23 +736,20 @@ static void arm_basic_block_asm_gen(p_arm_asm_gen_info p_info, p_ir_basic_block 
         p_ir_instr p_instr = list_entry(p_node, ir_instr, node);
         arm_instr_asm_gen(p_info, p_instr);
     }
+    p_arm_instr p_jump;
     switch (p_block->p_branch->kind) {
     case ir_br_branch:
         swap_in_phi(p_info, p_block->p_branch->p_target_1->p_block, p_block->p_branch->p_target_1);
-        if (p_block->p_branch->p_target_1->p_block != p_next_block) {
-            p_arm_instr p_jump = arm_jump_instr_gen(arm_b, arm_al, p_block->p_branch->p_target_1->p_block->p_info);
-            arm_block_add_instr_tail(p_info->p_current_block, p_jump);
-        }
+        p_jump = arm_jump_instr_gen(arm_b, arm_al, p_info->p_current_block, p_block->p_branch->p_target_1->p_block->p_info);
+        arm_block_set_br1(p_info->p_current_block, p_jump);
         break;
     case ir_cond_branch:
         assert(p_block->p_branch->p_exp->kind == reg);
         arm_cond_type type = get_jump_type(p_info, p_block->p_branch->p_exp->p_vreg);
-        p_arm_instr p_jump = arm_jump_instr_gen(arm_b, type, p_block->p_branch->p_target_1->p_block->p_info);
-        arm_block_add_instr_tail(p_info->p_current_block, p_jump);
-        if (p_block->p_branch->p_target_2->p_block != p_next_block) {
-            p_arm_instr p_jump = arm_jump_instr_gen(arm_b, arm_al, p_block->p_branch->p_target_2->p_block->p_info);
-            arm_block_add_instr_tail(p_info->p_current_block, p_jump);
-        }
+        p_jump = arm_jump_instr_gen(arm_b, type, p_info->p_current_block, p_block->p_branch->p_target_1->p_block->p_info);
+        arm_block_set_br1(p_info->p_current_block, p_jump);
+        p_jump = arm_jump_instr_gen(arm_b, arm_al, p_info->p_current_block, p_block->p_branch->p_target_2->p_block->p_info);
+        arm_block_set_br2(p_info->p_current_block, p_jump);
         break;
     case ir_ret_branch:
         if (!p_block->p_branch->p_exp) {
@@ -793,7 +790,7 @@ static p_arm_asm_gen_info arm_asm_gen_info_gen(p_program p_program, p_symbol_fun
         p_info->save_reg_s[i] = callee_save_reg_s[i];
     p_info->p_current_func = p_a_func;
     p_list_head p_node;
-    list_for_each(p_node, &p_func->block){
+    list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_block = list_entry(p_node, ir_basic_block, node);
         p_arm_block p_a_block = arm_block_gen(arm_block_label_gen(p_func->name, p_block->block_id));
         arm_func_add_block_tail(p_a_func, p_a_block);
