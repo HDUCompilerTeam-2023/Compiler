@@ -48,6 +48,13 @@ void critical_edge_cut_pass(p_program p_ir) {
                 }
             }
         }
+        if (!list_head_alone(&p_func->p_entry_block->prev_branch_target_list)) {
+            assert(list_head_alone(&p_func->p_entry_block->basic_block_phis));
+            p_ir_basic_block p_new = ir_basic_block_gen();
+            symbol_func_bb_add_head(p_func, p_new);
+            ir_basic_block_set_br(p_new, p_func->p_entry_block);
+            p_func->p_entry_block = p_new;
+        }
         symbol_func_set_block_id(p_func);
     }
 }

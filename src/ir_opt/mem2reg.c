@@ -61,10 +61,50 @@ static inline size_t get_var_index(p_ir_operand p_operand, p_ssa_var_list_info p
     return p_vmem->id;
 }
 
+typedef struct {
+    p_ir_basic_block p_bb;
+    list_head node;
+} bb_node, *p_bb_node;
+static inline p_bb_node _bb_node_gen(p_ir_basic_block p_bb) {
+    p_bb_node p_bn = malloc(sizeof(*p_bn));
+    *p_bn = (bb_node) {
+        .p_bb = p_bb,
+        .node = list_init_head(&p_bn->node),
+    };
+    return p_bn;
+}
+static inline void _bb_list_add(p_list_head p_head, p_ir_basic_block p_bb) {
+    p_bb_node p_bn = _bb_node_gen(p_bb);
+    list_add_prev(&p_bn->node, p_head);
+}
+static inline p_ir_basic_block _bb_list_pop(p_list_head p_head) {
+    if (list_head_alone(p_head))
+        return NULL;
+    p_bb_node p_bn = list_entry(p_head->p_next, bb_node, node);
+    list_del(&p_bn->node);
+    p_ir_basic_block p_ret = p_bn->p_bb;
+    free(p_bn);
+    return p_ret;
+}
+static inline void _build_rpo_list(p_list_head p_head, p_ir_basic_block p_bb) {
+    if (p_bb->if_visited)
+        return;
+    p_bb->if_visited = true;
+    if (p_bb->p_branch->p_target_1)
+        _build_rpo_list(p_head, p_bb->p_branch->p_target_1->p_block);
+    if (p_bb->p_branch->p_target_2)
+        _build_rpo_list(p_head, p_bb->p_branch->p_target_2->p_block);
+
+    _bb_list_add(p_head, p_bb);
+}
+
 void mem2reg_compute_dom_frontier(p_convert_ssa_list p_convert_list) {
-    p_list_head p_node;
-    list_for_each_tail(p_node, &p_convert_list->p_func->block) {
-        p_ir_basic_block p_basic_block = list_entry(p_node, ir_basic_block, node);
+    list_head bb_head = list_init_head(&bb_head);
+    symbol_func_basic_block_init_visited(p_convert_list->p_func);
+    _build_rpo_list(&bb_head, p_convert_list->p_func->p_entry_block);
+
+    p_ir_basic_block p_basic_block;
+    while(p_basic_block = _bb_list_pop(&bb_head), p_basic_block) {
         p_convert_ssa p_info = p_convert_list->p_base + p_basic_block->block_id;
         p_ir_basic_block_branch_target p_true_block = p_basic_block->p_branch->p_target_1;
         p_ir_basic_block_branch_target p_false_block = p_basic_block->p_branch->p_target_2;
@@ -280,7 +320,7 @@ void mem2reg_func_pass(p_symbol_func p_func) {
     p_ssa_var_list_info p_var_list = mem2reg_init_var_list(p_func);
     // 初始化 dfs 序
     symbol_func_basic_block_init_visited(p_func);
-    p_ir_basic_block p_entry = list_entry(p_func->block.p_next, ir_basic_block, node);
+    p_ir_basic_block p_entry = p_func->p_entry_block;
     // 计算支配树
     ir_cfg_set_func_dom(p_func);
     // 计算支配边界

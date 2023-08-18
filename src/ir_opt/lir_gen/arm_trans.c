@@ -206,7 +206,7 @@ static inline void new_load_func_param(p_symbol_func p_func, p_ir_basic_block p_
 }
 
 static inline void symbol_func_param_vreg2vmem(p_symbol_func p_func) {
-    p_ir_basic_block p_entry = list_entry(p_func->block.p_next, ir_basic_block, node);
+    p_ir_basic_block p_entry = p_func->p_entry_block;
     size_t r = 0;
     size_t s = 0;
     p_list_head p_node_vreg, p_node_vreg_next;

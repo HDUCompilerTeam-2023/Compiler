@@ -160,7 +160,7 @@ static inline void p_live_in_block(p_liveness_info p_info, p_ir_basic_block p_ba
         p_ir_basic_block p_prev_block = list_entry(p_node, ir_branch_target_node, node)->p_target->p_source_block;
         p_live_out_block(p_info, p_prev_block, p_vreg);
     }
-    if (p_info->p_func->block.p_next == &p_basic_block->node) {
+    if (p_info->p_func->p_entry_block == p_basic_block) {
         list_for_each(p_node, &p_info->p_func->param_reg_list) {
             p_ir_vreg p_param = list_entry(p_node, ir_vreg, node);
             if (p_param == p_vreg)

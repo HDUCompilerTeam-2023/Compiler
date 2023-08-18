@@ -20,7 +20,7 @@ static inline void ir_simplify_cfg_dfs_basic_block(p_ir_basic_block p_bb) {
 
 static inline void ir_simplify_cfg_func_remove_no_predesessor_bb(p_symbol_func p_func) {
     symbol_func_basic_block_init_visited(p_func);
-    p_ir_basic_block p_entry_bb = list_entry(p_func->block.p_next, ir_basic_block, node);
+    p_ir_basic_block p_entry_bb = p_func->p_entry_block;
     ir_simplify_cfg_dfs_basic_block(p_entry_bb);
 
     p_ir_vreg *need_del = (p_ir_vreg *) malloc(sizeof(p_ir_vreg) * p_func->vreg_cnt);
@@ -162,6 +162,9 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
         if (!p_target || p_bb->p_branch->p_target_2) continue;
         if (p_target->p_block == p_bb) continue;
 
+        if (p_bb == p_func->p_entry_block && !list_head_alone(&p_target->block_param))
+            continue;
+
         p_list_head p_node, p_next;
         list_for_each(p_node, &p_target->p_block->prev_branch_target_list) {
             p_ir_branch_target_node p_bbl = list_entry(p_node, ir_branch_target_node, node);
@@ -244,7 +247,7 @@ static inline void ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_symbo
     list_for_each(p_node, &p_func->block) {
         p_ir_basic_block p_bb = list_entry(p_node, ir_basic_block, node);
         if ((&p_bb->prev_branch_target_list)->p_next->p_next != &p_bb->prev_branch_target_list) continue;
-        if (p_node == p_func->block.p_next) continue;
+        if (p_bb == p_func->p_entry_block) continue;
         assert(!list_head_alone(&p_bb->prev_branch_target_list));
         if (list_head_alone(&p_bb->basic_block_phis))
             continue;

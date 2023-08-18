@@ -160,7 +160,7 @@ static inline void new_store_bb_phi_front(p_conflict_graph p_graph, p_ir_basic_b
 }
 static inline void new_store_param_front(p_conflict_graph p_graph, p_symbol_func p_func) {
     // 处理形参
-    p_ir_basic_block p_entry = list_entry(p_func->block.p_next, ir_basic_block, node);
+    p_ir_basic_block p_entry = p_func->p_entry_block;
     p_list_head p_node;
     list_for_each(p_node, &p_func->param_reg_list) {
         p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);

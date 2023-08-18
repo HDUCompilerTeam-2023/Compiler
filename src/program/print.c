@@ -73,7 +73,7 @@ void program_ir_dom_info_print(p_program p_program) {
         if (list_head_alone(&p_func->block)) continue;
         ;
         symbol_func_init_print(p_func);
-        p_ir_basic_block p_basic_block = list_entry(p_func->block.p_next, ir_basic_block, node);
+        p_ir_basic_block p_basic_block = p_func->p_entry_block;
         ir_basic_block_dom_info_print(p_basic_block);
     }
     printf("+++ dom_tree end +++\n");

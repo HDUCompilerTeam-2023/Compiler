@@ -159,7 +159,7 @@ void whole_in_mem_alloca(p_symbol_func p_func, size_t reg_r_num, size_t reg_s_nu
     p_list_head p_node;
     p_list_head p_instr_node;
     // 处理形参
-    p_ir_basic_block p_entry = list_entry(p_func->block.p_next, ir_basic_block, node);
+    p_ir_basic_block p_entry = p_func->p_entry_block;
     p_instr_node = p_entry->instr_list.p_next;
     p_ir_instr p_head_instr = list_entry(&p_entry->instr_list, ir_instr, node);
     list_for_each(p_node, &p_func->param_reg_list) {

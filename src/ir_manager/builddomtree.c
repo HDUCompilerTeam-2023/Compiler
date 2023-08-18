@@ -83,7 +83,7 @@ void ir_cfg_set_func_dom(p_symbol_func p_func) {
     p_info_list->p_base = malloc(sizeof(*p_info_list->p_base) * block_num);
     // 初始化 dfs 序
     symbol_func_basic_block_init_visited(p_func);
-    p_ir_basic_block p_entry = list_entry(p_func->block.p_next, ir_basic_block, node);
+    p_ir_basic_block p_entry = p_func->p_entry_block;
     init_dfs_sequence(p_info_list, 0, 0, p_entry);
 
     for (size_t i = block_num - 1; i >= 1; i--) {
