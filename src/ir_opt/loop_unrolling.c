@@ -37,7 +37,6 @@ static inline int _loop_instr_cnt(p_nestedtree_node root) {
 }
 
 void ir_opt_loop_full_unrolling(p_program p_program) {
-    clear_all(p_program);
     program_ir_nestree_print(p_program);
     printf("------ loop full unrolling begin ------\n");
     get_program = p_program;
@@ -158,10 +157,12 @@ void loop_full_unrolling(p_nestedtree_node root) {
     }
     if (!list_head_alone(&root->son_list)) return;
     if (root->p_loop_step == NULL) return;
+
     if (root->p_loop_step->p_cond_instr->ir_binary.p_src2->kind != imme) return;
     if (root->p_loop_step->p_cond_instr->ir_binary.p_src2->p_type->basic != type_i32 || root->p_loop_step->p_cond_instr->ir_binary.p_src2->i32const > 100) return;
     if (root->p_loop_step->p_basic_var->basic_var->p_type->basic != type_i32) return;
     int div = 0;
+
     if (root->p_loop_step->p_basic_var->p_step_instr->ir_binary.p_src1->kind == reg) {
         if (root->p_loop_step->p_basic_var->p_step_instr->ir_binary.p_src1->p_vreg == root->p_loop_step->p_basic_var->basic_var) {
             if (root->p_loop_step->p_basic_var->p_step_instr->ir_binary.p_src2->kind != imme && root->p_loop_step->p_basic_var->p_step_instr->ir_binary.p_src2->p_type->basic != type_i32)
@@ -176,12 +177,15 @@ void loop_full_unrolling(p_nestedtree_node root) {
         else
             div = root->p_loop_step->p_basic_var->p_step_instr->ir_binary.p_src1->i32const;
     }
+
     assert(div);
     // p_ir_vreg p_vreg = root->p_loop_step->p_basic_var->basic_var;
     if (root->p_loop_step->p_basic_var->var_start->p_instr_def->irkind != ir_unary) return;
+    printf("ssssssss\n");
     if (root->p_loop_step->p_basic_var->var_start->p_instr_def->ir_unary.op != ir_val_assign) return;
     if (root->p_loop_step->p_basic_var->var_start->p_instr_def->ir_unary.p_src->kind != imme) return;
     if (root->p_loop_step->p_basic_var->var_start->p_instr_def->ir_unary.p_src->p_type->basic != type_i32) return;
+
     int step_cnt = div;
     if (root->p_loop_step->p_cond_instr->ir_binary.op == ir_l_op)
         step_cnt--;
@@ -355,7 +359,8 @@ void loop_unrolling(p_nestedtree_node root, int k, bool is_full) {
     //     prev_loop_add(root, k);
     //  return;
     p_copy_map p_map[k];
-    p_ir_basic_block p_prev = root->head;
+    // p_ir_basic_block p_prev = root->head;
+    p_ir_basic_block p_prev = list_entry(root->loop_exit_block.p_next, ir_basic_block_list_node, node)->p_basic_block;
     p_ir_basic_block p_latch_copy[k], p_cond_copy[k], p_head_copy[k];
     for (int i = 1; i < k; ++i) {
         p_map[i] = ir_code_copy_map_gen();

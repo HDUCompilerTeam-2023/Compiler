@@ -365,7 +365,6 @@ static inline void ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_symbo
         ir_basic_block_print(p_bb);
         printf("dd\n");
         ir_basic_block_print(p_target->p_source_block);
-        assert();
         list_for_each(p_node, &p_bb->basic_block_phis) {
             assert(p_node_src != &p_target->block_param);
             p_ir_vreg p_des = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;

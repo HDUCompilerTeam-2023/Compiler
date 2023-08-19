@@ -51,6 +51,7 @@ void loop_normalization(p_nestedtree_node root) {
         }
     }
     root->p_loop_pre_block = loop_pre_block_add(root);
+    printf("pre block  %p\n", root->p_loop_pre_block);
     root->p_loop_latch_block = loop_latch_block_add(root);
     loop_exit_block_add(root);
     loop_lcssa(root);
@@ -114,6 +115,7 @@ p_ir_basic_block loop_latch_block_add(p_nestedtree_node root) {
     int cnt = 0;
     list_for_each(p_node, &root->head->loop_node_list) {
         p_ir_basic_block p_block = list_entry(p_node, ir_basic_block_list_node, node)->p_basic_block;
+        printf("loop list latch %p\n", p_block);
         if (p_block->p_nestree_node != root) continue;
         p_target1 = p_block->p_branch->p_target_1;
         p_target2 = p_block->p_branch->p_target_2;
@@ -259,7 +261,13 @@ p_ir_basic_block loop_pre_block_add(p_nestedtree_node root) {
             p_ret = p_branch_target->p_source_block;
         }
     }
-    if (cnt == 1) {
+    if (root->head == root->head->p_func->p_entry_block) {
+        p_ret = ir_basic_block_target_split(&list, root->head, true);
+        root->head->p_func->p_entry_block = p_ret;
+        return p_ret;
+    }
+
+    if (cnt == 1 && p_ret->p_branch->kind == ir_br_branch) {
         while (!list_head_alone(&list)) {
             p_node = (&list)->p_next;
             p_ir_branch_target_node p_branch_target_node = list_entry(p_node, ir_branch_target_node, node);
