@@ -7,6 +7,7 @@
 #include <ir_opt/simplify_cfg.h>
 
 #include <ir_gen.h>
+#include <ir_manager/memssa.h>
 #include <ir_print.h>
 #include <symbol_gen.h>
 
@@ -36,6 +37,7 @@ static inline int _loop_instr_cnt(p_nestedtree_node root) {
 }
 
 void ir_opt_loop_full_unrolling(p_program p_program) {
+    clear_all(p_program);
     program_ir_nestree_print(p_program);
     printf("------ loop full unrolling begin ------\n");
     get_program = p_program;
@@ -45,11 +47,14 @@ void ir_opt_loop_full_unrolling(p_program p_program) {
         loop_full_unrolling(p_func->p_nestedtree_root);
         symbol_func_set_block_id(p_func);
     }
+    //ir_deadcode_elimate_pass(p_program, true);
     ir_simplify_cfg_pass(p_program);
     printf("------ loop full unrolling end ------\n");
+    memssa_program_pass(p_program);
 }
 
 void ir_opt_loop_unrolling(p_program p_program, int unrolling_time) {
+    clear_all(p_program);
     program_ir_nestree_print(p_program);
     printf("------ loop unrolling begin ------\n");
     bool flag = true;
@@ -118,6 +123,7 @@ void ir_opt_loop_unrolling(p_program p_program, int unrolling_time) {
         symbol_func_set_block_id(p_func);
     }
     printf("------ loop unrolling end ------\n");
+    memssa_program_pass(p_program);
 }
 
 void heap_loop_add(p_nestedtree_node root) {
@@ -405,12 +411,10 @@ void loop_unrolling(p_nestedtree_node root, int k, bool is_full) {
         p_cond_block->p_branch->p_exp = NULL;
         p_cond_block->p_branch->kind = ir_br_branch;
         if (p_target1->p_block == root->p_loop_latch_block) {
-            ir_basic_block_branch_del_prev_target(p_target1);
             ir_basic_block_branch_target_drop(p_cond_block, p_target1);
             p_cond_block->p_branch->p_target_1 = p_target2;
         }
         else {
-            ir_basic_block_branch_del_prev_target(p_target2);
             ir_basic_block_branch_target_drop(p_cond_block, p_target2);
         }
         p_cond_block->p_branch->p_target_2 = NULL;

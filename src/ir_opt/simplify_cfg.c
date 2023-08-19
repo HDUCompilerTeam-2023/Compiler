@@ -339,7 +339,7 @@ static inline bool ir_simplify_cfg_func_eliminate_single_br_bb(p_symbol_func p_f
     }
     return if_del;
 }
-
+#include <ir_print.h>
 static inline void ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_symbol_func p_func) {
     p_ir_vreg *need_del = (p_ir_vreg *) malloc(sizeof(p_ir_vreg) * p_func->vreg_cnt);
     p_ir_varray *need_del_varray = (p_ir_varray *) malloc(sizeof(p_ir_varray) * (p_func->varray_num + p_func->p_program->varray_num));
@@ -362,6 +362,10 @@ static inline void ir_simplify_cfg_func_eliminate_single_predecessor_phi(p_symbo
         assert(p_target);
 
         p_list_head p_node, p_node_src = p_target->block_param.p_next;
+        ir_basic_block_print(p_bb);
+        printf("dd\n");
+        ir_basic_block_print(p_target->p_source_block);
+        assert();
         list_for_each(p_node, &p_bb->basic_block_phis) {
             assert(p_node_src != &p_target->block_param);
             p_ir_vreg p_des = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
@@ -421,10 +425,12 @@ static inline bool ir_simplify_cfg_func_pass(p_symbol_func p_func) {
     if_del = ir_simplify_cfg_func_eliminate_single_br_bb(p_func);
     return if_del;
 }
-
+#include <program/print.h>
 bool ir_simplify_cfg_pass(p_program p_program) {
     bool if_del = false;
     p_list_head p_node;
+    program_ir_print(p_program);
+
     list_for_each(p_node, &p_program->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         symbol_func_set_block_id(p_func);

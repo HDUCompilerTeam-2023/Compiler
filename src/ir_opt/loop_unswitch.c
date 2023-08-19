@@ -1,7 +1,7 @@
 #include <ir_opt/loop_unswitch.h>
 
 #include <ir_opt/code_copy.h>
-
+#include <ir_manager/memssa.h>
 #include <ir_gen.h>
 #include <ir_opt/gcm.h>
 #include <ir_opt/simplify_cfg.h>
@@ -9,11 +9,13 @@
 #include <symbol_gen.h>
 #include <symbol_gen/func.h>
 
+#include <program/print.h>
 const size_t MAX_INSTR_NUM = 6000;
 
 size_t program_instr_cnt = 0;
 
 void ir_opt_loop_unswitch(p_program p_program) {
+    clear_all(p_program);
     printf("\n ------ loop unswitch begin -------\n");
     program_instr_cnt = 0;
     bool flag = false;
@@ -35,6 +37,8 @@ void ir_opt_loop_unswitch(p_program p_program) {
         symbol_func_set_block_id(p_func);
     }
     printf("\n ------- loop unswitch end------ \n");
+    ir_simplify_cfg_pass(p_program);
+    memssa_program_pass(p_program);
 }
 
 static inline size_t _unswitch_cost_cal(p_nestedtree_node root, p_ir_basic_block switch_block) {
@@ -141,7 +145,6 @@ static inline void _unswitch_edge_set(p_nestedtree_node root, p_ir_basic_block p
     ir_basic_block_add_prev_target(p_target, p_contrl_block);
 
     p_target2 = p_switch_block->p_branch->p_target_2;
-    ir_basic_block_branch_del_prev_target(p_target2);
     p_switch_block->p_branch->p_exp->p_vreg->if_cond = false;
     ir_operand_drop(p_switch_block->p_branch->p_exp);
     p_switch_block->p_branch->p_exp = NULL;
@@ -150,7 +153,6 @@ static inline void _unswitch_edge_set(p_nestedtree_node root, p_ir_basic_block p
     p_switch_block->p_branch->p_target_2 = NULL;
 
     p_target1 = p_switch_copy->p_branch->p_target_1;
-    ir_basic_block_branch_del_prev_target(p_target1);
     p_switch_copy->p_branch->p_exp->p_vreg->if_cond = false;
     ir_operand_drop(p_switch_copy->p_branch->p_exp);
     p_switch_copy->p_branch->p_exp = NULL;

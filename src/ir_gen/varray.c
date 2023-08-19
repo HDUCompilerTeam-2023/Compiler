@@ -169,6 +169,7 @@ void ir_vmem_base_clear_all(p_ir_vmem_base p_base) {
     }
     ir_vmem_base_clear(p_base);
 }
+
 void ir_vmem_base_drop(p_ir_vmem_base p_base) {
     ir_vmem_base_clear(p_base);
     free(p_base);
@@ -230,3 +231,28 @@ void ir_param_vmem_base_drop(p_ir_param_vmem_base p_base) {
     free(p_base);
 }
 
+void clear_var_varray(p_list_head p_head) {
+    p_list_head p_node;
+    list_for_each(p_node, p_head) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        assert(p_var->p_base);
+        ir_vmem_base_clear_all(p_var->p_base);
+    }
+}
+void clear_param_varray(p_symbol_func p_func) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_func->param_vmem_base) {
+        p_ir_param_vmem_base p_param = list_entry(p_node, ir_param_vmem_base, node);
+        assert(p_param->p_param_base);
+        ir_vmem_base_clear_all(p_param->p_param_base);
+    }
+}
+void clear_all(p_program p_ir){
+    clear_var_varray(&p_ir->variable);
+    p_list_head p_node;
+    list_for_each(p_node, &p_ir->function){
+        p_symbol_func p_func = list_entry(p_node, symbol_func, node);
+        clear_var_varray(&p_func->variable);
+        clear_param_varray(p_func);
+    }
+}

@@ -1,4 +1,5 @@
 #include <ir_manager/loop_normalization.h>
+#include <ir_manager/memssa.h>
 
 #include <ir.h>
 #include <ir_gen.h>
@@ -10,6 +11,7 @@
 #include <symbol_gen/type.h>
 
 void program_loop_normalization(p_program p_program) {
+    clear_all(p_program);
     ir_cfg_set_program_dom(p_program);
     ir_build_program_nestedtree(p_program);
     printf("\nLoop Normalization\n");
@@ -25,6 +27,7 @@ void program_loop_normalization(p_program p_program) {
         }
         symbol_func_set_block_id(p_func);
     }
+    memssa_program_pass(p_program);
 }
 
 void loop_normalization(p_nestedtree_node root) {

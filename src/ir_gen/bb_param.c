@@ -22,7 +22,10 @@ void ir_varray_bb_phi_drop(p_ir_varray_bb_phi p_varray_bb_phi) {
     list_del(&p_varray_bb_phi->node);
     free(p_varray_bb_phi);
 }
+#include <ir_print.h>
 void ir_varray_bb_param_drop(p_ir_varray_bb_param p_varray_param) {
+    ir_varray_bb_param_print(p_varray_param);
+    printf("sss\n");
     assert(p_varray_param->p_des_phi->p_basic_block == p_varray_param->p_target->p_block);
     if (p_varray_param->p_varray_bb_param) {
         assert(p_varray_param->p_varray_bb_param->varray_use_type == varray_bb_param_use);

@@ -888,7 +888,7 @@ void invariant_analysis(p_nestedtree_node root) {
                     p_instr->ir_gep.p_des->is_loop_inv = false;
                     break;
                 case ir_call:
-                    if (p_instr->ir_call.p_func->ret_type != type_void)
+                    if (p_instr->ir_call.p_des)
                         p_instr->ir_call.p_des->is_loop_inv = false;
                     break;
                 default:
@@ -1114,7 +1114,7 @@ void induction_var_analysis(p_nestedtree_node root) {
                     p_instr->ir_load.p_des->scev_kind = scev_unknown;
                     break;
                 case ir_call:
-                    if (p_instr->ir_call.p_func->ret_type != type_void)
+                    if (p_instr->ir_call.p_des)
                         p_instr->ir_call.p_des->scev_kind = scev_unknown;
                     break;
                 default:

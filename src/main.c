@@ -6,10 +6,14 @@
 #include <backend/arm/ir_arm_asm.h>
 #include <ir_manager/memssa.h>
 #include <ir_manager/set_cond.h>
+#include <ir_manager/loop_normalization.h>
 #include <ir_opt/copy_propagation.h>
 #include <ir_opt/deadcode_elimate.h>
 #include <ir_opt/gcm.h>
 #include <ir_opt/globalopt.h>
+#include <ir_opt/scev.h>
+#include <ir_opt/loop_unrolling.h>
+#include <ir_opt/loop_unswitch.h>
 #include <ir_opt/gvn.h>
 #include <ir_opt/inline.h>
 #include <ir_opt/lir_gen/arm_imme_trans.h>
@@ -75,6 +79,15 @@ int main(int argc, char *argv[]) {
             ir_reassociate(p_program);
             ir_opt_gvn(p_program);
             ir_opt_gcm(p_program);
+            // program_loop_normalization(p_program);
+            // program_var_analysis(p_program,false);
+            // ir_opt_loop_unswitch(p_program);
+            program_loop_normalization(p_program);
+            program_var_analysis(p_program, false);
+            ir_opt_loop_full_unrolling(p_program);
+            // program_loop_normalization(p_program);
+            // program_var_analysis(p_program, false);
+            // ir_opt_loop_unrolling(p_program, 1);
             ir_deadcode_elimate_pass(p_program, true);
         }
         ir_opt_copy_propagation(p_program);

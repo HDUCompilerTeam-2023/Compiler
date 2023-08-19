@@ -514,6 +514,7 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
 }
 
 void ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive) {
+    // ir_simplify_cfg_pass(p_ir);
     bool if_del;
     do {
         _ir_deadcode_elimate_pass(p_ir, if_aggressive);

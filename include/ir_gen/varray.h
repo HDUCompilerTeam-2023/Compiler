@@ -31,4 +31,8 @@ void ir_vmem_base_drop(p_ir_vmem_base p_base);
 void ir_varray_drop(p_ir_varray p_varray);
 void ir_varray_def_pair_drop(p_ir_varray_def_pair p_def_pair);
 void ir_param_vmem_base_drop(p_ir_param_vmem_base p_vmem_base);
+
+void clear_var_varray(p_list_head p_head);
+void clear_param_varray(p_symbol_func p_func);
+void clear_all(p_program p_ir);
 #endif

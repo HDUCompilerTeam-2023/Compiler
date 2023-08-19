@@ -4,6 +4,7 @@
 #include <symbol/var.h>
 #include <symbol_gen/func.h>
 #include <symbol_gen/type.h>
+#include <ir_opt/simplify_cfg.h>
 typedef struct mem_ssa mem_ssa, *p_mem_ssa;
 typedef struct operand_stack_node operand_stack_node, *p_operand_stack_node;
 typedef struct ssa_mem_info ssa_mem_info, *p_ssa_mem_info;
@@ -467,22 +468,6 @@ static inline void print_dom_frontier(p_mem_ssa_list p_convert_list) {
     }
     printf("--- dom_frontier end---\n");
 }
-static inline void clear_var_varray(p_list_head p_head) {
-    p_list_head p_node;
-    list_for_each(p_node, p_head) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        assert(p_var->p_base);
-        ir_vmem_base_clear_all(p_var->p_base);
-    }
-}
-static inline void clear_param_varray(p_symbol_func p_func) {
-    p_list_head p_node;
-    list_for_each(p_node, &p_func->param_vmem_base) {
-        p_ir_param_vmem_base p_param = list_entry(p_node, ir_param_vmem_base, node);
-        assert(p_param->p_param_base);
-        ir_vmem_base_clear_all(p_param->p_param_base);
-    }
-}
 static inline void mem_ssa_dfs_seq_drop(p_mem_ssa_list p_convert_list) {
     for (size_t i = 0; i < p_convert_list->p_func->block_cnt; i++) {
         bitmap_drop((p_convert_list->p_base + i)->dom_frontier);
@@ -498,8 +483,6 @@ static inline void ssa_mem_list_info_drop(p_ssa_mem_list_info p_var_list) {
     free(p_var_list);
 }
 void memssa_func_pass(p_symbol_func p_func, p_program p_program) {
-    clear_var_varray(&p_func->variable);
-    clear_param_varray(p_func);
     // 初始化变量集合
     p_ssa_mem_list_info p_var_list = memssa_init_var_list(p_func, p_program);
     p_mem_ssa_list p_convert_list = memssa_info_gen(p_func, p_var_list->vmem_base_num);
@@ -524,7 +507,7 @@ void memssa_func_pass(p_symbol_func p_func, p_program p_program) {
 }
 
 void memssa_program_pass(p_program p_program) {
-    clear_var_varray(&p_program->variable);
+    clear_all(p_program);
     ir_side_effects(p_program);
     p_list_head p_node;
     list_for_each(p_node, &p_program->function) {
