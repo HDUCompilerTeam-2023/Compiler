@@ -14,6 +14,9 @@ p_arm_instr arm_binary_instr_gen(arm_binary_op op, arm_reg rd, arm_reg rs1, p_ar
 p_arm_instr arm_cmp_instr_gen(arm_cmp_op op, arm_reg rs1, p_arm_operand op2);
 void arm_block_set_br1(p_arm_block p_a_block, p_arm_instr p_instr);
 void arm_block_set_br2(p_arm_block p_a_block, p_arm_instr p_instr);
+void arm_block_add_prev(p_arm_block p_source, p_arm_instr p_instr);
+void arm_block_del_prev(p_arm_instr p_jump);
+void arm_jump_instr_reset_target(p_arm_instr p_jump, p_arm_block p_target);
 p_arm_instr arm_jump_instr_gen(arm_jump_op op, arm_cond_type cond_type, p_arm_block p_source_block, p_arm_block block);
 p_arm_instr arm_call_instr_gen(arm_label label);
 p_arm_instr arm_mem_instr_gen(arm_mem_op op, arm_reg rd, arm_reg base, p_arm_operand offset);
@@ -41,4 +44,6 @@ void arm_func_drop(p_arm_func p_func);
 arm_label arm_block_label_gen(char *func, size_t id);
 arm_cond_type get_opposite_type(arm_cond_type type);
 bool if_float_reg(arm_reg reg);
+
+p_arm_instr arm_instr_copy(p_arm_instr p_src);
 #endif

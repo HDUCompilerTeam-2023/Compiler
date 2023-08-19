@@ -86,12 +86,38 @@ static inline void arm_cond_type_output(FILE *out_file, arm_cond_type cond_type)
         break;
     }
 }
+static inline void arm_cond_type_output_non_space(FILE *out_file, arm_cond_type cond_type) {
+    switch (cond_type) {
+    case arm_eq:
+        fprintf(out_file, "eq");
+        break;
+    case arm_ne:
+        fprintf(out_file, "ne");
+        break;
+    case arm_ge:
+        fprintf(out_file, "ge");
+        break;
+    case arm_gt:
+        fprintf(out_file, "gt");
+        break;
+    case arm_le:
+        fprintf(out_file, "le");
+        break;
+    case arm_lt:
+        fprintf(out_file, "lt");
+        break;
+    case arm_al:
+        fprintf(out_file, "");
+        break;
+    }
+}
 static inline void arm_label_output(FILE *out_file, arm_label name) {
     fprintf(out_file, "%s", name);
     fprintf(out_file, ":\n");
 }
 
-static inline void arm_binary_instr_output(FILE *out_file, p_arm_binary_instr p_binary_instr) {
+static inline void arm_binary_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_binary_instr p_binary_instr = &p_instr->binary_instr;
     switch (p_binary_instr->op) {
     case arm_add:
         fprintf(out_file, "   add");
@@ -126,6 +152,7 @@ static inline void arm_binary_instr_output(FILE *out_file, p_arm_binary_instr p_
     default:
         assert(0);
     }
+    arm_cond_type_output(out_file, p_instr->cond_type);
     if (p_binary_instr->s)
         fprintf(out_file, "s");
     fprintf(out_file, " ");
@@ -137,9 +164,9 @@ static inline void arm_binary_instr_output(FILE *out_file, p_arm_binary_instr p_
     fprintf(out_file, "\n");
 }
 
-static inline void arm_jump_instr_output(FILE *out_file, p_arm_jump_instr p_jump_instr) {
+static inline void arm_jump_instr_output(FILE *out_file, p_arm_instr p_jump_instr) {
     bool if_label = true;
-    switch (p_jump_instr->op) {
+    switch (p_jump_instr->jump_instr.op) {
     case arm_b:
         fprintf(out_file, "   b");
         break;
@@ -160,46 +187,50 @@ static inline void arm_jump_instr_output(FILE *out_file, p_arm_jump_instr p_jump
     }
     arm_cond_type_output(out_file, p_jump_instr->cond_type);
     if (if_label)
-        fprintf(out_file, "%s", p_jump_instr->p_block_target->label);
+        fprintf(out_file, "%s", p_jump_instr->jump_instr.p_block_target->label);
     else
-        arm_reg_output(out_file, p_jump_instr->reg_target);
+        arm_reg_output(out_file, p_jump_instr->jump_instr.reg_target);
     fprintf(out_file, "\n");
 }
 static inline void arm_call_instr_output(FILE *out_file, p_arm_call_instr p_call_instr) {
     fprintf(out_file, "   bl %s\n", p_call_instr->func_name);
 }
-static inline void arm_cmp_instr_output(FILE *out_file, p_arm_cmp_instr p_cmp_instr) {
+static inline void arm_cmp_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_cmp_instr p_cmp_instr = &p_instr->cmp_instr;
     switch (p_cmp_instr->op) {
     case arm_cmp:
-        fprintf(out_file, "   cmp ");
+        fprintf(out_file, "   cmp");
         break;
     case arm_cmn:
-        fprintf(out_file, "   cmn ");
+        fprintf(out_file, "   cmn");
         break;
     case arm_tst:
-        fprintf(out_file, "   tst ");
+        fprintf(out_file, "   tst");
         break;
     case arm_teq:
-        fprintf(out_file, "   teq ");
+        fprintf(out_file, "   teq");
         break;
     default:
         assert(0);
     }
+    arm_cond_type_output(out_file, p_instr->cond_type);
     arm_reg_output(out_file, p_cmp_instr->rs1);
     fprintf(out_file, ", ");
     operand2str(out_file, p_cmp_instr->op2);
     fprintf(out_file, "\n");
 }
 
-static inline void arm_mem_instr_output(FILE *out_file, p_arm_mem_instr p_mem_instr) {
+static inline void arm_mem_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_mem_instr p_mem_instr = &p_instr->mem_instr;
     switch (p_mem_instr->op) {
     case arm_store:
-        fprintf(out_file, "   str ");
+        fprintf(out_file, "   str");
         break;
     case arm_load:
-        fprintf(out_file, "   ldr ");
+        fprintf(out_file, "   ldr");
         break;
     }
+    arm_cond_type_output(out_file, p_instr->cond_type);
     arm_reg_output(out_file, p_mem_instr->rd);
     fprintf(out_file, ", [");
     arm_reg_output(out_file, p_mem_instr->base);
@@ -209,7 +240,8 @@ static inline void arm_mem_instr_output(FILE *out_file, p_arm_mem_instr p_mem_in
     }
     fprintf(out_file, "]\n");
 }
-static inline void arm_mov_instr_output(FILE *out_file, p_arm_mov_instr p_mov_instr) {
+static inline void arm_mov_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_mov_instr p_mov_instr = &p_instr->mov_instr;
     switch (p_mov_instr->op) {
     case arm_mov:
         fprintf(out_file, "   mov");
@@ -222,23 +254,26 @@ static inline void arm_mov_instr_output(FILE *out_file, p_arm_mov_instr p_mov_in
     }
     if (p_mov_instr->s)
         fprintf(out_file, "s");
-    arm_cond_type_output(out_file, p_mov_instr->type);
+    arm_cond_type_output(out_file, p_instr->cond_type);
     arm_reg_output(out_file, p_mov_instr->rd);
     fprintf(out_file, ", ");
     operand2str(out_file, p_mov_instr->operand);
     fprintf(out_file, "\n");
 }
-static inline void arm_mov32_instr_output(FILE *out_file, p_arm_mov32_instr p_mov32_instr) {
+static inline void arm_mov32_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_mov32_instr p_mov32_instr = &p_instr->mov32_instr;
     if (p_mov32_instr->label) {
         bool small_off = p_mov32_instr->imme && p_mov32_instr->imme < 32768;
-        fprintf(out_file, "   movw ");
+        fprintf(out_file, "   movw");
+        arm_cond_type_output(out_file, p_instr->cond_type);
         arm_reg_output(out_file, p_mov32_instr->rd);
         fprintf(out_file, ", #:lower16:");
         fprintf(out_file, "%s", p_mov32_instr->label);
         if (small_off)
             fprintf(out_file, "+%d", p_mov32_instr->imme);
         fprintf(out_file, "\n");
-        fprintf(out_file, "   movt ");
+        fprintf(out_file, "   movt");
+        arm_cond_type_output(out_file, p_instr->cond_type);
         arm_reg_output(out_file, p_mov32_instr->rd);
         fprintf(out_file, ", #:upper16:");
         fprintf(out_file, "%s", p_mov32_instr->label);
@@ -249,12 +284,14 @@ static inline void arm_mov32_instr_output(FILE *out_file, p_arm_mov32_instr p_mo
     else {
         arm_imme low = ((1 << 16) - 1) & p_mov32_instr->imme;
         arm_imme high = (p_mov32_instr->imme >> 16);
-        fprintf(out_file, "   movw ");
+        fprintf(out_file, "   movw");
+        arm_cond_type_output(out_file, p_instr->cond_type);
         arm_reg_output(out_file, p_mov32_instr->rd);
         fprintf(out_file, ", #");
         fprintf(out_file, "%d", low);
         fprintf(out_file, "\n");
-        fprintf(out_file, "   movt ");
+        fprintf(out_file, "   movt");
+        arm_cond_type_output(out_file, p_instr->cond_type);
         arm_reg_output(out_file, p_mov32_instr->rd);
         fprintf(out_file, ", #");
         fprintf(out_file, "%d", high);
@@ -262,10 +299,12 @@ static inline void arm_mov32_instr_output(FILE *out_file, p_arm_mov32_instr p_mo
     }
 }
 
-static inline void arm_mul_instr_output(FILE *out_file, p_arm_mul_instr p_mul_instr) {
+static inline void arm_mul_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_mul_instr p_mul_instr = &p_instr->mul_instr;
     fprintf(out_file, "   mul");
     if (p_mul_instr->s)
         fprintf(out_file, "s");
+    arm_cond_type_output(out_file, p_instr->cond_type);
     fprintf(out_file, " ");
     arm_reg_output(out_file, p_mul_instr->rd);
     fprintf(out_file, ", ");
@@ -275,9 +314,10 @@ static inline void arm_mul_instr_output(FILE *out_file, p_arm_mul_instr p_mul_in
     fprintf(out_file, "\n");
 }
 
-static inline void arm_sdiv_instr_output(FILE *out_file, p_arm_sdiv_instr p_sdiv_instr) {
+static inline void arm_sdiv_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_sdiv_instr p_sdiv_instr = &p_instr->sdiv_instr;
     fprintf(out_file, "   sdiv");
-    fprintf(out_file, " ");
+    arm_cond_type_output(out_file, p_instr->cond_type);
     arm_reg_output(out_file, p_sdiv_instr->rd);
     fprintf(out_file, ", ");
     arm_reg_output(out_file, p_sdiv_instr->rs1);
@@ -305,7 +345,8 @@ static inline void arm_push_pop_instr_output(FILE *out_file, p_arm_push_pop_inst
     }
     fprintf(out_file, "}\n");
 }
-static inline void arm_vbinary_instr_output(FILE *out_file, p_arm_vbinary_instr p_vbinary_instr) {
+static inline void arm_vbinary_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_vbinary_instr p_vbinary_instr = &p_instr->vbinary_instr;
     switch (p_vbinary_instr->op) {
     case arm_vadd:
         fprintf(out_file, "   vadd");
@@ -323,6 +364,7 @@ static inline void arm_vbinary_instr_output(FILE *out_file, p_arm_vbinary_instr 
         fprintf(out_file, "   vand");
         break;
     }
+    arm_cond_type_output_non_space(out_file, p_instr->cond_type);
     fprintf(out_file, ".f32 ");
     arm_reg_output(out_file, p_vbinary_instr->rd);
     fprintf(out_file, ", ");
@@ -331,17 +373,20 @@ static inline void arm_vbinary_instr_output(FILE *out_file, p_arm_vbinary_instr 
     arm_reg_output(out_file, p_vbinary_instr->rs2);
     fprintf(out_file, "\n");
 }
-static inline void arm_vmem_instr_output(FILE *out_file, p_arm_vmem_instr p_vmem_instr) {
+static inline void arm_vmem_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_vmem_instr p_vmem_instr = &p_instr->vmem_instr;
     switch (p_vmem_instr->op) {
     case arm_vstore:
-        fprintf(out_file, "   vstr.32 ");
+        fprintf(out_file, "   vstr");
         break;
     case arm_vload:
-        fprintf(out_file, "   vldr.32 ");
+        fprintf(out_file, "   vldr");
         break;
     default:
         assert(0);
     }
+    arm_cond_type_output_non_space(out_file, p_instr->cond_type);
+    fprintf(out_file, ".32 ");
     arm_reg_output(out_file, p_vmem_instr->rd);
     fprintf(out_file, ", [");
     arm_reg_output(out_file, p_vmem_instr->base);
@@ -351,8 +396,10 @@ static inline void arm_vmem_instr_output(FILE *out_file, p_arm_vmem_instr p_vmem
     }
     fprintf(out_file, "]\n");
 }
-static inline void arm_vmov_instr_output(FILE *out_file, p_arm_vmov_instr p_vmov_instr) {
+static inline void arm_vmov_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_vmov_instr p_vmov_instr = &p_instr->vmov_instr;
     fprintf(out_file, "   vmov");
+    arm_cond_type_output_non_space(out_file, p_instr->cond_type);
     if (p_vmov_instr->rd >= R_NUM && p_vmov_instr->rs >= R_NUM)
         fprintf(out_file, ".f32 ");
     else
@@ -362,7 +409,8 @@ static inline void arm_vmov_instr_output(FILE *out_file, p_arm_vmov_instr p_vmov
     arm_reg_output(out_file, p_vmov_instr->rs);
     fprintf(out_file, "\n");
 }
-static inline void arm_vcmp_instr_output(FILE *out_file, p_arm_vcmp_instr p_vcmp_instr) {
+static inline void arm_vcmp_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_vcmp_instr p_vcmp_instr = &p_instr->vcmp_instr;
     switch (p_vcmp_instr->op) {
     case arm_vcmp:
         fprintf(out_file, "  vcmp");
@@ -374,6 +422,7 @@ static inline void arm_vcmp_instr_output(FILE *out_file, p_arm_vcmp_instr p_vcmp
         assert(0);
         break;
     }
+    arm_cond_type_output_non_space(out_file, p_instr->cond_type);
     fprintf(out_file, ".f32 ");
     arm_reg_output(out_file, p_vcmp_instr->rs1);
     fprintf(out_file, ", ");
@@ -381,8 +430,10 @@ static inline void arm_vcmp_instr_output(FILE *out_file, p_arm_vcmp_instr p_vcmp
     fprintf(out_file, "\n");
     fprintf(out_file, "   vmrs APSR_nzcv, FPSCR\n");
 }
-static inline void arm_vcvt_instr_output(FILE *out_file, p_arm_vcvt_instr p_vcvt_instr) {
+static inline void arm_vcvt_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_vcvt_instr p_vcvt_instr = &p_instr->vcvt_instr;
     fprintf(out_file, "   vcvt");
+    arm_cond_type_output_non_space(out_file, p_instr->cond_type);
     switch (p_vcvt_instr->op) {
     case arm_int2float:
         fprintf(out_file, ".f32.s32 ");
@@ -398,8 +449,11 @@ static inline void arm_vcvt_instr_output(FILE *out_file, p_arm_vcvt_instr p_vcvt
     arm_reg_output(out_file, p_vcvt_instr->rs);
     fprintf(out_file, "\n");
 }
-static inline void arm_vneg_instr_output(FILE *out_file, p_arm_vneg_instr p_vneg_instr) {
-    fprintf(out_file, "   vneg.f32 ");
+static inline void arm_vneg_instr_output(FILE *out_file, p_arm_instr p_instr) {
+    p_arm_vneg_instr p_vneg_instr = &p_instr->vneg_instr;
+    fprintf(out_file, "   vneg");
+    arm_cond_type_output_non_space(out_file, p_instr->cond_type);
+    fprintf(out_file, ".f32 ");
     arm_reg_output(out_file, p_vneg_instr->rd);
     fprintf(out_file, ", ");
     arm_reg_output(out_file, p_vneg_instr->rs);
@@ -428,52 +482,52 @@ static inline void arm_vpush_vpop_instr_output(FILE *out_file, p_arm_vpush_vpop_
 static inline void arm_instr_output(FILE *out_file, p_arm_instr p_instr) {
     switch (p_instr->type) {
     case arm_binary_type:
-        arm_binary_instr_output(out_file, &p_instr->binary_instr);
+        arm_binary_instr_output(out_file, p_instr);
         break;
     case arm_jump_type:
-        arm_jump_instr_output(out_file, &p_instr->jump_instr);
+        arm_jump_instr_output(out_file, p_instr);
         break;
     case arm_call_type:
         arm_call_instr_output(out_file, &p_instr->call_instr);
         break;
     case arm_cmp_type:
-        arm_cmp_instr_output(out_file, &p_instr->cmp_instr);
+        arm_cmp_instr_output(out_file, p_instr);
         break;
     case arm_mem_type:
-        arm_mem_instr_output(out_file, &p_instr->mem_instr);
+        arm_mem_instr_output(out_file, p_instr);
         break;
     case arm_mov_type:
-        arm_mov_instr_output(out_file, &p_instr->mov_instr);
+        arm_mov_instr_output(out_file, p_instr);
         break;
     case arm_mov32_type:
-        arm_mov32_instr_output(out_file, &p_instr->mov32_instr);
+        arm_mov32_instr_output(out_file, p_instr);
         break;
     case arm_mul_type:
-        arm_mul_instr_output(out_file, &p_instr->mul_instr);
+        arm_mul_instr_output(out_file, p_instr);
         break;
     case arm_sdiv_type:
-        arm_sdiv_instr_output(out_file, &p_instr->sdiv_instr);
+        arm_sdiv_instr_output(out_file, p_instr);
         break;
     case arm_push_pop_type:
         arm_push_pop_instr_output(out_file, &p_instr->push_pop_instr);
         break;
     case arm_vbinary_type:
-        arm_vbinary_instr_output(out_file, &p_instr->vbinary_instr);
+        arm_vbinary_instr_output(out_file, p_instr);
         break;
     case arm_vmov_type:
-        arm_vmov_instr_output(out_file, &p_instr->vmov_instr);
+        arm_vmov_instr_output(out_file, p_instr);
         break;
     case arm_vmem_type:
-        arm_vmem_instr_output(out_file, &p_instr->vmem_instr);
+        arm_vmem_instr_output(out_file, p_instr);
         break;
     case arm_vcvt_type:
-        arm_vcvt_instr_output(out_file, &p_instr->vcvt_instr);
+        arm_vcvt_instr_output(out_file, p_instr);
         break;
     case arm_vneg_type:
-        arm_vneg_instr_output(out_file, &p_instr->vneg_instr);
+        arm_vneg_instr_output(out_file, p_instr);
         break;
     case arm_vcmp_type:
-        arm_vcmp_instr_output(out_file, &p_instr->vcmp_instr);
+        arm_vcmp_instr_output(out_file, p_instr);
         break;
     case arm_vpush_vpop_type:
         arm_vpush_vpop_instr_output(out_file, &p_instr->vpush_vpop_instr);
@@ -489,12 +543,12 @@ static inline void arm_block_output(FILE *out_file, p_arm_block p_block, p_arm_b
         arm_instr_output(out_file, p_instr);
     }
     if (p_block->p_target1) {
-        if (p_block->p_target1->jump_instr.cond_type != arm_al || p_block->p_target1->jump_instr.p_block_target != p_next) {
+        if (p_block->p_target1->cond_type != arm_al || p_block->p_target1->jump_instr.p_block_target != p_next) {
             arm_instr_output(out_file, p_block->p_target1);
         }
     }
     if (p_block->p_target2) {
-        assert(p_block->p_target2->jump_instr.cond_type == arm_al);
+        assert(p_block->p_target2->cond_type == arm_al);
         if (p_block->p_target2->jump_instr.p_block_target != p_next)
             arm_instr_output(out_file, p_block->p_target2);
     }

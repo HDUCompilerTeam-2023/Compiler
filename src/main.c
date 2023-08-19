@@ -22,6 +22,7 @@
 #include <ir_opt/sccp.h>
 #include <ir_opt/gcm.h>
 #include <ir_opt/gvn.h>
+#include <backend/arm/arm_delete_non_use_block.h>
 #include <stdio.h>
 
 int main(int argc, char *argv[]) {
@@ -95,6 +96,7 @@ int main(int argc, char *argv[]) {
     critical_edge_cut_pass(p_program);
 
     ir_arm_asm_pass(p_program);
+    arm_delete_non_use_block(p_program);
     program_arm_asm_output(p_program);
     // drop ir
     program_ir_print(p_program);

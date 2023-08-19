@@ -181,7 +181,6 @@ struct arm_binary_instr {
 };
 struct arm_jump_instr {
     arm_jump_op op;
-    arm_cond_type cond_type;
     p_arm_block p_source_block;
     union {
         p_arm_block p_block_target;
@@ -193,7 +192,6 @@ struct arm_call_instr {
     arm_label func_name;
 };
 struct arm_mov_instr {
-    arm_cond_type type;
     arm_mov_op op;
     bool s;
     arm_reg rd;
@@ -273,6 +271,7 @@ struct arm_vpush_vpop_instr {
 };
 struct arm_instr {
     arm_instr_type type;
+    arm_cond_type cond_type;
     union {
         arm_binary_instr binary_instr;
         arm_mem_instr mem_instr;
