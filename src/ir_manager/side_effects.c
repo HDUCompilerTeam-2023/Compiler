@@ -1,13 +1,13 @@
-#include <ir_manager/side_effects.h>
-#include <symbol_gen/func.h>
-#include <ir/vreg.h>
-#include <ir/instr.h>
-#include <ir/param.h>
-#include <ir/bb_param.h>
 #include <ir/basic_block.h>
+#include <ir/bb_param.h>
+#include <ir/instr.h>
 #include <ir/operand.h>
-#include <symbol/var.h>
+#include <ir/param.h>
+#include <ir/vreg.h>
+#include <ir_manager/side_effects.h>
 #include <symbol/type.h>
+#include <symbol/var.h>
+#include <symbol_gen/func.h>
 
 static inline void _mem_info_gen(p_symbol_var p_var) {
     p_mem_info p_info = malloc(sizeof(*p_info));
@@ -177,7 +177,7 @@ static inline bool _fse_add_param(p_symbol_func p_func, size_t param_id, bool is
 
 static inline bool _fse_add_input(p_symbol_func p_func) {
     p_func->p_side_effects->pure = false;
-    if(p_func->p_side_effects->input)
+    if (p_func->p_side_effects->input)
         return false;
     p_func->p_side_effects->input = true;
     return true;
@@ -185,7 +185,7 @@ static inline bool _fse_add_input(p_symbol_func p_func) {
 
 static inline bool _fse_add_output(p_symbol_func p_func) {
     p_func->p_side_effects->pure = false;
-    if(p_func->p_side_effects->output)
+    if (p_func->p_side_effects->output)
         return false;
     p_func->p_side_effects->output = true;
     return true;
@@ -225,13 +225,15 @@ static inline p_call_graph_edge _pop_wl_node(p_list_head p_head) {
 // 0b01 -> load
 // 0b10 -> store
 // 0b11 -> both
-#define NONE_FLAG  0
-#define LOAD_FLAG  1
+#define NONE_FLAG 0
+#define LOAD_FLAG 1
 #define STORE_FLAG 2
 
 typedef struct {
     enum {
-        param_ref, global_ref, not_ref,
+        param_ref,
+        global_ref,
+        not_ref,
     } kind;
     union {
         size_t param_id;
@@ -247,7 +249,7 @@ typedef struct {
 } func_ref_info, *p_func_ref_info;
 
 static inline size_t _ref_side_effects(p_ir_operand p_ref, p_ref_info p_table) {
-    assert(p_ref->kind  != not_ref);
+    assert(p_ref->kind != not_ref);
     assert(p_ref->p_vreg);
 
     size_t flag = NONE_FLAG;
@@ -305,7 +307,20 @@ static inline size_t _ref_side_effects(p_ir_operand p_ref, p_ref_info p_table) {
         }
         break;
     case bb_param_ptr:
-        // TODO
+        assert(!p_des);
+        p_list_head p_node1, p_node2;
+        for (p_node1 = (&p_ref->p_bb_param->p_target->block_param)->p_next,
+            p_node2 = (&p_ref->p_bb_param->p_target->p_block->basic_block_phis)->p_next;
+             p_node1 != (&p_ref->p_bb_param->p_target->block_param);
+             p_node1 = p_node1->p_next, p_node2 = p_node2->p_next) {
+            p_ir_operand p_operand = list_entry(p_node1, ir_bb_param, node)->p_bb_param;
+            if (p_operand != p_ref) continue;
+            p_des = list_entry(p_node2, ir_bb_phi, node)->p_bb_phi;
+            p_des_info = p_table + p_des->id;
+            break;
+        }
+        assert(p_des);
+        break;
         assert(0);
     case cond_ptr:
     case ret_ptr:
@@ -313,8 +328,34 @@ static inline size_t _ref_side_effects(p_ir_operand p_ref, p_ref_info p_table) {
     }
 
     assert(p_des);
-    assert(p_des_info->kind == not_ref);
-    assert(p_des_info->p_vreg == p_des);
+    if (p_des_info->kind != not_ref)
+        assert(p_des_info->p_vreg == p_ref->p_vreg);
+    else {
+        assert(p_des_info->kind == not_ref);
+        assert(p_des_info->p_vreg == p_des);
+    }
+
+    if (p_ref->kind == reg && p_ref->p_vreg->def_type == bb_phi_def) {
+        p_list_head p_node;
+        size_t place = 0;
+        p_ir_basic_block p_bb = p_ref->p_vreg->p_bb_phi->p_basic_block;
+        list_for_each(p_node, &p_bb->basic_block_phis) {
+            p_ir_vreg p_vreg = list_entry(p_node, ir_bb_phi, node)->p_bb_phi;
+            if (p_vreg == p_ref->p_vreg) break;
+            ++place;
+        }
+        list_for_each(p_node, &p_bb->prev_branch_target_list) {
+            p_ir_basic_block_branch_target p_target = list_entry(p_node, ir_branch_target_node, node)->p_target;
+            p_list_head p_param_node;
+            size_t cnt = 0;
+            list_for_each(p_param_node, &p_target->block_param) {
+                if (cnt++ != place) continue;
+                p_ir_vreg p_vreg = list_entry(p_param_node, ir_bb_param, node)->p_bb_param->p_vreg;
+                assert(p_vreg == p_ref->p_vreg);
+                break;
+            }
+        }
+    }
 
     if (p_ref->kind == imme) {
         assert(p_ref->p_type->ref_level);
@@ -374,8 +415,7 @@ static inline void _func_side_effects_print(p_symbol_func p_func) {
         printf("    - store %s\n", p_visit->p_global->name);
     }
 
-    if (p_func->p_side_effects->loaded_param_cnt ||
-            p_func->p_side_effects->stored_param_cnt)
+    if (p_func->p_side_effects->loaded_param_cnt || p_func->p_side_effects->stored_param_cnt)
         printf("  - param\n");
     for (size_t i = 0; i < p_func->p_side_effects->param_cnt; ++i) {
         if (p_func->p_side_effects->loaded_param[i])
@@ -638,6 +678,7 @@ void ir_side_effects(p_program p_ir) {
         if (func_ref_table[p_func->id].has_effects)
             _add_wl_node(p_func, &wl_head);
     }
+    //
 
     p_call_graph_edge p_cg_edge;
     while (p_cg_edge = _pop_wl_node(&wl_head), p_cg_edge) {
@@ -664,8 +705,7 @@ void ir_side_effects(p_program p_ir) {
             has_change |= _fse_add_global(p_caller, p_visit->p_global, true);
         }
 
-        if (p_callee->p_side_effects->loaded_param_cnt ||
-                p_callee->p_side_effects->stored_param_cnt) {
+        if (p_callee->p_side_effects->loaded_param_cnt || p_callee->p_side_effects->stored_param_cnt) {
             list_for_each(p_node, &p_cg_edge->call_instr) {
                 p_call_instr_node p_ci_node = list_entry(p_node, call_instr_node, node);
                 p_ir_instr p_call = p_ci_node->p_call_instr;
@@ -737,8 +777,10 @@ void ir_side_effects(p_program p_ir) {
         for (size_t i = 0; i < vreg_cnt; ++i) {
             printf("%%%ld ", reg_table[i].p_vreg->id);
             if (reg_table[i].kind == not_ref) printf("not ref\n");
-            else if (reg_table[i].kind == param_ref) printf("ref param %%%ld\n", reg_table[i].param_id);
-            else if (reg_table[i].kind == global_ref) printf("ref global %s\n", reg_table[i].p_global->name);
+            else if (reg_table[i].kind == param_ref)
+                printf("ref param %%%ld\n", reg_table[i].param_id);
+            else if (reg_table[i].kind == global_ref)
+                printf("ref global %s\n", reg_table[i].p_global->name);
         }
         free(reg_table);
     }
