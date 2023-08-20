@@ -289,3 +289,10 @@ void ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive) {
         if_del = ir_simplify_cfg_pass(p_ir);
     } while (if_del);
 }
+
+void ir_func_deadcode_elimate_just(p_symbol_func p_func) {
+    assert(p_func->p_entry_block);
+    symbol_func_set_block_id(p_func);
+    ir_dead_code_elimate_func(p_func, false);
+    symbol_func_set_varible_id(p_func);
+}

@@ -3,6 +3,7 @@
 #include <ir/basic_block.h>
 #include <ir_gen/operand.h>
 #include <symbol/func.h>
+#include <ir_opt/deadcode_elimate.h>
 
 static inline void _do_phi(p_ir_bb_phi p_bb_phi) {
     p_ir_vreg p_vreg = NULL;
@@ -61,5 +62,6 @@ void ir_phi_propagation(p_program p_ir) {
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         ir_func_phi_propagation(p_func);
+        ir_func_deadcode_elimate_just(p_func);
     }
 }
