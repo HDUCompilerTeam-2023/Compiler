@@ -143,11 +143,10 @@ p_arm_instr arm_mov_instr_gen(arm_mov_op op, arm_cond_type cond, arm_reg rd, p_a
     p_instr->node = list_head_init(&p_instr->node);
     p_instr->type = arm_mov_type;
     p_instr->mov_instr.op = op;
-    p_instr->cond_type = cond;
     p_instr->mov_instr.s = false;
     p_instr->mov_instr.rd = rd;
     p_instr->mov_instr.operand = op1;
-    p_instr->cond_type = arm_al;
+    p_instr->cond_type = cond;
     return p_instr;
 }
 
@@ -195,6 +194,7 @@ p_arm_instr arm_push_pop_instr_gen(arm_push_pop_op op) {
     return p_instr;
 }
 void arm_push_pop_instr_add(p_arm_push_pop_instr p_instr, arm_reg reg) {
+    assert(p_instr->num < 16);
     p_instr->regs[p_instr->num++] = reg;
 }
 void arm_push_pop_instr_init(p_arm_push_pop_instr p_instr, arm_reg *reg, size_t num) {
@@ -272,6 +272,7 @@ p_arm_instr arm_vpush_vpop_instr_gen(arm_vpush_vpop_op op) {
     return p_instr;
 }
 void arm_vpush_vpop_instr_add(p_arm_vpush_vpop_instr p_instr, arm_reg reg) {
+    assert(p_instr->num < 16);
     p_instr->regs[p_instr->num++] = reg;
 }
 void arm_vpush_vpop_instr_init(p_arm_vpush_vpop_instr p_instr, arm_reg *reg, size_t num) {
