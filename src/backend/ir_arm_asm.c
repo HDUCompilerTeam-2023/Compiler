@@ -547,9 +547,10 @@ static inline void push_still_live(p_arm_asm_gen_info p_info, p_list_head p_inse
         case arm_mov_type:
             assert(p_a_instr->mov_instr.op == arm_mov);
             assert(p_a_instr->mov_instr.operand->if_imme);
-            printf("aaa%ld\n", p_a_instr->mov_instr.rd);
-            if (p_a_instr->mov_instr.rd == TMP) // 偏移放到临时寄存器
-                p_a_instr->mov_instr.operand->imme += new_sp;
+            if (p_a_instr->mov_instr.rd == TMP) { // 偏移放到临时寄存器
+                if (!(p_a_instr->mov_instr.operand->imme & (1 << ((sizeof(arm_imme) << 3) - 1))))
+                    p_a_instr->mov_instr.operand->imme += new_sp;
+            }
             break;
         case arm_mov32_type:
             if (p_a_instr->mov32_instr.label != NULL)
@@ -561,15 +562,36 @@ static inline void push_still_live(p_arm_asm_gen_info p_info, p_list_head p_inse
         case arm_mem_type:
             if (p_a_instr->mem_instr.op == arm_load) {
                 if (p_a_instr->mem_instr.base == SP) {
-                    if (p_a_instr->mem_instr.offset->if_imme)
+                    if (p_a_instr->mem_instr.offset->if_imme) {
+                        assert(!(p_a_instr->mem_instr.offset->imme & (1 << ((sizeof(arm_imme) << 3) - 1))));
                         p_a_instr->mem_instr.offset->imme += new_sp;
+                    }
+                }
+            }
+            if (p_a_instr->mem_instr.op == arm_store) {
+                if (p_a_instr->mem_instr.base == SP) {
+                    if (p_a_instr->mem_instr.offset->if_imme)
+                        if (!(p_a_instr->mem_instr.offset->imme & (1 << ((sizeof(arm_imme) << 3) - 1))))
+                            p_a_instr->mem_instr.offset->imme += new_sp;
                 }
             }
             break;
         case arm_vmem_type:
             if (p_a_instr->mem_instr.op == arm_vload) {
                 if (p_a_instr->vmem_instr.base == SP) {
+                    assert(!(p_a_instr->vmem_instr.offset & (1 << ((sizeof(arm_imme) << 3) - 1))));
                     p_a_instr->vmem_instr.offset += new_sp;
+                }
+                else {
+                    assert(p_a_instr->vmem_instr.base == TMP);
+                    assert(p_a_instr->vmem_instr.offset == 0);
+                    p_a_instr->vmem_instr.offset += new_sp;
+                }
+            }
+            if (p_a_instr->vmem_instr.op == arm_vstore) {
+                if (p_a_instr->vmem_instr.base == SP) {
+                    if (!(p_a_instr->vmem_instr.offset & ((1 << ((sizeof(arm_imme) << 3) - 1)))))
+                        p_a_instr->vmem_instr.offset += new_sp;
                 }
                 else {
                     assert(p_a_instr->vmem_instr.base == TMP);
