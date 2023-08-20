@@ -12,6 +12,7 @@ static inline void arm_delete_empty_block(p_arm_block p_a_block) {
         p_arm_instr p_jump = list_entry(p_node, arm_block_edge_node, node)->p_jump_instr;
         arm_jump_instr_reset_target(p_jump, p_a_block->p_target1->jump_instr.p_block_target);
     }
+    arm_block_del_prev(p_a_block->p_target1);
     arm_block_drop(p_a_block);
 }
 static inline void arm_delete_little_instr(p_arm_block p_a_block) {

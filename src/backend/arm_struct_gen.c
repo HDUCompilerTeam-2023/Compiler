@@ -96,9 +96,10 @@ void arm_block_del_prev(p_arm_instr p_jump) {
         if (p_edge_node->p_jump_instr == p_jump) {
             list_del(&p_edge_node->node);
             free(p_edge_node);
-            break;
+            return;
         }
     }
+    assert(0);
 }
 
 void arm_jump_instr_reset_target(p_arm_instr p_jump, p_arm_block p_target) {
