@@ -6,6 +6,7 @@
 typedef enum alloca_type alloca_type;
 
 enum alloca_type {
+    alloca_min_spill,
     alloca_whole_in_mem,
     alloca_color_graph,
 };

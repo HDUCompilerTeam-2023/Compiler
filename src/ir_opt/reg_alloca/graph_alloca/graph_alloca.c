@@ -437,8 +437,8 @@ static inline void cal_spill_num(p_conflict_graph p_graph) {
     printf("spilled_reg_num: %ld, spilled_assign_instr_num %ld\n", spill_reg_num, spill_assign_instr_num);
     printf("spilled_mem_num: %ld, spilled_mem_instr_num %ld\n", spill_mem_num, spill_mem_instr_num);
 }
-void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
-    size_t before_instr_num = p_func->instr_num;
+
+p_conflict_graph ir_gen_conflict_graph(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     p_conflict_graph p_graph = conflict_graph_gen(reg_num_r, reg_num_s, p_func);
     p_liveness_info p_live_info = liveness_info_gen(p_func);
     liveness_analysis(p_live_info);
@@ -448,7 +448,11 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
     maximum_clique(p_graph);
     get_color_num(p_graph);
     print_conflict_graph(p_graph);
+    liveness_info_drop(p_live_info);
+    return p_graph;
+}
 
+void ir_graph_spill(p_symbol_func p_func, p_conflict_graph p_graph) {
     while (p_graph->color_num_r > p_graph->reg_num_r
         || p_graph->color_num_s > p_graph->reg_num_s) {
         choose_spill(p_graph);
@@ -460,15 +464,16 @@ void graph_alloca(p_symbol_func p_func, size_t reg_num_r, size_t reg_num_s) {
         maximum_clique(p_graph);
         get_color_num(p_graph);
     }
+}
+void graph_alloca(p_symbol_func p_func, p_conflict_graph p_graph) {
     set_graph_color(p_graph);
     adjust_graph_color(p_graph);
     delete_no_use_vreg(p_graph);
+}
 
+void ir_combine(p_symbol_func p_func, p_conflict_graph p_graph) {
     combine_mov(p_func);
-    liveness_info_drop(p_live_info);
     cal_spill_num(p_graph);
     conflict_graph_drop(p_graph);
     symbol_func_set_block_id(p_func);
-    printf("before alloca instr num %s: %ld\n", p_func->name, before_instr_num);
-    printf("after alloca instr num %s: %ld\n", p_func->name, p_func->instr_num);
 }

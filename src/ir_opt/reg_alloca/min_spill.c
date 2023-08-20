@@ -1171,7 +1171,7 @@ static inline void _MIN_in_bb(p_W p_w, p_W p_s, p_ir_basic_block p_bb) {
     }
 }
 
-static inline void _spill_func(p_symbol_func p_func) {
+void ir_min_spill_func(p_symbol_func p_func) {
     symbol_func_set_block_id(p_func);
 
     p_spill_slot p_slot = _spill_slot_alloc(p_func);
@@ -1179,8 +1179,6 @@ static inline void _spill_func(p_symbol_func p_func) {
     p_liveness_info p_live_info = liveness_info_gen(p_func);
     liveness_analysis(p_live_info);
     liveness_info_drop(p_live_info);
-
-    size_t before_instr_num = p_func->instr_num;
 
     p_W *W_exit_map = malloc(sizeof(p_W) * p_func->block_cnt);
     memset(W_exit_map, 0, sizeof(p_W) * p_func->block_cnt);
@@ -1313,15 +1311,4 @@ static inline void _spill_func(p_symbol_func p_func) {
     free(S_exit_map);
 
     symbol_func_set_block_id(p_func);
-
-    printf("min spill before %ld\n", before_instr_num);
-    printf("min spill after %ld\n", p_func->instr_num);
-}
-
-void ir_opt_min_spill(p_program p_ir) {
-    p_list_head p_node;
-    list_for_each(p_node, &p_ir->function)  {
-        p_symbol_func p_func = list_entry(p_node, symbol_func, node);
-        _spill_func(p_func);
-    }
 }
