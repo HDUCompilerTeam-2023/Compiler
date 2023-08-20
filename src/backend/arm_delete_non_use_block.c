@@ -30,6 +30,8 @@ static inline void arm_delete_little_instr(p_arm_block p_a_block) {
         if (p_a_instr->type == arm_call_type || p_a_instr->type == arm_push_pop_type || p_a_instr->type == arm_vpush_vpop_type) {
             return;
         }
+        if (p_a_instr->cond_type != arm_al)
+            return;
         instr_num++;
     }
     if (instr_num < 5) {

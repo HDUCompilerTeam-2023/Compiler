@@ -494,6 +494,8 @@ static inline void push_still_live(p_arm_asm_gen_info p_info, p_list_head p_inse
         p_ir_vreg p_live = list_entry(p_node, ir_vreg_list_node, node)->p_vreg;
         if (p_live == p_instr->ir_call.p_des)
             continue;
+        if (!if_caller_save_reg(p_live->reg_id))
+            continue;
         if (p_live->if_float)
             regs_s[push_num_s++] = vreg_arm_reg(p_live);
         else
