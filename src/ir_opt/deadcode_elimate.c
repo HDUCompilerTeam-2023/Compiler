@@ -19,10 +19,14 @@ struct reg_info {
 };
 
 struct reg_info_table {
+    p_symbol_func p_func;
     p_reg_info p_top;
     p_reg_info p_base;
     p_varray_info p_varray_top;
     p_varray_info p_varray_base;
+    size_t vreg_num;
+    size_t varray_num;
+    size_t param_reg_num;
     bool if_aggressive;
 };
 static inline void reg_info_gen(p_reg_info p_info, p_ir_vreg p_vreg) {
@@ -79,6 +83,7 @@ static inline void deal_varray_use(p_ir_varray_use p_varray_use, p_reg_info_tabl
     }
     push_varray(p_varray_use->p_varray_use, reg_info_table);
 }
+#include <ir_print.h>
 static inline bool deal_instr_src(p_ir_instr p_instr, p_reg_info_table reg_info_table, p_symbol_func p_func) {
     p_list_head p_node;
     switch (p_instr->irkind) {
@@ -390,26 +395,49 @@ static inline void delete_all(p_reverse_dom_tree_info_list p_info_list, p_reg_in
         }
     }
 }
-static inline p_reg_info_table reg_info_table_gen(bool if_aggressive, size_t vreg_num, size_t varray_num) {
+static inline p_reg_info_table reg_info_table_gen(bool if_aggressive, p_symbol_func p_func) {
     p_reg_info_table reg_info_table = malloc(sizeof(*reg_info_table));
+    reg_info_table->p_func = p_func;
     reg_info_table->if_aggressive = if_aggressive;
-    reg_info_table->p_base = malloc(sizeof(*reg_info_table->p_base) * vreg_num);
+    reg_info_table->param_reg_num = p_func->param_reg_cnt;
+    reg_info_table->vreg_num = p_func->param_reg_cnt + p_func->vreg_cnt;
+    reg_info_table->p_base = malloc(sizeof(*reg_info_table->p_base) * reg_info_table->vreg_num);
     reg_info_table->p_top = NULL;
-    reg_info_table->p_varray_base = malloc(sizeof(*reg_info_table->p_varray_base) * varray_num);
+    reg_info_table->p_varray_base = malloc(sizeof(*reg_info_table->p_varray_base) * (p_func->varray_num + p_func->p_program->varray_num));
     reg_info_table->p_varray_top = NULL;
-    return reg_info_table;
-}
-static inline void ir_dead_code_elimate_func(p_symbol_func p_func, bool if_aggressive) {
-    p_reverse_dom_tree_info_list p_info_list = ir_build_cdg_func(p_func);
-    size_t vreg_num = p_func->vreg_cnt + p_func->param_reg_cnt;
-    size_t varray_num = p_func->varray_num;
-    p_reg_info_table reg_info_table = reg_info_table_gen(if_aggressive, vreg_num, varray_num);
-    p_list_head p_node;
-    list_for_each(p_node, &p_func->vreg_list) {
-        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
-        reg_info_gen(reg_info_table->p_base + p_vreg->id, p_vreg);
-    }
+
     size_t i = 0;
+    p_list_head p_node;
+    list_for_each(p_node, &p_func->p_program->variable) {
+        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
+        p_list_head p_vmem_node;
+        list_for_each(p_vmem_node, &p_var->p_base->varray_list) {
+            p_ir_varray p_varray = list_entry(p_vmem_node, ir_varray, node);
+            if (!p_varray->p_instr_def) continue;
+            switch (p_varray->varray_def_type) {
+            case varray_func_def:
+            case varray_global_def:
+                if (p_varray->p_func != reg_info_table->p_func)
+                    continue;
+                break;
+            case varray_instr_def:
+                if (p_varray->p_instr_def->p_basic_block->p_func != reg_info_table->p_func)
+                    continue;
+                break;
+            case varray_bb_phi_def:
+                if (p_varray->p_varray_bb_phi->p_basic_block->p_func != reg_info_table->p_func)
+                    continue;
+                break;
+            case varray_def_pair_def:
+                if (p_varray->p_pair->p_instr->p_basic_block->p_func != reg_info_table->p_func)
+                    continue;
+                break;
+            }
+            varray_info_gen(reg_info_table->p_varray_base + i, p_varray);
+            i++;
+        }
+    }
+
     list_for_each(p_node, &p_func->param_vmem_base) {
         p_ir_vmem_base p_vmem_base = list_entry(p_node, ir_param_vmem_base, node)->p_param_base;
         p_list_head p_vmem_node;
@@ -440,16 +468,46 @@ static inline void ir_dead_code_elimate_func(p_symbol_func p_func, bool if_aggre
             i++;
         }
     }
+    reg_info_table->varray_num = i;
+    i = 0;
+    list_for_each(p_node, &p_func->vreg_list) {
+        p_ir_vreg p_vreg = list_entry(p_node, ir_vreg, node);
+        reg_info_gen(reg_info_table->p_base + p_vreg->id, p_vreg);
+        i++;
+    }
+    assert(i == p_func->vreg_cnt);
+    return reg_info_table;
+}
 
-    assert(i == p_func->varray_num);
+static inline void reg_info_table_clear(p_reg_info_table reg_info_table) {
+    for (size_t j = reg_info_table->param_reg_num; j < reg_info_table->vreg_num; j++) {
+        if (!(reg_info_table->p_base + j)->p_prev) {
+            symbol_func_vreg_del(reg_info_table->p_func, (reg_info_table->p_base + j)->p_vreg);
+        }
+    }
+    for (size_t j = 0; j < reg_info_table->varray_num; j++) {
+        p_varray_info p_info = reg_info_table->p_varray_base + j;
+        if (!p_info->p_prev) {
+            ir_varray_drop(p_info->p_varray);
+        }
+    }
+    symbol_func_set_block_id(reg_info_table->p_func);
+    if (reg_info_table->varray_num) {
+        symbol_func_clear_varible(reg_info_table->p_func);
+        program_clear_varible(reg_info_table->p_func->p_program);
+    }
+}
+static inline void ir_dead_code_elimate_func(p_symbol_func p_func, bool if_aggressive) {
+    p_reverse_dom_tree_info_list p_info_list = ir_build_cdg_func(p_func);
+    p_reg_info_table reg_info_table = reg_info_table_gen(if_aggressive, p_func);
     p_list_head p_block_node;
     list_for_each(p_block_node, &p_func->block) {
         p_ir_basic_block p_block = list_entry(p_block_node, ir_basic_block, node);
-
         bool if_useful = false;
         p_list_head p_instr_node, p_next;
         list_for_each_safe(p_instr_node, p_next, &p_block->instr_list) {
             p_ir_instr p_instr = list_entry(p_instr_node, ir_instr, node);
+            ir_instr_print(p_instr);
             if_useful |= deal_instr_src(p_instr, reg_info_table, p_func);
         }
 
@@ -464,19 +522,7 @@ static inline void ir_dead_code_elimate_func(p_symbol_func p_func, bool if_aggre
     deal_reg_info_table(p_info_list, reg_info_table);
 
     delete_all(p_info_list, reg_info_table, p_func);
-    for (size_t j = p_func->param_reg_cnt; j < vreg_num; j++) {
-        if (!(reg_info_table->p_base + j)->p_prev) {
-            symbol_func_vreg_del(p_func, (reg_info_table->p_base + j)->p_vreg);
-        }
-    }
-    for (size_t j = 0; j < varray_num; j++) {
-        if (!(reg_info_table->p_varray_base + j)->p_prev) {
-            ir_varray_drop((reg_info_table->p_varray_base + j)->p_varray);
-        }
-    }
-    symbol_func_set_block_id(p_func);
-    if (varray_num)
-        symbol_func_clear_varible(p_func);
+    reg_info_table_clear(reg_info_table);
     free(reg_info_table->p_base);
     free(reg_info_table->p_varray_base);
     free(reg_info_table);
@@ -484,18 +530,6 @@ static inline void ir_dead_code_elimate_func(p_symbol_func p_func, bool if_aggre
 }
 static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive) {
     p_list_head p_node;
-    p_varray_info varray_info_base = malloc(sizeof(*varray_info_base) * p_ir->varray_num);
-    size_t varray_num = p_ir->varray_num;
-    size_t i = 0;
-    list_for_each(p_node, &p_ir->variable) {
-        p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        p_list_head p_vmem_node;
-        list_for_each(p_vmem_node, &p_var->p_base->varray_list) {
-            p_ir_varray p_varray = list_entry(p_vmem_node, ir_varray, node);
-            varray_info_gen(varray_info_base + i, p_varray);
-            i++;
-        }
-    }
     list_for_each(p_node, &p_ir->function) {
         p_symbol_func p_func = list_entry(p_node, symbol_func, node);
         assert(p_func->p_entry_block);
@@ -503,14 +537,6 @@ static inline void _ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive)
         ir_dead_code_elimate_func(p_func, if_aggressive);
         symbol_func_set_varible_id(p_func);
     }
-    for (size_t j = 0; j < varray_num; j++) {
-        if (!(varray_info_base + j)->p_prev) {
-            ir_varray_drop((varray_info_base + j)->p_varray);
-        }
-    }
-    if (varray_num)
-        program_clear_varible(p_ir);
-    free(varray_info_base);
 }
 
 void ir_deadcode_elimate_pass(p_program p_ir, bool if_aggressive) {
