@@ -603,7 +603,6 @@ static inline void push_still_live(p_arm_asm_gen_info p_info, p_list_head p_inse
         case arm_binary_type:
             assert(p_a_instr->binary_instr.op == arm_add);
             assert(p_a_instr->binary_instr.rs1 == SP);
-            assert(p_a_instr->binary_instr.rd == TMP);
             break;
         case arm_vmov_type:
             break;
