@@ -109,6 +109,8 @@ int main(int argc, char *argv[]) {
 
     memssa_program_out(p_program);
 
+    exit(0);
+
     // arm lir trans
     arm_param_trans_pass(p_program);
     arm_imme_trans_pass(p_program);
