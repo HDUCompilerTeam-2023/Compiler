@@ -210,6 +210,7 @@ static inline p_spill_slot _spill_slot_alloc(p_symbol_func p_func) {
     p_list_head p_node, p_next;
     list_for_each_safe(p_node, p_next, &pcc_head) {
         p_phi_congruence_class pcc = list_entry(p_node, phi_congruence_class, node);
+        list_del(&pcc->node);
         p_spill_slot_node p_ssn = _spill_slot_node_gen(pcc);
         symbol_func_add_variable(p_func, p_ssn->p_var);
         list_add_prev(&p_ssn->node, &p_slot->list);
