@@ -78,21 +78,31 @@ int main(int argc, char *argv[]) {
         ir_deadcode_elimate_pass(p_program, true);
 
         // optimize - need keep block information
-        if (is_opt) {
-            ir_side_effects(p_program);
-            set_cond_pass(p_program);
-            ir_reassociate(p_program);
-            ir_opt_gvn(p_program);
-            ir_opt_gcm(p_program);
-            ir_deadcode_elimate_pass(p_program, true);
-        }
+        ir_side_effects(p_program);
+        set_cond_pass(p_program);
+        ir_reassociate(p_program);
+        ir_opt_gvn(p_program);
+        ir_opt_gcm(p_program);
+        ir_deadcode_elimate_pass(p_program, true);
         ir_opt_copy_propagation(p_program);
         ir_opt_mem_copy_propagation(p_program);
         ir_opt_sccp(p_program);
+        ir_opt_gvn(p_program);
+        ir_opt_gcm(p_program);
 
         // deadcode elimate
         ir_deadcode_elimate_pass(p_program, true);
-    } while (n--);
+    } while (is_opt && n--);
+
+    if (!is_opt) {
+        ir_opt_gvn(p_program);
+        ir_opt_mem_copy_propagation(p_program);
+        ir_opt_gvn(p_program);
+        ir_opt_gcm(p_program);
+
+        // deadcode elimate
+        ir_deadcode_elimate_pass(p_program, true);
+    }
 
     // shared lir trans
     share_lir_trans_pass(p_program);
