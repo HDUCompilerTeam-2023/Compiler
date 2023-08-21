@@ -65,6 +65,46 @@ static inline void _global_opt_var_list(p_list_head p_list) {
     }
 }
 
+static inline void revise_mem(p_ir_operand p_operand) {
+    p_ir_vreg p_des = NULL;
+    switch (p_operand->used_type) {
+    case instr_ptr:
+        switch (p_operand->p_instr->irkind) {
+        case ir_store:
+            p_operand->p_instr->ir_store.is_stack_ptr = true;
+            break;
+        case ir_load:
+            p_operand->p_instr->ir_load.is_stack_ptr = true;
+            break;
+        case ir_unary:
+            p_des = p_operand->p_instr->ir_unary.p_des;
+            break;
+        case ir_binary:
+            p_des = p_operand->p_instr->ir_binary.p_des;
+            break;
+        case ir_gep:
+            p_des = p_operand->p_instr->ir_gep.p_des;
+            break;
+        case ir_call:
+            assert(0);
+            break;
+        }
+        break;
+    case bb_param_ptr:
+    case cond_ptr:
+    case ret_ptr:
+        assert(0);
+        break;
+
+    }
+    if(!p_des)
+        return;
+    p_list_head p_node;
+    list_for_each(p_node, &p_des->use_list) {
+        p_ir_operand p_use = list_entry(p_node, ir_operand, use_node);
+        revise_mem(p_use);
+    }
+}
 static inline void _global_variable_localize(p_symbol_var p_var) {
     assert(p_var->is_global);
     if (p_var->p_type->ref_level == 0 && !list_head_alone(&p_var->p_type->array))
@@ -127,6 +167,11 @@ static inline void _global_variable_localize(p_symbol_var p_var) {
         }
         p_ir_instr p_instr = ir_store_instr_gen(ir_operand_addr_gen(p_var, NULL, 0), p_init, true);
         ir_basic_block_addinstr_head(p_func->p_entry_block, p_instr);
+        p_list_head p_node;
+        list_for_each(p_node, &p_var->ref_list) {
+            p_ir_operand p_operand = list_entry(p_node, ir_operand, ref_node);
+            revise_mem(p_operand);
+        }
         assert(!p_var->is_global);
         assert(p_var->p_func == p_func);
     }

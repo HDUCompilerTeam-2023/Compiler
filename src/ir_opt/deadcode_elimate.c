@@ -338,6 +338,16 @@ static inline void delete_all(p_reverse_dom_tree_info_list p_info_list, p_reg_in
                         || !list_head_alone(&p_instr->ir_call.p_func->p_side_effects->stored_global))) {
                     if_useful = true;
                 }
+                if (!strcmp(p_instr->ir_call.p_func->name, "_sysy_starttime")
+                    || !strcmp(p_instr->ir_call.p_func->name, "_sysy_stoptime")) { 
+                    p_list_head p_node;
+                    list_for_each(p_node, &p_instr->ir_call.varray_defs){
+                        p_ir_varray_def_pair p_pair = list_entry(p_node, ir_varray_def_pair, node);
+                        assert(p_pair->p_des);
+                        varray_info_set_useful(p_pair->p_des->p_info);
+                    }
+                    break;
+                }
                 if (p_instr->ir_call.p_des) {
                     if (!if_vreg_useful(p_instr->ir_call.p_des, reg_info_table)) {
                         ir_set_call_instr_des(p_instr, NULL);
@@ -492,10 +502,10 @@ static inline void reg_info_table_clear(p_reg_info_table reg_info_table) {
         }
     }
     symbol_func_set_block_id(reg_info_table->p_func);
-    if (reg_info_table->varray_num) {
+    // if (reg_info_table->varray_num) {
         symbol_func_clear_varible(reg_info_table->p_func);
         program_clear_varible(reg_info_table->p_func->p_program);
-    }
+    // }
 }
 static inline void ir_dead_code_elimate_func(p_symbol_func p_func, bool if_aggressive) {
     p_reverse_dom_tree_info_list p_info_list = ir_build_cdg_func(p_func);

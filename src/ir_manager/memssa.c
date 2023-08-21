@@ -275,17 +275,36 @@ void memssa_insert_phi(p_mem_ssa_list p_convert_list, p_ssa_mem_list_info p_var_
                 bitmap_add_element(p_info->p_def_var, p_vmem_base_info->id);
             }
             else if (p_instr->irkind == ir_call) {
-                p_list_head p_node;
-                list_for_each(p_node, &p_var_list->p_program->variable) {
-                    p_ssa_mem_info p_vmem_base_info = list_entry(p_node, symbol_var, node)->p_base->p_info;
-                    bitmap_add_element(p_info->p_def_var, p_vmem_base_info->id);
+                if (!strcmp(p_instr->ir_call.p_func->name, "_sysy_starttime")
+                    || !strcmp(p_instr->ir_call.p_func->name, "_sysy_stoptime")) {
+                    p_list_head p_node;
+                    list_for_each(p_node, &p_var_list->p_program->variable) {
+                        p_ssa_mem_info p_vmem_base_info = list_entry(p_node, symbol_var, node)->p_base->p_info;
+                        bitmap_add_element(p_info->p_def_var, p_vmem_base_info->id);
+                    }
+                    list_for_each(p_node, &p_var_list->p_func->variable) {
+                        p_ssa_mem_info p_vmem_base_info = list_entry(p_node, symbol_var, node)->p_base->p_info;
+                        bitmap_add_element(p_info->p_def_var, p_vmem_base_info->id);
+                    }
+                    list_for_each(p_node, &p_var_list->p_func->param_vmem_base) {
+                        p_ssa_mem_info p_vmem_base_info = list_entry(p_node, ir_param_vmem_base, node)->p_param_base->p_info;
+                        bitmap_add_element(p_info->p_def_var, p_vmem_base_info->id);
+                    }
+                    continue;
                 }
+                p_list_head p_node;
+                size_t i = 0;
                 list_for_each(p_node, &p_instr->ir_call.param_list) {
                     p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
-                    if (p_param->p_type->ref_level) {
+                    if (p_instr->ir_call.p_func->p_side_effects->stored_param[i]) {
                         p_ssa_mem_info p_vmem_base_info = get_vmem_base(p_param)->p_info;
                         bitmap_add_element(p_info->p_def_var, p_vmem_base_info->id);
                     }
+                    i++;
+                }
+                list_for_each(p_node, &p_instr->ir_call.p_func->p_side_effects->stored_global) {
+                    p_ssa_mem_info p_vmem_base_info = list_entry(p_node, mem_visit_node, node)->p_global->p_base->p_info;
+                    bitmap_add_element(p_info->p_def_var, p_vmem_base_info->id);
                 }
             }
         }
@@ -429,6 +448,35 @@ void memssa_rename_var(p_ssa_mem_list_info p_var_list, p_mem_ssa_list p_convert_
         }
         if (p_instr->irkind == ir_call) {
             p_list_head p_node;
+            if (!strcmp(p_instr->ir_call.p_func->name, "_sysy_starttime")
+                || !strcmp(p_instr->ir_call.p_func->name, "_sysy_stoptime")) {
+                p_list_head p_node;
+                list_for_each(p_node, &p_var_list->p_program->variable) {
+                    p_ssa_mem_info p_vmem_base_info = list_entry(p_node, symbol_var, node)->p_base->p_info;
+                    p_ir_varray_use p_use = get_top_varray_use(p_vmem_base_info);
+                    p_ir_varray p_des = ir_varray_gen(p_vmem_base_info->p_vmem_base);
+                    p_ir_varray_def_pair p_pair = ir_varray_def_pair_gen(p_des, p_use);
+                    ir_call_instr_add_varray_def_pair(p_instr, p_pair);
+                    p_vmem_base_info->p_current_varray = p_des;
+                }
+                list_for_each(p_node, &p_var_list->p_func->variable) {
+                    p_ssa_mem_info p_vmem_base_info = list_entry(p_node, symbol_var, node)->p_base->p_info;
+                    p_ir_varray_use p_use = get_top_varray_use(p_vmem_base_info);
+                    p_ir_varray p_des = ir_varray_gen(p_vmem_base_info->p_vmem_base);
+                    p_ir_varray_def_pair p_pair = ir_varray_def_pair_gen(p_des, p_use);
+                    ir_call_instr_add_varray_def_pair(p_instr, p_pair);
+                    p_vmem_base_info->p_current_varray = p_des;
+                }
+                list_for_each(p_node, &p_var_list->p_func->param_vmem_base) {
+                    p_ssa_mem_info p_vmem_base_info = list_entry(p_node, ir_param_vmem_base, node)->p_param_base->p_info;
+                    p_ir_varray_use p_use = get_top_varray_use(p_vmem_base_info);
+                    p_ir_varray p_des = ir_varray_gen(p_vmem_base_info->p_vmem_base);
+                    p_ir_varray_def_pair p_pair = ir_varray_def_pair_gen(p_des, p_use);
+                    ir_call_instr_add_varray_def_pair(p_instr, p_pair);
+                    p_vmem_base_info->p_current_varray = p_des;
+                }
+                continue;
+            }
             list_for_each(p_node, &p_instr->ir_call.p_func->p_side_effects->stored_global) {
                 p_ssa_mem_info p_vmem_base_info = list_entry(p_node, mem_visit_node, node)->p_global->p_base->p_info;
                 p_vmem_base_info->has_store = true;
@@ -449,20 +497,19 @@ void memssa_rename_var(p_ssa_mem_list_info p_var_list, p_mem_ssa_list p_convert_
                 ir_call_instr_add_varray_def_pair(p_instr, p_pair);
             }
             size_t i = 0;
-            ir_instr_print(p_instr);
             list_for_each(p_node, &p_instr->ir_call.param_list) {
                 p_ir_operand p_param = list_entry(p_node, ir_param, node)->p_param;
                 if (p_instr->ir_call.p_func->p_side_effects->stored_param[i]) {
                     p_ssa_mem_info p_vmem_base_info = get_vmem_base(p_param)->p_info;
                     if (p_vmem_base_info->has_store) {
                         p_vmem_base_info->has_store = false;
+                        i++;
                         continue;
                     }
                     p_ir_varray_use p_use = get_top_varray_use(p_vmem_base_info);
                     p_ir_varray p_des = ir_varray_gen(p_vmem_base_info->p_vmem_base);
                     p_ir_varray_def_pair p_pair = ir_varray_def_pair_gen(p_des, p_use);
                     ir_call_instr_add_varray_def_pair(p_instr, p_pair);
-                    ir_varray_def_pair_print(p_pair);
                     p_vmem_base_info->p_current_varray = p_des;
                     i++;
                     continue;
