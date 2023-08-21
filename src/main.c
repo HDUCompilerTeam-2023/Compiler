@@ -71,28 +71,30 @@ int main(int argc, char *argv[]) {
 
     size_t n = 3;
     do {
-        ir_opt_inline(p_program);
+        if (is_opt) ir_opt_inline(p_program);
 
-        ir_opt_globalopt(p_program);
+        if (is_opt) ir_opt_globalopt(p_program);
         memssa_program_pass(p_program);
         ir_deadcode_elimate_pass(p_program, true);
 
         // optimize - need keep block information
-        if (is_opt) {
-            ir_side_effects(p_program);
-            set_cond_pass(p_program);
-            ir_reassociate(p_program);
-            ir_opt_gvn(p_program);
-            ir_opt_gcm(p_program);
-            ir_deadcode_elimate_pass(p_program, true);
-        }
+        set_cond_pass(p_program);
+        if (is_opt) ir_side_effects(p_program);
+        if (is_opt) ir_reassociate(p_program);
+        ir_opt_gvn(p_program);
+        if (is_opt) ir_opt_gcm(p_program);
+        if (is_opt) ir_deadcode_elimate_pass(p_program, true);
         ir_opt_copy_propagation(p_program);
         ir_opt_mem_copy_propagation(p_program);
+        ir_opt_gcm(p_program);
+        if (is_opt) ir_deadcode_elimate_pass(p_program, true);
         ir_opt_sccp(p_program);
+        if (is_opt) ir_opt_gvn(p_program);
+        if (is_opt) ir_opt_gcm(p_program);
 
         // deadcode elimate
         ir_deadcode_elimate_pass(p_program, true);
-    } while (n--);
+    } while (is_opt && n--);
 
     // shared lir trans
     share_lir_trans_pass(p_program);
