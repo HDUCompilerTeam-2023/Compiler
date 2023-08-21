@@ -938,7 +938,7 @@ static inline void _reload_instr_gen(p_W p_w, p_ir_vreg p_vreg, p_ir_instr p_ins
                 p_load = ir_unary_instr_gen(p_def->ir_unary.op, ir_operand_copy(p_def->ir_unary.p_src), p_copy);
             }
         }
-        if (p_def->irkind == ir_binary){
+        if (p_def->irkind == ir_binary && p_def->ir_binary.op != ir_div_op){
             if ((p_def->ir_binary.p_src1->kind == imme || _W_find(p_w, p_def->ir_binary.p_src1->p_vreg))
                     && (p_def->ir_binary.p_src2->kind == imme || _W_find(p_w, p_def->ir_binary.p_src2->p_vreg))) {
                 p_load = ir_binary_instr_gen(p_def->ir_binary.op, ir_operand_copy(p_def->ir_binary.p_src1), ir_operand_copy(p_def->ir_binary.p_src2), p_copy);
