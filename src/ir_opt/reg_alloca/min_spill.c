@@ -626,6 +626,15 @@ static inline void _vreg_set_insertion(p_vreg_set p_des, p_vreg_set p_vs) {
         }
     }
 }
+static inline bool _vreg_set_find(p_vreg_set p_vs, p_ir_vreg p_vreg) {
+    p_list_head p_node;
+    list_for_each(p_node, &p_vs->vregs) {
+        p_vreg_set_node p_vsn = list_entry(p_node, vreg_set_node, node);
+        if (p_vsn->p_vreg == p_vreg)
+            return true;
+    }
+    return false;
+}
 static inline void _vreg_set_union(p_vreg_set p_des, p_vreg_set p_vs) {
     p_list_head p_node;
     list_for_each(p_node, &p_vs->vregs) {
@@ -688,6 +697,12 @@ static inline void _W_cut(p_W p_w, size_t space_r, size_t space_s) {
         space_s = p_w->limit_s;
     _vreg_set_cut(p_w->vreg_set_r, p_w->limit_r - space_r);
     _vreg_set_cut(p_w->vreg_set_s, p_w->limit_s - space_s);
+}
+static inline bool _W_find(p_W p_w, p_ir_vreg p_vreg) {
+    if (p_vreg->if_float)
+        return _vreg_set_find(p_w->vreg_set_s, p_vreg);
+    else
+        return _vreg_set_find(p_w->vreg_set_s, p_vreg);
 }
 static inline void _W_insertion(p_W p_des, p_W p_w) {
     _vreg_set_insertion(p_des->vreg_set_r, p_w->vreg_set_r);
@@ -912,10 +927,27 @@ static inline p_W _S_init(p_W p_w_entry_bb, p_W *W_exit_map, p_W *S_exit_map, p_
     return p_s_entry_bb;
 }
 
-static inline void _reload_instr_gen(p_ir_vreg p_vreg, p_ir_instr p_instr) {
+static inline void _reload_instr_gen(p_W p_w, p_ir_vreg p_vreg, p_ir_instr p_instr) {
     p_ir_vreg p_copy = ir_vreg_copy(p_vreg);
     symbol_func_vreg_add(p_instr->p_basic_block->p_func, p_copy);
-    p_ir_instr p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vreg->p_info, NULL, 0), p_copy, true);
+    p_ir_instr p_load = NULL;
+    if (p_vreg->def_type == instr_def) {
+        p_ir_instr p_def = p_vreg->p_instr_def;
+        if (p_def->irkind == ir_unary){
+            if (p_def->ir_unary.p_src->kind == imme || _W_find(p_w, p_def->ir_unary.p_src->p_vreg)) {
+                p_load = ir_unary_instr_gen(p_def->ir_unary.op, ir_operand_copy(p_def->ir_unary.p_src), p_copy);
+            }
+        }
+        if (p_def->irkind == ir_binary){
+            if ((p_def->ir_binary.p_src1->kind == imme || _W_find(p_w, p_def->ir_binary.p_src1->p_vreg))
+                    && (p_def->ir_binary.p_src2->kind == imme || _W_find(p_w, p_def->ir_binary.p_src2->p_vreg))) {
+                p_load = ir_binary_instr_gen(p_def->ir_binary.op, ir_operand_copy(p_def->ir_binary.p_src1), ir_operand_copy(p_def->ir_binary.p_src2), p_copy);
+            }
+        }
+    }
+    if (!p_load) {
+        p_load = ir_load_instr_gen(ir_operand_addr_gen(p_vreg->p_info, NULL, 0), p_copy, true);
+    }
     ir_instr_add_prev(p_load, p_instr);
     copy_vreg_list(p_load->p_live_in, p_instr->p_live_in);
     copy_vreg_list(p_load->p_live_out, p_instr->p_live_in);
@@ -926,15 +958,15 @@ static inline void _spill_instr_gen(p_ir_vreg p_vreg, p_ir_instr p_instr) {
     copy_vreg_list(p_store->p_live_in, p_instr->p_live_in);
     copy_vreg_list(p_store->p_live_out, p_instr->p_live_in);
 }
-static inline void _load_all_before_instr(p_W need_load, p_ir_instr p_instr) {
+static inline void _load_all_before_instr(p_W p_w, p_W need_load, p_ir_instr p_instr) {
     p_list_head p_node;
     list_for_each(p_node, &need_load->vreg_set_r->vregs) {
         p_ir_vreg p_vreg = list_entry(p_node, vreg_set_node, node)->p_vreg;
-        _reload_instr_gen(p_vreg, p_instr);
+        _reload_instr_gen(p_w, p_vreg, p_instr);
     }
     list_for_each(p_node, &need_load->vreg_set_s->vregs) {
         p_ir_vreg p_vreg = list_entry(p_node, vreg_set_node, node)->p_vreg;
-        _reload_instr_gen(p_vreg, p_instr);
+        _reload_instr_gen(p_w, p_vreg, p_instr);
     }
 }
 static inline void _spill_all_before_instr(p_W need_spill, p_ir_instr p_instr) {
@@ -948,12 +980,12 @@ static inline void _spill_all_before_instr(p_W need_spill, p_ir_instr p_instr) {
         _spill_instr_gen(p_vreg, p_instr);
     }
 }
-static inline void _load_all_at_bb(p_W need_load, p_ir_basic_block p_bb) {
+static inline void _load_all_at_bb(p_W p_w, p_W need_load, p_ir_basic_block p_bb) {
     p_ir_instr p_instr = ir_call_instr_gen(p_bb->p_func, NULL);
     ir_basic_block_addinstr_tail(p_bb, p_instr);
     copy_vreg_list(p_instr->p_live_in, p_bb->p_branch->p_live_in);
     copy_vreg_list(p_instr->p_live_out, p_bb->p_branch->p_live_in);
-    _load_all_before_instr(need_load, p_instr);
+    _load_all_before_instr(p_w, need_load, p_instr);
     ir_instr_drop(p_instr);
 }
 static inline void _spill_all_at_bb(p_W need_spill, p_ir_basic_block p_bb) {
@@ -975,6 +1007,8 @@ static inline void _add_spill_and_reload_for_edge(p_W *W_entry_map, p_W *S_entry
     assert(p_w_exit_p);
     assert(p_s_exit_p);
 
+    p_W before = _W_copy(p_w_exit_p);
+
     p_W need_load = _W_copy(p_w_entry_bb);
     _W_complement(need_load, p_w_exit_p);
 
@@ -993,6 +1027,7 @@ static inline void _add_spill_and_reload_for_edge(p_W *W_entry_map, p_W *S_entry
         assert(list_head_alone(&need_load->vreg_set_s->vregs));
         assert(list_head_alone(&need_spill->vreg_set_r->vregs));
         assert(list_head_alone(&need_spill->vreg_set_s->vregs));
+        _W_drop(before);
         _W_drop(need_load);
         _W_drop(need_spill);
         return;
@@ -1005,6 +1040,7 @@ static inline void _add_spill_and_reload_for_edge(p_W *W_entry_map, p_W *S_entry
         assert(p_node_src != &p_bb->basic_block_phis);
         p_ir_vreg p_param = list_entry(p_node, ir_bb_param, node)->p_bb_param->p_vreg;
         p_ir_vreg p_phi = list_entry(p_node_src, ir_bb_phi, node)->p_bb_phi;
+        _W_replace(before, p_phi, p_param);
         _W_replace(need_load, p_phi, p_param);
         _W_replace(need_spill, p_phi, p_param);
         p_node_src = p_node_src->p_next;
@@ -1037,7 +1073,8 @@ static inline void _add_spill_and_reload_for_edge(p_W *W_entry_map, p_W *S_entry
     _W_print(need_spill);
 
     _spill_all_at_bb(need_spill, p_source_bb);
-    _load_all_at_bb(need_load, p_source_bb);
+    _load_all_at_bb(before, need_load, p_source_bb);
+    _W_drop(before);
     _W_drop(need_load);
     _W_drop(need_spill);
 }
@@ -1137,6 +1174,7 @@ static inline void _MIN_in_bb(p_W p_w, p_W p_s, p_ir_basic_block p_bb) {
             break;
         }
         p_W need_load = _W_gen();
+        p_W before = _W_copy(p_w);
         if (p_src1 && p_src1->kind == reg)
             _add_to_W(p_w, p_s, need_load, p_src1->p_vreg);
         if (p_src2 && p_src2->kind == reg)
@@ -1150,6 +1188,7 @@ static inline void _MIN_in_bb(p_W p_w, p_W p_s, p_ir_basic_block p_bb) {
             }
         }
         _limit(p_w, p_s, p_instr->p_live_in, p_instr, 0);
+        _W_insertion(before, p_w);
         if (p_des && !p_des->if_cond) {
             _limit(p_w, p_s, p_instr->p_live_out, p_instr, 1);
             _W_add(p_w, p_des);
@@ -1159,8 +1198,9 @@ static inline void _MIN_in_bb(p_W p_w, p_W p_s, p_ir_basic_block p_bb) {
         if (need_load->vreg_set_r->cnt || need_load->vreg_set_s->cnt) {
             printf("need reload\n");
             _W_print(need_load);
-            _load_all_before_instr(need_load, p_instr);
+            _load_all_before_instr(before, need_load, p_instr);
         }
+        _W_drop(before);
         _W_drop(need_load);
     }
 }
