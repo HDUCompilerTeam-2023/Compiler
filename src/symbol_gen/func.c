@@ -219,19 +219,14 @@ void symbol_func_clear_varible(p_symbol_func p_func) {
     if (!p_func->var_cnt)
         return;
     p_list_head p_node, p_next;
-    list_for_each_safe(p_node, p_next, &p_func->param_vmem_base) {
-        p_ir_param_vmem_base p_base = list_entry(p_node, ir_param_vmem_base, node);
-        if (p_base->p_param_base->num == 0)
-            symbol_func_param_vmem_base_drop(p_func, p_base);
-    }
     list_for_each_safe(p_node, p_next, &p_func->param) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        if (p_var->p_base->num == 0)
+        if (p_var->p_base->num == 0 && list_head_alone(&p_var->ref_list))
             symbol_var_drop(p_var);
     }
     list_for_each_safe(p_node, p_next, &p_func->variable) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        if (p_var->p_base->num == 0)
+        if (p_var->p_base->num == 0 && list_head_alone(&p_var->ref_list))
             symbol_var_drop(p_var);
     }
     symbol_func_set_varible_id(p_func);

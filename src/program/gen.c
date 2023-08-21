@@ -47,7 +47,7 @@ void program_clear_varible(p_program p_program) {
     p_list_head p_node, p_next;
     list_for_each_safe(p_node, p_next, &p_program->variable) {
         p_symbol_var p_var = list_entry(p_node, symbol_var, node);
-        if (p_var->p_base->num == 0)
+        if (p_var->p_base->num == 0 && list_head_alone(&p_var->ref_list))
             symbol_var_drop(p_var);
     }
     program_global_set_id(p_program);
