@@ -167,13 +167,6 @@ static inline p_spill_slot_node _spill_slot_node_gen (p_phi_congruence_class pcc
 }
 static inline void _spill_slot_node_drop(p_spill_slot_node p_ssn) {
     list_del(&p_ssn->node);
-    if (list_head_alone(&p_ssn->p_var->ref_list)) {
-        p_list_head p_node;
-        list_for_each(p_node, &p_ssn->pcc->set) {
-            p_pcc_node p_pn = list_entry(p_node, pcc_node, node);
-            p_pn->p_vreg->p_info = NULL;
-        }
-    }
     phi_congruence_class_drop(p_ssn->pcc);
     free(p_ssn);
 }
