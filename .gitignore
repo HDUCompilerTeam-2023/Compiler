@@ -24,6 +24,10 @@
 
 # Directory
 !*/
+!*/gcc_o0_time
+!*/gcc_o1_time
+!*/gcc_o2_time
+!*/gcc_o3_time
 
 build/
 output/

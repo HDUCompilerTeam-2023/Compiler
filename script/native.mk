@@ -3,6 +3,8 @@ include script/build.mk
 
 
 # Directorys
+optim = -O3
+gcc_compiler = arm-linux-gnueabihf-gcc -include lib/sylib.h $(optim) -S
 OUTPUT_DIR = output
 OUTPUT_FAILURE = $(OUTPUT_DIR)/failure
 CLEAN += $(OUTPUT_DIR)/
@@ -13,23 +15,14 @@ TEST_EXE_SRC = $(shell find $(TEST_DIR) -name "*.exe")
 ARM_ASSEMBLER = arm-linux-gnueabihf-gcc -static
 
 # Test rules
-$(OUTPUT_DIR)/%.compiler_out: %.sy $(BINARY) ALWAYS
+$(OUTPUT_DIR)/%.compiler_out: %.c ALWAYS
 	@echo '  * $<'
 	@mkdir -p $(dir $@)
 	@echo '=====' >  $@
 	@cat $<       >> $@
 	@echo ''      >> $@
 	@echo '=====' >> $@
-	@$(BINARY) $< -O1 -o $(<:%.sy=%.s) >> $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
-
-$(OUTPUT_DIR)/test/2023/functional/%.compiler_out: test/2023/functional/%.sy $(BINARY) ALWAYS
-	@echo '  * $<'
-	@mkdir -p $(dir $@)
-	@echo '=====' >  $@
-	@cat $<       >> $@
-	@echo ''      >> $@
-	@echo '=====' >> $@
-	@$(BINARY) $< -o $(<:%.sy=%.s) >> $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
+	@$(gcc_compiler) $< -o $(<:%.c=%.s) >> $@ 2>&1 || echo '  x $@' >> $(OUTPUT_FAILURE)
 
 LINK_DIR = lib
 LINK_FILE = sysy
@@ -58,7 +51,7 @@ gdb: $(BINARY)
 	@gdb -q $(BINARY)
 PHONY += gdb
 
-test: $(TESTSRC:%.sy=$(OUTPUT_DIR)/%.compiler_out) 
+test: $(TESTSRC:%.c=$(OUTPUT_DIR)/%.compiler_out) 
 	@echo 'create asm' 
 	@test -f $(OUTPUT_FAILURE) \
 		&& echo '< Error' \
