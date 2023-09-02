@@ -2,25 +2,32 @@ name: Auto Test CI
 
 on:
   push:
+    branches-ignore:
+      - 'raspi_log'
 
 jobs:
   test:
-
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Set clang version as clang-10
+        run: clang --version
 
-    - name: Set clang version as clang-10
-      run: |
-        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-10 300
-        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-10 300
-        sudo update-alternatives --install /usr/bin/clang-cpp clang-cpp /usr/bin/clang-cpp-10 300
-        clang --version
+      - name: Fetch Branch
+        run: |
+          echo "$(pwd)"
+          remote_branch="${GITHUB_REF#refs/heads/}"  
+          git fetch origin "${remote_branch}"         
+          git checkout origin/"${remote_branch}" 
+        working-directory: /home/zengyong/actions-runner/_work/Compiler
 
-    - name: Test-release
-      run: make test VERSION=release
+      - name: Test-release
+        run: ./github_ci.sh ./test-results.md
+        working-directory: /home/zengyong/actions-runner/_work/Compiler
 
-    - name: Test-debug
-      run: make test VERSION=debug
+      - name: Upload Test Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+            name: test-results
+            path: /home/zengyong/actions-runner/_work/Compiler/test-results.md
+
