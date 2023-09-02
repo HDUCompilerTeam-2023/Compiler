@@ -115,3 +115,12 @@
 - [ ] 50. Parallel and SIMD
 - [ ] 51. IP OPT
 
+## 关于测试
+### 本地评测
+* 在 `./qemu_arm_gcc` 下已经输出了交叉编译器`gcc -O0`、`gcc -O1`、`gcc -O2`、`gcc -O3`的所有运行时间
+* 通过运行 `./test_whole.sh test_dir result_dir` 对 `test_dir` 下的所有 `.sy` 文件运行编译器、交叉编译的链接器、可执行文件，将编译器、连接器、可执行文件以及输出的测试结果输出到 `result_dir` ,同时与 `./qemu_arm_gcc` 的运行时间进行比较产生结果报告 `result.md`
+* 如果有两个编译器的输出结果(包括 `test_compiler`、`test_asembler`、`test_exe`、`test_output`、 `result.md`) 分别在 `dir1`、`dir2` 下，想比较两个编译器的结果差异可以使用 `python compare.py dir1 dir2 result_dir`, 在 `result_dir` 会输出两个编译器分别的报告以及比较报告 `compare_result.md`
+  
+### 远端（树莓派）评测
+* 有一个专门的分支 `raspi_log` 存放了所有提交的运行结果情况，每次 `push` 后会在树莓派上运行该分支所有未测试的提交，并将当前最新分支的结果报告 `test-results.md` 返回到 `github action` 上。 (未来可以将结果发邮件或者以网页形式展示)
+* 如果想比较两个提交在远端运行结果的差异可以运行 `./compare_commit.sh commit1 commit2 result_dir` , 如比较当前和上一个差异：`./compare_commit.sh HEAD HEAD^ result_dir`, 运行的结果与本地评测运行 `compare.py` 的结果一致
