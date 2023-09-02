@@ -37,7 +37,7 @@ LEXSRC = grammar/SysY.l
 CSRCS = $(shell find $(CSRC_DIR) -name "*.c")
 CXXSRCS = $(shell find $(CSRC_DIR) -name "*.cc")
 
-TESTSRC = $(shell find $(TEST_DIR) -name "*.sy")
+TESTSRC = $(shell find $(TEST_DIR) -name "*.c")
 
 BUILD_SCIRPT = script/yacc.mk script/lex.mk
 
