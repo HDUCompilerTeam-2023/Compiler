@@ -29,6 +29,7 @@
 !*/gcc_o1_time
 !*/gcc_o2_time
 !*/gcc_o3_time
+!raspi_log/*/*
 
 build/
 output/
